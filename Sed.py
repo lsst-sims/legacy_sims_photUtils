@@ -102,7 +102,7 @@ class Sed:
         return
 
     def readSED_flambda(self, filename):
-        """Read a file containing [lambda Flambda] (lambda in Angstroms) (Flambda erg/cm^2/s/nm).
+        """Read a file containing [lambda Flambda] (lambda in nm) (Flambda erg/cm^2/s/nm).
         
         Does not resample wavelen/flambda onto grid; leave fnu=None. """
         # Try to open data file.
@@ -128,7 +128,7 @@ class Sed:
 
     def readSED_fnu(self, filename, 
                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
-        """Read a file containing [lambda Fnu] (lambda in Angstroms) (Fnu in Jansky).
+        """Read a file containing [lambda Fnu] (lambda in nm) (Fnu in Jansky).
 
         To do the conversion between fnu to flambda, this SED *must* be regridded.
         The grid to do that conversion is (optionally) specified by wavelen_min/max/step"""
@@ -225,6 +225,10 @@ class Sed:
         
         Given wavelen OR defaults to self.wavelen - return True/False check on whether
          the arrays need to be resampled to match wavelen_min/max/step grid"""
+        # Check if wavelen_min/max/step are set - if ==None, then return (no regridding).
+        if ((wavelen_min == None) & (wavelen_max == None) & (wavelen_step==None)):
+            need_regrid = False
+            return need_regrid
         # Check if method acting on self or other data.
         update_self = self.checkUseSelf(wavelen, wavelen)
         if update_self:
@@ -282,7 +286,7 @@ class Sed:
          user can provide wavelen/flambda and get back a gridded wavelen/fnu """
         # Change Flamda to Fnu by multiplying Flambda * lambda^2 = Fv
         # Fv dv = Fl dl .. Fv = Fl dl / dv = Fl dl / (dl*c/l/l) = Fl*l*l/c
-        # Is the method acting on self.wavelen/flambda/fnu or passed wavelen/flambda arrays? 
+        # Check - Is the method acting on self.wavelen/flambda/fnu or passed wavelen/flambda arrays? 
         update_self = self.checkUseSelf(wavelen, flambda)
         if update_self:
             wavelen = self.wavelen
@@ -371,8 +375,10 @@ class Sed:
         # then different values for a(x) and b(x) depending on wavelength regime.
         # Also, the extinction is parametrized as R_v = A_v / E(B-V).
         # Magnitudes of extinction (A_l) translates to flux by a_l = -2.5log(f_red / f_nonred).
-        a_x = n.zeros(len(wavelen), dtype=float)
-        b_x = n.zeros(len(wavelen), dtype=float)
+        if wavelen == None:
+            wavelen = n.copy(self.wavelen)
+        a_x = n.zeros(len(wavelen), dtype='float')
+        b_x = n.zeros(len(wavelen), dtype='float')
         # Convert wavelength to x (in inverse microns).
         x = n.empty(len(wavelen), dtype=float)
         x = 1.0 / wavelen * 10000.0  
@@ -525,7 +531,7 @@ class Sed:
 
 
     def calcMag(self, bandpass, wavelen=None, fnu=None):
-        """Calculate the AB magnitude of an object, using phi the normalized system response
+        """Calculate the AB magnitude of an object, using phi the normalized system response.
 
         Can pass wavelen/fnu arrays or use self. Passed wavelen/fnu arrays will be unchanged.
         If method uses self, checks if fnu set; if not, does *not* permanently set fnu. 
@@ -679,47 +685,51 @@ class Sed:
             self.fnuToflambda(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
         return wavelen, fnu
 
-    def renormalizeSED(self, lambdanorm=5000, normvalue=1, gap=0, normflux='flambda',
+    def renormalizeSED(self, lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
                        wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
-        """Renormalize a sed in flambda to have normflux(flambda or fnu)=normvalue @ lambdanorm or gap.
+        """Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
         
+        Can normalized in flambda or fnu values.
         Return a new sed object; only  uses self.wavelen/flambda as input wavelen/flambda"""
         # Normalizes the fnu/flambda SED at one wavelength or average value over small range (gap).
         # This is useful for generating SED catalogs, mostly, to make them match schema.
         # Do not use this for calculating specific magnitudes -- use calcfluxNorm and multiplyFluxNorm.
         wavelen = n.copy(self.wavelen)
         flambda = n.copy(self.flambda)
-        # Get fnu and make sure on grid, in one step. 
-        wavelen, fnu = self.flambdaTofnu(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
         # Start normalizing wavelen/flambda.
         if normflux=='flambda':
-            # "standard" schema have flambda = 1 at 5000 angstroms
+            if self.needResample(wavelen, wavelen_min, wavelen_max, wavelen_step):
+                wavelen, flambda = self.resampleSED(wavelen, flambda, 
+                                                    wavelen_min, wavelen_max, wavelen_step)
+            # "standard" schema have flambda = 1 at 500 nm
             if gap==0:
-                lambdapt = n.arange(lambdanorm, lambdanorm+1, 1, dtype=float)
-                flambda_atpt = lambdapt * 0.0 
+                lambdapt = n.arange(lambdanorm, lambdanorm+wavelen_step, wavelen_step, dtype=float)
+                flambda_atpt = n.zeros(len(lambdapt), dtype='float')
                 flambda_atpt = n.interp(lambdapt, wavelen, flambda, left=None, right=None)
-                gaplambda = flambda_atpt[0]
+                gapval = flambda_atpt[0]
             else:
-                lambdapt = n.arange(lambdanorm-gap, lambdanorm+gap, 1, dtype=float)
-                flambda_atpt = lambdapt * 0.0
+                lambdapt = n.arange(lambdanorm-gap, lambdanorm+gap, wavelen_step, dtype=float)
+                flambda_atpt = n.zeros(len(lambdapt), dtype='float')
                 flambda_atpt = n.interp(lambdapt, wavelen, flambda, left=None, right=None)
-                gaplambda = flambda_atpt.sum()/gap/2.0
+                gapval = flambda_atpt.sum()/len(lambdapt)
             # Now renormalize fnu and flambda in the case of normalizing flambda.
-            konst = normvalue/gaplambda
+            konst = normvalue/gapval
             flambda = flambda * konst
         if normflux=='fnu':  
+            # Get fnu and make sure on grid, in one step. 
+            wavelen, fnu = self.flambdaTofnu(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)  
             if gap==0:
-                lambdapt = n.arange(lambdanorm, lambdanorm+1, 1, dtype=float)
-                fnu_atpt = lambdapt * 0.0 
+                lambdapt = n.arange(lambdanorm, lambdanorm+wavelen_step, wavelen_step, dtype=float)
+                fnu_atpt = n.zeros(len(lambdapt), dtype='float')
                 fnu_atpt = n.interp(lambdapt, wavelen, fnu, left=None, right=None)
-                gaplambda = fnu_atpt[0]
+                gapval = fnu_atpt[0]
             else:
-                lambdapt = n.arange(lambdanorm-gap, lambdanorm+gap, 1, dtype=float)
-                fnu_atpt = lambdapt * 0.0
+                lambdapt = n.arange(lambdanorm-gap, lambdanorm+gap, wavelen_step, dtype=float)
+                fnu_atpt = n.zeros(len(lambdapt), dtype='float')
                 fnu_atpt = n.interp(lambdapt, wavelen, fnu, left=None, right=None)
-                gaplambda = fnu_atpt.sum()/gap/2.0
+                gapval = fnu_atpt.sum()/len(lambdapt)
             # Now renormalize fnu and flambda in the case of normalizing fnu.
-            konst = normvalue/gaplambda
+            konst = normvalue/gapval
             fnu = fnu * konst
             flambda = self.fnutoflambda(wavelen,fnu, wavelen_min, wavelen_max, wavelen_step)
         new_sed = Sed(wavelen, flambda)
@@ -727,7 +737,7 @@ class Sed:
 
 
     def writeSED(self, filename, print_fnu=False, 
-                 wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+                 wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """Write SED (wavelen, flambda, optional fnu) out to file.
         
         Does not alter self, regardless of grid or presence/absence of fnu"""
@@ -742,9 +752,9 @@ class Sed:
         # Print header.
         if print_fnu:
             wavelen, fnu = self.flambdaTofnu(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
-            print >>f, "# Wavelength(A)  Flambda(ergs/cm^s/s/A)   Fnu(Jansky)"
+            print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)   Fnu(Jansky)"
         else:
-            print >>f, "# Wavelength(A)  Flambda(ergs/cm^s/s/A)"
+            print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)"
         for i in range(0, len(wavelen), 1):
             if print_fnu:
                 print >> f, self.wavelen[i], self.flambda[i], self.fnu[i]

@@ -27,10 +27,9 @@ Methods:
  writeThroughput : utility to write bandpass information to file
 
 """
-
 import warnings as warning
 import numpy as n
-import sed  # For ZP_t and M5 calculations. 
+import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation. 
 
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
 MINWAVELEN = 300
@@ -99,7 +98,8 @@ class Bandpass:
         self.sb[self.wavelen==imsimwavelen] = 1.0
         return
 
-    def readThroughput(self, filename, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def readThroughput(self, filename, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN,
+                       wavelen_step=WAVELENSTEP):
         """Populate bandpass data with data (wavelen/sb) read from file, resample onto grid.
         
         Sets wavelen/sb, with grid min/max/step as optional parameters. Does NOT set phi."""
@@ -110,9 +110,10 @@ class Bandpass:
         # Check for filename error. 
         # If given list of filenames, pass to (and return from) readThroughputList.
         if isinstance(filename, list):  
-            raise warning.warn("Was given list of files, instead of single file. Using readThroughputList instead")
+            raise warning.warn("Was given list of files, instead of a single file. Using readThroughputList instead")
             self.readThroughputList(componentList=filename, 
-                                    wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
+                                    wavelen_min=wavelen_min, wavelen_max=wavelen_max, 
+                                    wavelen_step=wavelen_step)
         # Filename is single file, now try to open file and read data.
         try:
             f = open(filename, 'r')
@@ -287,7 +288,7 @@ class Bandpass:
         dlambda = self.wavelen[1] - self.wavelen[0]
         # Set up flat source of arbitrary brightness,
         #   but where the units of fnu are Jansky (for AB mag zeropoint = -8.9).
-        flatsource = sed.Sed()
+        flatsource = Sed.Sed()
         flatsource.setFlatSED()
         adu = flatsource.calcADU(self, expTime=expTime, effarea=effarea, gain=gain)
         # Scale fnu so that adu is 1 count/expTime.
@@ -356,4 +357,22 @@ class Bandpass:
             else:
                 print >> f, self.wavelen[i], self.sb[i]
         f.close()
+        return
+
+
+## Bonus, many-magnitude calculation for many SEDs with a single bandpass
+    
+    def manyMagCalc(self, sedlist):
+        """Calculate many magnitudes for many seds using a single bandpass."""
+        # Set up limits for wavelength and check bandpass prepared for magnitude calculation.
+        minwavelen = self.wavelen[0]
+        maxwavelen = self.wavelen[len(self.wavelen)-1]
+        stepwavelen = self.wavelen[1] - self.wavelen[0]
+        if self.phi == None:
+            self.sbTophi()
+        # Get seds in compatible wavelength range format.
+        for sed in sedlist:
+            wavelen, fnu = sed.flambdaTofnu(sed.wavelen, sed.flambda, wavelen_min=minwavelen,
+                                            wavelen_max = maxwavelen, wavelen_step=stepwavelen)
+        # TODO
         return
