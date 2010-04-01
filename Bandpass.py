@@ -371,8 +371,13 @@ class Bandpass:
         if self.phi == None:
             self.sbTophi()
         # Get seds in compatible wavelength range format.
+        fnu = n.empty((len(sedlist), len(self.wavelen)), dtype='float')
+        mags = n.empty(len(sedlist), dtype='float')
+        i = 0
         for sed in sedlist:
-            wavelen, fnu = sed.flambdaTofnu(sed.wavelen, sed.flambda, wavelen_min=minwavelen,
+            wavelen, fnu[i] = sed.flambdaTofnu(sed.wavelen, sed.flambda, wavelen_min=minwavelen,
                                             wavelen_max = maxwavelen, wavelen_step=stepwavelen)
-        # TODO
-        return
+            i = i+1
+        
+        mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*stepwavelen) - sedlist[0].zp            
+        return mags

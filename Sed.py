@@ -858,3 +858,50 @@ class Sed:
         astrom_error = n.sqrt(error_sys * error_sys + error_rand*error_rand)
         return astrom_error
 
+
+## Bonus, many-magnitude calculation for many SEDs with a single bandpass
+    
+    def manyMagCalc(self, bandpasslist):
+        """Calculate many magnitudes for many bandpasses using a single sed."""
+        # Set up limits for wavelength and check bandpass prepared for magnitude calculation.
+        minwavelen = bandpasslist[0].min()
+        maxwavelen = bandpasslist[0].max()
+        stepwavelen = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
+        for bandpass in bandpasslist:
+            minw = bandpass.wavelen.min()
+            if minw < minwavelen:
+                minwavelen = minw
+            maxw = bandpass.wavelen.max()
+            if maxw > maxwavelen:
+                maxwavelen = maxw    
+            stepw = bandpass.wavelen[1] - bandpass.wavelen[0]
+            if stepw < stepwavelen:
+                stepwavelen = stepw
+        # Check for fnu
+        if self.fnu == None:
+            # If fnu is not present, create temporary copy on bandpass grid.
+            wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda, 
+                                             wavelen_min=minwavelen,
+                                             wavelen_max=maxwavelen,
+                                             wavelen_step=stepwavelen)
+        else:
+            wavelen = self.wavelen
+            fnu = self.fnu
+        # Check if bandpass and wavelen/fnu are on the same grid. 
+        if self.needResample(wavelen, wavelen_min = minwavelen,
+                             wavelen_max = maxwavelen,
+                             wavelen_step = stepwavelen):
+            wavelen, fnu = self.resampleSED(wavelen, fnu, minwavelen, maxwavelen,
+                                            stepwavelen)
+        # Calculate phis and resample onto same wavelength grid
+        phi = n.empty((len(bandpasslist), len(fnu)), dtype='float')
+        mags = n.empty(len(sedlist), dtype='float')
+        i = 0
+        for bandpass in bandpasslist:
+            wavelen, phi[i] = bandpass.sbTophi(bandpass.wavelen, bandpass.sb,
+                                               wavelen_max = maxwavelen, wavelen_step=stepwavelen)
+            i = i+1
+        
+        mags = -2.5*n.log10(n.sum(phi*fnu, axis=1)*stepwavelen) - self.zp            
+        return mags
+
