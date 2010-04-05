@@ -905,3 +905,21 @@ class Sed:
         mags = -2.5*n.log10(n.sum(phi*fnu, axis=1)*stepwavelen) - self.zp            
         return mags
 
+# routines specific for instance catalog operations
+def loadSeds(sedList, dataDir = "./"):
+    """Generate dictionary of SEDs required for generating magnitudes
+
+    Given a dataDir and a list of seds return a dictionary with sedName and sed as key, value
+    """
+    sedDict={}
+    for sedName in sedList:
+        if sedName in sedDict:
+            continue
+        else:
+            sed = Sed()
+            sed.readSED_flambda(dataDir+"data/seds/"+ sedName)
+            if sed.needResample():
+                sed.resampleSED()             
+            sedDict[sedName] = sed
+
+    return sedDict

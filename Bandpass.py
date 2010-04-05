@@ -381,3 +381,19 @@ class Bandpass:
         
         mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*stepwavelen) - sedlist[0].zp            
         return mags
+
+# Routines for InstanceCatalog
+
+def loadBandpasses(bandpassList, dataDir="./"):
+    """ Generate dictionary of bandpasses for the LSST nominal throughputs
+
+    Given a list of of filter throughputs return a dictionary of filteNames and bandpass key, values
+    """
+
+    bandpassDict = {}
+    for filter in bandpassList:
+        bandpass = Bandpass()
+        bandpass.readThroughput(dataDir + "data/throughputs/" + filter + ".dat")
+        bandpassDict[filter] = bandpass
+    return bandpassDict
+

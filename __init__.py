@@ -1,2 +1,2 @@
-from bandpass import *
-from sed import *
+from Bandpass import *
+from Sed import *
