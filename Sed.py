@@ -905,7 +905,8 @@ class Sed:
         mags = -2.5*n.log10(n.sum(phi*fnu, axis=1)*stepwavelen) - self.zp            
         return mags
 
-# routines specific for instance catalog operations
+# Friend function, not class method.
+# Routines specific for instance catalog operations.
 def loadSeds(sedList, dataDir = "./"):
     """Generate dictionary of SEDs required for generating magnitudes
 

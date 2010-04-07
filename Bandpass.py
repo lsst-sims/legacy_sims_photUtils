@@ -320,7 +320,7 @@ class Bandpass:
         v_n = neff* (skynoise**2 + noise_instr**2)
         counts_5sigma = (snr**2)/2.0/gain + n.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
         # Create a flat fnu source that has the required counts (in electrons) in this bandpass.
-        flatsource = sed.Sed()
+        flatsource = Sed.Sed()
         flatsource.setFlatSED()
         counts_flat = flatsource.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
         flatsource.multiplyFluxNorm(counts_5sigma/counts_flat)
@@ -374,14 +374,16 @@ class Bandpass:
         fnu = n.empty((len(sedlist), len(self.wavelen)), dtype='float')
         mags = n.empty(len(sedlist), dtype='float')
         i = 0
-        for sed in sedlist:
-            wavelen, fnu[i] = sed.flambdaTofnu(sed.wavelen, sed.flambda, wavelen_min=minwavelen,
-                                            wavelen_max = maxwavelen, wavelen_step=stepwavelen)
+        for sedobj in sedlist:
+            wavelen, fnu[i] = sedobj.flambdaTofnu(sed.wavelen, sed.flambda, wavelen_min=minwavelen,
+                                                  wavelen_max = maxwavelen, wavelen_step=stepwavelen)
             i = i+1
         
         mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*stepwavelen) - sedlist[0].zp            
         return mags
 
+
+# Friend functions - not class methods.
 # Routines for InstanceCatalog
 
 def loadBandpasses(bandpassList, dataDir="./"):
