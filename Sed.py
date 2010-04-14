@@ -445,7 +445,7 @@ class Sed:
             a_x[condition] = 1.752 - 0.316*y - 0.104/((y-4.67)**2 + 0.341) + Fa_x
             b_x[condition] = -3.090 + 1.825*y + 1.206/((y-4.62)**2 + 0.263) + Fb_x
         # Dust in far UV (if needed for high-z) 8 /mu < x < 10 /mu region.
-        condition = (x >= 8) & (x<= 10.)
+        condition = (x >= 8) & (x<= 11.)
         if len(a_x[condition])>0: 
             y = x[condition]-8.0
             a_x[condition] = -1.073 - 0.628*(y) + 0.137*(y)**2 - 0.070*(y)**3
