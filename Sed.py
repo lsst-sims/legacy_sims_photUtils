@@ -1,7 +1,7 @@
 """ 
 sed - 
 
-2/19/2010  ljones@astro.washington.edu
+4/13/2010  ljones@astro.washington.edu
 
 Class data: 
 wavelen (nm)
@@ -9,17 +9,49 @@ flambda (ergs/cm^s/s/nm)
 fnu (Jansky)
 zp  (units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz)
 
+It is important to note the units are NANOMETERS, not ANGSTROMS. It is possible to rig this so you can
+use angstroms instead of nm, but you should know what you're doing and understand the grid limits. 
+
 Methods: 
  Because of how these methods will be applied for catalog generation, (taking one base SED and then 
   applying various dust extinctions and redshifts), many of the methods will either work on,
   and update self, OR they can be given a set of lambda/flambda arrays and then will return 
   new versions of these arrays. 
-  For consistency, anytime self.wavelen/flambda is used, it will be updated (except in the special case
-  of calculating magnitudes), and if self.wavelen/flambda is updated, 
+ In general, the philosophy of Sed.py is to not define the boundaries of the wavelength (and thus flambda)
+  until it is necessary for magnitude calculation, or other gridded-required conversions (such as
+  calculating fnu). At those times, the min/max/step wavelengths are defined and the entire SED is
+  resampled onto that grid. The default values are 300-1200 nanometers however this is user-definable.
+  Please note that if you define your own grid, you will have to define it EVERY time you call a method
+  that takes these arguments. 
+
+ When considering whether to use the internal wavelen/flambda (self) values, versus input values:
+  For consistency, anytime self.wavelen/flambda is used, it will be updated if the values are changed
+  (except in the special case of calculating magnitudes), and if self.wavelen/flambda is updated, 
   self.fnu will be recalculated or set to None.
   If arrays are passed into a method, they will not be altered and the arrays which are returned will be
   allocated new memory. 
 
+Method include: 
+  setSED / setFlatSED / readSED_flambda / readSED_fnu -- to input information into Sed wavelen/flambda.
+  getSED_flambda / getSED_fnu -- to return wavelen / flambda or fnu to the user.
+  clearSED -- set everything to 0.
+  synchronizeSED -- to grid wavelen/flambda/fnu onto the desired grid and calculate fnu.
+  checkUseSelf / needResample -- not expected to be useful to the user, rather intended for internal use.
+  resampleSED -- primarily internal use, but may be useful to user. Resamples SED onto specified grid.
+  flambdaTofnu / fnuToflambda -- conversion methods, will resample/grid flambda and fnu in the process.
+  redshiftSED -- as it says. 
+  setupCCMab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupCCMab). 
+  multiplySED -- multiply two SEDS together.
+  calcADU / calcMag / calcFlux -- with a Bandpass, calculate the ADU/magnitude/flux of a SED.
+  calcFluxNorm / multiplyFluxNorm -- handle fluxnorm parameters (from UW LSST database) properly. These 
+methods are intended to give a user an easy way to scale an SED to match an expected magnitude. 
+  renormalizeSED  -- intended for rescaling SEDS to a common flambda or fnu level. 
+  writeSED -- keep a file record of your SED. 
+  calcSNR_psf / calcSNR_mag -- two methods to calculate the SNR of a SED. (_psf is more accurate, but 
+requires knowing the sky count backgrounds. _mag assumes you know the m5 already). 
+  calcMagError / calcAstrometricError -- currently only very rough values.
+  manyMagCalc -- given a list of bandpasses, this will return an array of magnitudes (in the same 
+order as the bandpasses) of this SED in each of those bandpasses. 
 
 """
 
@@ -381,7 +413,8 @@ class Sed:
         b_x = n.zeros(len(wavelen), dtype='float')
         # Convert wavelength to x (in inverse microns).
         x = n.empty(len(wavelen), dtype=float)
-        x = 1.0 / wavelen * 10000.0  
+        nm_to_micron = 1/1000.0
+        x = 1.0 / (wavelen * nm_to_micron)  
         # Dust in infrared 0.3 /mu < x < 1.1 /mu (inverse microns).
         condition = (x>=0.3) & (x<=1.1)
         if len(a_x[condition]) > 0 :
@@ -392,10 +425,10 @@ class Sed:
         condition = (x >=1.1) & (x<=3.3)
         if len(a_x[condition])>0:
             y = x[condition] - 1.82
-            a_x[condition] = 1 + 0.17699*y - 0.50447*y**2 - 0.02427*y**3 + 0.72085*y**4 
-            a_x[condition] = a_x[condition] + 0.01979*y**5 - 0.77530*y**6 + 0.32999*y**7 
-            b_x[condition] = 1.41338*y + 2.28305*y**2 + 1.07233*y**3 - 5.38434*y**4
-            b_x[condition] = b_x[condition] - 0.62251*y**5 + 5.30260*y**6 - 2.09002*y**7
+            a_x[condition] = 1 + 0.104*y - 0.609*y**2 + 0.701*y**3 + 1.137*y**4 
+            a_x[condition] = a_x[condition] - 1.718*y**5 - 0.827*y**6 + 1.647*y**7 - 0.505*y**8
+            b_x[condition] = 1.952*y + 2.908*y**2 - 3.989*y**3 - 7.985*y**4
+            b_x[condition] = b_x[condition] + 11.102*y**5 + 5.491*y**6 - 10.805*y**7 + 3.347*y**8
         # Dust in ultraviolet and UV (if needed for high-z) 3.3 /mu< x< 8 /mu.
         condition = (x>=3.3) & (x<5.9)
         if len(a_x[condition])>0:
