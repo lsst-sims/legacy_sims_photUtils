@@ -375,23 +375,23 @@ class Bandpass:
         mags = n.empty(len(sedlist), dtype='float')
         i = 0
         for sedobj in sedlist:
-            wavelen, fnu[i] = sedobj.flambdaTofnu(sed.wavelen, sed.flambda, wavelen_min=minwavelen,
+            wavelen, fnu[i] = sedobj.flambdaTofnu(sedobj.wavelen, sedobj.flambda, wavelen_min=minwavelen,
                                                   wavelen_max = maxwavelen, wavelen_step=stepwavelen)
             i = i+1
-        
+            
         mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*stepwavelen) - sedlist[0].zp            
         return mags
 
 
 # Friend functions - not class methods.
 # Routines for InstanceCatalog
-
+    
 def loadBandpasses(bandpassList, dataDir="./"):
     """ Generate dictionary of bandpasses for the LSST nominal throughputs
-
+    
     Given a list of of filter throughputs return a dictionary of filteNames and bandpass key, values
     """
-
+    
     bandpassDict = {}
     for filter in bandpassList:
         bandpass = Bandpass()

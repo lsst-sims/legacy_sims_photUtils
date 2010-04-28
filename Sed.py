@@ -736,7 +736,7 @@ class Sed:
                                                     wavelen_min, wavelen_max, wavelen_step)
             # "standard" schema have flambda = 1 at 500 nm
             if gap==0:
-                lambdapt = n.arange(lambdanorm, lambdanorm+wavelen_step, wavelen_step, dtype=float)
+                lambdapt = n.arange(lambdanorm-wavelen_step/2.0, lambdanorm+wavelen_step/2.0, wavelen_step, dtype=float)
                 flambda_atpt = n.zeros(len(lambdapt), dtype='float')
                 flambda_atpt = n.interp(lambdapt, wavelen, flambda, left=None, right=None)
                 gapval = flambda_atpt[0]
@@ -769,10 +769,11 @@ class Sed:
         return new_sed
 
 
-    def writeSED(self, filename, print_fnu=False, 
+    def writeSED(self, filename, print_header=None, print_fnu=False, 
                  wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """Write SED (wavelen, flambda, optional fnu) out to file.
         
+        Option of adding a header line (such as version info) to output file.
         Does not alter self, regardless of grid or presence/absence of fnu"""
         # This can be useful for debugging or recording an SED.
         f = open(filename, 'w')
@@ -783,6 +784,9 @@ class Sed:
             wavelen, flambda = self.resampleSED(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
         # Then just use this gridded wavelen/flambda to calculate fnu.
         # Print header.
+        if print_header != None:
+            print >>f, "#", print_header
+        # Print standard header info.
         if print_fnu:
             wavelen, fnu = self.flambdaTofnu(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
             print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)   Fnu(Jansky)"
