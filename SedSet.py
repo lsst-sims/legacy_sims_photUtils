@@ -70,7 +70,7 @@ class SedSet:
                 rootdir = rootdir + 'white_dwarfs/He'
                 self.readWhiteDwarfs(rootdir=rootdir,  verbose=verbose)
             elif type == 'reddwarf':
-                rootdir = rootdir + 'MLTY_dwarfs'
+                rootdir = rootdir + 'mlt'
                 self.readRedDwarfs(rootdir=rootdir, verbose=verbose)
             elif type == 'AGB':
                 rootdir = rootdir + 'AGB'
@@ -142,23 +142,22 @@ class SedSet:
         sedlist=[]
         mdwarflist = []
         ldwarflist = []
-        tdwarflist = []
+        bdwarflist = []
         tmplist = os.listdir(rootdir)
         for tmp in tmplist:
-            if file[:1]=='m':
-                mdwarflist.append(file)
-            if (file[:1]=='l') | (file[:1]=="L"):
-                ldwarflist.append(file)
-            if file[:1]=='t':
-                tdwarflist.append(file)
-            if file[:4]=='burr':
-                bdwarflist.append(file)
-        sedlist = mdwarflist + ldwarflist + tdwarflist + bdwarflist
+            if tmp[:1]=='m':
+                mdwarflist.append(tmp)
+            if (tmp[:1]=='l') | (tmp[:1]=="L"):
+                ldwarflist.append(tmp)
+            if tmp[:1]=='t':
+                tdwarflist.append(tmp)
+            if tmp[:4]=='burr':
+                bdwarflist.append(tmp)
+        sedlist = mdwarflist + ldwarflist  + bdwarflist
         self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir,verbose=verbose)
         self.type = 'reddwarf'
         self.mdwarflist = mdwarflist
         self.ldwarflist = ldwarflist
-        self.tdwarflist = tdwarflist
         self.bdwarflist = bdwarflist
         return 
 
@@ -169,12 +168,12 @@ class SedSet:
         Ostarlist = []
         tmplist = os.listdir(rootdir)
         for tmp in tmplist:
-            if file[-4:]=='.dat':
-                sedlist.append(file)
-                if file[:2]=='C_':
-                    Cstarlist.append(file)
-                if file[:2]=='O_':
-                    Ostarlist.append(file)
+            if tmp[-4:]=='.dat':
+                sedlist.append(tmp)
+                if tmp[:2]=='C_':
+                    Cstarlist.append(tmp)
+                if tmp[:2]=='O_':
+                    Ostarlist.append(tmp)
         self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir, verbose=verbose)
         self.type='AGB'
         self.Cstarlist = Cstarlist
@@ -186,8 +185,8 @@ class SedSet:
         sedlist = []
         tmplist = os.listdir(rootdir)
         for tmp in tmplist:
-            if file[-4:]=='.dat':
-                sedlist.append(file)
+            if tmp[-4:]=='.dat':
+                sedlist.append(tmp)
         self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir, verbose=verbose)
         self.type='asteroid'
         return
@@ -380,7 +379,7 @@ class SedSet:
             effobjlambda[sedname] = {}
             if self.seds[sedname].fnu.sum() == 0:
                 # then there was nothing in this data file
-                for filter in filters.filterlist:
+                for filter in bandpassSet.filterlist:
                     effobjlambda[sedname][filter] = 0
                 continue
             for filter in bandpassSet.filterlist:
@@ -411,7 +410,7 @@ class SedSet:
                     printstring = printstring + " %0.3f" %(mags[sedname][filter])
                 print printstring
         self.mags = mags
-        return mags, filters.filterlist
+        return mags, bandpassSet.filterlist
 
     def calcColorsDict(self, bandpassSet, colorfilter='r', verbose=False):
         """ Calculates colors, relative to colfilter (i.e. g-r, u-r...) of seds.
