@@ -260,7 +260,7 @@ class Sed:
             wavelen = self.wavelen
         # Check if wavelength arrays are equal, if wavelen_match passed. 
         if wavelen_match != None:
-            need_grid = !(n.all(wavelen_match==wavelen))
+            need_grid = n.any(abs(wavelen_match-wavelen)>1e-10)
         else:
             need_grid = True
             # Check if wavelen_min/max/step are set - if ==None, then return (no regridding).
