@@ -89,7 +89,8 @@ class Sed:
         self.fnu = None
         self.wavelen = None
         self.flambda = None
-        self.zp = -8.9  # default units, Jansky.
+        #self.zp = -8.9  # default units, Jansky.
+        self.zp = -2.5*n.log10(3631)
         # If init was given data to initialize class, use it.
         if (wavelen!= None) & (flambda!=None):
             self.setSED(wavelen, flambda=flambda)
@@ -260,9 +261,9 @@ class Sed:
             wavelen = self.wavelen
         # Check if wavelength arrays are equal, if wavelen_match passed. 
         if wavelen_match != None:
-            need_grid = n.any(abs(wavelen_match-wavelen)>1e-10)
+            need_regrid = n.any(abs(wavelen_match-wavelen)>1e-10)
         else:
-            need_grid = True
+            need_regrid = True
             # Check if wavelen_min/max/step are set - if ==None, then return (no regridding).
             # It's possible (writeSED) to call this routine, even with no final grid in mind.
             if ((wavelen_min == None) & (wavelen_max == None) & (wavelen_step==None)):
@@ -669,7 +670,7 @@ class Sed:
         # Fluxnorm gets applied to f_nu (fluxnorm * SED(f_nu) * PHI = mag - 8.9 (AB zeropoint).
         # FluxNorm * SED => correct magnitudes for this object.
         # check if wavelen/fnu are on same grid as bandpass
-        if self.needResample((wavelen=wavelen, wavelen_match=bandpass.wavelen):
+        if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
             # Here - not on the same grid so resample to match wavelen/fnu to bandpass, 
             #  but don't store in self. 
             # Note that resampleSED allocates new memory for wavelen/fnu return values.
