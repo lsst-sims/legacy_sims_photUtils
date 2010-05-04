@@ -656,7 +656,6 @@ class Sed:
         Can pass wavelen/fnu or apply to self. Requires a gridded wavelen/fnu on min/max/step grid.
         Note that calcFluxNorm does not regrid self.wavelen/flambda/fnu permanently, so need
         to use the same grid here as you use in multiplyFluxNorm. """
-        # Regridding self makes sense, because otherwise fluxnorm value wouldn't be 'permanent'.
         update_self = self.checkUseSelf(wavelen, fnu)
         if update_self:
             wavelen = self.wavelen
@@ -797,7 +796,8 @@ class Sed:
             if print_fnu:
                 print >> f, self.wavelen[i], self.flambda[i], self.fnu[i]
             else:
-                print >> f, self.wavelen[i], self.flambda[i]
+                #print >> f, self.wavelen[i], self.flambda[i]
+                print >> f "%.2f %.7f" %(self.wavelen[i], self.flambda[i])
         # Done writing, close file.
         f.close()       
         return
@@ -942,23 +942,3 @@ class Sed:
         
         mags = -2.5*n.log10(n.sum(phi*fnu, axis=1)*stepwavelen) - self.zp            
         return mags
-
-# Friend function, not class method.
-# Routines specific for instance catalog operations.
-def loadSeds(sedList, dataDir = "./"):
-    """Generate dictionary of SEDs required for generating magnitudes
-
-    Given a dataDir and a list of seds return a dictionary with sedName and sed as key, value
-    """
-    sedDict={}
-    for sedName in sedList:
-        if sedName in sedDict:
-            continue
-        else:
-            sed = Sed()
-            sed.readSED_flambda(dataDir+"data/seds/"+ sedName)
-            if sed.needResample():
-                sed.resampleSED()             
-            sedDict[sedName] = sed
-
-    return sedDict
