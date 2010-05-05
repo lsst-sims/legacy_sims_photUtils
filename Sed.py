@@ -780,7 +780,8 @@ class Sed:
         wavelen = self.wavelen
         flambda = self.flambda
         # See if need to regrid data (if regrid, new memory copy).
-        if self.needResample(wavelen, wavelen_min, wavelen_max, wavelen_step):
+        if self.needResample(wavelen=wavelen, wavelen_min=wavelen_min, 
+                             wavelen_max=wavelen_max, wavelen_step=wavelen_step):
             wavelen, flambda = self.resampleSED(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
         # Then just use this gridded wavelen/flambda to calculate fnu.
         # Print header.
@@ -794,10 +795,11 @@ class Sed:
             print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)"
         for i in range(0, len(wavelen), 1):
             if print_fnu:
-                print >> f, self.wavelen[i], self.flambda[i], self.fnu[i]
+                fnu = self.flambdaTofnu(wavelen=wavelen, flambda=flambda)
+                print >> f, wavelen[i], flambda[i], fnu[i]
             else:
                 #print >> f, self.wavelen[i], self.flambda[i]
-                print >> f "%.2f %.7g" %(self.wavelen[i], self.flambda[i])
+                print >> f, "%.2f %.7g" %(wavelen[i], flambda[i])
         # Done writing, close file.
         f.close()       
         return
