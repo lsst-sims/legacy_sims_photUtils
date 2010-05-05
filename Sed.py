@@ -797,7 +797,7 @@ class Sed:
                 print >> f, self.wavelen[i], self.flambda[i], self.fnu[i]
             else:
                 #print >> f, self.wavelen[i], self.flambda[i]
-                print >> f "%.2f %.7f" %(self.wavelen[i], self.flambda[i])
+                print >> f "%.2f %.7g" %(self.wavelen[i], self.flambda[i])
         # Done writing, close file.
         f.close()       
         return
