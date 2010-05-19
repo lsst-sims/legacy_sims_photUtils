@@ -31,13 +31,11 @@ figformat = 'png'
 class BandpassSet:
     """ Set up a dictionary of a set of bandpasses (multi-filters). Be able to do things with them."""
     def __init__(self, filterlist=('u', 'g', 'r', 'i', 'z', 'y'), 
-                 rootdir="thruputs", rootname="final_", rootsuffix="", verbose=True):
+                 rootdir="thruputs", rootname="total_", rootsuffix=".dat", verbose=True):
         """Initialize filter set with filters in filterlist, in directory dir with root name root"""
         bandpass = {}
-        if rootdir!='':
-            rootdir = rootdir + "/"
         for filter in filterlist:
-            filename = rootdir  + rootname + filter + rootsuffix
+            filename = os.path.join(rootdir, rootname+filter+rootsuffix)
             # read filter throughput and set up Sb/Phi and zeropoint
             if verbose:
                 print "Initializing filter %s" %(filename)
@@ -274,11 +272,11 @@ class BandpassSet:
         # end of filters
         return
 
-    def plotFilters(self, rootdir="thruputs", throughput=True, phi=False, 
+    def plotFilters(self, rootdir=".", throughput=True, phi=False, 
                     plotdropoffs=False, ploteffsb=True, compare=None, savefig=False, 
                     figroot='filters', xlim=(300, 1100), ylimthruput=(0, 1), ylimphi=(0, 0.002), 
                     filter_tags='normal', leg_tag='LSST', compare_tag='', atmos=True, 
-                    linestyle='-', linewidth=1, newfig=True):
+                    linestyle='-', linewidth=2, newfig=True):
         """ Plot the filter throughputs and phi's, with limits xlim/ylimthruput/ylimphi. 
         
         Optionally add comparison (another teleThruputGroup or None) throughput and phi curves.
@@ -303,14 +301,13 @@ class BandpassSet:
             drop_peak_blue = self.drop_peak_blue
         # read files for atmosphere and optional comparison throughputs
         if atmos:
-            if (rootdir != ''):
-                rootdir = rootdir + "/"
-            atmosfile = rootdir + "atmos.dat"
+            atmosfile = os.path.join(rootdir, 'atmos.dat')
             atmosphere = Bandpass.Bandpass()
             atmosphere.readThroughput(atmosfile)
-        Xatm=1.2
+        Xatm=1.3
         # set up colors for plot output
         colors = ('c', 'b', 'chartreuse', 'g', 'y', 'r', 'burlywood', 'm') 
+        #colors = ('r', 'b', 'r', 'b', 'r', 'b', 'r', 'b')
         if (throughput):
             if newfig:
                 pyl.figure()
@@ -364,8 +361,8 @@ class BandpassSet:
             if compare!=None:
                 legendtext= legendtext + "\n%s = dashed" %(compare_tag)
             if atmos: 
-                legendtext = legendtext + "\nAirmass %.2f" %(Xatm)
-            pyl.figtext(0.15, 0.78, legendtext)
+                legendtext = legendtext + "\nAirmass %.1f" %(Xatm)
+            pyl.figtext(0.15, 0.8, legendtext)
             # add names to filter throughputs
             if filter_tags == 'side':
                 xtags = n.zeros(len(filterlist), dtype=float)
@@ -374,11 +371,12 @@ class BandpassSet:
                 ytags = ytags*0.04 + 0.35
             else: # 'normal' tagging
                 xtags = (0.17, 0.27, 0.42, 0.585, 0.677, 0.8, 0.8, 0.8)
-                ytags = (0.63, 0.63, 0.63, 0.63, 0.63, 0.63, 0.60, 0.57)
+                ytags = (0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.69, 0.65)
             index= 0
             colorindex = 0
             for filter in filterlist: 
-                pyl.figtext(xtags[index], ytags[index], filter, color=colors[colorindex], va='top')
+                pyl.figtext(xtags[index], ytags[index], filter, color=colors[colorindex], 
+                            va='top', size='x-large')
                 index = index+1
                 colorindex = colorindex + 1
                 if colorindex == len(colors):
@@ -386,7 +384,7 @@ class BandpassSet:
             # set x/y limits
             pyl.xlim(xmin=xlim[0], xmax=xlim[1])
             pyl.ylim(ymin=ylimthruput[0], ymax=ylimthruput[1])
-            pyl.xlabel("Wavelength (A)")
+            pyl.xlabel("Wavelength (nm)")
             pyl.ylabel("Throughput (%)")
             pyl.grid()
             if savefig:
@@ -452,7 +450,7 @@ class BandpassSet:
             # set x/y limits
             pyl.xlim(xmin=xlim[0], xmax=xlim[1])
             pyl.ylim(ymin=ylimphi[0], ymax=ylimphi[1])
-            pyl.xlabel("Wavelength (A)")
+            pyl.xlabel("Wavelength (nm)")
             pyl.ylabel("Phi")
             pyl.grid()
             if savefig:
