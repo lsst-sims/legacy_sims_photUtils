@@ -339,17 +339,19 @@ class Bandpass:
         effwavelensb = (self.wavelen*self.sb).sum()/self.sb.sum()
         return effwavelenphi, effwavelensb
 
-    def writeThroughput(self, filename, write_phi=False):
+    def writeThroughput(self, filename, print_header=None, write_phi=False):
         """Write throughput to a file"""
         # Useful if you build a throughput up from components and need to record the combined value.
         f = open(filename, 'w')
-        # Print header.
+        # Print header.       
+        if print_header != None:
+            print >>f, "#", print_header
         if write_phi:
             if self.phi==None:
                 self.sbTophi()
-            print >>f, "# Wavelength(A)  Throughput   Phi"
+            print >>f, "# Wavelength(nm)  Throughput(0-1)   Phi"
         else:
-            print >>f, "# Wavelength(A)  Throughput"
+            print >>f, "# Wavelength(nm)  Throughput(0-1)"
         # Loop through data, printing out to file.
         for i in range(0, len(self.wavelen), 1):
             if write_phi:
@@ -382,20 +384,4 @@ class Bandpass:
         mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*stepwavelen) - sedlist[0].zp            
         return mags
 
-
-# Friend functions - not class methods.
-# Routines for InstanceCatalog
-    
-def loadBandpasses(bandpassList, dataDir="./"):
-    """ Generate dictionary of bandpasses for the LSST nominal throughputs
-    
-    Given a list of of filter throughputs return a dictionary of filteNames and bandpass key, values
-    """
-    
-    bandpassDict = {}
-    for filter in bandpassList:
-        bandpass = Bandpass()
-        bandpass.readThroughput(dataDir + "data/throughputs/" + filter + ".dat")
-        bandpassDict[filter] = bandpass
-    return bandpassDict
 
