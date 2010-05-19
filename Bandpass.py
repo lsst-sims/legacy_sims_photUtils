@@ -85,18 +85,19 @@ class Bandpass:
         self.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
         return
 
-    def imsimBandpass(self, imsimwavelen=500, 
+    def imsimBandpass(self, imsimwavelen=500.0, 
                       wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, 
                       wavelen_step=WAVELENSTEP):
         """Populate bandpass data with sb=0 everywhere except sb=1 at imsimwavelen.
         
         Sets wavelen/sb, with grid min/max/step as optional parameters. Does NOT set phi. """
         # Set up arrays.
-        self.wavelen = n.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
+        self.wavelen = n.arange(wavelen_min, wavelen_max+wavelen_step, 
+                                wavelen_step, dtype='float')
         self.phi = None
         # Set sb.
         self.sb = n.zeros(len(self.wavelen), dtype='float')
-        self.sb[self.wavelen==imsimwavelen] = 1.0
+        self.sb[abs(self.wavelen-imsimwavelen)<wavelen_step/2.0] = 1.0
         return
 
     def readThroughput(self, filename, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN,
