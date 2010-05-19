@@ -85,8 +85,9 @@ class Bandpass:
         self.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
         return
 
-    def imsimBandpass(self, imsimwavelen=5000, 
-                      wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def imsimBandpass(self, imsimwavelen=500, 
+                      wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, 
+                      wavelen_step=WAVELENSTEP):
         """Populate bandpass data with sb=0 everywhere except sb=1 at imsimwavelen.
         
         Sets wavelen/sb, with grid min/max/step as optional parameters. Does NOT set phi. """
