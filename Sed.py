@@ -82,7 +82,7 @@ SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Defaul
 
 class Sed: 
     """Class for holding and utilizing spectral energy distributions (SEDs)"""
-    def __init__(self, wavelen=None, flambda=None):
+    def __init__(self, wavelen=None, flambda=None, fnu=None):
         """Initialize sed object by giving filename or lambda/flambda array.
 
         Note that this does *not* regrid flambda and leaves fnu undefined."""
@@ -92,13 +92,13 @@ class Sed:
         #self.zp = -8.9  # default units, Jansky.
         self.zp = -2.5*n.log10(3631)
         # If init was given data to initialize class, use it.
-        if (wavelen!= None) & (flambda!=None):
-            self.setSED(wavelen, flambda=flambda)
+        if (wavelen!= None) & ((flambda!=None) | (fnu!=None)):
+            self.setSED(wavelen, flambda=flambda, fnu=fnu)
         return
 
     ### Methods for getters and setters.
 
-    def setSED(self, wavelen, flambda=None, fnu=None, wavelen_step=WAVELENSTEP):
+    def setSED(self, wavelen, flambda=None, fnu=None):
         """Populate wavelen/flambda fields in sed by giving lambda/flambda or lambda/fnu array.
 
         If flambda present, this overrides fnu. Method sets fnu=None, and if only fnu given, this
@@ -124,8 +124,13 @@ class Sed:
             elif (isinstance(fnu, n.ndarray)==False) | (len(fnu)!=len(self.wavelen)):
                 raise ValueError("(No Flambda) - Fnu must be numpy array of same length as Wavelen.")
             # Convert fnu to flambda (regrids wavelen/flambda in the process).
-            self.wavelen, self.flambda = self.fnuToflambda(wavelen, fnu, wavelen[0], 
-                                                           wavelen[len(wavelen)-1], wavelen_step)
+            wavelenmin = wavelen[0]
+            wavelenmax = wavelen[len(wavelen)-1]
+            wavelenstep = wavelen[1] - wavelen[0]
+            self.wavelen, self.flambda = self.fnuToflambda(wavelen, fnu,
+                                                           wavelen_min=wavelenmin,
+                                                           wavelen_max=wavelenmax,
+                                                           wavelen_step=wavelenstep)
         return
 
     def setFlatSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
