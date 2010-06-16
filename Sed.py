@@ -1,6 +1,8 @@
 """ 
 sed - 
 
+$Id$
+
 4/13/2010  ljones@astro.washington.edu
 
 Class data: 
