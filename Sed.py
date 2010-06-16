@@ -101,8 +101,8 @@ class Sed:
     def setSED(self, wavelen, flambda=None, fnu=None):
         """Populate wavelen/flambda fields in sed by giving lambda/flambda or lambda/fnu array.
 
-        If flambda present, this overrides fnu. Method sets fnu=None, and if only fnu given, this
-         then sets wavelen/flambda on evenly spaced grid (wavelen_step) covering range of wavelen"""
+        If flambda present, this overrides fnu. Method sets fnu=None unless only fnu is given.
+        Sets wavelen/flambda or wavelen/flambda/fnu over wavelength array given. """
         # Check wavelen array for type matches.
         if isinstance(wavelen, n.ndarray)==False:
             raise ValueError("Wavelength must be a numpy array")
@@ -123,14 +123,8 @@ class Sed:
                 raise ValueError("Both fnu and flambda are 'None', cannot set the SED.")
             elif (isinstance(fnu, n.ndarray)==False) | (len(fnu)!=len(self.wavelen)):
                 raise ValueError("(No Flambda) - Fnu must be numpy array of same length as Wavelen.")
-            # Convert fnu to flambda (regrids wavelen/flambda in the process).
-            wavelenmin = wavelen[0]
-            wavelenmax = wavelen[len(wavelen)-1]
-            wavelenstep = wavelen[1] - wavelen[0]
-            self.wavelen, self.flambda = self.fnuToflambda(wavelen, fnu,
-                                                           wavelen_min=wavelenmin,
-                                                           wavelen_max=wavelenmax,
-                                                           wavelen_step=wavelenstep)
+            # Convert fnu to flambda.
+            self.wavelen, self.flambda = self.fnuToflambda(wavelen, fnu)
         return
 
     def setFlatSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
@@ -165,12 +159,10 @@ class Sed:
         self.fnu = None 
         return
 
-    def readSED_fnu(self, filename, 
-                    wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def readSED_fnu(self, filename):
         """Read a file containing [lambda Fnu] (lambda in nm) (Fnu in Jansky).
 
-        To do the conversion between fnu to flambda, this SED *must* be regridded.
-        The grid to do that conversion is (optionally) specified by wavelen_min/max/step"""
+        Does not resample wavelen/fnu/flambda onto a grid; leaves fnu set."""
         # Try to open the data file.
         try:
             f=open(filename, 'r')
@@ -191,8 +183,7 @@ class Sed:
         sourcewavelen = n.array(sourcewavelen)
         sourcefnu = n.array(sourcefnu)
         # Convert fnu to flambda (regrids wavelen/flambda in the process).
-        self.wavelen, self.flambda = self.fnuToflambda(sourcewavelen, sourcefnu, 
-                                                       wavelen_min, wavelen_max, wavelen_step)
+        self.wavelen, self.flambda = self.fnuToflambda(sourcewavelen, sourcefnu)
         return
 
     def getSED_flambda(self):
@@ -211,10 +202,7 @@ class Sed:
             fnu = n.copy(self.fnu)
         else:
             # Fnu was not set .. grab copy fnu without changing self. 
-            wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda, 
-                                             wavelen[0], 
-                                             wavelen[len(wavelen)-1],
-                                             wavelen[1]-wavelen[0])
+            wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda)
             # Now wavelen/fnu (new mem) are gridded evenly, but self.wavelen/flambda/fnu remain unchanged.
         return wavelen, fnu
 
@@ -228,13 +216,18 @@ class Sed:
         self.zp = -8.9
         return
     
-    def synchronizeSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
-        """Set all wavelen/flambda/fnu values, on min/max/step grid.
-        
-        Since wavelen/flambda are always set (but not always gridded) this means -
-          this method will grid wavelen/flambda and calculate fnu.  """
-        # Calculate fnu.
-        self.flambdaTofnu(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
+    def synchronizeSED(self, wavelen_min=None, wavelen_max=None, wavelen_step=None):
+        """Set all wavelen/flambda/fnu values, potentially on min/max/step grid.
+
+        Uses flambda to recalculate fnu. If wavelen min/max/step are given, resamples
+        wavelength/flambda/fnu onto an even grid with these values. Defaults would be
+        300/1200/0.1. """
+        # (Re)Calculate fnu.        
+        self.flambdaTofnu()
+        # Grid wavelength/flambda/fnu if desired.
+        if ((wavelen_min!=None) & (wavelen_max!=None) & (wavelen_step!=None)):
+            resampleSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max,
+                        wavelen_step=wavelen_step)
         return
         
     ## Utilities common to several later methods.
@@ -266,7 +259,11 @@ class Sed:
             wavelen = self.wavelen
         # Check if wavelength arrays are equal, if wavelen_match passed. 
         if wavelen_match != None:
-            need_regrid = n.any(abs(wavelen_match-wavelen)>1e-10)
+            if n.shape(wavelen_match) != n.shape(wavelen):
+                need_regrid=True
+            else:
+                # check the elements to see if any vary
+                need_regrid = n.any(abs(wavelen_match-wavelen)>1e-10)
         else:
             need_regrid = True
             # Check if wavelen_min/max/step are set - if ==None, then return (no regridding).
@@ -290,9 +287,9 @@ class Sed:
                     
             
     
-    def resampleSED(self, wavelen=None, flux=None, 
+    def resampleSED(self, wavelen=None, flux=None, wavelen_match=None,
                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
-        """Resample flux onto grid defined by min/max/step. 
+        """Resample flux onto grid defined by min/max/step OR another wavelength array.
 
         Give method wavelen/flux OR default to self.wavelen/self.flambda.
         Method either returns wavelen/flambda (if given those arrays) or updates wavelen/flambda in self. 
@@ -308,8 +305,12 @@ class Sed:
         # In here, resampling will be done regardless if necessary or not.
         #  (this simplifies memory management, as if you call this funtion, you will be 
         #   getting new copies of data). 
-        # Set up gridded wavelength. 
-        wavelen_grid = n.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')   
+        # Set up gridded wavelength or copy of wavelen array to match.
+        if wavelen_match == None:
+            wavelen_grid = n.arange(wavelen_min, wavelen_max+wavelen_step,
+                                    wavelen_step, dtype='float')
+        else:
+            wavelen_grid = n.copy(wavelen_match)
         flux_grid = n.empty(len(wavelen), dtype='float')
         # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
         flux_grid = n.interp(wavelen_grid, wavelen, flux, left=0.0, right=0.0)
@@ -319,13 +320,11 @@ class Sed:
             self.flambda = flux_grid
         return wavelen_grid, flux_grid
 
-    def flambdaTofnu(self, wavelen=None, flambda=None, 
-                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def flambdaTofnu(self, wavelen=None, flambda=None):
         """Convert flambda into fnu. 
 
         This routine assumes that flambda is in ergs/cm^s/s/nm and produces fnu in Jansky.
-        Can act on self (and will grid *all* of wavelen/flambda/fnu on wavelen_min/max/step) or
-         user can provide wavelen/flambda and get back a gridded wavelen/fnu """
+        Can act on self or user can provide wavelen/flambda and get back wavelen/fnu """
         # Change Flamda to Fnu by multiplying Flambda * lambda^2 = Fv
         # Fv dv = Fl dl .. Fv = Fl dl / dv = Fl dl / (dl*c/l/l) = Fl*l*l/c
         # Check - Is the method acting on self.wavelen/flambda/fnu or passed wavelen/flambda arrays? 
@@ -335,10 +334,6 @@ class Sed:
             flambda=self.flambda
             self.fnu = None
         # Now on with the calculation. 
-        # First, regrid wavelen/flambda if needed. 
-        if self.needResample(wavelen=wavelen, wavelen_min=wavelen_min, wavelen_max=wavelen_max,
-                             wavelen_step=wavelen_step):
-            wavelen, flambda = self.resampleSED(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
         # Calculate fnu.
         fnu = flambda * wavelen * wavelen * NM2M / LIGHTSPEED
         fnu = fnu * ERGSETC2JANSKY
@@ -351,13 +346,11 @@ class Sed:
         # Return wavelen, fnu.
         return wavelen, fnu
 
-    def fnuToflambda(self, wavelen=None, fnu=None,
-                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):     
-        """Convert fnu into flambda -- must regrid onto wavelen_min/max/step to do so.
+    def fnuToflambda(self, wavelen=None, fnu=None):
+        """Convert fnu into flambda.
         
         Assumes fnu in units of Jansky and flambda in ergs/cm^s/s/nm.
-        Can act on self (and will regrid *all* of wavelen/flambda/fnu) or
-          user can give wavelen/fnu and get (new memory) gridded wavelen/flambda returned"""
+        Can act on self or user can give wavelen/fnu and get wavelen/flambda returned"""
         # Fv dv = Fl dl .. Fv = Fl dl / dv = Fl dl / (dl*c/l/l) = Fl*l*l/c
         # Is method acting on self or passed arrays?
         update_self = self.checkUseSelf(wavelen, fnu)
@@ -365,11 +358,6 @@ class Sed:
             wavelen = self.wavelen
             fnu = self.fnu
         # On with the calculation.
-        # First, regrid wavelen/fnu.
-        if self.needResample(wavelen=wavelen, wavelen_min=wavelen_min, wavelen_max=wavelen_max,
-                             wavelen_step=wavelen_step):
-            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_min=wavelen_min, 
-                                            wavelen_max=wavelen_max, wavelen_step=wavelen_step)
         # Calculate flambda.
         flambda = fnu / wavelen / wavelen * LIGHTSPEED / NM2M
         flambda = flambda / ERGSETC2JANSKY
@@ -521,15 +509,19 @@ class Sed:
         flambda_1 = self.flambda
         if self.needResample(wavelen=wavelen_1, wavelen_min=wavelen_min,
                              wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-            wavelen_1, flambda_1 = self.resampleSED(wavelen_1, flambda_1, wavelen_min,
-                                                    wavelen_max, wavelen_step)
+            wavelen_1, flambda_1 = self.resampleSED(wavelen_1, flambda_1,
+                                                    wavelen_min=wavelen_min,
+                                                    wavelen_max=wavelen_max,
+                                                    wavelen_step=wavelen_step)
         # Set up wavelen/flambda of second object, on grid.  
         wavelen_2 = other_sed.wavelen
         flambda_2 = other_sed.flambda
         if self.needResample(wavelen=wavelen_2, wavelen_min=wavelen_min,
                              wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-            wavelen_2, flambda_2 = self.resampleSED(wavelen_2, flambda_2, wavelen_min, 
-                                                    wavelen_max, wavelen_step)
+            wavelen_2, flambda_2 = self.resampleSED(wavelen_2, flambda_2,
+                                                    wavelen_min=wavelen_min, 
+                                                    wavelen_max=wavelen_max,
+                                                    wavelen_step=wavelen_step)
         # Multiply the two flambda together.
         wavelen = wavelen_1
         flambda = flambda_1 * flambda_2
@@ -540,7 +532,6 @@ class Sed:
     ## routines related to magnitudes
 
     def calcADU(self, bandpass, wavelen=None, fnu=None,
-                wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP,
                 expTime=EXPTIME, effarea=EFFAREA, gain=GAIN):
         """Calculate the number of adu from camera, using sb and fnu.
 
@@ -553,10 +544,7 @@ class Sed:
             # Calculate fnu if required.
             if self.fnu == None:
                 # If fnu not present, create temporary copy - on bandpass grid.
-                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda, 
-                                                 wavelen_min=bandpass.wavelen[0], 
-                                                 wavelen_max=bandpass.wavelen[len(bandpass.wavelen)-1],
-                                                 wavelen_step=(bandpass.wavelen[1]-bandpass.wavelen[0]))
+                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda)
             else:
                 wavelen = self.wavelen
                 fnu = self.fnu
@@ -564,9 +552,7 @@ class Sed:
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
             # Here, not on the same grid so resample to match wavelen/fnu to bandpass.
             # Note that resampleSED allocates new memory for wavelen/fnu return values.
-            wavelen, fnu = self.resampleSED(wavelen, fnu, bandpass.wavelen[0], 
-                                            bandpass.wavelen[len(bandpass.wavelen)-1], 
-                                            bandpass.wavelen[1] - bandpass.wavelen[0])
+            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate the number of photons.
         dlambda = wavelen[1] - wavelen[0]
         # Nphoton in units of 10^-23 ergs/cm^s/nm. 
@@ -595,10 +581,7 @@ class Sed:
             # Calculate fnu if required.
             if self.fnu == None:
                 # If fnu is not present, create temporary copy on bandpass grid.
-                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda, 
-                                                 wavelen_min=bandpass.wavelen[0], 
-                                                 wavelen_max=bandpass.wavelen[len(bandpass.wavelen)-1],
-                                                 wavelen_step=(bandpass.wavelen[1]-bandpass.wavelen[0]))
+                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda)
             else:
                 wavelen = self.wavelen
                 fnu = self.fnu
@@ -607,9 +590,7 @@ class Sed:
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):                             
             # Here - not on the same grid, so resample to match wavelen/fnu to bandpass.
             # Note that resampleSED allocates new memory for wavelen/fnu return values.
-            wavelen, fnu = self.resampleSED(wavelen, fnu, bandpass.wavelen[0], 
-                                            bandpass.wavelen[len(bandpass.wavelen)-1], 
-                                            bandpass.wavelen[1] - bandpass.wavelen[0])
+            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate bandpass phi value if required.
         if bandpass.phi == None:
             bandpass.sbTophi()
@@ -630,10 +611,7 @@ class Sed:
             # Calculate fnu if required.
             if self.fnu == None:
                 # If fnu not present, create temporary copy - on bandpass grid.
-                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda, 
-                                                 wavelen_min=bandpass.wavelen[0], 
-                                                 wavelen_max=bandpass.wavelen[len(bandpass.wavelen)-1],
-                                                 wavelen_step=(bandpass.wavelen[1]-bandpass.wavelen[0]))
+                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda) 
             else:
                 wavelen = self.wavelen
                 fnu = self.fnu
@@ -642,9 +620,7 @@ class Sed:
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
             # Here - not on the same grid so resample to match wavelen/fnu to bandpass.
             # Note that resampleSED allocates new memory for wavelen/fnu return values.
-            wavelen, fnu = self.resampleSED(wavelen, fnu, bandpass.wavelen[0], 
-                                            bandpass.wavelen[len(bandpass.wavelen)-1], 
-                                            bandpass.wavelen[1] - bandpass.wavelen[0])
+            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate bandpass phi value if required.
         if bandpass.phi == None:
             bandpass.sbTophi()
@@ -668,9 +644,7 @@ class Sed:
             # Check possibility that fnu is not calculated yet.
             if fnu==None:
                 # This only temporarily calculates fnu, so we don't permanently resample self here.
-                wavelen, fnu = self.flambdaTofnu(wavelen=self.wavelen, flambda=self.flambda, 
-                                                 wavelen_min=wavelen_min, wavelen_max=wavelen_max, 
-                                                 wavelen_step=wavelen_step)  
+                wavelen, fnu = self.flambdaTofnu(wavelen=self.wavelen, flambda=self.flambda) 
         # Fluxnorm gets applied to f_nu (fluxnorm * SED(f_nu) * PHI = mag - 8.9 (AB zeropoint).
         # FluxNorm * SED => correct magnitudes for this object.
         # check if wavelen/fnu are on same grid as bandpass
@@ -678,9 +652,7 @@ class Sed:
             # Here - not on the same grid so resample to match wavelen/fnu to bandpass, 
             #  but don't store in self. 
             # Note that resampleSED allocates new memory for wavelen/fnu return values.
-            wavelen, fnu = self.resampleSED(wavelen, fnu, bandpass.wavelen[0], 
-                                            bandpass.wavelen[len(bandpass.wavelen)-1], 
-                                            bandpass.wavelen[1] - bandpass.wavelen[0])
+            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate fluxnorm. 
         dmag = magmatch - self.calcMag(bandpass, wavelen, fnu)
         fluxnorm = n.power(10, (-0.4*dmag))  
@@ -698,18 +670,23 @@ class Sed:
         if update_self:
             # Make sure fnu is defined.
             if self.fnu==None:
-                self.flambdaTofnu(wavelen_min=wavelen_min, wavelen_max=wavelen_max, 
-                                  wavelen_step=wavelen_step)  
+                self.flambdaTofnu()
             wavelen = self.wavelen
             fnu = self.fnu
-            # Make sure on correct grid. 
-            if self.needResample(wavelen, wavelen_min, wavelen_max, wavelen_step):
-                wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_min, wavelen_max, wavelen_step)
+            # Make sure on desired grid. 
+            if self.needResample(wavelen, wavelen_min=wavelen_min,
+                                 wavelen_max=wavelen_max, wavelen_step=wavelen_step):
+                wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_min=wavelen_min,
+                                                wavelen_max=wavelen_max,
+                                                wavelen_step=wavelen_step)
         else:
-            # Check wavelen/fnu are on grid:
-            if self.needResample(wavelen, wavelen_min, wavelen_max, wavelen_step):
+            # Check wavelen/fnu are on desired grid:
+            if self.needResample(wavelen, wavelen_min=wavelen_min,
+                                 wavelen_max=wavelen_max, wavelen_step=wavelen_step):
                 # Automatically get new copy of data here.
-                wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_min, wavelen_max, wavelen_step)
+                wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_min=wavelen_min,
+                                                wavelen_max=wavelen_max,
+                                                wavelen_step=wavelen_step)
             else:
                 # Require new copy of the data.
                 wavelen = n.copy(wavelen)
@@ -720,7 +697,7 @@ class Sed:
         if update_self:
             self.wavelen = wavelen
             self.fnu = fnu
-            self.fnuToflambda(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
+            self.fnuToflambda()
         return wavelen, fnu
 
     def renormalizeSED(self, lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
@@ -738,7 +715,9 @@ class Sed:
         if normflux=='flambda':
             if self.needResample(wavelen, wavelen_min, wavelen_max, wavelen_step):
                 wavelen, flambda = self.resampleSED(wavelen, flambda, 
-                                                    wavelen_min, wavelen_max, wavelen_step)
+                                                    wavelen_min=wavelen_min,
+                                                    wavelen_max=wavelen_max,
+                                                    wavelen_step=wavelen_step)
             # "standard" schema have flambda = 1 at 500 nm
             if gap==0:
                 lambdapt = n.arange(lambdanorm-wavelen_step/2.0, lambdanorm+wavelen_step/2.0, wavelen_step, dtype=float)
@@ -755,7 +734,7 @@ class Sed:
             flambda = flambda * konst
         if normflux=='fnu':  
             # Get fnu and make sure on grid, in one step. 
-            wavelen, fnu = self.flambdaTofnu(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)  
+            wavelen, fnu = self.flambdaTofnu(wavelen, flambda)
             if gap==0:
                 lambdapt = n.arange(lambdanorm, lambdanorm+wavelen_step, wavelen_step, dtype=float)
                 fnu_atpt = n.zeros(len(lambdapt), dtype='float')
@@ -769,8 +748,8 @@ class Sed:
             # Now renormalize fnu and flambda in the case of normalizing fnu.
             konst = normvalue/gapval
             fnu = fnu * konst
-            flambda = self.fnutoflambda(wavelen,fnu, wavelen_min, wavelen_max, wavelen_step)
-        new_sed = Sed(wavelen, flambda)
+            flambda = self.fnutoflambda(wavelen,fnu)
+        new_sed = Sed(wavelen=wavelen, flambda=flambda)
         return new_sed
 
 
@@ -787,14 +766,16 @@ class Sed:
         # See if need to regrid data (if regrid, new memory copy).
         if self.needResample(wavelen=wavelen, wavelen_min=wavelen_min, 
                              wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-            wavelen, flambda = self.resampleSED(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
+            wavelen, flambda = self.resampleSED(wavelen, flambda, wavelen_min=wavelen_min,
+                                                wavelen_max=wavelen_max,
+                                                wavelen_step=wavelen_step)
         # Then just use this gridded wavelen/flambda to calculate fnu.
         # Print header.
         if print_header != None:
             print >>f, "#", print_header
         # Print standard header info.
         if print_fnu:
-            wavelen, fnu = self.flambdaTofnu(wavelen, flambda, wavelen_min, wavelen_max, wavelen_step)
+            wavelen, fnu = self.flambdaTofnu(wavelen, flambda)
             print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)   Fnu(Jansky)"
         else:
             print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)"
@@ -908,6 +889,7 @@ class Sed:
     
     def manyMagCalc(self, bandpasslist):
         """Calculate many magnitudes for many bandpasses using a single sed."""
+        ## NEEDS WORK
         # Set up limits for wavelength and check bandpass prepared for magnitude calculation.
         minwavelen = bandpasslist[0].min()
         maxwavelen = bandpasslist[0].max()
@@ -925,10 +907,7 @@ class Sed:
         # Check for fnu
         if self.fnu == None:
             # If fnu is not present, create temporary copy on bandpass grid.
-            wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda, 
-                                             wavelen_min=minwavelen,
-                                             wavelen_max=maxwavelen,
-                                             wavelen_step=stepwavelen)
+            wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda)
         else:
             wavelen = self.wavelen
             fnu = self.fnu
@@ -936,8 +915,10 @@ class Sed:
         if self.needResample(wavelen, wavelen_min = minwavelen,
                              wavelen_max = maxwavelen,
                              wavelen_step = stepwavelen):
-            wavelen, fnu = self.resampleSED(wavelen, fnu, minwavelen, maxwavelen,
-                                            stepwavelen)
+            wavelen, fnu = self.resampleSED(wavelen, fnu,
+                                            wavelen_min=minwavelen,
+                                            wavelen_max=maxwavelen,
+                                            wavelen_step=stepwavelen)
         # Calculate phis and resample onto same wavelength grid
         phi = n.empty((len(bandpasslist), len(fnu)), dtype='float')
         mags = n.empty(len(sedlist), dtype='float')
