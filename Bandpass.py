@@ -370,23 +370,24 @@ class Bandpass:
 ## Bonus, many-magnitude calculation for many SEDs with a single bandpass
     
     def manyMagCalc(self, sedlist):
-        """Calculate many magnitudes for many seds using a single bandpass."""
-        # Set up limits for wavelength and check bandpass prepared for magnitude calculation.
-        minwavelen = self.wavelen[0]
-        maxwavelen = self.wavelen[len(self.wavelen)-1]
-        stepwavelen = self.wavelen[1] - self.wavelen[0]
+        """Calculate many magnitudes for many seds using a single bandpass.
+
+        Note that this is a LESS STABLE method of calculating magnitudes than individually
+        doing so, but has been included for a speed boost. You will have to be sure that all
+        of the SEDS have the same wavelength array *before* invoking this function, and that
+        this wavelength array is the same as bandpass.wavelen.
+        Also be sure that fnu is defined and calculated for each SED. """
         if self.phi == None:
             self.sbTophi()
         # Get seds in compatible wavelength range format.
         fnu = n.empty((len(sedlist), len(self.wavelen)), dtype='float')
-        mags = n.empty(len(sedlist), dtype='float')
         i = 0
         for sedobj in sedlist:
-            wavelen, fnu[i] = sedobj.flambdaTofnu(sedobj.wavelen, sedobj.flambda, wavelen_min=minwavelen,
-                                                  wavelen_max = maxwavelen, wavelen_step=stepwavelen)
+            fnu[i] = sedobj.fnu
             i = i+1
-            
-        mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*stepwavelen) - sedlist[0].zp            
+        mags = n.empty(len(sedlist), dtype='float')
+        dlambda = self.wavelen[1] - self.wavelen[0]
+        mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*dlambda) - sedlist[0].zp            
         return mags
 
 
