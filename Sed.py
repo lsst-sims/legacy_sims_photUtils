@@ -574,9 +574,9 @@ class Sed:
         # wavelen/flambda information if you were using self., as this is not obvious from the "outside".
         # To preserve 'user logic', the wavelen/flambda of self are left untouched. Unfortunately 
         # this means, this method can be used inefficiently if calculating many magnitudes with
-        # the same sed and same bandpass region - in that case, use self.flambdaTofnu() first 
-        # on all of the seds in question, then hop to calculating magnitudes much more efficiently! 
-        # (also, if bandpass and mag are using the same grid, this is more efficient). 
+        # the same sed and same bandpass region - in that case, use self.synchronizeSED() with
+        # the wavelen min/max/step set to the bandpass min/max/step first ..
+        # then hop to calculating multiple magnitudes much more efficiently! 
         update_self = self.checkUseSelf(wavelen, fnu)
         if update_self:
             # Calculate fnu if required.
