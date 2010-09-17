@@ -222,14 +222,13 @@ class Sed:
         """Set all wavelen/flambda/fnu values, potentially on min/max/step grid.
 
         Uses flambda to recalculate fnu. If wavelen min/max/step are given, resamples
-        wavelength/flambda/fnu onto an even grid with these values. Defaults would be
-        300/1200/0.1. """
-        # (Re)Calculate fnu.        
-        self.flambdaTofnu()
+        wavelength/flambda/fnu onto an even grid with these values. """
         # Grid wavelength/flambda/fnu if desired.
         if ((wavelen_min!=None) & (wavelen_max!=None) & (wavelen_step!=None)):
-            resampleSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max,
-                        wavelen_step=wavelen_step)
+            self.resampleSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max,
+                             wavelen_step=wavelen_step)
+        # Reset or set fnu.
+        self.flambdaTofnu()
         return
         
     ## Utilities common to several later methods.
@@ -890,45 +889,20 @@ class Sed:
 ## Bonus, many-magnitude calculation for many SEDs with a single bandpass
     
     def manyMagCalc(self, bandpasslist):
-        """Calculate many magnitudes for many bandpasses using a single sed."""
-        ## NEEDS WORK
-        # Set up limits for wavelength and check bandpass prepared for magnitude calculation.
-        minwavelen = bandpasslist[0].min()
-        maxwavelen = bandpasslist[0].max()
-        stepwavelen = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
-        for bandpass in bandpasslist:
-            minw = bandpass.wavelen.min()
-            if minw < minwavelen:
-                minwavelen = minw
-            maxw = bandpass.wavelen.max()
-            if maxw > maxwavelen:
-                maxwavelen = maxw    
-            stepw = bandpass.wavelen[1] - bandpass.wavelen[0]
-            if stepw < stepwavelen:
-                stepwavelen = stepw
-        # Check for fnu
-        if self.fnu == None:
-            # If fnu is not present, create temporary copy on bandpass grid.
-            wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda)
-        else:
-            wavelen = self.wavelen
-            fnu = self.fnu
-        # Check if bandpass and wavelen/fnu are on the same grid. 
-        if self.needResample(wavelen, wavelen_min = minwavelen,
-                             wavelen_max = maxwavelen,
-                             wavelen_step = stepwavelen):
-            wavelen, fnu = self.resampleSED(wavelen, fnu,
-                                            wavelen_min=minwavelen,
-                                            wavelen_max=maxwavelen,
-                                            wavelen_step=stepwavelen)
+        """Calculate many magnitudes for many bandpasses using a single sed.
+
+        This is LESS STABLE than calculating the magnitude independently, as it
+        takes several things for granted. For example, it assumes that each SED is
+        resampled onto the same wavelength array and that fnu has been calculated.
+        Also that each bandpass in the bandpasslist has been sampled onto
+        the same wavelength array and already has phi calculated."""
+        dlambda = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
         # Calculate phis and resample onto same wavelength grid
-        phi = n.empty((len(bandpasslist), len(fnu)), dtype='float')
-        mags = n.empty(len(sedlist), dtype='float')
+        phi = n.empty((len(bandpasslist), len(bandpasslist[0].phi)), dtype='float')
+        mags = n.empty(len(bandpasslist), dtype='float')
         i = 0
         for bandpass in bandpasslist:
-            wavelen, phi[i] = bandpass.sbTophi(bandpass.wavelen, bandpass.sb,
-                                               wavelen_max = maxwavelen, wavelen_step=stepwavelen)
+            phi[i] = bandpass.phi
             i = i+1
-        
-        mags = -2.5*n.log10(n.sum(phi*fnu, axis=1)*stepwavelen) - self.zp            
+        mags = -2.5*n.log10(n.sum(phi*self.fnu, axis=1)*dlambda) - self.zp
         return mags
