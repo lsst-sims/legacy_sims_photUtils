@@ -40,7 +40,7 @@ Method include:
   synchronizeSED -- to grid wavelen/flambda/fnu onto the desired grid and calculate fnu.
   checkUseSelf / needResample -- not expected to be useful to the user, rather intended for internal use.
   resampleSED -- primarily internal use, but may be useful to user. Resamples SED onto specified grid.
-  flambdaTofnu / fnuToflambda -- conversion methods, will resample/grid flambda and fnu in the process.
+  flambdaTofnu / fnuToflambda -- conversion methods, does not affect wavelen gridding.
   redshiftSED -- as it says. 
   setupCCMab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS
 if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupCCMab). 
@@ -344,7 +344,8 @@ class Sed:
             self.wavelen = wavelen
             self.flambda = flambda
             self.fnu = fnu
-        # Return wavelen, fnu.
+            return
+        # Return wavelen, fnu, unless updating self (then does not return).
         return wavelen, fnu
 
     def fnuToflambda(self, wavelen=None, fnu=None):
@@ -362,8 +363,8 @@ class Sed:
         # Calculate flambda.
         flambda = fnu / wavelen / wavelen * LIGHTSPEED / NM2M
         flambda = flambda / ERGSETC2JANSKY
-        # If updating self, then *all of wavelen/fnu/flambda will be gridded and updated,
-        # this is so wavelen/fnu AND wavelen/flambda can be kept in sync.
+        # If updating self, then *all of wavelen/fnu/flambda will be updated.
+        # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self: 
             self.wavelen = wavelen
             self.flambda = flambda
@@ -635,9 +636,11 @@ class Sed:
         """Calculate the fluxNorm (SED normalization value for a given mag) for a sed.
         
         Equivalent to adjusting a particular f_nu to Jansky's appropriate for the desired mag.
-        Can pass wavelen/fnu or apply to self. Requires a gridded wavelen/fnu on min/max/step grid.
-        Note that calcFluxNorm does not regrid self.wavelen/flambda/fnu permanently, so need
-        to use the same grid here as you use in multiplyFluxNorm. """
+        Can pass wavelen/fnu or apply to self.
+        Requires a gridded wavelen/fnu on min/max/step grid, to match bandpass.
+        Note that calcFluxNorm does not regrid self.wavelen/flambda/fnu permanently, so preferably
+        would use synchronizeSED to set wavelength/flambda/fnu grid to be the same as here, before
+        applying fluxnorm with multiplyFluxNorm."""
         update_self = self.checkUseSelf(wavelen, fnu)
         if update_self:
             wavelen = self.wavelen
@@ -659,12 +662,11 @@ class Sed:
         fluxnorm = n.power(10, (-0.4*dmag))  
         return fluxnorm 
    
-    def multiplyFluxNorm(self, fluxNorm, wavelen=None, fnu=None,
-                         wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def multiplyFluxNorm(self, fluxNorm, wavelen=None, fnu=None):
         """Multiply wavelen/fnu (or self.wavelen/fnu) by fluxnorm.
         
         Returns wavelen/fnu arrays (or updates self). 
-        Note that multiplyFluxNorm *does* regrid self.wavelen/flambda/fnu permanently""" 
+        Note that multiplyFluxNorm does not regrid self.wavelen/flambda/fnu at all.""" 
         # Note that fluxNorm is intended to be applied to f_nu,
         # so that fluxnorm*fnu*phi = mag (expected magnitude).
         update_self = self.checkUseSelf(wavelen, fnu)
@@ -674,31 +676,21 @@ class Sed:
                 self.flambdaTofnu()
             wavelen = self.wavelen
             fnu = self.fnu
-            # Make sure on desired grid. 
-            if self.needResample(wavelen, wavelen_min=wavelen_min,
-                                 wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-                wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_min=wavelen_min,
-                                                wavelen_max=wavelen_max,
-                                                wavelen_step=wavelen_step)
         else:
-            # Check wavelen/fnu are on desired grid:
-            if self.needResample(wavelen, wavelen_min=wavelen_min,
-                                 wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-                # Automatically get new copy of data here.
-                wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_min=wavelen_min,
-                                                wavelen_max=wavelen_max,
-                                                wavelen_step=wavelen_step)
-            else:
-                # Require new copy of the data.
-                wavelen = n.copy(wavelen)
-                fnu = n.copy(fnu)
+            # Require new copy of the data for multiply.
+            wavelen = n.copy(wavelen)
+            fnu = n.copy(fnu)
         # Apply fluxnorm.
         fnu = fnu * fluxNorm
         # Update self.
         if update_self:
             self.wavelen = wavelen
             self.fnu = fnu
+            # Update flambda as well.
             self.fnuToflambda()
+        if update_self:
+            return
+        # Else return new wavelen/fnu pairs.
         return wavelen, fnu
 
     def renormalizeSED(self, lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
@@ -721,7 +713,8 @@ class Sed:
                                                     wavelen_step=wavelen_step)
             # "standard" schema have flambda = 1 at 500 nm
             if gap==0:
-                lambdapt = n.arange(lambdanorm-wavelen_step/2.0, lambdanorm+wavelen_step/2.0, wavelen_step, dtype=float)
+                lambdapt = n.arange(lambdanorm-wavelen_step/2.0, lambdanorm+wavelen_step/2.0,
+                                    wavelen_step, dtype=float)
                 flambda_atpt = n.zeros(len(lambdapt), dtype='float')
                 flambda_atpt = n.interp(lambdapt, wavelen, flambda, left=None, right=None)
                 gapval = flambda_atpt[0]
@@ -892,10 +885,10 @@ class Sed:
         """Calculate many magnitudes for many bandpasses using a single sed.
 
         This is LESS STABLE than calculating the magnitude independently, as it
-        takes several things for granted. For example, it assumes that each SED is
-        resampled onto the same wavelength array and that fnu has been calculated.
-        Also that each bandpass in the bandpasslist has been sampled onto
-        the same wavelength array and already has phi calculated."""
+        takes several things for granted (less error checking).
+        For example, it assumes that each SED is resampled onto the same wavelength array
+        and that fnu has been calculated. Also that each bandpass in the bandpasslist has
+        been sampled onto the same wavelength array and already has phi calculated."""
         dlambda = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
         # Calculate phis and resample onto same wavelength grid
         phi = n.empty((len(bandpasslist), len(bandpasslist[0].phi)), dtype='float')
