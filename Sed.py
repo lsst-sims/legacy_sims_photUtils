@@ -184,8 +184,8 @@ class Sed:
         # Convert to numpy arrays.
         sourcewavelen = n.array(sourcewavelen)
         sourcefnu = n.array(sourcefnu)
-        # Convert fnu to flambda (regrids wavelen/flambda in the process).
-        self.wavelen, self.flambda = self.fnuToflambda(sourcewavelen, sourcefnu)
+        # Convert fnu to flambda 
+        self.fnuToflambda(sourcewavelen, sourcefnu)
         return
 
     def getSED_flambda(self):
@@ -319,6 +319,7 @@ class Sed:
         if update_self:
             self.wavelen = wavelen_grid
             self.flambda = flux_grid
+            return
         return wavelen_grid, flux_grid
 
     def flambdaTofnu(self, wavelen=None, flambda=None):
@@ -369,6 +370,7 @@ class Sed:
             self.wavelen = wavelen
             self.flambda = flambda
             self.fnu = fnu
+            return
         # Return wavelen/flambda.
         return wavelen, flambda
 
@@ -398,6 +400,7 @@ class Sed:
         if update_self:
             self.wavelen = wavelen
             self.flambda = flambda
+            return
         return wavelen, flambda
 
     def setupCCMab(self, wavelen=None):
@@ -498,7 +501,8 @@ class Sed:
         flambda = flambda * dust
         # Update self if required.
         if update_self:
-            self.flambda = flambda 
+            self.flambda = flambda
+            return
         return wavelen, flambda
 
     def multiplySED(self, other_sed,
@@ -537,16 +541,15 @@ class Sed:
                 expTime=EXPTIME, effarea=EFFAREA, gain=GAIN):
         """Calculate the number of adu from camera, using sb and fnu.
 
-        Given wavelen/fnu arrays or use self. Passed wavelen/fnu arrays will be unchanged. 
-         If method uses self, checks if fnu set; if not, does *not* permanently set fnu.
+        Given wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged. 
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass; 
          (temporary values of these are used). """
-        update_self = self.checkUseSelf(wavelen, fnu)
-        if update_self:
+        use_self = self.checkUseSelf(wavelen, fnu)
+        if use_self:
             # Calculate fnu if required.
             if self.fnu == None:
-                # If fnu not present, create temporary copy - on bandpass grid.
-                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda)
+                # If fnu not present, calculate. (does not regrid). 
+                self.flambdaTofnu()
             else:
                 wavelen = self.wavelen
                 fnu = self.fnu
@@ -566,10 +569,9 @@ class Sed:
     def calcMag(self, bandpass, wavelen=None, fnu=None):
         """Calculate the AB magnitude of an object, using phi the normalized system response.
 
-        Can pass wavelen/fnu arrays or use self. Passed wavelen/fnu arrays will be unchanged.
-        If method uses self, checks if fnu set; if not, does *not* permanently set fnu. 
+        Can pass wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass; 
-         (temporary values of these are used)"""
+         (but only temporary values of these are used)"""
         # Note - the behavior in this first section might be considered a little odd. 
         # However, I felt calculating a magnitude should not (unexpectedly) regrid your 
         # wavelen/flambda information if you were using self., as this is not obvious from the "outside".
@@ -578,12 +580,11 @@ class Sed:
         # the same sed and same bandpass region - in that case, use self.synchronizeSED() with
         # the wavelen min/max/step set to the bandpass min/max/step first ..
         # then hop to calculating multiple magnitudes much more efficiently! 
-        update_self = self.checkUseSelf(wavelen, fnu)
-        if update_self:
+        use_self = self.checkUseSelf(wavelen, fnu)
+        if use_self:
             # Calculate fnu if required.
-            if self.fnu == None:
-                # If fnu is not present, create temporary copy on bandpass grid.
-                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda)
+            if self.fnu == None:                
+                self.flambdaTofnu()
             else:
                 wavelen = self.wavelen
                 fnu = self.fnu
@@ -605,15 +606,13 @@ class Sed:
         """Calculate the F_b (integrated flux of an object, above the atmosphere), using phi.
         
         Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
-           If fnu not set, does *not* permanently set fnu. 
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass; 
            (temporary values of these are used)"""
-        update_self = self.checkUseSelf(wavelen, fnu)
-        if update_self:
+        use_self = self.checkUseSelf(wavelen, fnu)
+        if use_self:
             # Calculate fnu if required.
             if self.fnu == None:
-                # If fnu not present, create temporary copy - on bandpass grid.
-                wavelen, fnu = self.flambdaTofnu(self.wavelen, self.flambda) 
+                self.flambdaTofnu()
             else:
                 wavelen = self.wavelen
                 fnu = self.fnu
@@ -641,14 +640,13 @@ class Sed:
         Note that calcFluxNorm does not regrid self.wavelen/flambda/fnu permanently, so preferably
         would use synchronizeSED to set wavelength/flambda/fnu grid to be the same as here, before
         applying fluxnorm with multiplyFluxNorm."""
-        update_self = self.checkUseSelf(wavelen, fnu)
-        if update_self:
+        use_self = self.checkUseSelf(wavelen, fnu)
+        if use_self:
             wavelen = self.wavelen
             fnu = self.fnu
             # Check possibility that fnu is not calculated yet.
             if fnu==None:
-                # This only temporarily calculates fnu, so we don't permanently resample self here.
-                wavelen, fnu = self.flambdaTofnu(wavelen=self.wavelen, flambda=self.flambda) 
+                self.flambdaTofnu()
         # Fluxnorm gets applied to f_nu (fluxnorm * SED(f_nu) * PHI = mag - 8.9 (AB zeropoint).
         # FluxNorm * SED => correct magnitudes for this object.
         # check if wavelen/fnu are on same grid as bandpass
@@ -693,25 +691,37 @@ class Sed:
         # Else return new wavelen/fnu pairs.
         return wavelen, fnu
 
-    def renormalizeSED(self, lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
+    def renormalizeSED(self, wavelen=None, flambda=None, fnu=None,
+                       lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
                        wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
         """Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
         
         Can normalized in flambda or fnu values.
-        Return a new sed object; only  uses self.wavelen/flambda as input wavelen/flambda"""
+        Either returns wavelen/flambda values or updates self."""        
         # Normalizes the fnu/flambda SED at one wavelength or average value over small range (gap).
         # This is useful for generating SED catalogs, mostly, to make them match schema.
         # Do not use this for calculating specific magnitudes -- use calcfluxNorm and multiplyFluxNorm.
-        wavelen = n.copy(self.wavelen)
-        flambda = n.copy(self.flambda)
         # Start normalizing wavelen/flambda.
+        wavelen_step = WAVELENSTEP
         if normflux=='flambda':
-            if self.needResample(wavelen, wavelen_min, wavelen_max, wavelen_step):
-                wavelen, flambda = self.resampleSED(wavelen, flambda, 
-                                                    wavelen_min=wavelen_min,
-                                                    wavelen_max=wavelen_max,
-                                                    wavelen_step=wavelen_step)
-            # "standard" schema have flambda = 1 at 500 nm
+            update_self = self.checkUseSelf(wavelen, flambda)
+            if update_self:
+                wavelen = self.wavelen
+                flambda = self.flambda
+            else:
+                # Make a copy of the input data.
+                wavelen = n.copy(wavelen)
+                # Look for either flambda or fnu in input data. 
+                if flambda == None:
+                    if fnu == None:
+                        raise Exception("If passing wavelength, must also pass fnu or flambda.")
+                    # If not given flambda, must calculate from the given values of fnu.
+                    wavelen, flambda = self.fnuToflambda(wavelen, fnu)
+                # Make a copy of the input data. 
+                else:
+                    flambda = n.copy(flambda)
+            # Calculate renormalization values.
+            # "standard" schema have flambda = 1 at 500 nm.
             if gap==0:
                 lambdapt = n.arange(lambdanorm-wavelen_step/2.0, lambdanorm+wavelen_step/2.0,
                                     wavelen_step, dtype=float)
@@ -726,9 +736,26 @@ class Sed:
             # Now renormalize fnu and flambda in the case of normalizing flambda.
             konst = normvalue/gapval
             flambda = flambda * konst
-        if normflux=='fnu':  
-            # Get fnu and make sure on grid, in one step. 
-            wavelen, fnu = self.flambdaTofnu(wavelen, flambda)
+            wavelen, fnu = self.flambdaTofnu()
+        if normflux=='fnu':
+            update_self = self.checkUseSelf(wavelen, fnu)
+            if update_self:
+                wavelen = self.wavelen
+                if self.fnu == None:
+                    self.flambdaTofnu()
+                fnu = self.fnu
+            else:
+                # Make a copy of the input data.
+                wavelen = n.copy(wavelen)
+                # Look for either flambda or fnu in input data.
+                if fnu == None:
+                    if flambda == None:
+                        raise Exception("If passing wavelength, must also pass fnu or flambda.")
+                    wavelen, fnu = self.flambdaTofnu(wavelen, fnu)
+                # Make a copy of the input data. 
+                else:
+                    fnu = n.copy(fnu)
+            # Calculate renormalization values. 
             if gap==0:
                 lambdapt = n.arange(lambdanorm, lambdanorm+wavelen_step, wavelen_step, dtype=float)
                 fnu_atpt = n.zeros(len(lambdapt), dtype='float')
@@ -742,7 +769,12 @@ class Sed:
             # Now renormalize fnu and flambda in the case of normalizing fnu.
             konst = normvalue/gapval
             fnu = fnu * konst
-            flambda = self.fnutoflambda(wavelen,fnu)
+            wavelen, flambda = self.fnutoflambda(wavelen,fnu)
+        if update_self:
+            self.wavelen = wavelen
+            self.flambda = flambda
+            self.fnu = fnu
+            return
         new_sed = Sed(wavelen=wavelen, flambda=flambda)
         return new_sed
 
