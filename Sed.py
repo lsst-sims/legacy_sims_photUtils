@@ -736,8 +736,8 @@ class Sed:
             # Now renormalize fnu and flambda in the case of normalizing flambda.
             konst = normvalue/gapval
             flambda = flambda * konst
-            wavelen, fnu = self.flambdaTofnu()
-        if normflux=='fnu':
+            wavelen, fnu = self.flambdaTofnu(wavelen, flambda)
+        elif normflux=='fnu':
             update_self = self.checkUseSelf(wavelen, fnu)
             if update_self:
                 wavelen = self.wavelen
