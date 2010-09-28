@@ -325,7 +325,7 @@ class BandpassSet:
                 legendstring = legendstring + "  " + infotext
                 pyl.figtext(0.25, 0.76, legendstring)
                 pyl.xlabel("Wavelength (nm)")
-                pyl.ylabel("Throughput (%)")
+                pyl.ylabel("Throughput (0-1)")
                 pyl.yscale('log')
                 pyl.title(f)
                 pyl.ylim(1e-6, 1)
@@ -451,7 +451,7 @@ class BandpassSet:
             pyl.xlim(xmin=xlim[0], xmax=xlim[1])
             pyl.ylim(ymin=ylimthruput[0], ymax=ylimthruput[1])
             pyl.xlabel("Wavelength (nm)")
-            pyl.ylabel("Throughput (%)")
+            pyl.ylabel("Throughput (0-1)")
             pyl.grid()
             if savefig:
                 figname = figroot + "_thruputs." + figformat
