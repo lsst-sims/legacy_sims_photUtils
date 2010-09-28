@@ -81,7 +81,8 @@ if (xlim[0] > 500) | (xlim[1]<900):
 else:
     filter_tags='normal'
 testSet.plotFilters(xlim=xlim, throughput=True, ploteffsb=True, savefig=True, 
-                    figroot='bandpass', atmos=False, leg_tag=None, filter_tags=filter_tags)
+                    figroot='bandpass', rootdir=rootdir, atmos=False, 
+                    leg_tag=None, filter_tags=filter_tags)
 
 
 # Okay, and now let's calculate the filter leaks.

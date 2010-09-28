@@ -25,6 +25,8 @@ import pylab as pyl
 import Bandpass
 import Sed
 
+# airmass of standard atmosphere
+_stdX = 1.2
 
 # wavelength range parameters for calculations.
 WAVELEN_MIN = 300   # minimum wavelength for transmission/source (nm)
@@ -368,7 +370,7 @@ class BandpassSet:
             atmosfile = os.path.join(rootdir, 'atmos.dat')
             atmosphere = Bandpass.Bandpass()
             atmosphere.readThroughput(atmosfile)
-        Xatm=1.3
+        Xatm=_stdX
         # set up colors for plot output
         colors = ('k', 'b', 'g', 'y', 'r', 'm', 'burlywood', 'k') 
         #colors = ('r', 'b', 'r', 'b', 'r', 'b', 'r', 'b')
