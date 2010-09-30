@@ -394,7 +394,7 @@ class Sed:
         # Or blueshift, as the case may be. 
         if redshift<0:
             wavelen = wavelen / (1-redshift)
-        else 
+        else:
             wavelen = wavelen * (1+redshift)
         # Flambda now just has different wavelength for each value.
         # Add cosmological dimming if required.
