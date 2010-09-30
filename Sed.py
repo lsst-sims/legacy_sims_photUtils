@@ -391,7 +391,10 @@ class Sed:
             wavelen = n.copy(wavelen)
             flambda = n.copy(flambda)
         # Okay, move onto redshifting the wavelen/flambda pair.
-        wavelen = wavelen * (1+redshift)
+        if redshift>=0:
+            wavelen = wavelen * (1+redshift)
+        elif redshift<0: 
+            wavelen = wavelen / (1-redshift)
         # Flambda now just has different wavelength for each value.
         # Add cosmological dimming if required.
         if dimming:
