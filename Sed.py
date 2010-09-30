@@ -391,14 +391,18 @@ class Sed:
             wavelen = n.copy(wavelen)
             flambda = n.copy(flambda)
         # Okay, move onto redshifting the wavelen/flambda pair.
-        if redshift>=0:
-            wavelen = wavelen * (1+redshift)
-        elif redshift<0: 
+        # Or blueshift, as the case may be. 
+        if redshift<0:
             wavelen = wavelen / (1-redshift)
+        else 
+            wavelen = wavelen * (1+redshift)
         # Flambda now just has different wavelength for each value.
         # Add cosmological dimming if required.
         if dimming:
-            flambda = flambda / (1+redshift)
+            if redshift<0:
+                flambda = flambda * (1-redshift)
+            else:
+                flambda = flambda / (1+redshift)
         # Update self, if required - but just flambda (still no grid required).
         if update_self:
             self.wavelen = wavelen
