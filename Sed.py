@@ -557,9 +557,11 @@ class Sed:
             if self.fnu == None:
                 # If fnu not present, calculate. (does not regrid). 
                 self.flambdaTofnu()
-            else:
                 wavelen = self.wavelen
                 fnu = self.fnu
+            else:
+                wavelen = wavelen
+                fnu = fnu
         # Check bandpass/fnu (even if not self) are on same grid.
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
             # Here, not on the same grid so resample to match wavelen/fnu to bandpass.
@@ -592,9 +594,11 @@ class Sed:
             # Calculate fnu if required.
             if self.fnu == None:                
                 self.flambdaTofnu()
-            else:
-                wavelen = self.wavelen
-                fnu = self.fnu
+            wavelen = self.wavelen
+            fnu = self.fnu
+        else:
+            wavelen = wavelen
+            fnu = fnu
         # Continue with magnitude calculation.
         # Check if bandpass and wavelen/fnu are on the same grid. 
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):                             
@@ -620,9 +624,11 @@ class Sed:
             # Calculate fnu if required.
             if self.fnu == None:
                 self.flambdaTofnu()
-            else:
-                wavelen = self.wavelen
-                fnu = self.fnu
+            wavelen = self.wavelen
+            fnu = self.fnu
+        else:
+            wavelen = wavelen
+            fnu = fnu
         # Go on with magnitude calculation.
         # Check bandpass and wavelen/fnu are on the same grid.
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
@@ -693,7 +699,6 @@ class Sed:
             self.fnu = fnu
             # Update flambda as well.
             self.fnuToflambda()
-        if update_self:
             return
         # Else return new wavelen/fnu pairs.
         return wavelen, fnu
