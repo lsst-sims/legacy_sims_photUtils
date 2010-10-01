@@ -557,11 +557,11 @@ class Sed:
             if self.fnu == None:
                 # If fnu not present, calculate. (does not regrid). 
                 self.flambdaTofnu()
-                wavelen = self.wavelen
-                fnu = self.fnu
-            else:
-                wavelen = wavelen
-                fnu = fnu
+            wavelen = self.wavelen
+            fnu = self.fnu
+        else:
+            wavelen = wavelen
+            fnu = fnu
         # Check bandpass/fnu (even if not self) are on same grid.
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
             # Here, not on the same grid so resample to match wavelen/fnu to bandpass.
