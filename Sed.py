@@ -552,6 +552,7 @@ class Sed:
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass; 
          (temporary values of these are used). """
         use_self = self.checkUseSelf(wavelen, fnu)
+        # Use self values if desired, otherwise use values passed to function. 
         if use_self:
             # Calculate fnu if required.
             if self.fnu == None:
@@ -559,9 +560,6 @@ class Sed:
                 self.flambdaTofnu()
             wavelen = self.wavelen
             fnu = self.fnu
-        else:
-            wavelen = wavelen
-            fnu = fnu
         # Check bandpass/fnu (even if not self) are on same grid.
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
             # Here, not on the same grid so resample to match wavelen/fnu to bandpass.
@@ -590,15 +588,13 @@ class Sed:
         # the wavelen min/max/step set to the bandpass min/max/step first ..
         # then hop to calculating multiple magnitudes much more efficiently! 
         use_self = self.checkUseSelf(wavelen, fnu)
+        # Use self values if desired, otherwise use values passed to function. 
         if use_self:
             # Calculate fnu if required.
             if self.fnu == None:                
                 self.flambdaTofnu()
             wavelen = self.wavelen
             fnu = self.fnu
-        else:
-            wavelen = wavelen
-            fnu = fnu
         # Continue with magnitude calculation.
         # Check if bandpass and wavelen/fnu are on the same grid. 
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):                             
@@ -620,15 +616,13 @@ class Sed:
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass; 
            (temporary values of these are used)"""
         use_self = self.checkUseSelf(wavelen, fnu)
+        # Use self values if desired, otherwise use values passed to function. 
         if use_self:
             # Calculate fnu if required.
             if self.fnu == None:
                 self.flambdaTofnu()
             wavelen = self.wavelen
             fnu = self.fnu
-        else:
-            wavelen = wavelen
-            fnu = fnu
         # Go on with magnitude calculation.
         # Check bandpass and wavelen/fnu are on the same grid.
         if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
@@ -643,34 +637,23 @@ class Sed:
         flux = (fnu*bandpass.phi).sum() * dlambda
         return flux
 
-    def calcFluxNorm(self, magmatch, bandpass, wavelen=None, fnu=None,
-                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def calcFluxNorm(self, magmatch, bandpass, wavelen=None, fnu=None):
         """Calculate the fluxNorm (SED normalization value for a given mag) for a sed.
         
         Equivalent to adjusting a particular f_nu to Jansky's appropriate for the desired mag.
-        Can pass wavelen/fnu or apply to self.
-        Requires a gridded wavelen/fnu on min/max/step grid, to match bandpass.
-        Note that calcFluxNorm does not regrid self.wavelen/flambda/fnu permanently, so preferably
-        would use synchronizeSED to set wavelength/flambda/fnu grid to be the same as here, before
-        applying fluxnorm with multiplyFluxNorm."""
+        Can pass wavelen/fnu or apply to self. """
         use_self = self.checkUseSelf(wavelen, fnu)
         if use_self:
+            # Check possibility that fnu is not calculated yet.
+            if self.fnu==None:
+                self.flambdaTofnu()
             wavelen = self.wavelen
             fnu = self.fnu
-            # Check possibility that fnu is not calculated yet.
-            if fnu==None:
-                self.flambdaTofnu()
         # Fluxnorm gets applied to f_nu (fluxnorm * SED(f_nu) * PHI = mag - 8.9 (AB zeropoint).
         # FluxNorm * SED => correct magnitudes for this object.
-        # check if wavelen/fnu are on same grid as bandpass
-        if self.needResample(wavelen=wavelen, wavelen_match=bandpass.wavelen):
-            # Here - not on the same grid so resample to match wavelen/fnu to bandpass, 
-            #  but don't store in self. 
-            # Note that resampleSED allocates new memory for wavelen/fnu return values.
-            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate fluxnorm. 
         dmag = magmatch - self.calcMag(bandpass, wavelen, fnu)
-        fluxnorm = n.power(10, (-0.4*dmag))  
+        fluxnorm = n.power(10, (-0.4*dmag))
         return fluxnorm 
    
     def multiplyFluxNorm(self, fluxNorm, wavelen=None, fnu=None):
