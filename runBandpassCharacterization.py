@@ -71,6 +71,7 @@ testSet.calcZeroPoints(gain=1.0)  # note - the zeropoint calculation assumes a 6
 testSet.calcFilterEdges(drop_peak=0.5, drop_percent=0.5)
 # And then also for 10% of max/10% absolute throughput values.
 testSet.calcFilterEdges(drop_peak=0.1, drop_percent=0.1)
+testSet.calcFilterEdges(drop_peak=0.001, drop_percent=0.001)
 
 # Now let's make a plot of the filter throughputs.
 # You can change xlim to other wavelength limits for extra plot clarify if desired.
@@ -86,7 +87,8 @@ testSet.plotFilters(xlim=xlim, throughput=True, ploteffsb=True, savefig=True,
 
 
 # Okay, and now let's calculate the filter leaks.
-testSet.calcFilterLeaks(makeplot=True, savefig=True, figroot = "bandpass")
+testSet.calcFilterLeaks(ten_nm_limit=0.0001, out_of_band_limit=0.0005, filter_edges=0.001,
+                         makeplot=True, savefig=True, figroot = "bandpass")
 
 
 pylab.show()
