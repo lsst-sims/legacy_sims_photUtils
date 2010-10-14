@@ -20,6 +20,7 @@ $Id$
 
 
 import os
+import copy
 import numpy as n
 import pylab as pyl
 import Bandpass
@@ -42,6 +43,14 @@ class BandpassSet:
     
     def __init__(self):
         """Initialize the class but don't do anything yet."""
+        return
+
+    def setBandpassSet(self, bpDict, bpDictlist=('u', 'g', 'r', 'i', 'z','y'), verbose=True):
+        """Simply set throughputs from a pre-made dictionary."""
+        if len(bpDictlist) != len(bpDict.keys()):
+            bpDictList = bpDict.keys()
+        self.bandpass = copy.deepcopy(bpDict)
+        self.filterlist = copy.deepcopy(bpDictlist)
         return
 
     def setThroughputs_SingleFiles(self, filterlist=('u', 'g', 'r', 'i', 'z', 'y'), 
@@ -69,32 +78,24 @@ class BandpassSet:
         self.filterlist = filterlist        
         return 
 
-    def setThroughputs_ComponentList(self, filterlist=('u', 'g', 'r', 'i', 'z', 'y'),
-                                     separate_filter_complist = ('filter_u.dat', 'filter_g.dat', 'filter_r.dat',
-                                                                 'filter_i.dat', 'filter_z.dat', 'filter_y.dat'),
-                                     all_filter_complist = ('detector.dat', 'lens1.dat', 'lens2.dat',
-                                                            'lens3.dat', 'm1.dat', 'm2.dat', 'm3.dat',
-                                                            'atmos.dat'),
-                                     rootdir = "./", verbose=True):
-        """Read and build bandpass set from all_filter_complist + (for each filter in filterlist) an element
-        from separate_filter_complist, using data from directory rootdir. """
-        # Check that inputs for filterlist and separate_filter_complist are the same length
-        #  as there should be one separate_filter_complist item for each filter.
-        if len(filterlist) != len(separate_filter_complist):
-            raise Exception("filterlist and separate_filter_complist should be the same length.")
+    def setThroughputs_ComponentFiles(self, filterlist=('u', 'g', 'r', 'i', 'z', 'y'),
+                                      all_filter_complist = ('detector.dat', 'lens1.dat', 'lens2.dat',
+                                                             'lens3.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                                                             'atmos.dat'),
+                                      rootdir = "./", verbose=True):
+        """Read and build bandpass set from all_filter_complist, using data from directory rootdir.
+        Note that with this method, every bandpass will be the same. The point is that then you can
+        use this method, plus set up a different BandpassSet with values that are different for each filter
+        and then multiply the two together using multiplyBandpassSets."""        
         # Set up dictionary to hold final bandpass information.
         bandpass = {}
         # Loop through filters.
-        i = 0
+        # Set up full filenames in a list containing all elements of final throughput curve.  
+        complist = []
+        # Join all 'all-filter' items.
+        for cp in all_filter_complist:
+            complist.append(os.path.join(rootdir, cp))
         for f in filterlist:
-            # Set up full filenames in a list containing all elements of final throughput curve.  
-            complist = []
-            # Join all 'all-filter' items.
-            for cp in all_filter_complist:
-                complist.append(os.path.join(rootdir, cp))
-            # Add in filter-specific item.
-            complist.append(os.path.join(rootdir, separate_filter_complist[i]))
-            i += 1
             if verbose:
                 print "Reading throughput curves ", complist, " for filter ", f
             # Initialize bandpass object.
@@ -105,21 +106,50 @@ class BandpassSet:
         self.bandpass = bandpass
         self.filterlist = filterlist
         return
+
+    def multiplyBandpassSets(self, otherBpSet):
+        """Multiply two bandpass sets together, filter by filter. Filterlists must match!
+        Returns a new bandpassSet object."""
+        if self.filterlist != otherBpSet.filterlist:
+            raise Exception("The bandpassSet filter lists must match.")
+        # Set up dictionary to hold new bandpass objects. 
+        newBpDict = {}
+        for f in self.filterlist:
+            wavelen, sb = self.bandpass[f].multiplyThroughputs(otherBpSet.bandpass[f].wavelen,
+                                                               otherBpSet.bandpass[f].sb)
+            newBpDict[f] = Bandpass.Bandpass(wavelen=wavelen, sb=sb)
+        newBpSet = BandpassSet()
+        newBpSet.setBandpassSet(newBpDict, self.filterlist)
+        return newBpSet
     
-    def writePhis(self):
+    def writePhis(self, filename):
         """Write all phi values and wavelength to stdout"""
         # This is useful for getting a data file with only phi's, as requested by some science collaborations.
+        file = open(filename, "w")
         # Print header.
         headerline = "#Wavelen(nm) "
         for filter in self.filterlist:
             headerline = headerline + "  phi_"  + filter
-        print headerline
+        print >>file, headerline
         # print data
         for i in range(0, len(self.bandpass[self.filterlist[0]].wavelen), 1):
             outline = "%.2f " %(self.bandpass[self.filterlist[0]].wavelen[i])
             for f in self.filterlist:
                 outline = outline + " %.6g " %(self.bandpass[f].phi[i])
-            print outline
+            print >>file, outline
+        file.close()
+        return
+
+    def writePhotozThroughputs(self, filename):
+        """Write all throughputs in format AndyC needs for photoz"""
+        file = open(filename,"w")
+        for i,filter in enumerate(self.filterlist):
+            file.write("%d NAME %d\n"%(len(filter.wavelen),i))
+            j=0
+            for lam,thru in zip(filter.wavelen,filter.sb):
+                file.write("%d %g %g\n"%(j,10.*lam,thru))
+                j=j+1
+        file.close()
         return
 
     def calcFilterEffWave(self, verbose=True):
@@ -338,10 +368,10 @@ class BandpassSet:
         # end of loop through filters
         return
 
-    def plotFilters(self, rootdir=".", throughput=True, phi=False, 
+    def plotFilters(self, rootdir=".", throughput=True, phi=False,  atmos=True,
                     plotdropoffs=False, ploteffsb=True, compare=None, savefig=False, 
                     figroot='bandpass', xlim=(300, 1100), ylimthruput=(0, 1), ylimphi=(0, 0.002), 
-                    filter_tags='normal', leg_tag='LSST', compare_tag='', atmos=True, 
+                    filter_tags='normal', leg_tag=None, compare_tag='', title=None,
                     linestyle='-', linewidth=2, newfig=True):
         """ Plot the filter throughputs and phi's, with limits xlim/ylimthruput/ylimphi. 
         
@@ -357,7 +387,7 @@ class BandpassSet:
                 self.drop_peak_red
                 self.drop_peak_blue
         except AttributeError:
-            self.calcFilterEffWave()
+            self.calcFilterEffWave(verbose=False)
             if plotdropoffs:
                 self.calcFilterEdges(verbose=False)
         effsb = self.effsb
@@ -435,7 +465,6 @@ class BandpassSet:
                 xtags = xtags + 0.15
                 spacing = (0.8 - 0.1) / len(filterlist)
                 ytags = n.arange(0.8, 0.1, -1*spacing, dtype=float)
-                print ytags
                 ytags = ytags 
             else: # 'normal' tagging
                 xtags = (0.16, 0.27, 0.42, 0.585, 0.68, 0.8, 0.8, 0.8)
@@ -455,6 +484,8 @@ class BandpassSet:
             pyl.xlabel("Wavelength (nm)")
             pyl.ylabel("Throughput (0-1)")
             pyl.grid()
+            if title!=None:
+                pyl.title(title)
             if savefig:
                 figname = figroot + "_thruputs." + figformat
                 pyl.savefig(figname, format=figformat)
@@ -521,6 +552,8 @@ class BandpassSet:
             pyl.xlabel("Wavelength (nm)")
             pyl.ylabel("Phi")
             pyl.grid()
+            if title!=None:
+                pyl.title(title)
             if savefig:
                 figname = figroot + "_phi." + figformat
                 pyl.savefig(figname, format=figformat)

@@ -40,8 +40,8 @@ if single == True:
 if single == False:
     filterlist = ('u', 'g', 'r','i', 'z', 'y')
     # these files will be used for each separate filter component.
-    separate_filter_complist = ('filter_u.dat', 'filter_g.dat', 'filter_r.dat',
-                                'filter_i.dat', 'filter_z.dat', 'filter_y.dat')
+    rootname = "filter_"
+    rootsuffix = ".dat"
     # these files will be used for the components which apply to all filters. 
     all_filter_complist = ('detector.dat', 'lens1.dat', 'lens2.dat',
                            'lens3.dat', 'm1.dat', 'm2.dat', 'm3.dat',
@@ -50,15 +50,25 @@ if single == False:
 
 
 # Okay, let's read this information and then do the tests. 
-testSet = BandpassSet.BandpassSet()
 if single:
+    # Read in these single files per passband.
+    testSet = BandpassSet.BandpassSet()
     testSet.setThroughputs_SingleFiles(filterlist=filterlist, rootdir=rootdir, rootname=rootname,
                                        rootsuffix=rootsuffix)
 else:
-    testSet.setThroughputs_ComponentList(filterlist=filterlist,
-                                         separate_filter_complist = separate_filter_complist,
+    # Read in the files which are different for each passband (but have a similar name structure). 
+    testSetFilters = BandpassSet.BandpassSet()
+    testSetFilters.setThroughputs_SingleFiles(filterlist=filterlist, rootdir=rootdir, rootname=rootname,
+                                              rootsuffix=rootsuffix)
+    # Read in the files which are the same for each passband (but need to be multiplied together). 
+    testSetAll = BandpassSet.BandpassSet()
+    testSetAll.setThroughputs_ComponentList(filterlist=filterlist,
                                          all_filter_complist = all_filter_complist,
                                          rootdir = rootdir)
+    # Generate combination of these for all passbands - the final set of throughput! 
+    testSet = testSetAll.multiplyBandpassSets(testSetFilters)
+
+
 
 # And let's do some tests.
 

@@ -1,6 +1,7 @@
 """
-  Written by: Lynne Jones - UW - 4/28/10
   Questions or comments, email : ljones.uw@gmail.com
+
+$Id$
 
 Similarly to the explanation given in BandpassSet, the main 
 point of this class is to provide a way to group many seds 
@@ -13,8 +14,8 @@ a list of the dictionary keys).
 There are several functions to read a bunch of seds from a particular 
 directory: 
  (the init is the primary method to get to these)
- __init__, readSeds, readKurucz, readWhiteDwarfs, readRedDwarfs, 
- readAGBStars, readAsteroids, readLymanGals, readGalaxies, readQuasar. 
+ __init__, readSeds,
+
 Then there is an interesting method to redshift all of a set of base
 seds you have (say if you have a bunch of galaxy seds and then need
 to replicate these at many redshifts .. use redshiftSEDS. 
@@ -22,20 +23,16 @@ to replicate these at many redshifts .. use redshiftSEDS.
 Then things for plotting - plotSeds, normalizeSEDS is useful for helping
 put things on the same scale to be plotted. 
 
-calcEffObjLambdasDict - calculate effective wavelengths for each of your
+calcEffLambdasSed - calculate effective wavelengths for each of your
 seds in a BandpassSet (ie effective wavelength for each sed, for each filter).
 
-calcMagArray - calculate magnitudes for each of your seds in one bandpass,
+calcMag - calculate magnitudes for each of your seds in one bandpass,
 but returns a numpy array of the magnitudes. 
-calcMagsDict - similar to above, but returns a magnitude dictionary (keyed 
-to sed name). 
 
-The calcColor/calcDeltaMag array and dict methods are similar to the mag
-Array/Dict methods above, but for colors. 
+calcDeltaMag - similar to above, but give it two bandpasses so it can calculate colors.
 
-Then some useful shortcuts to plotting color-color diagrams: 
-plotColorColor / plotLSSTAllColor (subpanels appropriate for LSST filters)
-plotSDSSAllColor (subpanels appropriate for SDSS filters). 
+calcAllMags - calculate magnitudes for each of the SEDS, in all bandpasses in a bandpassDictionary.
+calcAllColors - similar to above, but calculates adjacent colors for all bandpasses in the dictionary.
 
 """
 
@@ -51,211 +48,224 @@ figformat = 'png'
 
 class SedSet:
     """ Set up a dictionary of a bunch of seds."""
-    def __init__(self, sedlist=None, rootdir='seds', type=None, verbose=True):
-        """Initialize Seds with in list sedlist, in directory dir with root name root"""
-        if sedlist == None:
-            if rootdir!='':
-                rootdir = rootdir + "/"
-            if verbose:
-                print "No files specified."
-                print "Will try to read all seds known to be of type %s from %s%s" \
-                    %(type, rootdir, type)
-            if type == 'kurucz':
-                rootdir = rootdir
-                self.readKurucz(rootdir=rootdir, verbose=verbose)
-            elif (type == 'white_dwarf_H') | (type=='wdH'):
-                rootdir = rootdir + 'white_dwarfs/H'
-                self.readWhiteDwarfs(rootdir=rootdir, verbose=verbose)
-            elif (type == 'white_dwarf_He') | (type=='wdHe'):
-                rootdir = rootdir + 'white_dwarfs/He'
-                self.readWhiteDwarfs(rootdir=rootdir,  verbose=verbose)
-            elif type == 'reddwarf':
-                rootdir = rootdir + 'mlt'
-                self.readRedDwarfs(rootdir=rootdir, verbose=verbose)
-            elif type == 'AGB':
-                rootdir = rootdir + 'AGB'
-                self.readAGBStars(rootdir=rootdir, verbose=verbose)
-            elif (type=='asteroid') | (type=='asteroids'):
-                rootdir = rootdir + 'asteroids'
-                self.readAsteroids(rootdir=rootdir, verbose=verbose)                
-            elif ((type == 'lyman_gal') | (type=='lyman')) :
-                rootdir = rootdir + 'lyman_gal'
-                self.readLymanGals(rootdir=rootdir, verbose=verbose)
-            elif (type=='galaxy') | (type=='galaxies'):
-                rootdir = rootdir + 'galaxies'
-                self.readGalaxies(rootdir=rootdir,  verbose=verbose)
-            elif (type=='quasar'):
-                rootdir= rootdir + 'quasar'
-                self.readQuasars(rootdir=rootdir, alpha=0.0, verbose=verbose)
-            else :
-                print "Will just try to read everything in directory %s" %(rootdir)
-                sedlist = os.listdir(rootdir)
-                self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir, verbose=verbose)
+    def __init__(self, sedlist=None, rootdir='.', sedtype=None, verbose=True):
+        """Initialize Seds.
+
+        Give root directory for SED location (rootdir). Will read all files from that directory unless you - 
+        Optional: give list of SEDS from that directory (sedlist).
+        Optional: give 'type' of SEDS, which will attempt to pull more identifing information (T/FeH/g, etc.), and
+                  also constrain the list of SEDS from the rootdir."""
+        # Check and set sedtype.
+        sedtypes = ('white_dwarf', 'kurucz', 'red_dwarf', 'asteroid', 'AGB', 'galaxy', 'quasar')
+        if sedtype not in sedtypes:
+            print "sedtype is not recognized: defaulting to 'None'. Please use one of %s" %(sedtypes)
+            self.sedtype = None
         else:
-            self.type = type
-            self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir, verbose=verbose)
+            self.sedtype = sedtype
+        # Comment on source directory.
+        if verbose:
+            print "Reading files from %s" %(rootdir)
+        # Set up sedlist. 
+        if sedlist == None:
+            if verbose:
+                print "No files specified. Will scan directory."
+            self.sedlist = os.listdir(rootdir)
+        else:
+            self.sedlist = sedlist
+        if self.sedtype != None:                
+            if verbose:
+                print "Using sedtype of %s."
+            self.setupSedType(rootdir)
+        # Read seds.
+        if self.sedtype == 'quasar':
+            if verbose:
+                print "Quasar is a special case and has already read in SED in setupSedType."
+        else:
+            self.readSeds(rootdir=rootdir, verbose=verbose)
+        # Convert data into numpy arrays so masking/conditions can work. 
+        for key in self.data.keys():
+            self.data[key] = n.array(self.data[key])
         return
 
-    def readSeds(self, sedlist, rootdir='seds', verbose=True):
-        """Read sim object sed files specified in sedlist, returns sedlist and seds."""
-        # Read the files, set up the sed dictionary.
-        seds = {}
-        if rootdir != '':
-            rootdir = rootdir + "/"
-        for sedname in sedlist:
-            filename = rootdir  + sedname
-            # read seds from sedlist in rootdir
+    def readSeds(self, rootdir, verbose=True):
+        """Read sim object sed files specified in self.sedlist, removing invalid sed files from list."""
+        # Set up the dictionary and good sed list.
+        self.seds = {}
+        tmpsed = Sed.Sed()
+        validsedlist = []
+        i = 0 
+        # Attempt to read seds from sedlist.
+        for sedname in self.sedlist:
+            filename = os.path.join(rootdir, sedname)
             if verbose:
                 print "Reading sed from %s" %(filename)
-            seds[sedname] = Sed.Sed()
-            seds[sedname].readSED_flambda(filename)
-        return sedlist, seds
-
-    def readKurucz(self, rootdir='', verbose=True):
-        """ Initialize all kurucz models seds"""
-        # not all metallicities and temperatures have corresponding kurucz models 
-        tmplist = os.listdir(rootdir)
-        kuruczlist = []
-        # check for files that match the 'kurucz' filename template k(m10)_Temp_g*.fits[_Temp]
-        # not guaranteed 100% but should be okay
-        for tmp in tmplist:
-            if (tmp[:1] == 'k') & (tmp[:5][-1:] == '_'):
-                kuruczlist.append(tmp)
-        self.sedlist, self.seds = self.readSeds(kuruczlist, rootdir=rootdir, verbose=verbose)
-        self.type = 'kurucz'
-        return
-    
-    def readWhiteDwarfs(self, rootdir='', verbose=True):
-        """Initialize all white dwarf seds"""
-        tmplist = os.listdir(rootdir)
-        wdlist = []
-        # Look for files which match 'bergeron_*'
-        for tmp in tmplist:
-            if (tmp[:8]=='bergeron'):
-                wdlist.append(tmp)
-        self.sedlist, self.seds = self.readSeds(wdlist, rootdir=rootdir, verbose=verbose)
-        self.type = 'white_dwarf'
-        return
-        
-    def readRedDwarfs(self, rootdir='', verbose=True):
-        """Initialize all cool red MLT dwarf seds"""
-        sedlist=[]
-        mdwarflist = []
-        ldwarflist = []
-        bdwarflist = []
-        tmplist = os.listdir(rootdir)
-        for tmp in tmplist:
-            if tmp[:1]=='m':
-                mdwarflist.append(tmp)
-            if (tmp[:1]=='l') | (tmp[:1]=="L"):
-                ldwarflist.append(tmp)
-            if tmp[:1]=='t':
-                tdwarflist.append(tmp)
-            if tmp[:4]=='burr':
-                bdwarflist.append(tmp)
-        sedlist = mdwarflist + ldwarflist  + bdwarflist
-        self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir,verbose=verbose)
-        self.type = 'reddwarf'
-        self.mdwarflist = mdwarflist
-        self.ldwarflist = ldwarflist
-        self.bdwarflist = bdwarflist
+            try:
+                tmpsed.readSED_flambda(filename)
+                validsedlist.append(sedname)
+                # Store the SED in the self.seds dictionary. 
+                self.seds[sedname] = Sed.Sed(wavelen=tmpsed.wavelen, flambda=tmpsed.flambda)
+                # Set up fnu while we're here.
+                self.seds[sedname].flambdaTofnu()
+                i = i + 1
+            except ValueError:
+                print "Oops - file %s was not a valid sedfile. Removing from sedlist and other data info."
+                del self.sedlist[i]
+                for key in self.data.keys():
+                    del self.data[key][i]
+        self.sedlist = validsedlist                
         return 
 
-    def readAGBStars(self, rootdir='', verbose=True):
-        """ Initialize all AGB stars """
-        sedlist = []
-        Cstarlist = []
-        Ostarlist = []
-        tmplist = os.listdir(rootdir)
-        for tmp in tmplist:
-            if tmp[-4:]=='.dat':
-                sedlist.append(tmp)
-                if tmp[:2]=='C_':
-                    Cstarlist.append(tmp)
-                if tmp[:2]=='O_':
-                    Ostarlist.append(tmp)
-        self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir, verbose=verbose)
-        self.type='AGB'
-        self.Cstarlist = Cstarlist
-        self.Ostarlist = Ostarlist
+    def setupSedType(self, rootdir):
+        """Use self.sedlist to trim sedlist to only seds known to be of this 'type' and gather
+        additional data appropriate to type (such as Teff/FeH/logg/asteroid type)."""
+        self.data = {}
+        # Kurucz
+        if self.sedtype == 'kurucz':
+            kuruczlist = []
+            self.data['Teff'] = []
+            self.data['FeH'] = []
+            self.data['logg'] = []
+            # Check for files that match the 'kurucz' filename template k(m10)_Temp.fits_g(40)[_Temp]
+            # And gather relevant information.
+            for sedname in self.sedlist:
+                tmp = sedname.split('_')
+                if (tmp[0][0] == 'k'):
+                    kuruczlist.append(sedname)
+                    # Teff will either be tmp[1] or tmp[3]
+                    if len(tmp) > 3:
+                        self.data['Teff'].append(int(tmp[3]))
+                    else:
+                        self.data['Teff'].append(int(tmp[1].split('.')[0]))
+                    # logg should be tmp[2], minus the 'g'
+                    self.data['logg'].append(float(tmp[2][1:])/10.0)
+                    # FeH should be tmp[0], after accounting for 'm' or 'p'
+                    metsign = 1
+                    if tmp[0][1:][:1] == 'm':
+                        metsign = -1
+                    self.data['FeH'].append(metsign*float(tmp[0][2:])/10.0)
+            self.sedlist = kuruczlist
+        # White Dwarf
+        elif self.sedtype == 'white_dwarf':
+            wdlist = []
+            self.data['Teff'] = []
+            self.data['logg'] = []
+            # Look for files which match 'bergeron_Temp_logg.dat[_Temp]'
+            for sedname in self.sedlist:
+                tmp = sedname.split('_')
+                if (tmp[0]=='bergeron'):
+                    wdlist.append(sedname)
+                    if tmp[1] == "He":
+                        if len(tmp)>4:
+                            self.data['Teff'].append(int(tmp[4]))
+                        else:
+                            self.data['Teff'].append(int(tmp[2]))
+                        self.data['logg'].append(tmp[3].split('.')[0])
+                    else:                        
+                        if len(tmp)>3:
+                            self.data['Teff'].append(int(tmp[3]))
+                        else:
+                            self.data['Teff'].append(int(tmp[1]))
+                        self.data['logg'].append(float(tmp[2].split('.')[0])/10.0)
+            self.sedlist = wdlist
+        # Red dwarf (mlty stars)
+        elif self.sedtype == 'red_dwarf':
+            self.data['mlist'] = []
+            self.data['llist'] = []
+            self.data['tlist'] = []
+            self.data['blist'] = []
+            for sedname in self.sedlist:
+                if sedname[:1]=='m':
+                    self.data['mlist'].append(sedname)
+                if (sedname[:1]=='l') | (sedname[:1]=="L"):
+                    self.data['llist'].append(sedname)
+                if sedname[:1]=='t':
+                    self.data['tlist'].append(sedname)
+                if sedname[:4]=='burr':
+                    self.data['blist'].append(sedname)
+            self.sedlist = self.data['mlist'] + self.data['llist'] + self.data['tlist'] + self.data['blist']
+        # AGB stars
+        elif self.sedtype == 'AGB':
+            self.data['Clist'] = []
+            self.data['Olist']= []
+            for sedname in self.sedlist:
+                if sedname[:2]=='C_':
+                    self.data['Clist'].append(tmp)
+                if sedname[:2]=='O_':
+                    self.data['Olist'].append(tmp)
+            self.sedlist = self.data['Clist'] + self.data['Olist']
+        # Asteroids
+        elif self.sedtype == 'asteroid':
+            sedlist = []
+            self.data['taxtype'] = []
+            for sedname in self.sedlist:
+                if sedname[-4:]=='.dat':
+                    sedlist.append(sedname)
+                self.data['taxtype'].append(sedname.split('.')[0])
+            self.sedlist = sedlist
+        # Galaxies
+        elif self.sedtype == 'galaxy':
+            galaxylist = []
+            self.data['galtype'] = []
+            self.data['age'] = []
+            for sedname in self.sedlist:
+                tmp = sedname.split('.')
+                if tmp[-1:] == "spec":
+                    galaxylist.append(sedname)
+                    self.data['galtype'] = tmp[0]
+                    self.data['age'] = tmp[3]
+            self.sedlist = galaxylist
+        # Quasars
+        elif self.sedtype == 'quasar':
+            # This is a special case .. there is only one quasar spectrum, but we can 'shift' the slope.
+            quasar = Sed.Sed()
+            quasar.readSED_flambda(os.path.join(rootdir, 'quasar.dat'))
+            self.data['alpha'] = n.arange(-0.5, 0.6, 0.5, dtype='float')
+            self.seds = {}
+            self.sedlist = []
+            for alpha in self.data['alpha']:
+                dictkey = "q_" + "%.1f" %(alpha)
+                self.sedlist.append(dictkey)
+                self.seds[dictkey] = Sed.Sed(wavelen=quasar.wavelen, flambda=quasar.flambda)
+                # Add 'color' variation.
+                self.seds[dictkey].flambda = self.seds[dictkey].flambda * \
+                                             n.power(self.seds[dictkey].wavelen/400.0, alpha)
         return
 
-    def readAsteroids(self, rootdir='', verbose=True):
-        """ Initialize all asteroid seds"""
-        sedlist = []
-        tmplist = os.listdir(rootdir)
-        for tmp in tmplist:
-            if tmp[-4:]=='.dat':
-                sedlist.append(tmp)
-        self.sedlist, self.seds = self.readSeds(sedlist, rootdir=rootdir, verbose=verbose)
-        self.type='asteroid'
-        return
-
-    def readLymanGals(self, rootdir='',  verbose=True):
-        """Initialize lyman break galaxy seds"""
-        # there are only a few of these, so just specify here
-        lymanlist = ('spec1.dat', 'spec2.dat', 'spec3.dat', 'spec4.dat')
-        self.sedlist, self.seds = self.readSeds(lymanlist, rootdir=rootdir, verbose=verbose)
-        self.type = 'lyman_gal'
-        return
-
-    def readGalaxies(self, rootdir='', verbose=True):
-        """Initialize galaxy seds."""
-        galaxylist = []
-        tmplist = os.listdir(rootdir)
-        for tmp in tmplist:
-            if tmp[-4:] == "spec":
-                galaxylist.append(tmp)
-        self.sedlist, self.seds = self.readSeds(galaxylist, rootdir=rootdir, verbose=verbose)
-        self.type = 'galaxy'
-        return
-
-    def readQuasars(self, alpha=0.0, rootdir='', verbose=True):
-        """ Initialize quasar seds from QSO composite spectra """
-        seds = {}
-        if rootdir != '':
-            rootdir = rootdir + "/"
-        filename = rootdir + 'quasar.sed'
-        quasar = Sed.Sed()
-        # NOTE NEED TO FIX Quasar sed (not nm, not flambda)
-        quasar.readSED_fnu(filename) 
-        quasar.wavelen = quasar.wavelen/10.0
-        # add 'color' variation
-        quasar.flambda = quasar.flambda* n.power((quasar.wavelen/4000), alpha)
-        quasar.flambdatofnu()
-        seds = {}
-        sedlist = ('quasar%.2f' %(alpha),)
-        self.sedlist = sedlist
-        seds[sedlist[0]] = quasar
-        self.seds = seds
-        self.type = 'quasar'
-        return
-
-    def redshiftSEDS(self, redshiftlim=(0, 8), redshiftstep=0.1, dimming=False):
+    def redshiftSEDS(self, redshiftlim=(0, 8), redshiftstep=0.2, dimming=False, verbose=True):
         """Add redshifted versions of all base seds.
 
         Key seds by sedname, but sedname has redshift added (origname_%.2f) %(redshift)"""
-        # now add redshifted galaxy seds
+        # This is really only applicable to galaxies or SN or quasars. 
         if verbose:
-            print "Now adding redshifts to these galaxies"
+            print "Now adding redshifts to these seds"
         redshifts = n.arange(redshiftlim[0], redshiftlim[1]+redshiftstep, redshiftstep)
         newsedlist = []
         basesedlist = self.sedlist
         newseds = {}
+        newalpha = []
+        newredshift = []
+        i = 0
         for basesedname in basesedlist:
             basesed = self.seds[basesedname]
+            alpha = self.data['alpha'][i]
+            i = i + 1
             for redshift in redshifts:
-                sedname = basesed + "_%.2f" %(redshift)
-                galaxylist.append(sedname)
+                sedname = basesedname + "_%.2f" %(redshift)
+                newsedlist.append(sedname)
+                newalpha.append(alpha)
+                newredshift.append(redshift)
                 wavelen, flambda = basesed.redshiftSED(redshift, wavelen=basesed.wavelen, 
                                                        flambda=basesed.flambda)
-                newseds[sedname] = Sed.Sed(wavelen, flambda)
-        self.redshifts = redshifts
+                newseds[sedname] = Sed.Sed(wavelen=wavelen, flambda=flambda)
+                newseds[sedname].flambdaTofnu()
+        self.data['redshift'] = newredshift
+        self.data['alpha'] = newalpha
+        self.basesedlist = basesedlist
         self.sedlist = newsedlist
         self.seds = newseds
         return
 
-    def plotSeds(self, sedlist, fnu=False, flambda=True, lambdaflambda=False, 
+    def plotSeds(self, sedlist=None, fnu=False, flambda=True, lambdaflambda=False, 
                  xlim=(300, 1100), ylimfnu=None, ylimflambda=None, ylabel=None, 
                  sed_xtags=0.68, sed_ytags=0.85, linestyle='-' , 
                  newfig=True, savefig=False, figroot='seds',):
@@ -267,6 +277,8 @@ class SedSet:
             return
         # note that sedlist doesn't have to be the full set of seds in self (b/c passed in)
         # set up colors for plot output
+        if sedlist == None:
+            sedlist = self.sedlist
         colors = ('c', 'k', 'r', 'y', 'g', 'b', 'm')
         if (fnu):
             if newfig:
@@ -279,7 +291,7 @@ class SedSet:
                 if colorindex == len(colors):
                     colorindex = 0 
                 pyl.plot(seds[sedname].wavelen, seds[sedname].fnu, color+linestyle)
-            # add names to filter throughputs
+            # add names to fnu values
             # x location specified by sed_xtags (can be turned off by setting sed_xtags to None)
             colorindex = 0
             ytag = sed_ytags
@@ -345,9 +357,8 @@ class SedSet:
         return
    
     def normalizeSEDS(self, mags, bandpass):
-        """ Given a set of seds, calculate and apply normalization constants.
+        """ Given a set of seds, calculate and apply offsets so all seds have the same mag in this bandpass.
 
-        so that they have the magnitudes given in mags, in filter 'bandpass'
         mags can be one number or a numpy array of len equal to number of seds"""
         # check if mags is an array or a single number
         try:
@@ -366,197 +377,172 @@ class SedSet:
             else:
                 magmatch = mags[i]
                 i = i + 1
-            norm = self.seds[sedname].calcFluxNorm(magmatch, bandpass)
-            self.seds[sedname].multiplyFluxNorm(norm)
+            fluxnorm = self.seds[sedname].calcFluxNorm(magmatch, bandpass)
+            self.seds[sedname].multiplyFluxNorm(fluxnorm)
+            self.seds[sedname].flambdaTofnu()
         return
 
-    def calcEffObjLambdasDict(self, bandpassSet):
+    def calcEffLambdasSed(self, bandpassDict, filterlist, verbose=True):
         """Calculate the effective wavelengths for these seds, in each of the filters.
-        
-        Returns dictionary of effective wavelengths for each SED (keyed by sedname) and keys"""
-        effobjlambda = {}
+
+        Give this a dictionary of bandpasses and the list of filter names. 
+        Sets efflambda_sed dictionary (key: sed, then filter) for self."""
+        efflambda_sed = {}
         for sedname in self.sedlist:
-            effobjlambda[sedname] = {}
+            efflambda_sed[sedname] = {}
             if self.seds[sedname].fnu.sum() == 0:
                 # then there was nothing in this data file
-                for filter in bandpassSet.filterlist:
-                    effobjlambda[sedname][filter] = 0
+                for f in filterlist:
+                    efflambda_sed[sedname][f] = 0
                 continue
-            for filter in bandpassSet.filterlist:
-                tmp1 = (bandpassSet.filters[filter].wavelen * bandpassSet.filters[filter].phi 
+            for f in filterlist:
+                tmp1 = (bandpassDict[f].wavelen * bandpassDict[f].phi 
                         * self.seds[sedname].fnu )
-                tmp2 = bandpassSet.filters[filter].phi * self.seds[sedname].fnu
-                effobjlambda[sedname][filter] = tmp1.sum() / tmp2.sum()
-        return effobjlambda, self.sedlist
-
-    def calcMagsDict(self, bandpassSet, verbose=False):
-        """ Given a set of seds, calculate the magnitudes using a set of filters"""
-        """ Returns magnitude dictionary (keyed sed / bandpass)  """
-        mags = {}
+                tmp2 = bandpassDict[f].phi * self.seds[sedname].fnu
+                efflambda_sed[sedname][f] = tmp1.sum() / tmp2.sum()
+        self.efflambda_sed = efflambda_sed
         if verbose:
-            # print out magnitudes header
-            printstring = "#      "
-            for filter in bandpassSet.filterlist:
-                printstring = printstring + "  "  + filter + " "
-            print printstring
-        for sedname in self.sedlist:
-            mags[sedname] = {}
-            for filter in bandpassSet.filterlist:
-                mags[sedname][filter] = self.seds[sedname].calcMag(bandpassSet.bandpass[filter])
-            if verbose:
-                # print out magnitudes
-                printstring = sedname + " "
-                for filter in bandpassSet.filterlist:
-                    printstring = printstring + " %0.3f" %(mags[sedname][filter])
-                print printstring
-        self.mags = mags
-        return mags, bandpassSet.filterlist
+            writestring = "#SEDNAME efflambda:  "
+            for f in filterlist:
+                writestring = writestring + " %s " %(f)
+            print writestring
+            for sedname in self.sedlist:
+                writestring = sedname
+                for f in filterlist:
+                    writestring = writestring + " %.2f " %(self.efflambda_sed[sedname][f])
+            print writestring
+        return 
 
-    def calcColorsDict(self, bandpassSet, colorfilter='r', verbose=False):
-        """ Calculates colors, relative to colfilter (i.e. g-r, u-r...) of seds.
-        Returns color dictionary (keyed sed/color) """
-        try:
-            self.mags
-        except AttributeError:
-            self.calcMagsDict(bandpassSet, verbose=False)
-        mags = self.mags
-        # set up list of colors (keys)
-        colorlist = []
-        for filter in bandpassSet.filterlist:
-            color = filter + colorfilter
-            colorlist.append(color)
-        # calculate colors for all seds
-        colormags = {}
-        # if verbose, print colorheader
-        if verbose:
-            printstring = "#     "
-            for color in colorlist:
-                printstring = printstring + " " + color + "  "
-            print printstring
-        for sedname in self.sedlist:
-            colormags[sedname] = {}
-            for filter in bandpassSet.filterlist:
-                color = filter+colorfilter
-                colormags[sedname][color] = mags[sedname][filter] - mags[sedname][colorfilter]
-            if verbose:
-                # print out colors 
-                printstring = sedname + " "
-                for color in colorlist:
-                    printstring = printstring+  " %0.5f" %(colormags[sedname][color])
-                print printstring
-        self.colormags = colormags
-        return colormags, colorlist
-
-    def calcMagArray(self, bandpass):
+    def calcMags(self, bandpass):
         """ Calculate magnitudes in bandpass and returns numpy array"""
+        # Please note - this is not the *fastest* way to do this calculation, but it is
+        #  easy to read and quick to write like this. But look at manyMagsCalc versions in Sed and Bandpass.
         mags = n.empty(len(self.sedlist), float)
         i = 0
         for sedname in self.sedlist:
             mags[i] = self.seds[sedname].calcMag(bandpass)
             i = i +1
-        return mags
+        return mags    
 
-    def calcDeltaMagArray(self, sedlist, bandpass1, bandpass2):
+    def calcDeltaMag(self, bandpass1, bandpass2):
         """ Calculates the difference in magnitudes between filter (bandpass) 1 and 2 """
         """  Returns numpy array """
-        deltamags = n.empty(len(sedlist), float)
+        deltamags = n.empty(len(self.sedlist), float)
         i = 0
-        for sedname in sedlist:
+        for sedname in self.sedlist:
             deltamags[i] = (self.seds[sedname].calcMag(bandpass1) - 
                             self.seds[sedname].calcMag(bandpass2))
             i = i +1
         return deltamags
                          
+    def calcAllMags(self, bandpassDict, filterlist, verbose=False):
+        """Calculate magnitudes for all seds in all bandpasses. Stores result in self as dictionary:
+                 mags[filter]=array."""
+        # First rearrange the bandpassDictionary to a list of bandpasses, with phi calculated.
+        bplist = []
+        for f in filterlist:
+            # in case phi isn't pre-calculated
+            bandpassDict[f].sbTophi()
+            bplist.append(bandpassDict[f])
+        wavelen_min = bplist[0].wavelen.min()
+        wavelen_max = bplist[0].wavelen.max()
+        wavelen_step = bplist[0].wavelen[1] - bplist[0].wavelen[0]
+        self.mags = {}
+        for f in filterlist:
+            self.mags[f] = n.zeros(len(self.sedlist), dtype='float')
+        i = 0
+        for sedname in self.sedlist:
+            # Set up for fast mag calculation.
+            tmpsed = Sed.Sed(wavelen=self.seds[sedname].wavelen, flambda=self.seds[sedname].flambda)
+            tmpsed.synchronizeSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max,
+                                  wavelen_step=wavelen_step)
+            # Calculate the magnitudes. 
+            tmpmags = tmpsed.manyMagCalc(bplist)
+            # Assign list of magnitudes returned to individual elements. 
+            j = 0
+            for f in filterlist:
+                self.mags[f][i] = tmpmags[j]
+                j = j + 1
+            i = i + 1        
+        if verbose:
+            writestring = "# SEDname "
+            for f in filterlist:
+                writestring = writestring + " %s " %(f)
+            print writestring
+            for i in range(len(self.sedlist)):
+                writestring = self.sedlist[i]
+                for  f in filterlist:
+                    writestring = writestring + " %.3f" %(self.mags[f][i])
+                print writestring
+        return
+    
+    def calcAllColors(self, bandpassDict, filterlist, verbose=False):
+        # First calculate all the magnitudes.
+        self.calcAllMags(bandpassDict, filterlist, verbose=False)
+        # Calculate all the colors.
+        self.colors = {}
+        i = 0
+        colornames = []
+        for i in range(len(filterlist)-1):
+            colorname = filterlist[i]+filterlist[i+1]
+            colornames.append(colorname)
+            self.colors[colorname] = self.mags[filterlist[i]] - self.mags[filterlist[i+1]]
+        self.colornames = colornames
+        if verbose:
+            writestring = "# SEDname "
+            for f in filterlist:
+                writestring = writestring + " %s " %(f)
+            print writestring
+            for i in range(len(self.sedlist)):
+                writestring = self.sedlist[i]
+                for c in colornames:
+                    writestring = writestring + " %.3f" %(self.colors[c][i])
+                print writestring
+        return
 
-    def plotColorColor(self, sedlist, bandpass1, bandpass2, bandpass3, bandpass4, 
-                       color='r', linestyle='.', withlines=True, xlim=None, ylim=None, 
-                       xlabel=None, ylabel=None, title=None, grid=False, 
-                       leg_xtag=0.6, leg_ytag=0.8, leg_text="", 
-                       newfig=True, savefig=False, figroot='color-color'):
-        """ Plot color-color diagram for self """
+    def plotColorColor(self, xcolor, ycolor, ptcolor='r', linestyle='.', withlines=True,
+                       xlim=None, ylim=None, newfig=True, savefig=False, figroot='colorcolor'):
         if newfig:
             pyl.figure()
-        # calculate the values for the color color plot 
-        # bandpass1 - bandpass2 = color1 = X axis
-        # bandpass3 - bandpass4 = color2 = Y axis
-        color1 = self.calcDeltaMagArray(sedlist, bandpass1, bandpass2)
-        color2 = self.calcDeltaMagArray(sedlist, bandpass3, bandpass4)
-        color = color
+        try:
+            self.colors[xcolor]
+        except AttributeError:
+            raise Exception("You haven't calculated this %s color yet - calculate and add to colors dictionary." \
+                            %(xcolor))
+        try:
+            self.colors[ycolor]
+        except AttributeError:
+            raise Exception("You haven't calculated this %s color yet - calculate and add to colors dictionary." \
+                            %(ycolor))
         if withlines:
-            pyl.plot(color1, color2, color)
-        pyl.plot(color1, color2, color+linestyle)
-        pyl.figtext(leg_xtag, leg_ytag, leg_text, color=color)
-        if xlim!=None:
-            pyl.xlim(xlim[0], xlim[1])
-        if ylim!=None:
-            pyl.ylim(ylim[0], ylim[1])
-        if grid:
-            pyl.grid()
-        if xlabel!=None:
-            pyl.xlabel(xlabel)
-        if ylabel!=None:
-            pyl.ylabel(ylabel)
-        if title!=None:
-            pyl.title(title)
+            # figure out what to connect.
+            if self.sedtype == 'kurucz':
+                # connect stars with the same metallicity, same logg but different temperatures.
+                mets = n.unique(self.data['FeH'])
+                loggs = n.unique(self.data['logg'])
+                for met in mets:
+                    for logg in loggs:
+                        condition = ((self.data['FeH'] == met) & (self.data['logg']==logg))
+                        pyl.plot(self.colors[xcolor][condition], self.colors[ycolor][condition], ptcolor+"-")
+            elif self.sedtype == 'quasar':
+                # connect stars with the same alpha, but different redshifts
+                alphas = n.unique(self.data['alpha'])
+                for alpha in alphas:
+                    condition = (self.data['alpha'] == alpha)
+                    pyl.plot(self.colors[xcolor][condition], self.colors[ycolor][condition], ptcolor+"-")
+            elif self.sedtype == 'white_dwarf':
+                # connect stars with the same logg but different temperatures
+                loggs = n.unique(self.data['logg'])
+                for logg in loggs:
+                    condition = (self.data['logg'] == logg)
+                    pyl.plot(self.colors[xcolor][condition], self.colors[ycolor][condition],  ptcolor+"-")
+            else:
+                pyl.plot(self.colors[xcolor], self.colors[ycolor], color=ptcolor, linestyle='-')
+        pyl.plot(self.colors[xcolor], self.colors[ycolor], ptcolor+linestyle, label=self.sedtype)
+        pyl.xlabel(xcolor)
+        pyl.ylabel(ycolor)
         if savefig:
             figname = figroot + '.' + figformat
             pyl.savefig(figname, format=figformat)
         return
 
-    def plotLSSTAllColor(self, sedlist, lsst, color='r', linestyle='.', 
-                         newfig=True, savefig=False, figroot='allcolor'):
-        """ Plot all colors, expecting LSST bands"""
-        if newfig: 
-            pyl.figure()
-        # assume the filters are lsst filters and want g-r/u-g, r-i/g-r, i-z/r-i, z-y/i-z        
-        pyl.subplot(221)
-        self.plotColorColor(sedlist, lsst.bandpass['u'], lsst.bandpass['g'], 
-                            lsst.bandpass['g'], lsst.bandpass['r'], 
-                            xlabel='u-g', ylabel='g-r', color=color, linestyle=linestyle, 
-                            withlines=False, grid=True, newfig=False, savefig=False)
-        pyl.subplot(222)
-        self.plotColorColor(sedlist, lsst.bandpass['g'], lsst.bandpass['r'], 
-                            lsst.bandpass['r'], lsst.bandpass['i'], 
-                            xlabel='g-r', ylabel='r-i', color=color, linestyle=linestyle, 
-                            withlines=False, grid=True, newfig=False, savefig=False)
-        pyl.subplot(223)
-        self.plotColorColor(sedlist, lsst.bandpass['r'], lsst.bandpass['i'], 
-                            lsst.bandpass['i'], lsst.bandpass['z'], 
-                            xlabel='r-i', ylabel='i-z', color=color, linestyle=linestyle, 
-                            withlines=False, grid=True, newfig=False, savefig=False)
-        pyl.subplot(224)
-        self.plotColorColor(sedlist, lsst.bandpass['i'], lsst.bandpass['z'], 
-                            lsst.bandpass['z'], lsst.bandpass['y'], 
-                            xlabel='i-z', ylabel='z-y', color=color, linestyle=linestyle, 
-                            withlines=False, grid=True, newfig=False, savefig=False)
-        if savefig:
-            figname = figroot + '.' + figformat
-            pyl.savefig(figname, format=figformat)
-        return
-
-    def plotSDSSAllColor(self, sedlist, sdss, color='r', linestyle='.', 
-                         newfig=True, savefig=False, figroot='allcolor'):
-        """ Plot all colors, expecting SDSS bands"""
-        if newfig: 
-            pyl.figure()
-        # assume the filters are sdss filters and want g-r/u-g, r-i/g-r, i-z/r-i
-        pyl.subplot(221)
-        self.plotColorColor(sedlist, sdss.bandpass['u'], sdss.bandpass['g'], 
-                            sdss.bandpass['g'], sdss.bandpass['r'], 
-                            xlabel='u-g', ylabel='g-r', color=color, 
-                            linestyle=linestyle, withlines=False, grid=True, 
-                            newfig=False, savefig=False)
-        pyl.subplot(222)
-        self.plotColorColor(sedlist, sdss.bandpass['g'], sdss.bandpass['r'],
-                            sdss.bandpass['r'], sdss.bandpass['i'], 
-                            xlabel='g-r', ylabel='r-i', color=color, linestyle=linestyle, 
-                            withlines=False, grid=True, newfig=False, savefig=False)
-        pyl.subplot(223)
-        self.plotColorColor(sedlist, sdss.bandpass['r'], sdss.bandpass['i'],
-                            sdss.bandpass['i'], sdss.bandpass['z'], 
-                            xlabel='r-i', ylabel='i-z', color=color, linestyle=linestyle, 
-                            withlines=False, grid=True, newfig=False, savefig=False)
-        if savefig:
-            figname = figroot + '.' + figformat
-            pyl.savefig(figname, format=figformat)
-        return
