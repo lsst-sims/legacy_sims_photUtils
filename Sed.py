@@ -688,16 +688,15 @@ class Sed:
 
     def renormalizeSED(self, wavelen=None, flambda=None, fnu=None,
                        lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
-                       wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+                       wavelen_step=WAVELENSTEP):
         """Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
         
-        Can normalized in flambda or fnu values.
+        Can normalized in flambda or fnu values. wavelen_step specifies the wavelength spacing when using 'gap'.
         Either returns wavelen/flambda values or updates self."""        
         # Normalizes the fnu/flambda SED at one wavelength or average value over small range (gap).
         # This is useful for generating SED catalogs, mostly, to make them match schema.
         # Do not use this for calculating specific magnitudes -- use calcfluxNorm and multiplyFluxNorm.
         # Start normalizing wavelen/flambda.
-        wavelen_step = WAVELENSTEP
         if normflux=='flambda':
             update_self = self.checkUseSelf(wavelen, flambda)
             if update_self:
@@ -718,11 +717,8 @@ class Sed:
             # Calculate renormalization values.
             # "standard" schema have flambda = 1 at 500 nm.
             if gap==0:
-                lambdapt = n.arange(lambdanorm-wavelen_step/2.0, lambdanorm+wavelen_step/2.0,
-                                    wavelen_step, dtype=float)
-                flambda_atpt = n.zeros(len(lambdapt), dtype='float')
-                flambda_atpt = n.interp(lambdapt, wavelen, flambda, left=None, right=None)
-                gapval = flambda_atpt[0]
+                flambda_atpt = n.interp(lambdanorm, wavelen, flambda, left=None, right=None)
+                gapval = flambda_atpt
             else:
                 lambdapt = n.arange(lambdanorm-gap, lambdanorm+gap, wavelen_step, dtype=float)
                 flambda_atpt = n.zeros(len(lambdapt), dtype='float')
@@ -752,10 +748,8 @@ class Sed:
                     fnu = n.copy(fnu)
             # Calculate renormalization values. 
             if gap==0:
-                lambdapt = n.arange(lambdanorm, lambdanorm+wavelen_step, wavelen_step, dtype=float)
-                fnu_atpt = n.zeros(len(lambdapt), dtype='float')
-                fnu_atpt = n.interp(lambdapt, wavelen, fnu, left=None, right=None)
-                gapval = fnu_atpt[0]
+                fnu_atpt = n.interp(lambdanorm, wavelen, flambda, left=None, right=None)
+                gapval = fnu_atpt
             else:
                 lambdapt = n.arange(lambdanorm-gap, lambdanorm+gap, wavelen_step, dtype=float)
                 fnu_atpt = n.zeros(len(lambdapt), dtype='float')
