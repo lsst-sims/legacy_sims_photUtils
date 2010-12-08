@@ -912,7 +912,7 @@ class Sed:
         wavelen_min = bandpasslist[0].wavelen[0]
         wavelen_max = bandpasslist[0].wavelen[len(bandpasslist[0].wavelen)-1]
         # Set up 
-        phiarray = n.empty((len(bandpasslist), len(bandpasslist[0].phi)), dtype='float')
+        phiarray = n.empty((len(bandpasslist), len(bandpasslist[0].wavelen)), dtype='float')
         # Check phis calculated and on same wavelength grid.
         i = 0
         for bp in bandpasslist:
