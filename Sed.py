@@ -919,7 +919,7 @@ class Sed:
             # Be sure bandpasses on same grid and calculate phi. 
             bp.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
             bp.sbTophi()
-            phiarray[i] = bandpass.phi
+            phiarray[i] = bandpasslist.phi
             i = i + 1
         return phiarray, wavelen_step
     
