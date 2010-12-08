@@ -931,6 +931,6 @@ class Sed:
         For example, it assumes that each SED is sampled appropriately in wavelength to
         match the 2-d phi array and that fnu has been calculated. """
         # Calculate phis and resample onto same wavelength grid
-        mags = n.empty(len(phi), dtype='float')
+        mags = n.empty(len(phiarray), dtype='float')
         mags = -2.5*n.log10(n.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
         return mags
