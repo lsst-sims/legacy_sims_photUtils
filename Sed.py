@@ -910,7 +910,7 @@ class Sed:
         # Calculate dlambda for phi array.
         wavelen_step = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
         wavelen_min = bandpasslist[0].wavelen[0]
-        wavelen_max = bandpasslist[0].wavelen[len(bandpasslist[0].wavelen)]
+        wavelen_max = bandpasslist[0].wavelen[len(bandpasslist[0].wavelen)-1]
         # Set up 
         phiarray = n.empty((len(bandpasslist), len(bandpasslist[0].phi)), dtype='float')
         # Check phis calculated and on same wavelength grid.
