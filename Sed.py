@@ -900,23 +900,37 @@ class Sed:
         return astrom_error
 
 
-## Bonus, many-magnitude calculation for many SEDs with a single bandpass
+## Bonus, functions for many-magnitude calculation for many SEDs with a single bandpass
+
+    def setupPhiArray(self, bandpasslist):
+        """Sets up a 2-d numpy phi array from bandpasslist suitable for input to manyMagCalc.
+
+        This is intended to be used once, most likely before using manyMagCalc many times on many SEDs.
+        Returns 2-d phi array and the wavelen_step (dlambda) appropriate for that array. """
+        # Calculate dlambda for phi array.
+        wavelen_step = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
+        wavelen_min = bandpasslist[0].wavelen[0]
+        wavelen_max = bandpasslist[0].wavelen[len(bandpasslist[0].wavelen)]
+        # Set up 
+        phiarray = n.empty((len(bandpasslist), len(bandpasslist[0].phi)), dtype='float')
+        # Check phis calculated and on same wavelength grid.
+        i = 0
+        for bp in bandpasslist:
+            # Be sure bandpasses on same grid and calculate phi. 
+            bp.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
+            bp.sbTophi()
+            phiarray[i] = bandpass.phi
+            i = i + 1
+        return phiarray, wavelen_step
     
-    def manyMagCalc(self, bandpasslist):
+    def manyMagCalc(self, phiarray, wavelen_step):
         """Calculate many magnitudes for many bandpasses using a single sed.
 
         This is LESS STABLE than calculating the magnitude independently, as it
         takes several things for granted (less error checking).
-        For example, it assumes that each SED is resampled onto the same wavelength array
-        and that fnu has been calculated. Also that each bandpass in the bandpasslist has
-        been sampled onto the same wavelength array and already has phi calculated."""
-        dlambda = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
+        For example, it assumes that each SED is sampled appropriately in wavelength to
+        match the 2-d phi array and that fnu has been calculated. """
         # Calculate phis and resample onto same wavelength grid
-        phi = n.empty((len(bandpasslist), len(bandpasslist[0].phi)), dtype='float')
         mags = n.empty(len(bandpasslist), dtype='float')
-        i = 0
-        for bandpass in bandpasslist:
-            phi[i] = bandpass.phi
-            i = i+1
-        mags = -2.5*n.log10(n.sum(phi*self.fnu, axis=1)*dlambda) - self.zp
+        mags = -2.5*n.log10(n.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
         return mags
