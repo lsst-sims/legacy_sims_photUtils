@@ -203,6 +203,9 @@ class Bandpass:
 
         Given wavelen OR defaults to self.wavelen/sb - return True/False check on whether
         the arrays need to be resampled to match wavelen_min/max/step grid"""
+        # Thought about adding wavelen_match option here (to give this an array to match to, rather than
+        # the grid parameters .. but then thought bandpass always needs to be on a regular grid (because
+        # of magnitude calculations). So, this will stay match to the grid parameters only. 
         # Check if method acting on self or other data.
         update_self = self.checkUseSelf(wavelen, wavelen)
         if update_self:

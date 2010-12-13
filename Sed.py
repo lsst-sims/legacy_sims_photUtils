@@ -945,10 +945,11 @@ class Sed:
     def manyMagCalc(self, phiarray, wavelen_step):
         """Calculate many magnitudes for many bandpasses using a single sed.
 
-        This is LESS STABLE than calculating the magnitude independently, as it
-        takes several things for granted (less error checking).
-        For example, it assumes that each SED is sampled appropriately in wavelength to
-        match the 2-d phi array and that fnu has been calculated. """
+        This method has *zero* error checking when calculating the magnitude.
+        It assumes that there will be flux within a particular bandpass
+        (could return '-Inf' for a magnitude if there is none) and assumes that the
+        phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
+        """
         # Calculate phis and resample onto same wavelength grid
         mags = n.empty(len(phiarray), dtype='float')
         mags = -2.5*n.log10(n.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
