@@ -141,6 +141,8 @@ class Bandpass:
         self.sb = n.array(sb, dtype='float')
         # Resample throughput onto grid.
         self.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
+        if self.sb.sum() < 1e-300:
+            raise Exception("Bandpass data from %s has no throughput in desired grid range %f, %f" %(filename, wavelen_min, wavelen_max))
         return
 
     def readThroughputList(self, componentList=['thruputs/detector.dat', 'thruputs/lens1.dat', 
@@ -238,6 +240,8 @@ class Bandpass:
             wavelen = self.wavelen
             sb = self.sb
         # Now, on with the resampling.
+        if (wavelen.min() > wavelen_max) | (wavelen.max() < wavelen_min):
+            raise Exception("No overlap between known wavelength range and desired wavelength range.")
         # Set up gridded wavelength.
         wavelen_grid = n.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')   
         sb_grid = n.empty(len(wavelen), dtype='float')
@@ -258,10 +262,13 @@ class Bandpass:
         This function only pdates self.phi"""
         # The definition of phi = (Sb/wavelength)/\int(Sb/wavelength)dlambda.
         # Due to definition of class, self.sb and self.wavelen are guaranteed equal-gridded.
-        dlambda = self.wavelen[1]-self.wavelen[0]
+        dlambda = self.wavelen[1]-self.wavelen[0]        
         self.phi = self.sb/self.wavelen
         # Normalize phi so that the integral of phi is 1.
-        norm = self.phi.sum() * dlambda
+        phisum = self.phi.sum()
+        if phisum < 1e-300:
+            raise Exception("Phi is poorly defined (nearly 0) over bandpass range.")
+        norm = phisum * dlambda
         self.phi = self.phi / norm
         return 
 

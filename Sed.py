@@ -321,7 +321,7 @@ class Sed:
         # If not, raise an exception as presumably you don't really want to resample into a
         # range where you had absolutely no information.
         if (wavelen.max() < wavelen_grid.min()) | (wavelen.min() > wavelen_grid.max()):
-            raise Exception("No overlap between desired wavelength range and known wavelength range.")
+            raise Exception("No overlap between known wavelength range and desired wavelength range.")
         flux_grid = n.empty(len(wavelen), dtype='float')
         # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
         flux_grid = n.interp(wavelen_grid, wavelen, flux, left=0.0, right=0.0)
@@ -617,7 +617,7 @@ class Sed:
         # Calculate flux in bandpass and then AB magnitude.
         dlambda = wavelen[1] - wavelen[0]
         flux = (fnu*bandpass.phi).sum() * dlambda
-        if flux == 0:
+        if flux < 1e-300:
             raise Exception("This SED has no flux within this bandpass.")
         mag = -2.5 * n.log10(flux) - self.zp
         return mag
