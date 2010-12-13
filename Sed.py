@@ -725,6 +725,9 @@ class Sed:
                 else:
                     flambda = n.copy(flambda)
             # Calculate renormalization values.
+            # Check that flambda is defined at the wavelength want to use for renormalization.
+            if (lambdanorm > wavelen.max()) | (lambdanorm < wavelen.min()):
+                raise Exception("Desired wavelength for renormalization, %f, is outside defined wavelength range." %(lambdanorm))
             # "standard" schema have flambda = 1 at 500 nm.
             if gap==0:
                 flambda_atpt = n.interp(lambdanorm, wavelen, flambda, left=None, right=None)
@@ -756,7 +759,10 @@ class Sed:
                 # Make a copy of the input data. 
                 else:
                     fnu = n.copy(fnu)
-            # Calculate renormalization values. 
+            # Calculate renormalization values.
+            # Check that flambda is defined at the wavelength want to use for renormalization.
+            if (lambdanorm > wavelen.max()) | (lambdanorm < wavelen.min()):
+                raise Exception("Desired wavelength for renormalization, %f, is outside defined wavelength range." %(lambdanorm))
             if gap==0:
                 fnu_atpt = n.interp(lambdanorm, wavelen, flambda, left=None, right=None)
                 gapval = fnu_atpt
