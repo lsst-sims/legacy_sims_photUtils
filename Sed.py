@@ -12,27 +12,31 @@ fnu (Jansky)
 zp  (units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz)
 
 It is important to note the units are NANOMETERS, not ANGSTROMS. It is possible to rig this so you can
-use angstroms instead of nm, but you should know what you're doing and understand the grid limits. 
+use angstroms instead of nm, but you should know what you're doing and understand the wavelength grid
+limits applied here and in Bandpass.py.
 
 Methods: 
  Because of how these methods will be applied for catalog generation, (taking one base SED and then 
   applying various dust extinctions and redshifts), many of the methods will either work on,
   and update self, OR they can be given a set of lambda/flambda arrays and then will return 
-  new versions of these arrays. 
- In general, the philosophy of Sed.py is to not define the boundaries of the wavelength (and thus flambda)
-  until it is necessary for magnitude calculation, or other gridded-required conversions (such as
-  calculating fnu). At those times, the min/max/step wavelengths are defined and the entire SED is
-  resampled onto that grid. The default values are 300-1200 nanometers however this is user-definable.
-  Please note that if you define your own grid, you will have to define it EVERY time you call a method
-  that takes these arguments. 
-
+  new versions of these arrays. In general, the methods will not explicitly set flambda or fnu to
+  something you (the user) did not specify - so, for example, when calculating magnitudes (which depend on
+  a wavelength/fnu gridded to match the given bandpass) the wavelength and fnu used are temporary copies
+  and the object itself is not changed. 
+ In general, the philosophy of Sed.py is to not define the wavelength grid for the object until necessary
+  (so, not until needed for the magnitude calculation or resampleSED is called). At that time the min/max/step
+  wavelengths or the bandpass wavelengths are used to define a new wavelength grid for the sed object. 
  When considering whether to use the internal wavelen/flambda (self) values, versus input values:
   For consistency, anytime self.wavelen/flambda is used, it will be updated if the values are changed
   (except in the special case of calculating magnitudes), and if self.wavelen/flambda is updated, 
   self.fnu will be recalculated or set to None.
   If arrays are passed into a method, they will not be altered and the arrays which are returned will be
-  allocated new memory. 
-
+  allocated new memory.
+ Another general philosophy for Sed.py is use separate methods for items which only need to be generated once
+  for several objects (such as the dust A_x, b_x arrays). This allows the user to optimize their code for
+  faster operation, depending on what their requirements are (see example_SedBandpass_star.py and
+  exampleSedBandpass_galaxy for examples). 
+ 
 Method include: 
   setSED / setFlatSED / readSED_flambda / readSED_fnu -- to input information into Sed wavelen/flambda.
   getSED_flambda / getSED_fnu -- to return wavelen / flambda or fnu to the user.
@@ -53,7 +57,8 @@ methods are intended to give a user an easy way to scale an SED to match an expe
   calcSNR_psf / calcSNR_mag -- two methods to calculate the SNR of a SED. (_psf is more accurate, but 
 requires knowing the sky count backgrounds. _mag assumes you know the m5 already). 
   calcMagError / calcAstrometricError -- currently only very rough values.
-  manyMagCalc -- given a list of bandpasses, this will return an array of magnitudes (in the same 
+  setPhiArray -- given a list of bandpasses, sets up the 2-d phiArray (for manyMagCalc) and dlambda value.
+  manyMagCalc -- given 2-d phiArray and dlambda, this will return an array of magnitudes (in the same 
 order as the bandpasses) of this SED in each of those bandpasses. 
 
 """
@@ -312,6 +317,11 @@ class Sed:
                                     wavelen_step, dtype='float')
         else:
             wavelen_grid = n.copy(wavelen_match)
+        # Check if the wavelength range desired and the wavelength range of the object overlap.
+        # If not, raise an exception as presumably you don't really want to resample into a
+        # range where you had absolutely no information.
+        if (wavelen.max() < wavelen_grid.min()) | (wavelen.min() > wavelen_grid.max()):
+            raise Exception("No overlap between desired wavelength range and known wavelength range.")
         flux_grid = n.empty(len(wavelen), dtype='float')
         # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
         flux_grid = n.interp(wavelen_grid, wavelen, flux, left=0.0, right=0.0)
