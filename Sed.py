@@ -741,6 +741,8 @@ class Sed:
                 flambda_atpt = n.interp(lambdapt, wavelen, flambda, left=None, right=None)
                 gapval = flambda_atpt.sum()/len(lambdapt)
             # Now renormalize fnu and flambda in the case of normalizing flambda.
+            if gapval == 0:
+                raise Exception("Original flambda is 0 at the desired point of normalization. Cannot renormalize.")
             konst = normvalue/gapval
             flambda = flambda * konst
             wavelen, fnu = self.flambdaTofnu(wavelen, flambda)
@@ -775,6 +777,8 @@ class Sed:
                 fnu_atpt = n.interp(lambdapt, wavelen, fnu, left=None, right=None)
                 gapval = fnu_atpt.sum()/len(lambdapt)
             # Now renormalize fnu and flambda in the case of normalizing fnu.
+            if gapval == 0:
+                raise Exception("Original fnu is 0 at the desired point of normalization. Cannot renormalize.")
             konst = normvalue/gapval
             fnu = fnu * konst
             wavelen, flambda = self.fnutoflambda(wavelen,fnu)
