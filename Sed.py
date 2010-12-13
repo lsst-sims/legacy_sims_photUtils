@@ -616,7 +616,10 @@ class Sed:
             bandpass.sbTophi()
         # Calculate flux in bandpass and then AB magnitude.
         dlambda = wavelen[1] - wavelen[0]
-        mag = -2.5 * n.log10((fnu*bandpass.phi).sum()*dlambda) - self.zp
+        flux = (fnu*bandpass.phi).sum() * dlambda
+        if flux == 0:
+            raise Exception("This SED has no flux within this bandpass.")
+        mag = -2.5 * n.log10(flux) - self.zp
         return mag
 
     def calcFlux(self, bandpass, wavelen=None, fnu=None):
