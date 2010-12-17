@@ -926,9 +926,9 @@ class Sed:
 ## Bonus, functions for many-magnitude calculation for many SEDs with a single bandpass
 
     def setupPhiArray(self, bandpasslist):
-        """Sets up a 2-d numpy phi array from bandpasslist suitable for input to manyMagCalc.
+        """Sets up a 2-d numpy phi array from bandpasslist suitable for input to Sed's manyMagCalc.
 
-        This is intended to be used once, most likely before using manyMagCalc many times on many SEDs.
+        This is intended to be used once, most likely before using Sed's manyMagCalc many times on many SEDs.
         Returns 2-d phi array and the wavelen_step (dlambda) appropriate for that array. """
         # Calculate dlambda for phi array.
         wavelen_step = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
@@ -949,10 +949,12 @@ class Sed:
     def manyMagCalc(self, phiarray, wavelen_step):
         """Calculate many magnitudes for many bandpasses using a single sed.
 
-        This method has *zero* error checking when calculating the magnitude.
-        It assumes that there will be flux within a particular bandpass
-        (could return '-Inf' for a magnitude if there is none) and assumes that the
+        This method assumes that there will be flux within a particular bandpass
+        (could return '-Inf' for a magnitude if there is none).
+        Use setupPhiArray first, and note that Sed.manyMagCalc *assumes*
         phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
+        These assumptions are to avoid error checking within this function (for speed), but could lead
+        to errors if method is used incorrectly. 
         """
         # Calculate phis and resample onto same wavelength grid
         mags = n.empty(len(phiarray), dtype='float')

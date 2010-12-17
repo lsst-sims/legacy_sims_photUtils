@@ -378,26 +378,62 @@ class Bandpass:
 
 
 ## Bonus, many-magnitude calculation for many SEDs with a single bandpass
+##  Note: testing of these functions indicate that this is NOT a good optimization.
+##  Use these if you have to, but it is SLOWER than just calculating a magnitude a normal way, and
+##  definitely slower than using Sed's manyMagCalc function. 
+
+    def setupFnuArray(self, seddict, sedlist):
+        """Set up 2-d array of sed FNU values and zeropoint suitable for input to Bandpass's manyMagCalc. 
+
+        Input a *dictionary* of seds.
+        This is intended to be used once on a list of Sed's to prepare them for several calls
+        to Bandpass's manyMagCalc, such as before calculating many magnitudes in different bands.
+        It will check if the seds are resampled to this bandpass's wavelength grid and if not, will
+        carry out that resampling on the fnu array values (only here - not affecting the sed itself). 
+        Returns 2-d array of sed fnu values.
+        ATTENTION - testing has proved that this is slower than any normal mag calculation.
+        Memory management most likely the culprit. Use Sed.manyMagCalc function instead. """
+        fnuArray = n.empty((len(sedlist), len(self.wavelen)), dtype='float')
+        i = 0
+        zp = seddict[sedlist[0]].zp
+        for s in sedlist:
+            # Check that zeropoint is the same for this Sed as all previous.
+            # This will always be the case for UW Seds as they are all in the same units. 
+            if seddict[s].zp != zp:
+                raise Exception("Sed %s has a zeropoint of %f (others have %f). Please check your sed units."\
+                                % (s, seddict[s].zp, zp))
+            # Check that fnu has already been calculated.
+            if seddict[s].fnu == None:
+                seddict[s].flambdaTofnu()
+            # Check that fnu is on the necessary wavelength grid. (remember self=bandpass).
+            if seddict[s].needResample(wavelen=seddict[s].wavelen, wavelen_match=self.wavelen):
+                wavelen, fnu = self.resampleSED(seddict[s].wavelen, seddict[s].fnu, wavelen_match=self.wavelen)
+                fnuArray[i] = fnu
+            else:
+                fnuArray[i] = seddict[s].fnu
+            i = i + 1
+        return fnuArray, zp
     
-    def manyMagCalc(self, sedlist):
+    def manyMagCalc(self, fnuArray, zp):
         """Calculate many magnitudes for many seds using a single bandpass.
 
-        Note that this is a LESS STABLE method of calculating magnitudes than individually
-        doing so, but has been included for a speed boost. You will have to be sure that all
-        of the SEDS have the same wavelength array *before* invoking this function, and that
-        this wavelength array is the same as bandpass.wavelen.
-        Also be sure that fnu is defined and calculated for each SED. """
-        if self.phi == None:
-            self.sbTophi()
-        # Get seds in compatible wavelength range format.
-        fnu = n.empty((len(sedlist), len(self.wavelen)), dtype='float')
-        i = 0
-        for sedobj in sedlist:
-            fnu[i] = sedobj.fnu
-            i = i+1
-        mags = n.empty(len(sedlist), dtype='float')
+        So, testing has shown that this method is slow, slower than just calculating a normal
+        magnitude (see examples/example_faststars.py for proof).
+        Thus I am now going to delete it from Bandpass. Keeping a copy in SVN though, just in
+        case it's ever useful. 
+
+        This method assumes that there will be flux within a particular bandpass
+        (could return '-Inf' for a magnitude if there is none), and use setupFnuArray first, on this
+        bandpass itself or on another bandpass with the same wavelength grid (i.e. here it is assumed that
+        the wavelength grid is correct).
+        Also assumes that phi has already been calculated for this bandpass (using self.sbTophi()). 
+        These assumptions are to avoid error checking within this function (for speed), but could lead
+        to errors if method is used incorrectly.
+        ATTENTION - testing has proved that this is slower than any normal mag calculation.
+        Memory management most likely the culprit. Use Sed.manyMagCalc function instead. """
+        mags = n.empty(len(fnuArray), dtype='float')
         dlambda = self.wavelen[1] - self.wavelen[0]
-        mags = -2.5*n.log10(n.sum(self.phi*fnu, axis=1)*dlambda) - sedlist[0].zp            
+        mags = -2.5*n.log10(n.sum(self.phi*fnuArray, axis=1)*dlambda) - zp
         return mags
 
 
