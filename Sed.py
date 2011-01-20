@@ -146,8 +146,13 @@ class Sed:
         
         Does not resample wavelen/flambda onto grid; leave fnu=None. """
         # Try to open data file.
+        # ASSUME that if filename ends with '.gz' that the file is gzipped. Otherwise, regular file.
         try:
-            f=open(filename, 'r')
+            if filename[-3:] == ".gz":
+                import gzip
+                f = gzip.open(filename, 'r')
+            else:
+                f = open(filename, 'r')
         except IOError:
             raise IOError("The file %s for this sed does not exist" %(filename))
         # Read source SED from file - lambda, flambda should be first two columns in the file.
