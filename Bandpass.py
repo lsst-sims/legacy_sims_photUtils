@@ -296,7 +296,7 @@ class Bandpass:
         # ZP_t is the magnitude of a (F_nu flat) source which produced 1 count per second.
         # This is often also known as the 'instrumental zeropoint'. 
         # Set gain to 1 if want to explore photo-electrons rather than adu.
-        # The typical LSST exposure time is 15s/30s, but zp_t definition is for 1s.
+        # The typical LSST exposure time is 15s and this is default here, but typical zp_t definition is for 1s.
         # SED class uses flambda in ergs/cm^2/s/nm, so need effarea in cm^2.
         #  
         # Check dlambda value for integral.

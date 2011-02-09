@@ -9,7 +9,7 @@ Class data:
 wavelen (nm)
 flambda (ergs/cm^s/s/nm)
 fnu (Jansky)
-zp  (units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz)
+zp  (basically translates to units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz))
 
 It is important to note the units are NANOMETERS, not ANGSTROMS. It is possible to rig this so you can
 use angstroms instead of nm, but you should know what you're doing and understand the wavelength grid
@@ -29,7 +29,9 @@ Methods:
  When considering whether to use the internal wavelen/flambda (self) values, versus input values:
   For consistency, anytime self.wavelen/flambda is used, it will be updated if the values are changed
   (except in the special case of calculating magnitudes), and if self.wavelen/flambda is updated, 
-  self.fnu will be recalculated or set to None.
+  self.fnu will be set to None. This is because many operations are typically chained together
+  which alter flambda -- so it is more efficient to wait and recalculate fnu at the end, plus it avoid possible
+  de-synchronization errors (flambda reflecting the addition of dust while fnu does not, for example). 
   If arrays are passed into a method, they will not be altered and the arrays which are returned will be
   allocated new memory.
  Another general philosophy for Sed.py is use separate methods for items which only need to be generated once
@@ -63,7 +65,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 
 """
 
-import warnings as warning
+import warnings
 import numpy as n
 
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
@@ -295,8 +297,6 @@ class Sed:
                     need_regrid = False
         # At this point, need_grid=True unless it's proven to be False, so return value.
         return need_regrid
-                    
-            
     
     def resampleSED(self, wavelen=None, flux=None, wavelen_match=None,
                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
@@ -408,16 +408,16 @@ class Sed:
         # Okay, move onto redshifting the wavelen/flambda pair.
         # Or blueshift, as the case may be. 
         if redshift<0:
-            wavelen = wavelen / (1-redshift)
+            wavelen = wavelen / (1.0-redshift)
         else:
-            wavelen = wavelen * (1+redshift)
+            wavelen = wavelen * (1.0+redshift)
         # Flambda now just has different wavelength for each value.
         # Add cosmological dimming if required.
         if dimming:
             if redshift<0:
-                flambda = flambda * (1-redshift)
+                flambda = flambda * (1.0-redshift)
             else:
-                flambda = flambda / (1+redshift)
+                flambda = flambda / (1.0+redshift)
         # Update self, if required - but just flambda (still no grid required).
         if update_self:
             self.wavelen = wavelen
@@ -425,6 +425,77 @@ class Sed:
             return
         return wavelen, flambda
 
+    def addIGMattenuation(self, redshift, rtau, wavelen=None, flambda=None):
+        """Given a redshifted sed and its redshift, calculate and apply extinction due to IGM.
+
+        From P. Maddau ... polynomial form from Argun Dey (NOAO). 
+        rtau is a parameter which scales the tau value at each wavelength. 
+        Pass wavelen/flambda or attenuates & updates self.wavelen/flambda. Unsets fnu. """
+        # Catch case of z=0, where should not apply any IGM extinction. 
+        if redshift == 0:
+            warnings.warn("IGM attenuation is not applied for redshift=0. No action taken.")
+            return
+        # Updating self or using passed arrays?
+        update_self = self.checkUseSelf(wavelen, flambda)
+        if update_self:
+            wavelen = self.wavelen
+            flambda = self.flambda
+            self.fnu = None
+        else:
+            wavelen = n.copy(wavelen)
+            flambda = n.copy(flambda)
+        # Now calculate magnitude of attenuation at each wavelength.
+        # Set up base information for Teff calculation. 
+        wavelen_rest = wavelen / (1.0+redshift)
+        # Wavelength thresholds for tau must be in NM as those are the units for wavelength. 
+        wavelen_thresholds = [91.20, 91.6429, 91.7181, 91.8129, 91.9352, 92.0963, 92.315, 92.6226, 93.0748,
+                              93.7803, 94.9743, 97.2537, 102.572, 121.567]
+        tau_coeff = [0.0036, 0.0017, 0.001185, 0.000941,
+                     0.000796, 0.000697,
+                     0.0006236, 0.0005665, 0.00052,
+                     0.000482, 0.0004487,
+                     0.00042, 0.0003947, 0.000372,
+                     0.000352, 0.00033336,
+                     0.0003165]
+        ext_power = 3.46
+        xc = wavelen / wavelen_thresholds[0]
+        # Calculate tau for each wavelength. Final attenuation is exp(-tau*rtau).
+        # Bigger tau values, more extinction. 0 -> no extinction. At wavelen>121.5nm, there is no extinction.
+        tau = n.zeros(len(wavelen), dtype='float')
+        # Start at the longest wavelengths where tau = 0. 
+        idx_wavelen = len(wavelen_thresholds) - 1
+        idx_coeff = 0
+        # Intermediate wavelengths add a little more to tau. 
+        while (idx_wavelen > 0):
+            condition = (wavelen_rest <= wavelen_thresholds[idx_wavelen])
+            # These are absorption LINES so appear as 'peaks' in absorption.
+            tau[condition] = tau[condition] + (tau_coeff[idx_coeff] * 
+                                               n.power(wavelen[condition]/wavelen_thresholds[idx_wavelen],
+                                                       ext_power))
+            idx_coeff = idx_coeff + 1
+            idx_wavelen = idx_wavelen - 1
+        # Finally, wavelengths < 912 (very blue) in the rest frame have additional terms. 
+        condition = (wavelen_rest <= wavelen_thresholds[0])
+        tau[condition] = (tau[condition] +
+                          0.25*n.power(xc[condition],3)*(n.power(redshift, 0.46)-n.power(xc[condition],0.46)) + 
+                          9.4*n.power(xc[condition],1.5)*(n.power(redshift, 0.18)-n.power(xc[condition], 0.18)) + 
+                          0.7*n.power(xc[condition], 3)*(n.power(redshift,-1.32)-n.power(xc[condition],-1.32)) + 
+                          -0.023*(n.power(redshift, 1.68)-n.power(xc[condition], 1.68)) +
+                          # The next absorption lines are due to helium I think.
+                          0.000372*n.power(wavelen[condition]/91.5824, ext_power) + 
+                          0.000352*n.power(wavelen[condition]/91.5329, ext_power) + 
+                          0.00033336*n.power(wavelen[condition]/91.4919, ext_power) +
+                          0.0003165*n.power(wavelen[condition]/91.45760, ext_power)) 
+        # Calculate attenuation at all wavelengths
+        attenuation = n.exp(-tau*rtau)
+        attenuation = n.where(attenuation>1, 1.0, attenuation)
+        flambda = flambda * attenuation
+        # Update self if required.
+        if update_self:
+            self.flambda = flambda
+            return
+        return wavelen, flambda
+ 
     def setupCCMab(self, wavelen=None):
         """Calculate a(x) and b(x) for CCM dust model. (x=1/wavelen).
         
@@ -526,38 +597,44 @@ class Sed:
             self.flambda = flambda
             return
         return wavelen, flambda
+    
 
     def multiplySED(self, other_sed,
                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
         """Multiply two SEDs together - flambda * flambda - and return a new sed object.
-        
+
+        Uses a grid of wavelengths from wavelen_min to wavelen_max unless the wavelength arrays are equal.
         Does not alter self or other_sed"""
-        # Set up wavelen/flambda of first object, on grid.
-        wavelen_1 = self.wavelen
-        flambda_1 = self.flambda
-        if self.needResample(wavelen=wavelen_1, wavelen_min=wavelen_min,
-                             wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-            wavelen_1, flambda_1 = self.resampleSED(wavelen_1, flambda_1,
-                                                    wavelen_min=wavelen_min,
-                                                    wavelen_max=wavelen_max,
-                                                    wavelen_step=wavelen_step)
-        # Set up wavelen/flambda of second object, on grid.  
-        wavelen_2 = other_sed.wavelen
-        flambda_2 = other_sed.flambda
-        if self.needResample(wavelen=wavelen_2, wavelen_min=wavelen_min,
-                             wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-            wavelen_2, flambda_2 = self.resampleSED(wavelen_2, flambda_2,
-                                                    wavelen_min=wavelen_min, 
-                                                    wavelen_max=wavelen_max,
-                                                    wavelen_step=wavelen_step)
-        # Multiply the two flambda together.
-        wavelen = wavelen_1
-        flambda = flambda_1 * flambda_2
-        # Instantiate new sed object.
-        new_sed = Sed(wavelen, flambda)
+        # Check if the wavelength arrays are equal (in which case do not resample)
+        if (n.all(self.wavelen==other_sed.wavelen)):
+            flambda = self.flambda * other_sed.flambda
+            new_sed = Sed(self.wavelen, flambda=flambda)
+        else:
+            # Set up wavelen/flambda of first object, on grid.
+            wavelen_1 = self.wavelen
+            flambda_1 = self.flambda
+            if self.needResample(wavelen=self.wavelen, wavelen_min=wavelen_min,
+                                 wavelen_max=wavelen_max, wavelen_step=wavelen_step):
+                wavelen_1, flambda_1 = self.resampleSED(self.wavelen, self.flambda,
+                                                        wavelen_min=wavelen_min,
+                                                        wavelen_max=wavelen_max,
+                                                        wavelen_step=wavelen_step)
+            # Set up wavelen/flambda of second object, on grid.  
+            wavelen_2 = other_sed.wavelen
+            flambda_2 = other_sed.flambda
+            if self.needResample(wavelen=other_sed.wavelen, wavelen_min=wavelen_min,
+                                 wavelen_max=wavelen_max, wavelen_step=wavelen_step):
+                wavelen_2, flambda_2 = self.resampleSED(wavelen_2, flambda_2,
+                                                        wavelen_min=wavelen_min, 
+                                                        wavelen_max=wavelen_max,
+                                                        wavelen_step=wavelen_step)
+            # Multiply the two flambda together.
+            flambda = flambda_1 * flambda_2
+            # Instantiate new sed object. wavelen_1 == wavelen_2 as both are on grid.
+            new_sed = Sed(wavelen_1, flambda)
         return new_sed
 
-    ## routines related to magnitudes
+    ## routines related to magnitudes and fluxes
 
     def calcADU(self, bandpass, wavelen=None, fnu=None,
                 expTime=EXPTIME, effarea=EFFAREA, gain=GAIN):
@@ -628,7 +705,7 @@ class Sed:
         return mag
 
     def calcFlux(self, bandpass, wavelen=None, fnu=None):
-        """Calculate the F_b (integrated flux of an object, above the atmosphere), using phi.
+        """Calculate the F_b (integrated flux of an object, **above the atmosphere**), using phi.
         
         Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass; 
