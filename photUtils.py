@@ -1,3 +1,14 @@
+"""
+photUtils - 
+
+$Id$
+
+ljones@astro.washington.edu  (and ajc@astro.washington.edu)
+
+Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
+
+"""
+
 import os
 import lsst.sims.catalogs.measures.photometry.Sed as Sed
 import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass

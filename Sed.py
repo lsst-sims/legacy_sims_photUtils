@@ -3,7 +3,7 @@ sed -
 
 $Id$
 
-4/13/2010  ljones@astro.washington.edu
+ljones@astro.washington.edu
 
 Class data: 
 wavelen (nm)
