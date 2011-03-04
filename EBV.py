@@ -124,19 +124,23 @@ class EbvMap():
         return ix,iy
 
 def main():
-    glon = float(sys.argv[1])
-    glat = float(sys.argv[2])
+    import sys
+    import os
+    glon = []
+    glat = []
+    glon.append(float(sys.argv[1])*math.pi/180.)
+    glat.append(float(sys.argv[2])*math.pi/180.)
 
-    map = EbvMap()
-    map.readMapFits('SFD_dust_4096_sgp.fits')
+    datadir = os.environ.get("CAT_SHARE_DATA")
+    ebvMapNorth = EbvMap()
+    ebvMapNorth.readMapFits(os.path.join(datadir, "data/Dust/SFD_dust_4096_ngp.fits"))
+    ebvMapSouth = EbvMap()
+    ebvMapSouth.readMapFits(os.path.join(datadir, "data/Dust/SFD_dust_4096_sgp.fits"))
 
-    x,y = map.skyToXY(glon, glat)
+    print calculateEbv(glon, glat, ebvMapNorth, ebvMapSouth, interp = True)
 
-    ebv = map.generateEbv(glon, glat)
 
-    print ebv
-
-    ebv = map.generateEbv(glon, glat, interpolate=True)
+    ebv = ebvMapNorth.generateEbv(glon[0], glat[0], interpolate=False)
 
     print ebv
 
