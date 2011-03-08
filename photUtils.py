@@ -14,20 +14,26 @@ import lsst.sims.catalogs.measures.photometry.Sed as Sed
 import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 
 # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-def loadSeds(sedList, dataDir = "./"):
+def loadSeds(sedList, dataDir = "./", resample_same=False):
     """Generate dictionary of SEDs required for generating magnitudes
 
     Given a dataDir and a list of seds return a dictionary with sedName and sed as key, value
-    """
+    """    
     sedDict={}
+    firstsed = True
     for sedName in sedList:
         if sedName in sedDict:
             continue
-        else:
+        else:            
             sed = Sed()
-            sed.readSED_flambda(os.path.join(dataDir, sedName)
-            if sed.needResample():
-                sed.resampleSED()             
+            sed.readSED_flambda(os.path.join(dataDir, sedName))
+            if resample_same:
+                if firstsed:
+                    wavelen_same = sed.wavelen
+                    firstsed = False
+                else:
+                    if sed.needResample(wavelen_same):
+                        sed.resampleSED(wavelen_same)
             sedDict[sedName] = sed
     return sedDict
 
@@ -47,7 +53,7 @@ def loadBandpasses(filterlist=('u', 'g', 'r', 'i', 'z', 'y'), dataDir=None, filt
             raise Exception("dataDir not given and unable to access environment variable 'LSST_THROUGHPUTS_DEFAULT'")
     for f in filterlist:
         bandpassDict[f] = Bandpass()
-        bandpassDict[f].readThroughput(os.path.join(dataDir, filterroot + f + ".dat")
+        bandpassDict[f].readThroughput(os.path.join(dataDir, filterroot + f + ".dat"))
     return bandpassDict
 
 def setupPhiArray_dict(bandpassDict, bandpassKeys):
