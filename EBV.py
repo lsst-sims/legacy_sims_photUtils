@@ -102,15 +102,37 @@ class EbvMap():
         iy = int(y + 0.5)
 
         #TODO check bounds        
-        
+
         if (interpolate):
-            xLow = interp1D(self.data[iy][ix], self.data[iy][ix+1], x - ix)
-#            print xLow, self.data[iy][ix], self.data[iy][ix+1]
+            if (ix == self.nc-1):
+                ixLow = ix-1
+                ixHigh = ix
+                dx = ix -x
+            else:
+                ixLow = ix
+                ixHigh = ix+1                   
+                dx = x - ix
+            if (iy == self.nr-1):
+                iyLow = iy-1
+                iyHigh = iy
+                dy = iy - y
+            else:
+                iyLow = iy
+                iyHigh = iy+1
+                dy = y - iy
+            try:
+                xLow = interp1D(self.data[iyLow][ixLow], self.data[iyLow][ixHigh], dx)
+                xHigh = interp1D(self.data[iyHigh][ixLow], self.data[iyHigh][ixHigh], dx)
+                ebvVal = interp1D(xLow, xHigh, dy)                
+            except:
+                print glon, glat, x, y
+                print ix,iy,self.nc, self.nr
+                print ixLow, ixHigh, iyLow, iyHigh, dx, dy
+                
+            #xLow = interp1D(self.data[iy][ix], self.data[iy][ix+1], x - ix)
+            #xHigh = interp1D(self.data[iy+1][ix], self.data[iy+1][ix+1], x - ix)
+            #ebvVal = interp1D(xLow, xHigh, y - iy)                
 
-            xHigh = interp1D(self.data[iy+1][ix], self.data[iy+1][ix+1], x - ix)
-#            print xHigh, self.data[iy+1][ix], self.data[iy+1][ix+1]
-
-            ebvVal = interp1D(xLow, xHigh, y - iy)
         else:
             ebvVal = self.data[iy][ix]
 
