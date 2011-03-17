@@ -2,6 +2,8 @@ import numpy
 import math
 import os
 from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.interpolate import UnivariateSpline
+from scipy.interpolate import interp1d
 
 class Variability(object):
     """Variability class for adding temporal variation to the magnitudes of
@@ -20,6 +22,7 @@ class Variability(object):
             
 
     def applyRRly(self, params, expmjd):
+        expmjd = numpy.asarray(expmjd)
         filename = params['filename']
         toff = params['tStartMjd']
         epoch = expmjd - toff
@@ -47,25 +50,38 @@ class Variability(object):
         return magoff
 
     def applyAgn(self, params, expmjd):
-        #This assumes monochromatic variability.  Should we go the extra step
-        #and at least use different sf's?
+        dMags = {}
+        expmjd = numpy.asarray(expmjd)
         toff = params['t0_mjd']
         seed = params['seed']
-        sfint = params['agn_sfr']
+        sfint = {}
+        sfint['u'] = params['agn_sfu']
+        sfint['g'] = params['agn_sfg']
+        sfint['r'] = params['agn_sfr']
+        sfint['i'] = params['agn_sfi']
+        sfint['z'] = params['agn_sfz']
+        sfint['y'] = params['agn_sfy']
         tau = params['agn_tau']
-        epoch = expmjd - toff
+        epochs = expmjd - toff
+        endepoch = epochs.max()
 
         dt = tau/100.
-        nbins = math.ceil(epoch/dt)
-        dt = (epoch/nbins)/tau
+        nbins = math.ceil(endepoch/dt)
+        dt = (endepoch/nbins)/tau
         sdt = math.sqrt(dt)
         s2 = math.sqrt(2.)
 
         es = numpy.random.normal(0., 1., nbins)
-        dx = 0.
-        for e in es:
-            dx = -dx*dt + s2*sfint*e*sdt
-        return {'u':dx, 'g':dx, 'r':dx, 'i':dx, 'z':dx, 'y':dx}
+        for k in sfint.keys():
+            dx = numpy.zeros(nbins+1)
+            dx[0] = 0.
+            for i in range(nbins):
+                dx[i+1] = -dx[i]*dt + s2*sfint[k]*es[i]*sdt
+            x = numpy.linspace(0, endepoch, nbins+1)
+            intdx = interp1d(x, dx)
+            magoff = intdx(epochs)
+            dMags[k] = magoff
+        return dMags
 
 
 
