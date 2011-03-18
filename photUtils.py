@@ -65,7 +65,7 @@ def setupPhiArray_dict(bandpassDict, bandpassKeys):
     # Make a list of the bandpassDict for phiArray - in the ORDER of the bandpassKeys
     bplist = []
     for f in bandpassKeys:
-        bplist.append(lsstbp[f])
+        bplist.append(bandpassDict[f])
     sedobj = Sed()
     phiArray, wavelenstep = sedobj.setupPhiArray(bplist)
     return phiArray, wavelenstep
