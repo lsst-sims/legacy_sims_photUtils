@@ -101,8 +101,6 @@ class EbvMap():
         ix = int(x + 0.5)
         iy = int(y + 0.5)
 
-        #TODO check bounds        
-
         if (interpolate):
             if (ix == self.nc-1):
                 ixLow = ix-1
