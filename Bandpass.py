@@ -32,6 +32,7 @@ Methods:
 """
 import warnings as warning
 import numpy as n
+import gzip
 import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation. 
 
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
@@ -121,9 +122,18 @@ class Bandpass:
                                     wavelen_step=wavelen_step)
         # Filename is single file, now try to open file and read data.
         try:
-            f = open(filename, 'r')
+            if filename.endswith('.gz'):
+                f = gzip.open(filename, 'r')
+            else:
+                f = open(filename, 'r')
         except IOError:
-            raise IOError("The throughput file %s does not exist" %(filename))
+            try:
+                if filename.endswith(".gz"):
+                    f = open(filename[:-3], 'r')
+                else:
+                    f = gzip.open(filename+".gz", 'r')
+            except IOError:
+                raise IOError("The throughput file %s does not exist" %(filename))
         # The throughput file should have wavelength(A), throughput(Sb) as first two columns.
         wavelen = []
         sb = []

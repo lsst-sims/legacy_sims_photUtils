@@ -67,6 +67,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 
 import warnings
 import numpy as n
+import gzip
 
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
 MINWAVELEN = 300
@@ -150,13 +151,19 @@ class Sed:
         # Try to open data file.
         # ASSUME that if filename ends with '.gz' that the file is gzipped. Otherwise, regular file.
         try:
-            if filename[-3:] == ".gz":
-                import gzip
+            if filename.endswith('.gz'):
                 f = gzip.open(filename, 'r')
             else:
                 f = open(filename, 'r')
+        #if the above fails, look for the file with and without the gz
         except IOError:
-            raise IOError("The file %s for this sed does not exist" %(filename))
+            try:
+                if filename.endswith(".gz"):
+                    f = open(filename[:-3], 'r')
+                else:
+                    f = gzip.open(filename+".gz", 'r')
+            except IOError:
+                raise IOError("The throughput file %s does not exist" %(filename))
         # Read source SED from file - lambda, flambda should be first two columns in the file.
         # lambda should be in nm and flambda should be in ergs/cm2/s/nm
         sourcewavelen = []
@@ -179,9 +186,19 @@ class Sed:
         Does not resample wavelen/fnu/flambda onto a grid; leaves fnu set."""
         # Try to open the data file.
         try:
-            f=open(filename, 'r')
+            if filename.endswith('.gz'):
+                f = gzip.open(filename, 'r')
+            else:
+                f = open(filename, 'r')
+        #if the above fails, look for the file with and without the gz
         except IOError:
-            raise IOError("The file %f for this sed does not exist" %(filename))
+            try:
+                if filename.endswith(".gz"):
+                    f = open(filename[:-3], 'r')
+                else:
+                    f = gzip.open(filename+".gz", 'r')
+            except IOError:
+                raise IOError("The throughput file %s does not exist" %(filename))
         # Read source SED from file - lambda, fnu should be first two columns in the file.
         # lambda should be in nm and fnu should be in Jansky.
         sourcewavelen = []
