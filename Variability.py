@@ -76,7 +76,7 @@ class Variability(object):
             dx = numpy.zeros(nbins+1)
             dx[0] = 0.
             for i in range(nbins):
-                dx[i+1] = -dx[i]*dt + s2*sfint[k]*es[i]*sdt
+                dx[i+1] = -dx[i]*dt + s2*sfint[k]*es[i]*sdt + dx[i]
             x = numpy.linspace(0, endepoch, nbins+1)
             intdx = interp1d(x, dx)
             magoff = intdx(epochs)
