@@ -63,10 +63,12 @@ class Variability(object):
         sfint['y'] = params['agn_sfy']
         tau = params['agn_tau']
         epochs = expmjd - toff
+        if epochs.min() < 0:
+            raise("WARNING: Time offset greater than minimum epoch.  Not applying variability")
         endepoch = epochs.max()
 
         dt = tau/100.
-        nbins = math.ceil(endepoch/dt)
+        nbins = int(math.ceil(endepoch/dt))
         dt = (endepoch/nbins)/tau
         sdt = math.sqrt(dt)
         s2 = math.sqrt(2.)
