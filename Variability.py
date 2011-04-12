@@ -71,14 +71,15 @@ class Variability(object):
         nbins = int(math.ceil(endepoch/dt))
         dt = (endepoch/nbins)/tau
         sdt = math.sqrt(dt)
-        s2 = math.sqrt(2.)
 
         es = numpy.random.normal(0., 1., nbins)
         for k in sfint.keys():
             dx = numpy.zeros(nbins+1)
             dx[0] = 0.
             for i in range(nbins):
-                dx[i+1] = -dx[i]*dt + s2*sfint[k]*es[i]*sdt + dx[i]
+                #The second term differs from Zeljko's equation by sqrt(2.)
+                #because he assumes stdev = sfint/sqrt(2)
+                dx[i+1] = -dx[i]*dt + sfint[k]*es[i]*sdt + dx[i]
             x = numpy.linspace(0, endepoch, nbins+1)
             intdx = interp1d(x, dx)
             magoff = intdx(epochs)
