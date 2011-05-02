@@ -1,4 +1,5 @@
 import numpy
+import linecache
 import math
 import os
 from scipy.interpolate import InterpolatedUnivariateSpline
@@ -12,7 +13,7 @@ class Variability(object):
     """
 
     def __init__(self, baseDir=None, cache=False):
-        self.rrlyLc = {}
+        self.lcCache = {}
         self.cache = cache
         if baseDir is None:
             try:
@@ -21,33 +22,123 @@ class Variability(object):
                 raise("No directory specified and $CAT_SHARE_DATA is undefined")
             
 
-    def applyRRly(self, params, expmjd):
+    def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
+            inDays=True, interpFactory=None):
         expmjd = numpy.asarray(expmjd)
-        filename = params['filename']
-        toff = params['tStartMjd']
+        filename = params[keymap['filename']]
+        toff = float(params[keymap['t0']])
         epoch = expmjd - toff
-        if self.rrlyLc.has_key(filename):
-            splines = self.rrlyLc[filename]['splines']
-            period = self.rrlyLc[filename]['period']
+        if self.lcCache.has_key(filename):
+            splines = self.lcCache[filename]['splines']
+            period = self.lcCache[filename]['period']
         else:
             lc = numpy.loadtxt(self.datadir+"/"+filename, unpack=True, comments='#')
-            dt = lc[0][1] - lc[0][0]
-            period = lc[0][-1] + dt
-            lc[0] /= period
+            if inPeriod is None:
+                dt = lc[0][1] - lc[0][0]
+                period = lc[0][-1] + dt
+            else:
+                period = inPeriod
+                
+            if inDays:    
+                lc[0] /= period
+
             splines  = {}
-            splines['u'] = InterpolatedUnivariateSpline(lc[0], lc[1])
-            splines['g'] = InterpolatedUnivariateSpline(lc[0], lc[2])
-            splines['r'] = InterpolatedUnivariateSpline(lc[0], lc[3])
-            splines['i'] = InterpolatedUnivariateSpline(lc[0], lc[4])
-            splines['z'] = InterpolatedUnivariateSpline(lc[0], lc[5])
-            splines['y'] = InterpolatedUnivariateSpline(lc[0], lc[6])
-            if self.cache:
-                self.rrlyLc[filename] = {'splines':splines, 'period':period}
+            if interpFactory is not None:
+                splines['u'] = interpFactory(lc[0], lc[1])
+                splines['g'] = interpFactory(lc[0], lc[2])
+                splines['r'] = interpFactory(lc[0], lc[3])
+                splines['i'] = interpFactory(lc[0], lc[4])
+                splines['z'] = interpFactory(lc[0], lc[5])
+                splines['y'] = interpFactory(lc[0], lc[6])
+                if self.cache:
+                    self.lcCache[filename] = {'splines':splines, 'period':period}
+            else:
+                splines['u'] = interp1d(lc[0], lc[1])
+                splines['g'] = interp1d(lc[0], lc[2])
+                splines['r'] = interp1d(lc[0], lc[3])
+                splines['i'] = interp1d(lc[0], lc[4])
+                splines['z'] = interp1d(lc[0], lc[5])
+                splines['y'] = interp1d(lc[0], lc[6])
+                if self.cache:
+                    self.lcCache[filename] = {'splines':splines, 'period':period}
+
         phase = epoch/period - epoch//period
         magoff = {}
         for k in splines:
             magoff[k] = splines[k](phase)
         return magoff
+
+    def applyRRly(self, params, expmjd):
+        keymap = {'filename':'filename', 't0':'tStartMjd'}
+        return self.applyStdPeriodic(params, keymap, expmjd,
+                interpFactory=InterpolatedUnivariateSpline)
+
+    def applyEb(self, params, expmjd):
+        keymap = {'filename':'lcfile', 't0':'t0'}
+        dMags = self.applyStdPeriodic(params, keymap, expmjd, 
+                interpFactory=InterpolatedUnivariateSpline)
+        for k in dMags.keys():
+            dMags[k] = -2.5*numpy.log10(dMags[k])
+        return dMags
+
+    def applyMicrolens(self, params, expmjd):
+        expmjd = numpy.asarray(expmjd)
+        epochs = expmjd - params['t0']
+        dMags = {}
+        u = numpy.sqrt(params['umin']**2 + ((2.0*epochs/params['that'])**2))
+        magnification = (u**2+2.0)/(u*numpy.sqrt(u**2+4.0))
+        dmag = -2.5*numpy.log10(magnification)
+        dMags['u'] = dmag
+        dMags['g'] = dmag
+        dMags['r'] = dmag
+        dMags['i'] = dmag
+        dMags['z'] = dmag
+        dMags['y'] = dmag
+        return dMags
+
+    def applyMflare(self, params, expmjd):
+        expmjd = numpy.asarray(expmjd)
+        period = params['length']
+        dt = params['dt']
+        nlines = int(period/dt - 1)
+        epoch = expmjd - params['t0']
+        phase = epoch/period - epoch//period
+        dMags = {'u':[], 'g':[], 'r':[], 'i':[], 'z':[], 'y':[]}
+        if expmjd.size == 1:
+            phase = [phase]
+            epoch = [epoch]
+        for p, e in zip(phase, epoch):
+            if p > 1.:
+                raise "somehow a phase is greater than 1."
+            linenum = numpy.floor(p*nlines)
+            line1 =\
+               linecache.getline(self.datadir+"/mflare/"+params['lcfilename'],
+                    int(linenum))
+            linenum += 1
+            if linenum > nlines:
+                linenum = 0
+            line2 =\
+                linecache.getline(self.datadir+"/mflare/"+params['lcfilename'],
+                    int(linenum))
+            linenum += 1
+            if linenum > nlines:
+                linenum = 0
+            line3 =\
+                linecache.getline(self.datadir+"/mflare/"+params['lcfilename'],
+                    int(linenum))
+            t1,u1,g1,r1,i1,z1,y1 = line1.rstrip().split()
+            t2,u2,g2,r2,i2,z2,y2 = line2.rstrip().split()
+            t3,u3,g3,r3,i3,z3,y3 = line3.rstrip().split()
+            for k in dMags:
+                spline = eval("interp1d([float(t1)/period, float(t2)/period, float(t3)/period],\
+                        [float(%s1),float(%s2),float(%s3)])"%(k,k,k))
+                dMags[k].append(spline(p))
+   
+        linecache.clearcache()
+        for k in dMags.keys():
+            dMags[k] = numpy.asarray(dMags[k])
+            dMags[k] *= -1
+        return dMags
 
     def applyAgn(self, params, expmjd):
         dMags = {}
@@ -86,5 +177,19 @@ class Variability(object):
             dMags[k] = magoff
         return dMags
 
+        
 
-
+    def applyMicrolensing(self, params, expmjd):
+        dMags = {}
+        epochs = numpy.asarray(expmjd) - params['t0']
+        u = numpy.sqrt(params['umin']**2 + (2.0 * epochs /\
+            params['that'])**2)
+        magnification = (u + 2.0) / (u * numpy.sqrt(u**2 + 4.0))
+        dmag = -2.5 * numpy.log10(magnification)
+        dMags['u'] = dmag
+        dMags['g'] = dmag
+        dMags['r'] = dmag
+        dMags['i'] = dmag
+        dMags['z'] = dmag
+        dMags['y'] = dmag 
+        return dMags
