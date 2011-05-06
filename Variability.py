@@ -177,8 +177,6 @@ class Variability(object):
             dMags[k] = magoff
         return dMags
 
-        
-
     def applyMicrolensing(self, params, expmjd):
         dMags = {}
         epochs = numpy.asarray(expmjd) - params['t0']
@@ -193,3 +191,69 @@ class Variability(object):
         dMags['z'] = dmag
         dMags['y'] = dmag 
         return dMags
+
+    def applyAmcvn(self, params, expmjd):
+        dMag = {}
+        epochs = numpy.asarray(expmjd)
+        # get the light curve of the typical variability
+        uLc   = params['amplitude']*numpy.cos((epochs - params['t0'])/params['period'])
+        gLc   = uLc
+        rLc   = uLc
+        iLc   = uLc
+        zLc   = uLc
+        yLc   = uLc
+
+        # add in the flux from any bursting
+        if params['does_burst']:
+            adds = np.zeros(len(epochs))
+            for o in np.linspace(params['t0'] + params['burst_freq'],\
+                                 params['t0'] + maxyears*365.25, \
+                                 np.ceil(maxyears*365.25/params['burst_freq'])):
+                tmp = np.exp( -1*(epochs - o)/params['burst_scale'])/np.exp(-1.)
+                adds -= params['amp_burst']*tmp*(tmp < 1.0)  ## kill the contribution 
+
+            ## add some blue excess during the outburst
+            uLc += adds +  2.0*params['color_excess_during_burst']*adds/min(adds)
+            gLc += adds + params['color_excess_during_burst']*adds/min(adds)
+            rLc += adds + 0.5*params['color_excess_during_burst']*adds/min(adds)
+            iLc += adds
+            zLc += adds
+            yLc += adds
+                      
+        self.dMag['u'] = uLc
+        self.dMag['g'] = gLc
+        self.dMag['r'] = rLc
+        self.dMag['i'] = iLc
+        self.dMag['z'] = zLc
+        self.dMag['y'] = yLc
+        return dMag
+
+    def applyBHMicrolens(self, params, expmjd):
+        expmjd = numpy.asarray(expmjd)
+        filename = params['filename']
+        toff = float(params['t0'])
+        epoch = expmjd - toff
+        lc = numpy.loadtxt(self.datadir+"/"+filename, unpack=True, comments='#')
+        dt = lc[0][1] - lc[0][0]
+        period = lc[0][-1]
+        #BH lightcurves are in years
+        lc[0] *= 365.
+        minage = lc[0][0]
+        maxage = lc[0][-1]
+        #I'm assuming that these are all single point sources lensed by a
+        #black hole.  These also can be used to simulate binary systems.
+        #Should be 8kpc away at least.
+        splines  = {}
+        magnification = InterpolatedUnivariateSpline(lc[0], lc[1])
+
+        magoff = {}
+        moff = []
+        for ep in epoch:
+            if ep < minage or ep > maxage:
+                moff.append(1.)
+            else:
+                moff.append(magnification(ep))
+        moff = numpy.asarray(moff)
+        for k in ['u','g','r','i','z','y']:
+            magoff[k] = -2.5*numpy.log(moff)
+        return magoff
