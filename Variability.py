@@ -32,6 +32,7 @@ class Variability(object):
             splines = self.lcCache[filename]['splines']
             period = self.lcCache[filename]['period']
         else:
+            print filename
             lc = numpy.loadtxt(self.datadir+"/"+filename, unpack=True, comments='#')
             if inPeriod is None:
                 dt = lc[0][1] - lc[0][0]
@@ -68,6 +69,11 @@ class Variability(object):
             magoff[k] = splines[k](phase)
         return magoff
 
+    def applyMflare(self, params, expmjd):
+        params['lcfilename'] = "mflare/"+params['lcfilename'][:-5]+"1.dat"
+        keymap = {'filename':'lcfilename', 't0':'t0'}
+        return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['length'])
+
     def applyRRly(self, params, expmjd):
         keymap = {'filename':'filename', 't0':'tStartMjd'}
         return self.applyStdPeriodic(params, keymap, expmjd,
@@ -96,49 +102,6 @@ class Variability(object):
         dMags['y'] = dmag
         return dMags
 
-    def applyMflare(self, params, expmjd):
-        expmjd = numpy.asarray(expmjd)
-        period = params['length']
-        dt = params['dt']
-        nlines = int(period/dt - 1)
-        epoch = expmjd - params['t0']
-        phase = epoch/period - epoch//period
-        dMags = {'u':[], 'g':[], 'r':[], 'i':[], 'z':[], 'y':[]}
-        if expmjd.size == 1:
-            phase = [phase]
-            epoch = [epoch]
-        for p, e in zip(phase, epoch):
-            if p > 1.:
-                raise "somehow a phase is greater than 1."
-            linenum = numpy.floor(p*nlines)
-            line1 =\
-               linecache.getline(self.datadir+"/mflare/"+params['lcfilename'],
-                    int(linenum))
-            linenum += 1
-            if linenum > nlines:
-                linenum = 0
-            line2 =\
-                linecache.getline(self.datadir+"/mflare/"+params['lcfilename'],
-                    int(linenum))
-            linenum += 1
-            if linenum > nlines:
-                linenum = 0
-            line3 =\
-                linecache.getline(self.datadir+"/mflare/"+params['lcfilename'],
-                    int(linenum))
-            t1,u1,g1,r1,i1,z1,y1 = line1.rstrip().split()
-            t2,u2,g2,r2,i2,z2,y2 = line2.rstrip().split()
-            t3,u3,g3,r3,i3,z3,y3 = line3.rstrip().split()
-            for k in dMags:
-                spline = eval("interp1d([float(t1)/period, float(t2)/period, float(t3)/period],\
-                        [float(%s1),float(%s2),float(%s3)])"%(k,k,k))
-                dMags[k].append(spline(p))
-   
-        linecache.clearcache()
-        for k in dMags.keys():
-            dMags[k] = numpy.asarray(dMags[k])
-            dMags[k] *= -1
-        return dMags
 
     def applyAgn(self, params, expmjd):
         dMags = {}
