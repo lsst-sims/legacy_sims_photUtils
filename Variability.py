@@ -72,7 +72,10 @@ class Variability(object):
     def applyMflare(self, params, expmjd):
         params['lcfilename'] = "mflare/"+params['lcfilename'][:-5]+"1.dat"
         keymap = {'filename':'lcfilename', 't0':'t0'}
-        return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['length'])
+        magoff = self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['length'])
+        for k in magoff.keys():
+            magoff[k] = -magoff[k]
+        return magoff
 
     def applyRRly(self, params, expmjd):
         keymap = {'filename':'filename', 't0':'tStartMjd'}
@@ -107,7 +110,7 @@ class Variability(object):
         dMags = {}
         expmjd = numpy.asarray(expmjd)
         toff = params['t0_mjd']
-        seed = params['seed']
+        seed = int(params['seed'])
         sfint = {}
         sfint['u'] = params['agn_sfu']
         sfint['g'] = params['agn_sfg']
@@ -125,7 +128,7 @@ class Variability(object):
         nbins = int(math.ceil(endepoch/dt))
         dt = (endepoch/nbins)/tau
         sdt = math.sqrt(dt)
-
+        numpy.random.seed(seed=seed)
         es = numpy.random.normal(0., 1., nbins)
         for k in sfint.keys():
             dx = numpy.zeros(nbins+1)
