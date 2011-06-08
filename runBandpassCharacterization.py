@@ -53,8 +53,8 @@ if single == False:
 if single:
     # Read in these single files per passband.
     testSet = BandpassSet.BandpassSet()
-    testSet.setThroughputs_SingleFiles(filterlist=filterlist, rootdir=rootdir, rootname=rootname,
-                                       rootsuffix=rootsuffix)
+    testSet.setThroughputs_SingleFiles(filterlist=filterlist, rootdir=rootdir,
+                                       rootname=rootname, rootsuffix=rootsuffix)
 else:
     # Read in the files which are different for each passband (but have a similar name structure). 
     testSetFilters = BandpassSet.BandpassSet()

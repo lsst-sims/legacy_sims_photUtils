@@ -179,11 +179,11 @@ class BandpassSet:
             print " %s     %.3f" %(f, zpt[f])
         return
 
-    def calcFilterEdges(self, drop_peak=0.10, drop_percent=0.10, verbose=True):
+    def calcFilterEdges(self, drop_peak=0.1, drop_percent=50, verbose=True):
         """Calculate the edges of each filter for Sb, at values of 'drop_*'.
         
-        Values for drop_peak are fraction of max throughput, drop_percent is where the
-        filter throughput drops to an absolute percent value. """
+        Values for drop_peak are X percent of max throughput, drop_percent is where the
+        filter throughput drops to an absolute X percent value. """
         bandpass = self.bandpass
         filterlist = self.filterlist
         try:
@@ -213,33 +213,36 @@ class BandpassSet:
             wavelenstep=(bandpass[f].wavelen[1] - bandpass[f].wavelen[0])
             # Find peak throughput.
             maxthruput[f] = bandpass[f].sb.max()
+            # Calculate the values we're looking for (for the threshold for the 'drop')
+            d_peak = maxthruput[f] * drop_peak/100.0
+            d_perc = drop_percent/100.0  # given in %, must translate to fraction.
             # Find the nearest spot on the wavelength grid used for filter, for edge lookup.
             sbindex = n.where(abs(bandpass[f].wavelen - effsb[f]) < wavelenstep/2.0)
             sbindex = sbindex[0]
-            # Now find where Sb drops below 'drop_peak_thruput' of max thruput for the first time.
+            # Now find where Sb drops below 'drop_peak_thruput' of max for the first time.
             # Calculate wavelength where dropoff X percent of max level.
             # Start at effective wavelength, and walk outwards. 
             for i in range(sbindex, len(bandpass[f].wavelen)):
-                if bandpass[f].sb[i] <= (drop_peak*maxthruput[f]):
+                if bandpass[f].sb[i] <= d_peak:
                     drop_peak_red[f] = bandpass[f].wavelen[i]
                     break
             for i in range(sbindex, 0, -1):
-                if bandpass[f].sb[i] <= (drop_peak*maxthruput[f]):
+                if bandpass[f].sb[i] <= d_peak:
                     drop_peak_blue[f] = bandpass[f].wavelen[i]
                     break
             # Calculate wavelength where dropoff X percent,  absolute value
             for i in range(sbindex, len(bandpass[f].wavelen)):
-                if bandpass[f].sb[i] <= (drop_percent):
+                if bandpass[f].sb[i] <= d_perc:
                     drop_perc_red[f] = bandpass[f].wavelen[i]
                     break
             for i in range(sbindex, 0, -1):
-                if bandpass[f].sb[i] <= (drop_percent):
+                if bandpass[f].sb[i] <= d_perc:
                     drop_perc_blue[f] = bandpass[f].wavelen[i]
                     break
         # Print output to screen.
         if verbose:
-            print "Filter  MaxThruput EffWavelen  %s_max(blue)  %s_max(red)  %s_abs(blue)  %s_abs(red)" \
-                %(drop_peak, drop_peak, drop_percent, drop_percent)
+            print "Filter  MaxThruput EffWavelen  %.3f%s_max(blue)  %.3f%s_max(red)  %.3f%s_abs(blue)  %.3f%s_abs(red)" \
+                %(drop_peak, "%", drop_peak, "%", drop_percent, "%", drop_percent, "%")
             for f in self.filterlist:
                 print "%4s   %10.4f %10.4f  %12.2f  %12.2f  %12.2f  %12.2f" \
                     % (f, maxthruput[f], 
@@ -255,23 +258,37 @@ class BandpassSet:
         self.drop_perc_blue = drop_perc_blue
         return 
 
-    def calcFilterLeaks(self, ten_nm_limit=0.0001, out_of_band_limit=0.0005, filter_edges=0.001,
-                        makeplot=True, savefig=False, figroot = "bandpass"):
+    def calcFilterLeaks(self, ten_nm_limit=0.01, out_of_band_limit=0.05, filter_edges=0.1,
+                        extra_title=None, makeplot=True, savefig=False, figroot = "bandpass"):
         """ Calculate throughput leaks beyond location where bandpass drops to filter_edges (%) of max throughput.
         
         
-        According to SRD these leaks must be below 1% (0.01%?) of peak value in any 10nm interval,
-        and less than 5% (0.05%?) of total transmission over all wavelengths beyond where thruput<0.1peak. (0.001?)
+        According to SRD these leaks must be below 0.01% of peak value in any 10nm interval,
+        and less than 0.05% of total transmission over all wavelengths beyond where thruput<0.1% of peak.
         Assumes wavelength is in nanometers! (because of nm requirement). Uses ten_nm_limit and out_of_band_limit
-        to set specs. 
+        to set specs. Note that the values given here should be in PERCENT (not fractions). 
         Generates plots for each filter, as well as calculation of fleaks. """
         # Go through each filter, calculate filter leaks.
         filterlist = self.filterlist
         bandpass = self.bandpass
-        # Check that data are already defined, or try defining it now.
+        # Make sure effective wavelengths defined. 
         self.calcFilterEffWave(verbose=False)
-        effsb = self.effsb
-        self.calcFilterEdges(drop_peak=filter_edges, verbose=False)
+        effsb = self.effsb                
+        # Look for the new FWHM definition for the 10nm filter leak definition
+        if filter_edges == "FWHM":
+            self.calcFilterEffWave(verbose=False)
+            self.calcFilterEdges(drop_percent=0.50, verbose=False)
+            # Calculate FWHM values. 
+            fwhm = {}
+            for f in filterlist:
+                fwhm[f] = self.drop_peak_red[f] - self.drop_peak_blue[f]
+            # Adjust 'drop' edges to account for being FWHM from center.
+            for f in filterlist:
+                self.drop_peak_red[f] = self.effsb[f] + fwhm[f]
+                self.drop_peak_blue[f] = self.effsb[f] - fwhm[f]
+        # Otherwise, traditional % definition.
+        else:
+            self.calcFilterEdges(drop_peak=filter_edges, verbose=False)
         drop_peak_red = self.drop_peak_red
         drop_peak_blue = self.drop_peak_blue
         # Set up plot colors.
@@ -302,15 +319,17 @@ class BandpassSet:
             sumthruput_outside_bandpass = temporary.sum()
             print "Total transmission through filter: %s" %(totaltrans)
             print "Transmission outside of filter edges (drop_peak): %f" %(sumthruput_outside_bandpass)
+            # Calculate percentage of out of band transmission to in-band transmission
+            out_of_band_perc = sumthruput_outside_bandpass / totaltrans * 100.0
             print "Ratio of total out-of-band to in-band transmission: %f%s" \
-                %(100.*sumthruput_outside_bandpass / totaltrans, "%")
-            infotext = "Out-of-band/in-band transmission %.2f%s" \
-                %(sumthruput_outside_bandpass/totaltrans*100., '%')
-            if sumthruput_outside_bandpass > out_of_band_limit * totaltrans: 
-                print " Does not meet SRD-This is more than %f%s of throughput outside the bandpass %s" \
+                %(out_of_band_perc, "%")
+            infotext = "Out-of-band/in-band transmission %.3f%s" \
+                %(out_of_band_perc, '%')
+            if out_of_band_perc > out_of_band_limit: 
+                print " Does not meet SRD-This is more than %.4f%s of throughput outside the bandpass %s" \
                       %(out_of_band_limit, '%', f)
             else:
-                print " Meets SRD - This is less than %f%s of total throughput outside bandpass" \
+                print " Meets SRD - This is less than %.4f%s of total throughput outside bandpass" \
                       %(out_of_band_limit, '%')
             # calculate transmission in each 10nm interval.
             sb_10nm = n.zeros(len(bandpass[f].sb), dtype='float')
@@ -318,25 +337,28 @@ class BandpassSet:
             meet_SRD=True
             maxsb_10nm = 0.
             maxwavelen_10nm = 0.
+            # Convert 10nm limit into actual value (and account for %)
+            ten_nm_limit_value = ten_nm_limit * peaktrans/100.0
             for i in range(0, len(sb_10nm), 1):
                 # calculate 10 nm 'smoothed' transmission
                 wavelen = bandpass[f].wavelen[i]
-                condition = ((bandpass[f].wavelen >= wavelen-gapsize_10nm/2) & 
-                             (bandpass[f].wavelen<wavelen+gapsize_10nm/2) & 
-                             ((bandpass[f].wavelen<drop_peak_blue[f]-gapsize_10nm/2) 
-                              | (bandpass[f].wavelen>drop_peak_red[f]+gapsize_10nm/2)))
+                condition = ((bandpass[f].wavelen >= wavelen-gapsize_10nm/2.0) & 
+                             (bandpass[f].wavelen < wavelen+gapsize_10nm/2.0) & 
+                             ((bandpass[f].wavelen <= drop_peak_blue[f]) 
+                              | (bandpass[f].wavelen >= drop_peak_red[f])))
                 sb_10nm[i]  = bandpass[f].sb[condition].mean()
-                # now see if in relevant 'non-bandpass' area
-                if ((bandpass[f].wavelen[i]<drop_peak_blue[f]) 
-                    | (bandpass[f].wavelen[i]>drop_peak_red[f])):
-                    value = sb_10nm[i] / peaktrans *100.
-                    if value > maxsb_10nm:
-                        maxsb_10nm = value
-                        maxwavelen_10nm = bandpass[f].wavelen[i]
-                    if (sb_10nm[i] > ten_nm_limit * peaktrans):
-                        meet_SRD = False
+            condition = ((bandpass[f].wavelen > drop_peak_blue[f]) &
+                         (bandpass[f].wavelen < drop_peak_red[f]))
+            sb_10nm[condition] = 0
+            # now check for violation of SRD
+            if sb_10nm.max() > ten_nm_limit_value:
+                meet_SRD = False
+                maxsb_10nm = sb_10nm.max()
+                maxwavelen_10nm = bandpass[f].wavelen[n.where(sb_10nm==sb_10nm.max())]
             if meet_SRD==False:
                 print "Does not meet SRD - %s has at least one region not meeting the 10nm SRD filter leak requirement (max is %f%s of peak transmission at %.1f A)" %(f, maxsb_10nm, "%", maxwavelen_10nm)
+            else:
+                print "10nm limit within SRD."
             if makeplot:
                 # make plot for this filter
                 pyl.figure()
@@ -350,18 +372,24 @@ class BandpassSet:
                 pyl.plot(bandpass[f].wavelen, sb_10nm, 'r-',linewidth=2)
                 pyl.axvline(drop_peak_blue[f], color='b', linestyle=':')
                 pyl.axvline(drop_peak_red[f], color='b', linestyle=':')
-                pyl.axhline(ten_nm_limit*peaktrans, color='b', linestyle=':')
+                pyl.axhline(ten_nm_limit_value, color='b', linestyle=':')
                 legendstring = f + " filter thruput, 10nm average thruput in red\n"
-                legendstring = legendstring + "  Peak throughput is %.2f%s\n" %(peaktrans, '%')
-                legendstring = legendstring + "  Total throughput (in band) is %.2f\n" %(totaltrans)
+                legendstring = legendstring + "  Peak throughput is %.1f%s\n" \
+                               %(peaktrans*100.0, '%')
+                legendstring = legendstring + "  Total throughput (in band) is %.0f%s\n" \
+                               %(totaltrans*100.0, '%')
                 legendstring = legendstring + "  " + infotext
                 pyl.figtext(0.25, 0.76, legendstring)
                 pyl.xlabel("Wavelength (nm)")
                 pyl.ylabel("Throughput (0-1)")
                 pyl.yscale('log')
-                pyl.title(f)
+                if extra_title != None:
+                    titletext = extra_title + " " + f
+                else:
+                    titletext = f
+                pyl.title(titletext)
                 pyl.ylim(1e-6, 1)
-                pyl.xlim(xmin=300, xmax=1100)
+                pyl.xlim(xmin=300, xmax=1200)
                 if savefig:
                     figname = figroot + "_" + f + "_fleak."+ figformat            
                     pyl.savefig(figname, format=figformat)
@@ -371,7 +399,7 @@ class BandpassSet:
     def plotFilters(self, rootdir=".", throughput=True, phi=False,  atmos=True,
                     plotdropoffs=False, ploteffsb=True, compare=None, savefig=False, 
                     figroot='bandpass', xlim=(300, 1100), ylimthruput=(0, 1), ylimphi=(0, 0.002), 
-                    filter_tags='normal', leg_tag=None, compare_tag='', title=None,
+                    filter_tags='normal', leg_tag=None, compare_tag=None, title=None,
                     linestyle='-', linewidth=2, newfig=True):
         """ Plot the filter throughputs and phi's, with limits xlim/ylimthruput/ylimphi. 
         
@@ -443,7 +471,7 @@ class BandpassSet:
             # plot comparison throughputs (optional)
             if compare!=None:
                 colorindex = 0
-                for filter in compare.filterlist:
+                for f in compare.filterlist:
                     color = colors[colorindex]
                     colorindex = colorindex + 1
                     if colorindex == len(colors):
@@ -455,7 +483,8 @@ class BandpassSet:
             if leg_tag==None:
                 legendtext = ""
             if compare!=None:
-                legendtext= legendtext + "\n%s = dashed" %(compare_tag)
+                if compare_tag!=None:
+                    legendtext= legendtext + "\n%s = dashed" %(compare_tag)
             if atmos: 
                 legendtext = legendtext + "\nAirmass %.1f" %(Xatm)
             pyl.figtext(0.15, 0.8, legendtext)
@@ -527,7 +556,8 @@ class BandpassSet:
             if leg_tag ==None:
                 legendtext = " "
             if compare!=None:
-                legendtext = legendtext + "\n%s = dashed" %(compare_tag)
+                if compare_tag!=None:
+                    legendtext = legendtext + "\n%s = dashed" %(compare_tag)
             pyl.figtext(0.15, 0.78, legendtext)
             # add name tags to filters
             if filter_tags == 'side':

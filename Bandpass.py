@@ -85,7 +85,7 @@ class Bandpass:
         self.wavelen = n.copy(wavelen)
         self.phi = None
         self.sb = n.copy(sb)
-        # Resample wavelen/sb onto grid.
+        # Resample wavelen/sb onto grid. 
         self.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
         return
 

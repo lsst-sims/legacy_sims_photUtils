@@ -38,10 +38,12 @@ calcAllColors - similar to above, but calculates adjacent colors for all bandpas
 
 
 import os
+import copy
 import numpy as n
 import pylab as pyl
 import Bandpass
 import Sed
+import photUtils
 import BandpassSet
 
 figformat = 'png'
@@ -438,26 +440,25 @@ class SedSet:
     def calcAllMags(self, bandpassDict, filterlist, verbose=False):
         """Calculate magnitudes for all seds in all bandpasses. Stores result in self as dictionary:
                  mags[filter]=array."""
-        # First rearrange the bandpassDictionary to a list of bandpasses, with phi calculated.
-        bplist = []
-        for f in filterlist:
-            # in case phi isn't pre-calculated
-            bandpassDict[f].sbTophi()
-            bplist.append(bandpassDict[f])
-        wavelen_min = bplist[0].wavelen.min()
-        wavelen_max = bplist[0].wavelen.max()
-        wavelen_step = bplist[0].wavelen[1] - bplist[0].wavelen[0]
+        # Set up storage dictionary for resulting magnitudes.
         self.mags = {}
         for f in filterlist:
             self.mags[f] = n.zeros(len(self.sedlist), dtype='float')
+        # First set up bandpass list (in filterlist order).
+        phiarray, dlambda = photUtils.setupPhiArray_dict(bandpassDict, filterlist)
+        # Now get set to resample SEDs onto the bandpass wavelength grid.
+        wavelen_min = bandpassDict[filterlist[0]].wavelen.min()
+        wavelen_max = bandpassDict[filterlist[0]].wavelen.max()
+        wavelen_step = bandpassDict[filterlist[0]].wavelen[1] - bandpassDict[filterlist[0]].wavelen[0]
         i = 0
         for sedname in self.sedlist:
-            # Set up for fast mag calculation.
-            tmpsed = Sed.Sed(wavelen=self.seds[sedname].wavelen, flambda=self.seds[sedname].flambda)
+            # Set up for fast mag calculation. Use copy of sed because we'll be resampling. 
+            tmpsed = copy.deepcopy(self.seds[sedname])
+            # Resample and set up fnu.
             tmpsed.synchronizeSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max,
                                   wavelen_step=wavelen_step)
             # Calculate the magnitudes. 
-            tmpmags = tmpsed.manyMagCalc(bplist)
+            tmpmags = tmpsed.manyMagCalc(phiarray, dlambda)
             # Assign list of magnitudes returned to individual elements. 
             j = 0
             for f in filterlist:
