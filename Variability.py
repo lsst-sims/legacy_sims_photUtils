@@ -32,7 +32,6 @@ class Variability(object):
             splines = self.lcCache[filename]['splines']
             period = self.lcCache[filename]['period']
         else:
-            print filename
             lc = numpy.loadtxt(self.datadir+"/"+filename, unpack=True, comments='#')
             if inPeriod is None:
                 dt = lc[0][1] - lc[0][0]
@@ -79,6 +78,11 @@ class Variability(object):
 
     def applyRRly(self, params, expmjd):
         keymap = {'filename':'filename', 't0':'tStartMjd'}
+        return self.applyStdPeriodic(params, keymap, expmjd,
+                interpFactory=InterpolatedUnivariateSpline)
+
+    def applyCepheid(self, params, expmjd):
+        keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(params, keymap, expmjd,
                 interpFactory=InterpolatedUnivariateSpline)
 
@@ -159,6 +163,7 @@ class Variability(object):
         return dMags
 
     def applyAmcvn(self, params, expmjd):
+        maxyears = 10.
         dMag = {}
         epochs = numpy.asarray(expmjd)
         # get the light curve of the typical variability
@@ -171,13 +176,12 @@ class Variability(object):
 
         # add in the flux from any bursting
         if params['does_burst']:
-            adds = np.zeros(len(epochs))
-            for o in np.linspace(params['t0'] + params['burst_freq'],\
+            adds = numpy.zeros(len(epochs))
+            for o in numpy.linspace(params['t0'] + params['burst_freq'],\
                                  params['t0'] + maxyears*365.25, \
-                                 np.ceil(maxyears*365.25/params['burst_freq'])):
-                tmp = np.exp( -1*(epochs - o)/params['burst_scale'])/np.exp(-1.)
+                                 numpy.ceil(maxyears*365.25/params['burst_freq'])):
+                tmp = numpy.exp( -1*(epochs - o)/params['burst_scale'])/numpy.exp(-1.)
                 adds -= params['amp_burst']*tmp*(tmp < 1.0)  ## kill the contribution 
-
             ## add some blue excess during the outburst
             uLc += adds +  2.0*params['color_excess_during_burst']*adds/min(adds)
             gLc += adds + params['color_excess_during_burst']*adds/min(adds)
@@ -186,12 +190,12 @@ class Variability(object):
             zLc += adds
             yLc += adds
                       
-        self.dMag['u'] = uLc
-        self.dMag['g'] = gLc
-        self.dMag['r'] = rLc
-        self.dMag['i'] = iLc
-        self.dMag['z'] = zLc
-        self.dMag['y'] = yLc
+        dMag['u'] = uLc
+        dMag['g'] = gLc
+        dMag['r'] = rLc
+        dMag['i'] = iLc
+        dMag['z'] = zLc
+        dMag['y'] = yLc
         return dMag
 
     def applyBHMicrolens(self, params, expmjd):
