@@ -22,7 +22,9 @@ def loadSeds(sedList, dataDir = "./", resample_same=False):
     sedDict={}
     firstsed = True
     for sedName in sedList:
-        if sedName in sedDict:
+        if sedName == None:
+            continue
+        elif sedName in sedDict:
             continue
         else:            
             sed = Sed()
