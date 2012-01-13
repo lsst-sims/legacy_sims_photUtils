@@ -83,7 +83,7 @@ class Variability(object):
 
     def applyCepheid(self, params, expmjd):
         keymap = {'filename':'lcfile', 't0':'t0'}
-        return self.applyStdPeriodic(params, keymap, expmjd,
+        return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
 
     def applyEb(self, params, expmjd):
@@ -218,6 +218,8 @@ class Variability(object):
 
         magoff = {}
         moff = []
+        if expmjd.size == 1:
+            epoch = [epoch]
         for ep in epoch:
             if ep < minage or ep > maxage:
                 moff.append(1.)
