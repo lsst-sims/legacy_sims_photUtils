@@ -176,7 +176,7 @@ class Variability(object):
 
         # add in the flux from any bursting
         if params['does_burst']:
-            adds = numpy.zeros(len(epochs))
+            adds = numpy.zeros(epochs.size)
             for o in numpy.linspace(params['t0'] + params['burst_freq'],\
                                  params['t0'] + maxyears*365.25, \
                                  numpy.ceil(maxyears*365.25/params['burst_freq'])):
