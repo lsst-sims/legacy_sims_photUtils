@@ -128,20 +128,22 @@ class Bandpass:
                 f = open(filename, 'r')
         except IOError:
             try:
-                if filename.endswith(".gz"):
+                if filename.endswith('.gz'):
                     f = open(filename[:-3], 'r')
                 else:
-                    f = gzip.open(filename+".gz", 'r')
+                    f = gzip.open(filename+'.gz', 'r')
             except IOError:
-                raise IOError("The throughput file %s does not exist" %(filename))
+                raise IOError('The throughput file %s does not exist' %(filename))
         # The throughput file should have wavelength(A), throughput(Sb) as first two columns.
         wavelen = []
         sb = []
         for line in f:
-            if line.startswith("#"):
+            if line.startswith("#") | line.startswith('$') | line.startswith('!'):
                 continue
             values = line.split()
             if len(values)<2:
+                continue
+            if (values[0] == '$') | (values[0] =='#') | (values[0] =='!'):
                 continue
             wavelen.append(float(values[0]))
             sb.append(float(values[1]))
@@ -149,6 +151,13 @@ class Bandpass:
         # Set up wavelen/sb.
         self.wavelen = n.array(wavelen, dtype='float')
         self.sb = n.array(sb, dtype='float')
+        # Check that wavelength is monotonic increasing and non-repeating in wavelength. (Sort on wavelength).
+        if len(self.wavelen) != len(n.unique(self.wavelen)):
+            raise ValueError('The wavelength values in file %s are non-unique.' %(filename))
+        # Shuffle values.
+        p = self.wavelen.argsort()
+        self.wavelen = self.wavelen[p]
+        self.sb = self.sb[p]
         # Resample throughput onto grid.
         self.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
         if self.sb.sum() < 1e-300:
