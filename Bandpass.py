@@ -30,6 +30,7 @@ Methods:
  writeThroughput : utility to write bandpass information to file
 
 """
+import os
 import warnings as warning
 import numpy as n
 import gzip
@@ -164,17 +165,18 @@ class Bandpass:
             raise Exception("Bandpass data from %s has no throughput in desired grid range %f, %f" %(filename, wavelen_min, wavelen_max))
         return
 
-    def readThroughputList(self, componentList=['thruputs/detector.dat', 'thruputs/lens1.dat', 
-                                                'thruputs/lens2.dat', 'thruputs/lens3.dat', 
-                                                'thruputs/m1.dat', 'thruputs/m2.dat', 'thruputs/m3.dat', 
-                                                'thruputs/atmos.dat', 'thruputs/ideal_g.dat'],
+    def readThroughputList(self, componentList=['detector.dat', 'lens1.dat', 
+                                                'lens2.dat', 'lens3.dat', 
+                                                'm1.dat', 'm2.dat', 'm3.dat', 
+                                                'atmos.dat'],
+                           rootDir = '.',
                            wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
         """Populate bandpass data by reading from a series of files with wavelen/Sb data.
 
         Multiplies throughputs (sb) from each file to give a final bandpass throughput. 
         Sets wavelen/sb, with grid min/max/step as optional parameters.  Does NOT set phi."""
         # ComponentList = names of files in that directory.
-        # A typical component list of all files to build final component list might be: 
+        # A typical component list of all files to build final component list, including filter, might be: 
         #   componentList=['detector.dat', 'lens1.dat', 'lens2.dat', 'lens3.dat', 
         #                 'm1.dat', 'm2.dat', 'm3.dat', 'atmos.dat', 'ideal_g.dat'] 
         # Set up wavelen/sb on grid.
@@ -185,7 +187,7 @@ class Bandpass:
         tempbandpass = Bandpass()
         for component in componentList:
             # Read data from file.
-            tempbandpass.readThroughput(component, wavelen_min, wavelen_max, wavelen_step)
+            tempbandpass.readThroughput(os.path.join(rootDir, component), wavelen_min, wavelen_max, wavelen_step)
             # Multiply self by new sb values.
             self.sb = self.sb * tempbandpass.sb
         return
