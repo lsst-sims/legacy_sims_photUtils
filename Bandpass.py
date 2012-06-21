@@ -1,11 +1,6 @@
 """ 
 bandpass - 
 
-$Id$
-
-
-2/9/2010  ljones@astro.washington.edu
-
 Class data: 
  wavelen (nm)
  sb  (Transmission, 0-1)
@@ -31,19 +26,19 @@ Methods:
 
 """
 import os
-import warnings as warning
-import numpy as n
+import warnings
+import numpy
 import gzip
 import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation. 
 
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
 MINWAVELEN = 300
-MAXWAVELEN = 1200
+MAXWAVELEN = 1150
 WAVELENSTEP = 0.1
 
 EXPTIME = 15                      # Default exposure time. (option for method calls).
 NEXP = 2                          # Default number of exposures. (option for methods).
-EFFAREA = n.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
+EFFAREA = numpy.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
 GAIN = 2.3                        # Default gain. (option for method call).
 RDNOISE = 5                       # Default value - readnoise electrons or adu per pixel (per exposure)
 DARKCURRENT = 0.2                 # Default value - dark current electrons or adu per pixel per second
@@ -77,15 +72,15 @@ class Bandpass:
         
         Sets self.wavelen/sb on a grid of wavelen_min/max/step. Phi set to None."""
         # Check data type.
-        if (isinstance(wavelen, n.ndarray)==False) | (isinstance(sb, n.ndarray)==False):
+        if (isinstance(wavelen, numpy.ndarray)==False) | (isinstance(sb, numpy.ndarray)==False):
             raise ValueError("Wavelen and sb arrays must be numpy arrays.")
         # Check data matches in length.
         if (len(wavelen)!=len(sb)):  
                 raise ValueError("Wavelen and sb arrays must have the same length.")
         # Data seems ok then, make a new copy of this data for self.
-        self.wavelen = n.copy(wavelen)
+        self.wavelen = numpy.copy(wavelen)
         self.phi = None
-        self.sb = n.copy(sb)
+        self.sb = numpy.copy(sb)
         # Resample wavelen/sb onto grid. 
         self.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
         return
@@ -97,11 +92,11 @@ class Bandpass:
         
         Sets wavelen/sb, with grid min/max/step as optional parameters. Does NOT set phi. """
         # Set up arrays.
-        self.wavelen = n.arange(wavelen_min, wavelen_max+wavelen_step, 
+        self.wavelen = numpy.arange(wavelen_min, wavelen_max+wavelen_step, 
                                 wavelen_step, dtype='float')
         self.phi = None
         # Set sb.
-        self.sb = n.zeros(len(self.wavelen), dtype='float')
+        self.sb = numpy.zeros(len(self.wavelen), dtype='float')
         self.sb[abs(self.wavelen-imsimwavelen)<wavelen_step/2.0] = 1.0
         return
 
@@ -117,7 +112,7 @@ class Bandpass:
         # Check for filename error. 
         # If given list of filenames, pass to (and return from) readThroughputList.
         if isinstance(filename, list):  
-            raise warning.warn("Was given list of files, instead of a single file. Using readThroughputList instead")
+            warnings.warn("Was given list of files, instead of a single file. Using readThroughputList instead")
             self.readThroughputList(componentList=filename, 
                                     wavelen_min=wavelen_min, wavelen_max=wavelen_max, 
                                     wavelen_step=wavelen_step)
@@ -150,12 +145,12 @@ class Bandpass:
             sb.append(float(values[1]))
         f.close()        
         # Set up wavelen/sb.
-        self.wavelen = n.array(wavelen, dtype='float')
-        self.sb = n.array(sb, dtype='float')
+        self.wavelen = numpy.array(wavelen, dtype='float')
+        self.sb = numpy.array(sb, dtype='float')
         # Check that wavelength is monotonic increasing and non-repeating in wavelength. (Sort on wavelength).
-        if len(self.wavelen) != len(n.unique(self.wavelen)):
+        if len(self.wavelen) != len(numpy.unique(self.wavelen)):
             raise ValueError('The wavelength values in file %s are non-unique.' %(filename))
-        # Shuffle values.
+        # Sort values.
         p = self.wavelen.argsort()
         self.wavelen = self.wavelen[p]
         self.sb = self.sb[p]
@@ -180,9 +175,9 @@ class Bandpass:
         #   componentList=['detector.dat', 'lens1.dat', 'lens2.dat', 'lens3.dat', 
         #                 'm1.dat', 'm2.dat', 'm3.dat', 'atmos.dat', 'ideal_g.dat'] 
         # Set up wavelen/sb on grid.
-        self.wavelen = n.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
+        self.wavelen = numpy.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
         self.phi = None
-        self.sb = n.ones(len(self.wavelen), dtype='float')
+        self.sb = numpy.ones(len(self.wavelen), dtype='float')
         # Set up a temporary bandpass object to hold data from each file.
         tempbandpass = Bandpass()
         for component in componentList:
@@ -193,8 +188,8 @@ class Bandpass:
         return
 
     def getBandpass(self):
-        wavelen = n.copy(self.wavelen)
-        sb = n.copy(self.sb)
+        wavelen = numpy.copy(self.wavelen)
+        sb = numpy.copy(self.sb)
         return wavelen, sb
 
     ## utilities
@@ -214,7 +209,7 @@ class Bandpass:
             update_self = True
         else:
             # Both of the arrays were passed in - check their validity.
-            if (isinstance(wavelen, n.ndarray)==False) | (isinstance(sb, n.ndarray)==False):
+            if (isinstance(wavelen, numpy.ndarray)==False) | (isinstance(sb, numpy.ndarray)==False):
                 raise ValueError("Must pass wavelen/sb as numpy arrays")
             if len(wavelen)!=len(sb): 
                 raise ValueError("Must pass equal length wavelen/sb arrays")
@@ -264,10 +259,10 @@ class Bandpass:
         if (wavelen.min() > wavelen_max) | (wavelen.max() < wavelen_min):
             raise Exception("No overlap between known wavelength range and desired wavelength range.")
         # Set up gridded wavelength.
-        wavelen_grid = n.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')   
-        sb_grid = n.empty(len(wavelen), dtype='float')
+        wavelen_grid = numpy.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')   
+        sb_grid = numpy.empty(len(wavelen), dtype='float')
         # Do the interpolation of wavelen/sb onto the grid. (note wavelen/sb type failures will die here).
-        sb_grid = n.interp(wavelen_grid, wavelen, sb, left=0.0, right=0.0)
+        sb_grid = numpy.interp(wavelen_grid, wavelen, sb, left=0.0, right=0.0)
         # Update self values if necessary.
         if update_self:
             self.phi = None
@@ -307,7 +302,7 @@ class Bandpass:
                                                             wavelen_max=self.wavelen.max(), 
                                                             wavelen_step=self.wavelen[1]-self.wavelen[0])
         # Make new memory copy of wavelen. 
-        wavelen_new = n.copy(self.wavelen)
+        wavelen_new = numpy.copy(self.wavelen)
         # Calculate new transmission - this is also new memory.
         sb_new = self.sb * sb_other
         return wavelen_new, sb_new
@@ -346,15 +341,15 @@ class Bandpass:
         seeing and platescale are also necessary. """
         # This calculation comes from equation #42 in the SNR document.
         snr = 5.0
-        noise_instr = n.sqrt(nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2)
+        noise_instr = numpy.sqrt(nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2)
         neff = 2.436 * (seeing/platescale)**2
         # Calculate the sky counts. Note that the atmosphere should not be included in sky counts.
         skycounts = skysed.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain)
         skycounts = skycounts * platescale * platescale
         # Calculate the sky noise.
-        skynoise  = n.sqrt(skycounts/gain)
+        skynoise  = numpy.sqrt(skycounts/gain)
         v_n = neff* (skynoise**2 + noise_instr**2)
-        counts_5sigma = (snr**2)/2.0/gain + n.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
+        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
         # Create a flat fnu source that has the required counts (in electrons) in this bandpass.
         flatsource = Sed.Sed()
         flatsource.setFlatSED()
