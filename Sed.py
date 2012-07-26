@@ -1,3 +1,25 @@
+# 
+# LSST Data Management System
+# Copyright 2008, 2009, 2010, 2011, 2012 LSST Corporation.
+# 
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the LSST License Statement and 
+# the GNU General Public License along with this program.  If not, 
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
+
 """ 
 sed - 
 
@@ -26,7 +48,7 @@ Methods:
   For consistency, anytime self.wavelen/flambda is used, it will be updated if the values are changed
   (except in the special case of calculating magnitudes), and if self.wavelen/flambda is updated, 
   self.fnu will be set to None. This is because many operations are typically chained together
-  which alter flambda -- so it is more efficient to wait and recalculate fnu at the end, plus it avoid possible
+  which alter flambda -- so it is more efficient to wait and recalculate fnu at the end, plus it avoids possible
   de-synchronization errors (flambda reflecting the addition of dust while fnu does not, for example). 
   If arrays are passed into a method, they will not be altered and the arrays which are returned will be
   allocated new memory.
@@ -278,7 +300,7 @@ class Sed:
         return update_self
 
     def needResample(self, wavelen_match=None, wavelen=None, 
-                     wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+                     wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """Check if wavelen or self.wavelen matches wavelen or wavelen_min/max/step grid."""
         # Check if should use self or passed wavelen.
         if wavelen==None:
@@ -296,23 +318,21 @@ class Sed:
             # It's possible (writeSED) to call this routine, even with no final grid in mind.
             if ((wavelen_min == None) & (wavelen_max == None) & (wavelen_step==None)):
                 need_regrid = False
-                return need_regrid
-            # Okay, now look at comparison of wavelen to the grid.
-            wavelen_max_in = wavelen[len(wavelen)-1]
-            wavelen_min_in = wavelen[0]
-            wavelen_step_in = wavelen[1]-wavelen[0]
-            # First check match to minimum/maximum and first step in array.
-            if ((wavelen_min_in == wavelen_min) & (wavelen_max_in == wavelen_max)
-                & (wavelen_step_in == wavelen_step)):
-                # Then do a check to see if number of elements consistent with even step size.
-                if len(wavelen) == (wavelen_max_in + wavelen_step_in - wavelen_min_in)/wavelen_step_in:
-                    # Then now decent chance data is gridded properly.
-                    need_regrid = False
+            else:
+                # Okay, now look at comparison of wavelen to the grid.
+                wavelen_max_in = wavelen[len(wavelen)-1]
+                wavelen_min_in = wavelen[0]
+                # First check match to minimum/maximum :
+                if ((wavelen_min_in == wavelen_min) & (wavelen_max_in == wavelen_max)):                
+                    # Then check on step size in wavelength array.
+                    stepsize = numpy.unique(numpy.diff(wavelen))
+                    if (len(stepsize) == 1) & (stepsize[0] == wavelen_step):
+                        need_regrid = False
         # At this point, need_grid=True unless it's proven to be False, so return value.
         return need_regrid
     
     def resampleSED(self, wavelen=None, flux=None, wavelen_match=None,
-                    wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+                    wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """Resample flux onto grid defined by min/max/step OR another wavelength array.
 
         Give method wavelen/flux OR default to self.wavelen/self.flambda.
@@ -331,8 +351,10 @@ class Sed:
         #   getting new copies of data). 
         # Set up gridded wavelength or copy of wavelen array to match.
         if wavelen_match == None:
+            if ((wavelen_min == None) & (wavelen_max == None) & (wavelen_step == None)):
+                raise Exception('Must set either wavelen_match or wavelen_min/max/step.')
             wavelen_grid = numpy.arange(wavelen_min, wavelen_max+wavelen_step,
-                                    wavelen_step, dtype='float')
+                                        wavelen_step, dtype='float')
         else:
             wavelen_grid = numpy.copy(wavelen_match)
         # Check if the wavelength range desired and the wavelength range of the object overlap.
@@ -444,7 +466,7 @@ class Sed:
         From P. Maddau ... polynomial form from Argun Dey (NOAO). 
         rtau is a parameter which scales the tau value at each wavelength. 
         Pass wavelen/flambda or attenuates & updates self.wavelen/flambda. Unsets fnu.
-        *** This is not approved for use yet. """
+        *** This is not approved for use yet - and actually seems incorrect. """
         # Catch case of z=0, where should not apply any IGM extinction. 
         if redshift == 0:
             warnings.warn("IGM attenuation is not applied for redshift=0. No action taken.")
@@ -614,35 +636,40 @@ class Sed:
         return wavelen, flambda
     
 
-    def multiplySED(self, other_sed,
-                    wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def multiplySED(self, other_sed, wavelen_step=WAVELENSTEP):
         """Multiply two SEDs together - flambda * flambda - and return a new sed object.
 
-        Uses a grid of wavelengths from wavelen_min to wavelen_max unless the wavelength arrays are equal.
-        Does not alter self or other_sed"""
+        Unless the two wavelength arrays are equal, returns a SED gridded with stepsize wavelen_step
+        over intersecting wavelength region. Does not alter self or other_sed. """        
         # Check if the wavelength arrays are equal (in which case do not resample)
         if (numpy.all(self.wavelen==other_sed.wavelen)):
             flambda = self.flambda * other_sed.flambda
             new_sed = Sed(self.wavelen, flambda=flambda)
         else:
+            # Find overlapping wavelength region.
+            wavelen_max = min(self.wavelen.max(), other_sed.wavelen.max())
+            wavelen_min = max(self.wavelen.min(), other_sed.wavelen.min())
+            if wavelen_max < wavelen_min:
+                raise Exception('The two SEDS do not overlap in wavelength space.')
             # Set up wavelen/flambda of first object, on grid.
-            wavelen_1 = self.wavelen
-            flambda_1 = self.flambda
             if self.needResample(wavelen=self.wavelen, wavelen_min=wavelen_min,
                                  wavelen_max=wavelen_max, wavelen_step=wavelen_step):
                 wavelen_1, flambda_1 = self.resampleSED(self.wavelen, self.flambda,
                                                         wavelen_min=wavelen_min,
                                                         wavelen_max=wavelen_max,
                                                         wavelen_step=wavelen_step)
+            else:
+                wavelen_1 = self.wavelen
+                flambda_1 = self.flambda
             # Set up wavelen/flambda of second object, on grid.  
-            wavelen_2 = other_sed.wavelen
-            flambda_2 = other_sed.flambda
             if self.needResample(wavelen=other_sed.wavelen, wavelen_min=wavelen_min,
                                  wavelen_max=wavelen_max, wavelen_step=wavelen_step):
-                wavelen_2, flambda_2 = self.resampleSED(wavelen_2, flambda_2,
-                                                        wavelen_min=wavelen_min, 
-                                                        wavelen_max=wavelen_max,
-                                                        wavelen_step=wavelen_step)
+                wavelen_2, flambda_2 = self.resampleSED(other_sed.wavelen, other_sed.flambda,
+                                                        wavelen_min=wavelen_min, wavelen_max=wavelen_max,
+                                                        wavelen_step = wavelen_step)
+            else:
+                wavelen_2 = other_sed.wavelen
+                flambda_2 = other_sed.flambda            
             # Multiply the two flambda together.
             flambda = flambda_1 * flambda_2
             # Instantiate new sed object. wavelen_1 == wavelen_2 as both are on grid.
@@ -693,7 +720,7 @@ class Sed:
         # this means, this method can be used inefficiently if calculating many magnitudes with
         # the same sed and same bandpass region - in that case, use self.synchronizeSED() with
         # the wavelen min/max/step set to the bandpass min/max/step first ..
-        # then hop to calculating multiple magnitudes much more efficiently! 
+        # then you can calculate multiple magnitudes much more efficiently! 
         use_self = self.checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function. 
         if use_self:
@@ -1055,5 +1082,5 @@ class Sed:
         """
         # Calculate phis and resample onto same wavelength grid
         mags = numpy.empty(len(phiarray), dtype='float')
-        mags = -2.5*numpy.log10(n.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
+        mags = -2.5*numpy.log10(numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
         return mags

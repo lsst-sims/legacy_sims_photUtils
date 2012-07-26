@@ -1,7 +1,6 @@
 """
 photUtils - 
 
-$Id$
 
 ljones@astro.washington.edu  (and ajc@astro.washington.edu)
 
