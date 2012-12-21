@@ -148,7 +148,7 @@ class Bandpass:
         self.sb[abs(self.wavelen-imsimwavelen)<wavelen_step/2.0] = 1.0
         return
 
-    def readThroughput(self, filename, wavelen_min=None, wavelen_max=None, wavelen_step=None):
+    def readThroughput(self, filename, wavelen_min=None, wavelen_max=None, wavelen_step=None, verbose=False):
         """Populate bandpass data with data (wavelen/sb) read from file, resample onto grid.
         
         Sets wavelen/sb, with grid min/max/step as optional parameters. Does NOT set phi."""
@@ -178,6 +178,8 @@ class Bandpass:
                     f = gzip.open(filename+'.gz', 'r')
             except IOError:
                 raise IOError('The throughput file %s does not exist' %(filename))
+        if verbose:
+            print '# Reading throughput curve from %s' %(filename)
         # The throughput file should have wavelength(A), throughput(Sb) as first two columns.
         wavelen = []
         sb = []
@@ -189,8 +191,14 @@ class Bandpass:
                 continue
             if (values[0] == '$') | (values[0] =='#') | (values[0] =='!'):
                 continue
-            wavelen.append(float(values[0]))
-            sb.append(float(values[1]))
+            try:
+                wavelen.append(float(values[0]))
+            except:
+                raise ValueError('Invalid data %s in line %s' %(values[0], line))
+            try:
+                sb.append(float(values[1]))
+            except:
+                raise ValueError('Invalid data %s in line %s' %(values[1], line))
         f.close()        
         # Set up wavelen/sb.
         self.wavelen = numpy.array(wavelen, dtype='float')
@@ -213,7 +221,7 @@ class Bandpass:
                                                 'lens2.dat', 'lens3.dat', 
                                                 'm1.dat', 'm2.dat', 'm3.dat', 
                                                 'atmos.dat'],
-                           rootDir = '.',
+                           rootDir = '.', verbose=False, 
                            wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """Populate bandpass data by reading from a series of files with wavelen/Sb data.
 
@@ -229,11 +237,13 @@ class Bandpass:
                                     dtype='float')
         self.phi = None
         self.sb = numpy.ones(len(self.wavelen), dtype='float')
+        if verbose:
+            print '# Combining data from the following throughput files - '
         # Set up a temporary bandpass object to hold data from each file.
         tempbandpass = Bandpass()
         for component in componentList:
             # Read data from file.
-            tempbandpass.readThroughput(os.path.join(rootDir, component), wavelen_min, wavelen_max, wavelen_step)
+            tempbandpass.readThroughput(os.path.join(rootDir, component), wavelen_min, wavelen_max, wavelen_step, verbose=verbose)
             # Multiply self by new sb values.
             self.sb = self.sb * tempbandpass.sb
         return
@@ -389,17 +399,23 @@ class Bandpass:
         Pass into this function the bandpass, hardware only of bandpass, and sky sed objects.
         The exposure time, nexp, readnoise, darkcurrent, gain,
         seeing and platescale are also necessary. """
-        # This calculation comes from equation #42 in the SNR document.
+                # This calculation comes from equation #42 in the SNR document.
         snr = 5.0
-        noise_instr = numpy.sqrt(nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2)
+        # Calculate the instrument noise in electrons, allowing for potential undersampling of readnoise.
+        #totalreadnoise = (numpy.sqrt(readnoise**2 + othernoise**2 + (0.5*gain)**2))
+        totalreadnoise = (numpy.sqrt(readnoise**2 + othernoise**2))
+        noise_instr = numpy.sqrt(nexp*totalreadnoise**2 + darkcurrent*expTime*nexp)
+        # Convert instrument noise to ADU.
+        noise_instr = noise_instr / gain
         neff = 2.436 * (seeing/platescale)**2
         # Calculate the sky counts. Note that the atmosphere should not be included in sky counts.
         skycounts = skysed.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain)
         skycounts = skycounts * platescale * platescale
-        # Calculate the sky noise.
+        # Calculate the sky noise in ADU.
         skynoise  = numpy.sqrt(skycounts/gain)
         v_n = neff* (skynoise**2 + noise_instr**2)
-        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
+        # Calculate the counts equivalent to SNR = snr - counts in ADU.
+        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain**2 + (snr**2)*v_n)
         # Create a flat fnu source that has the required counts (in electrons) in this bandpass.
         flatsource = Sed.Sed()
         flatsource.setFlatSED()
@@ -408,7 +424,6 @@ class Bandpass:
         # Calculate the AB magnitude of this source.
         mag_5sigma = flatsource.calcMag(self)
         return mag_5sigma
-
 
     def calcEffWavelen(self):
         """Calculate effective wavelengths for filters"""

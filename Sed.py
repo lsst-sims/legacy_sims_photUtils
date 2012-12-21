@@ -955,42 +955,40 @@ class Sed:
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass, 
                     readnoise=RDNOISE, darkcurrent=DARKCURRENT, 
                     othernoise=OTHERNOISE, seeing=SEEING['r'], 
-                    effarea=EFFAREA, expTime=EXPTIME, nexp=1, 
-                    platescale=PLATESCALE, gain=1, verbose=False):
+                    effarea=EFFAREA, expTime=EXPTIME, nexp=NEXP, 
+                    platescale=PLATESCALE, gain=GAIN, verbose=False):
         """Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
         
         For a given source, sky sed, total bandpass and hardware bandpass, as well as 
         seeing / expTime, calculates the SNR with optimal PSF extraction 
         assuming a double-gaussian PSF. Assumes that all values (readnoise/othernoise
-        /darkcurrent) are given in appropriate units for gain. (gain=1 -> values are in electrons,
-        while if gain!=1 then values given should be in adu, including readnoise/darkcurrent)."""
-        # Calculate the counts from the source.
-        sourcecounts = self.calcADU(totalbandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
-        # Calculate the counts from the sky.
-        skycounts = (skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
+        /darkcurrent) are given in PHOTOELECTRONS. """
+        # Calculate the counts from the source in electrons.
+        sourcecounts = self.calcADU(totalbandpass, expTime=expTime*nexp, effarea=effarea, gain=1.0)
+        # Calculate the counts from the sky in electrons.
+        skycounts = (skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=1.0)
                      * platescale * platescale)
         # Calculate the effective number of pixels for double-Gaussian PSF. 
         neff = 2.436*(seeing/platescale)**2
-        # Calculate the (square of the) noise due to instrumental effects.
-        # Include the readout noise twice because 30 seconds is two exposures.
-        noise_instr_sq = nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
-        # Calculate the (square of the) noise due to sky background poisson noise.
-        noise_sky_sq = skycounts/gain
+        # Calculate the (square of the) noise due to instrumental effects for the total visit, in e-. 
+        noise_instr_sq = nexp*(readnoise**2 + othernoise**2 + darkcurrent*expTime)
+        # Calculate the (square of the) noise due to sky background poisson noise, in e-.
+        noise_sky_sq = skycounts
         # Discount error in sky measurement for now.
         noise_skymeasurement_sq = 0
-        # Calculate the (square of the) noise due to signal poisson noise.
-        noise_source_sq = sourcecounts/gain
-        # Calculate total noise
+        # Calculate the (square of the) noise due to signal poisson noise in e-.
+        noise_source_sq = sourcecounts
+        # Calculate total noise in e-. 
         noise = numpy.sqrt(noise_source_sq + neff*(noise_sky_sq+noise_instr_sq+noise_skymeasurement_sq))
         # Calculate the signal to noise ratio.
         snr = sourcecounts / noise
         if verbose:
             print "For Nexp %.1f of time %.1f: " % (nexp, expTime)
-            print "Counts from source: %.2f  Counts from sky: %.2f" %(sourcecounts, skycounts)
+            print "Counts from source (e-): %.2f  Counts from sky (e-): %.2f" %(sourcecounts, skycounts)
             print "Seeing: %.2f('')  Neff pixels: %.3f(pix)" %(seeing, neff)
-            print "Noise from sky: %.2f Noise from instrument: %.2f" \
+            print "Noise from sky (e-): %.2f Noise from instrument (e-): %.2f" \
                 %(numpy.sqrt(noise_sky_sq), numpy.sqrt(noise_instr_sq))
-            print "Noise from source: %.2f" %(numpy.sqrt(noise_source_sq))
+            print "Noise from source (e-): %.2f" %(numpy.sqrt(noise_source_sq))
             print " Total Signal: %.2f   Total Noise: %.2f    SNR: %.2f" %(sourcecounts, noise, snr)
             # Return the signal to noise value.
         return snr
