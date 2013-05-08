@@ -70,7 +70,7 @@ RDNOISE = 5                       # Default value - readnoise electrons or adu p
 DARKCURRENT = 0.2                 # Default value - dark current electrons or adu per pixel per second
 OTHERNOISE = 4.69                 # Default value - other noise electrons or adu per pixel per exposure
 PLATESCALE = 0.2                  # Default value - "/pixel
-SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Default seeing values (in ")
+SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63, 'y3':0.63, 'y4':0.63}  # Default seeing values (in ")
 
 class Bandpass:
     """Class for holding and utilizing telescope bandpasses"""    
@@ -145,7 +145,7 @@ class Bandpass:
         self.phi = None
         # Set sb.
         self.sb = numpy.zeros(len(self.wavelen), dtype='float')
-        self.sb[abs(self.wavelen-imsimwavelen)<wavelen_step/2.0] = 1.0
+        self.sb[abs(self.wavelen-imsimwavelen)<self.wavelen_step/2.0] = 1.0
         return
 
     def readThroughput(self, filename, wavelen_min=None, wavelen_max=None, wavelen_step=None, verbose=False):
@@ -392,14 +392,17 @@ class Bandpass:
     
     def calcM5(self, skysed, hardware, expTime=EXPTIME, nexp=NEXP, readnoise=RDNOISE,
                darkcurrent=DARKCURRENT, othernoise=OTHERNOISE,
-               seeing=SEEING['r'], platescale=PLATESCALE, 
-               gain=GAIN, effarea=EFFAREA):
+               seeing=None, platescale=PLATESCALE, 
+               gain=GAIN, effarea=EFFAREA, filter='r'):
         """Calculate the AB magnitude of a 5-sigma above sky background source.
         
         Pass into this function the bandpass, hardware only of bandpass, and sky sed objects.
         The exposure time, nexp, readnoise, darkcurrent, gain,
-        seeing and platescale are also necessary. """
-                # This calculation comes from equation #42 in the SNR document.
+        seeing and platescale are also necessary. 
+        Readnoise, darkcurrent and 'othernoise' should be in ELECTRONS. """
+        if seeing == None:
+            seeing = SEEING[filter]
+        # This calculation comes from equation #42 in the SNR document.
         snr = 5.0
         # Calculate the instrument noise in electrons, allowing for potential undersampling of readnoise.
         #totalreadnoise = (numpy.sqrt(readnoise**2 + othernoise**2 + (0.5*gain)**2))
@@ -408,7 +411,7 @@ class Bandpass:
         # Convert instrument noise to ADU.
         noise_instr = noise_instr / gain
         neff = 2.436 * (seeing/platescale)**2
-        # Calculate the sky counts. Note that the atmosphere should not be included in sky counts.
+        # Calculate the sky counts in ADU. Note that the atmosphere should not be included in sky counts.
         skycounts = skysed.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain)
         skycounts = skycounts * platescale * platescale
         # Calculate the sky noise in ADU.

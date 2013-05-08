@@ -1049,9 +1049,13 @@ class Sed:
 
     def setupPhiArray(self, bandpasslist):
         """Sets up a 2-d numpy phi array from bandpasslist suitable for input to Sed's manyMagCalc.
-
+        
         This is intended to be used once, most likely before using Sed's manyMagCalc many times on many SEDs.
-        Returns 2-d phi array and the wavelen_step (dlambda) appropriate for that array. """
+        Returns 2-d phi array and the wavelen_step (dlambda) appropriate for that array.
+        Note that this method sets up phiArray using the *BANDPASS* wavelength grid, rather than the SED grid,
+        in order to allow the phiArray to be reused many times for any Sed (which may not be on the same grid).
+        This does mean that you will have to resample the Sed to be on the bandpass grid in order to use the
+        phiArray ... generally this is still faster (one resampling, rather than 5-6). """
         # Calculate dlambda for phi array.
         wavelen_step = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
         wavelen_min = bandpasslist[0].wavelen[0]
@@ -1067,17 +1071,19 @@ class Sed:
             phiarray[i] = bp.phi
             i = i + 1
         return phiarray, wavelen_step
-    
+
     def manyMagCalc(self, phiarray, wavelen_step):
         """Calculate many magnitudes for many bandpasses using a single sed.
-
+        
         This method assumes that there will be flux within a particular bandpass
         (could return '-Inf' for a magnitude if there is none).
         Use setupPhiArray first, and note that Sed.manyMagCalc *assumes*
         phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
-        These assumptions are to avoid error checking within this function (for speed), but could lead
-        to errors if method is used incorrectly. 
-        """
+        These assumptions are to avoid error checking within this function (for speed), but will lead
+        to errors if method is used incorrectly.
+        If you do get errors from this method, check (a) did you calculate/set fnu (and have not called
+        another function, like 'redshiftSed' which would unset that value? (b) if it's a 'broadcast shape'
+        type error, did you resample Sed onto the same wavelength grid as the *BANDPASS* before setting fnu?"""
         # Calculate phis and resample onto same wavelength grid
         mags = numpy.empty(len(phiarray), dtype='float')
         mags = -2.5*numpy.log10(numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
