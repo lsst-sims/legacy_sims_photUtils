@@ -195,7 +195,11 @@ class Sed:
         f.close()
         self.wavelen = numpy.array(sourcewavelen)
         self.flambda = numpy.array(sourceflambda)
-        self.fnu = None 
+        self.fnu = None
+        # In case lambda was not sorted.
+        idx = numpy.argsort(self.wavelen)
+        self.flambda = self.flambda[idx]
+        self.wavelen = self.wavelen[idx]
         return
 
     def readSED_fnu(self, filename):
@@ -233,6 +237,11 @@ class Sed:
         sourcefnu = numpy.array(sourcefnu)
         # Convert fnu to flambda 
         self.fnuToflambda(sourcewavelen, sourcefnu)
+        # In case lambda was not sorted.
+        idx = numpy.argsort(self.wavelen)
+        self.flambda = self.flambda[idx]
+        self.fnu = self.fnu[idx]
+        self.wavelen = self.wavelen[idx]        
         return
 
     def getSED_flambda(self):
