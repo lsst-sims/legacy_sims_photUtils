@@ -236,7 +236,8 @@ class Sed:
         sourcewavelen = numpy.array(sourcewavelen)
         sourcefnu = numpy.array(sourcefnu)
         # Convert fnu to flambda 
-        self.fnuToflambda(sourcewavelen, sourcefnu)
+        self.wavelen, self.flambda = self.fnuToflambda(sourcewavelen, sourcefnu)
+        self.fnu = sourcefnu
         # In case lambda was not sorted.
         idx = numpy.argsort(self.wavelen)
         self.flambda = self.flambda[idx]
