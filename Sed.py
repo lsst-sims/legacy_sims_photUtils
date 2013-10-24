@@ -195,11 +195,7 @@ class Sed:
         f.close()
         self.wavelen = numpy.array(sourcewavelen)
         self.flambda = numpy.array(sourceflambda)
-        self.fnu = None
-        # In case lambda was not sorted.
-        idx = numpy.argsort(self.wavelen)
-        self.flambda = self.flambda[idx]
-        self.wavelen = self.wavelen[idx]
+        self.fnu = None 
         return
 
     def readSED_fnu(self, filename):
@@ -236,13 +232,7 @@ class Sed:
         sourcewavelen = numpy.array(sourcewavelen)
         sourcefnu = numpy.array(sourcefnu)
         # Convert fnu to flambda 
-        self.wavelen, self.flambda = self.fnuToflambda(sourcewavelen, sourcefnu)
-        self.fnu = sourcefnu
-        # In case lambda was not sorted.
-        idx = numpy.argsort(self.wavelen)
-        self.flambda = self.flambda[idx]
-        self.fnu = self.fnu[idx]
-        self.wavelen = self.wavelen[idx]        
+        self.fnuToflambda(sourcewavelen, sourcefnu)
         return
 
     def getSED_flambda(self):
@@ -965,40 +955,42 @@ class Sed:
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass, 
                     readnoise=RDNOISE, darkcurrent=DARKCURRENT, 
                     othernoise=OTHERNOISE, seeing=SEEING['r'], 
-                    effarea=EFFAREA, expTime=EXPTIME, nexp=NEXP, 
-                    platescale=PLATESCALE, gain=GAIN, verbose=False):
+                    effarea=EFFAREA, expTime=EXPTIME, nexp=1, 
+                    platescale=PLATESCALE, gain=1, verbose=False):
         """Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
         
         For a given source, sky sed, total bandpass and hardware bandpass, as well as 
         seeing / expTime, calculates the SNR with optimal PSF extraction 
         assuming a double-gaussian PSF. Assumes that all values (readnoise/othernoise
-        /darkcurrent) are given in PHOTOELECTRONS. """
-        # Calculate the counts from the source in electrons.
-        sourcecounts = self.calcADU(totalbandpass, expTime=expTime*nexp, effarea=effarea, gain=1.0)
-        # Calculate the counts from the sky in electrons.
-        skycounts = (skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=1.0)
+        /darkcurrent) are given in appropriate units for gain. (gain=1 -> values are in electrons,
+        while if gain!=1 then values given should be in adu, including readnoise/darkcurrent)."""
+        # Calculate the counts from the source.
+        sourcecounts = self.calcADU(totalbandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
+        # Calculate the counts from the sky.
+        skycounts = (skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
                      * platescale * platescale)
         # Calculate the effective number of pixels for double-Gaussian PSF. 
         neff = 2.436*(seeing/platescale)**2
-        # Calculate the (square of the) noise due to instrumental effects for the total visit, in e-. 
-        noise_instr_sq = nexp*(readnoise**2 + othernoise**2 + darkcurrent*expTime)
-        # Calculate the (square of the) noise due to sky background poisson noise, in e-.
-        noise_sky_sq = skycounts
+        # Calculate the (square of the) noise due to instrumental effects.
+        # Include the readout noise twice because 30 seconds is two exposures.
+        noise_instr_sq = nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
+        # Calculate the (square of the) noise due to sky background poisson noise.
+        noise_sky_sq = skycounts/gain
         # Discount error in sky measurement for now.
         noise_skymeasurement_sq = 0
-        # Calculate the (square of the) noise due to signal poisson noise in e-.
-        noise_source_sq = sourcecounts
-        # Calculate total noise in e-. 
+        # Calculate the (square of the) noise due to signal poisson noise.
+        noise_source_sq = sourcecounts/gain
+        # Calculate total noise
         noise = numpy.sqrt(noise_source_sq + neff*(noise_sky_sq+noise_instr_sq+noise_skymeasurement_sq))
         # Calculate the signal to noise ratio.
         snr = sourcecounts / noise
         if verbose:
             print "For Nexp %.1f of time %.1f: " % (nexp, expTime)
-            print "Counts from source (e-): %.2f  Counts from sky (e-): %.2f" %(sourcecounts, skycounts)
+            print "Counts from source: %.2f  Counts from sky: %.2f" %(sourcecounts, skycounts)
             print "Seeing: %.2f('')  Neff pixels: %.3f(pix)" %(seeing, neff)
-            print "Noise from sky (e-): %.2f Noise from instrument (e-): %.2f" \
+            print "Noise from sky: %.2f Noise from instrument: %.2f" \
                 %(numpy.sqrt(noise_sky_sq), numpy.sqrt(noise_instr_sq))
-            print "Noise from source (e-): %.2f" %(numpy.sqrt(noise_source_sq))
+            print "Noise from source: %.2f" %(numpy.sqrt(noise_source_sq))
             print " Total Signal: %.2f   Total Noise: %.2f    SNR: %.2f" %(sourcecounts, noise, snr)
             # Return the signal to noise value.
         return snr
@@ -1059,13 +1051,9 @@ class Sed:
 
     def setupPhiArray(self, bandpasslist):
         """Sets up a 2-d numpy phi array from bandpasslist suitable for input to Sed's manyMagCalc.
-        
+
         This is intended to be used once, most likely before using Sed's manyMagCalc many times on many SEDs.
-        Returns 2-d phi array and the wavelen_step (dlambda) appropriate for that array.
-        Note that this method sets up phiArray using the *BANDPASS* wavelength grid, rather than the SED grid,
-        in order to allow the phiArray to be reused many times for any Sed (which may not be on the same grid).
-        This does mean that you will have to resample the Sed to be on the bandpass grid in order to use the
-        phiArray ... generally this is still faster (one resampling, rather than 5-6). """
+        Returns 2-d phi array and the wavelen_step (dlambda) appropriate for that array. """
         # Calculate dlambda for phi array.
         wavelen_step = bandpasslist[0].wavelen[1] - bandpasslist[0].wavelen[0]
         wavelen_min = bandpasslist[0].wavelen[0]
@@ -1081,19 +1069,17 @@ class Sed:
             phiarray[i] = bp.phi
             i = i + 1
         return phiarray, wavelen_step
-
+    
     def manyMagCalc(self, phiarray, wavelen_step):
         """Calculate many magnitudes for many bandpasses using a single sed.
-        
+
         This method assumes that there will be flux within a particular bandpass
         (could return '-Inf' for a magnitude if there is none).
         Use setupPhiArray first, and note that Sed.manyMagCalc *assumes*
         phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
-        These assumptions are to avoid error checking within this function (for speed), but will lead
-        to errors if method is used incorrectly.
-        If you do get errors from this method, check (a) did you calculate/set fnu (and have not called
-        another function, like 'redshiftSed' which would unset that value? (b) if it's a 'broadcast shape'
-        type error, did you resample Sed onto the same wavelength grid as the *BANDPASS* before setting fnu?"""
+        These assumptions are to avoid error checking within this function (for speed), but could lead
+        to errors if method is used incorrectly. 
+        """
         # Calculate phis and resample onto same wavelength grid
         mags = numpy.empty(len(phiarray), dtype='float')
         mags = -2.5*numpy.log10(numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
