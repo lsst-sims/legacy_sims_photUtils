@@ -145,7 +145,7 @@ class Bandpass:
         self.phi = None
         # Set sb.
         self.sb = numpy.zeros(len(self.wavelen), dtype='float')
-        self.sb[abs(self.wavelen-imsimwavelen)<wavelen_step/2.0] = 1.0
+        self.sb[abs(self.wavelen-imsimwavelen)<self.wavelen_step/2.0] = 1.0
         return
 
     def readThroughput(self, filename, wavelen_min=None, wavelen_max=None, wavelen_step=None):
