@@ -15,7 +15,7 @@ import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 class Photometry(object):
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(sedList, dataDir = "./", resample_same=False):
+    def loadSeds(self,sedList, dataDir = "./", resample_same=False):
         """Generate dictionary of SEDs required for generating magnitudes
 
         Given a dataDir and a list of seds return a dictionary with sedName and sed as key, value
@@ -40,7 +40,7 @@ class Photometry(object):
                 sedDict[sedName] = sed
         return sedDict
 
-    def loadBandpasses(filterlist=('u', 'g', 'r', 'i', 'z', 'y'), dataDir=None, filterroot='total_'):
+    def loadBandpasses(self,filterlist=('u', 'g', 'r', 'i', 'z', 'y'), dataDir=None, filterroot='total_'):
         """ Generate dictionary of bandpasses for the LSST nominal throughputs
 
         Given a list of filter keys (like u,g,r,i,z,y), return a dictionary of the total bandpasses.
@@ -59,7 +59,7 @@ class Photometry(object):
             bandpassDict[f].readThroughput(os.path.join(dataDir, filterroot + f + ".dat"))
         return bandpassDict
 
-    def setupPhiArray_dict(bandpassDict, bandpassKeys):
+    def setupPhiArray_dict(self,bandpassDict, bandpassKeys):
         """ Generate 2-dimensional numpy array for Phi values in the bandpassDict.
 
         You must pass in bandpassKeys so that the ORDER of the phiArray and the order of the magnitudes returned by
@@ -73,7 +73,7 @@ class Photometry(object):
         phiArray, wavelenstep = sedobj.setupPhiArray(bplist)
         return phiArray, wavelenstep
 
-    def manyMagCalc_dict(sedobj, phiArray, wavelenstep, bandpassDict, bandpassKeys):
+    def manyMagCalc_dict(self,sedobj, phiArray, wavelenstep, bandpassDict, bandpassKeys):
         """Return a dictionary of magnitudes for a single Sed object.
 
         You must pass the sed itself, phiArray and wavelenstep for the manyMagCalc itself, but
