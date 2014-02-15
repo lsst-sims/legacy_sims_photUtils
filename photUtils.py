@@ -84,7 +84,7 @@ def manyMagCalc_dict(sedobj, phiArray, wavelenstep, bandpassDict, bandpassKeys):
     if sedobj.needResample(wavelen=wavelen, wavelen_match=bandpassDict[bandpassKeys[0]].wavelen):
         sedobj.resampleSED(wavelen_match=bandpassDict[bandpassKeys[0]].wavelen)
     sedobj.flambdaTofnu()
-    magArray = sedobj.calcManyMag(phiArray, wavelenstep)
+    magArray = sedobj.manyMagCalc(phiArray, wavelenstep)
     magDict = {}
     i = 0
     for f in bandpassKeys:
