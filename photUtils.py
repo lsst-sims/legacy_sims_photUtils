@@ -83,7 +83,7 @@ class Photometry(object):
         Note that THIS WILL change sedobj by resampling it onto the required wavelength range. """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
-        if sedobj.needResample(wavelen=wavelen, wavelen_match=bandpassDict[bandpassKeys[0]].wavelen):
+        if sedobj.needResample(wavelen_match=bandpassDict[bandpassKeys[0]].wavelen):
             sedobj.resampleSED(wavelen_match=bandpassDict[bandpassKeys[0]].wavelen)
         sedobj.flambdaTofnu()
         magArray = sedobj.manyMagCalc(phiArray, wavelenstep)
