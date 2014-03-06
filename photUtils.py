@@ -18,8 +18,8 @@ class Photometry(object):
     
     #these variables will tell the mixin where to get the dust maps
     ebvDataDir=os.environ.get("CAT_SHARE_DATA")
-    ebvMapNorthName="data/Dust/SFD_dust_4096_ngp.fits")
-    ebvMapSouthName="data/Dust/SFD_dust_4096_sgp.fits")
+    ebvMapNorthName="data/Dust/SFD_dust_4096_ngp.fits"
+    ebvMapSouthName="data/Dust/SFD_dust_4096_sgp.fits"
     ebvMapNorth=None
     ebvMapSouth=None
     
