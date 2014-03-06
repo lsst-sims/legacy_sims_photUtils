@@ -32,11 +32,11 @@ class Photometry(object):
     
     #these routines will load the dust maps for the galactic north and south hemispheres
     def load_ebvMapNorth(self):
-        self.ebvMapNorth=EbvMap()
+        self.ebvMapNorth=EBV.EbvMap()
         self.ebvMapNorth.readMapFits(os.path.join(ebvDataDir,ebvMapNorthName))
     
     def load_ebvMapSouth(self):
-        self.ebvMapSouth=EbvMap()
+        self.ebvMapSouth=EBV.EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(ebvDataDir,ebvMapSouthName))
     
     #and finally, here is the getter
@@ -51,7 +51,7 @@ class Photometry(object):
         glon=self.column_by_name("glon")
         glat=self.column_by_name("glat")
         
-        EBV_out=numpy.array(calculateEbv(glong,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
+        EBV_out=numpy.array(EBV.calculateEbv(glong,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
         
         return EBV_out
     
