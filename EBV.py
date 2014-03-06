@@ -2,6 +2,18 @@ import pyfits
 import math
 import numpy
 
+#scott's notes to self
+#mixin could have a method by which user sets data dir and dust map file 
+#(see main() below)
+#otherwise, it defaults to values below
+#only instantiate the map when you call for the ebv values
+
+#however: that might get called before the user has a chance to intervene
+
+#I guess if the user just set it in the base class as an attribute of the base
+#class, the user would be able to intervene before the getter infrastructure 
+#kicked in...
+
 def interp1D(z1 , z2, offset):
     """ 1D interpolation on a grid"""
 

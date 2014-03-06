@@ -9,11 +9,47 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 """
 
 import os
+import numpy
 import lsst.sims.catalogs.measures.photometry.Sed as Sed
 import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
+import lsst.sims.catalogs.measures.photometry.EBV.py as EBV
 
 class Photometry(object):
-
+    
+    ebvDataDir=os.environ.get("CAT_SHARE_DATA")
+    ebvMapNorthName="data/Dust/SFD_dust_4096_ngp.fits")
+    ebvMapSouthName="data/Dust/SFD_dust_4096_sgp.fits")
+    ebvMapNorth=None
+    ebvMapSouth=None
+    
+    def set_ebvMapNorth(self,word):
+        self.ebvMapNorthName=word
+    
+    def set_ebvMapSouth(self,word):
+        self.ebvMapSouthName=word
+    
+    def load_ebvMapNorth(self):
+        self.ebvMapNorth=EbvMap()
+        self.ebvMapNorth.readMapFits(os.path.join(ebvDataDir,ebvMapNorthName))
+    
+    def load_ebvMapSouth(self):
+        self.ebvMapSouth=EbvMap()
+        self.ebvMapSouth.readMapFits(os.path.join(ebvDataDir,ebvMapSouthName))
+    
+    def get_EBF(self):
+        if self.ebvMapNorth==None:
+            self.load_ebvMapNorth()
+        
+        if self.ebvMapSouth==None:
+            self.load_ebvMapSouth()
+        
+        glon=self.column_by_name("glon")
+        glat=self.column_by_name("glat")
+        
+        EBV_out=numpy.array(calculateEbv(glong,glat,ebvMapNorth,ebvMapSouth,interp=True))
+        
+        return EBV_out
+    
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self,sedList, dataDir = "./", resample_same=False):
         """Generate dictionary of SEDs required for generating magnitudes
