@@ -16,18 +16,21 @@ import lsst.sims.catalogs.measures.photometry.EBV.py as EBV
 
 class Photometry(object):
     
+    #these variables will tell the mixin where to get the dust maps
     ebvDataDir=os.environ.get("CAT_SHARE_DATA")
     ebvMapNorthName="data/Dust/SFD_dust_4096_ngp.fits")
     ebvMapSouthName="data/Dust/SFD_dust_4096_sgp.fits")
     ebvMapNorth=None
     ebvMapSouth=None
     
+    #the set_xxxx routines below will allow the user to point elsewhere for the dust maps
     def set_ebvMapNorth(self,word):
         self.ebvMapNorthName=word
     
     def set_ebvMapSouth(self,word):
         self.ebvMapSouthName=word
     
+    #these routines will load the dust maps for the galactic north and south hemispheres
     def load_ebvMapNorth(self):
         self.ebvMapNorth=EbvMap()
         self.ebvMapNorth.readMapFits(os.path.join(ebvDataDir,ebvMapNorthName))
@@ -36,7 +39,9 @@ class Photometry(object):
         self.ebvMapSouth=EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(ebvDataDir,ebvMapSouthName))
     
-    def get_EBF(self):
+    #and finally, here is the getter
+    #it relies ont he calculateEbv routine defined in EBV.py
+    def get_EBV(self):
         if self.ebvMapNorth==None:
             self.load_ebvMapNorth()
         
@@ -46,7 +51,7 @@ class Photometry(object):
         glon=self.column_by_name("glon")
         glat=self.column_by_name("glat")
         
-        EBV_out=numpy.array(calculateEbv(glong,glat,ebvMapNorth,ebvMapSouth,interp=True))
+        EBV_out=numpy.array(calculateEbv(glong,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
         
         return EBV_out
     
