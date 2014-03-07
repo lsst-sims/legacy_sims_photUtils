@@ -10,9 +10,11 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 import os
 import numpy
+import palpy as pal
 import lsst.sims.catalogs.measures.photometry.Sed as Sed
 import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 import lsst.sims.catalogs.measures.photometry.EBV as EBV
+from lsst.sims.catalogs.measures.instance import compound
 
 class Photometry(object):
     
@@ -33,11 +35,11 @@ class Photometry(object):
     #these routines will load the dust maps for the galactic north and south hemispheres
     def load_ebvMapNorth(self):
         self.ebvMapNorth=EBV.EbvMap()
-        self.ebvMapNorth.readMapFits(os.path.join(ebvDataDir,ebvMapNorthName))
+        self.ebvMapNorth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapNorthName))
     
     def load_ebvMapSouth(self):
         self.ebvMapSouth=EBV.EbvMap()
-        self.ebvMapSouth.readMapFits(os.path.join(ebvDataDir,ebvMapSouthName))
+        self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
     #and finally, here is the getter
     #it relies ont he calculateEbv routine defined in EBV.py
@@ -51,9 +53,24 @@ class Photometry(object):
         glon=self.column_by_name("glon")
         glat=self.column_by_name("glat")
         
-        EBV_out=numpy.array(EBV.calculateEbv(glong,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
+        EBV_out=numpy.array(EBV.calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
         
         return EBV_out
+    
+    @compound('glon','glat')
+    def get_galactic_coords(self):
+        ra=self.column_by_name('raJ2000')
+        dec=self.column_by_name('decJ2000')
+        
+        glon=numpy.zeros(len(ra))
+        glat=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            gg=pal.eqgal(ra[i],dec[i])
+            glon[i]=gg[0]
+            glat[i]=gg[1]
+        
+        return numpy.array([glon,glat])
+    
     
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self,sedList, dataDir = "./", resample_same=False):
