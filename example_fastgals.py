@@ -1,6 +1,7 @@
 #
 
 import os
+import random
 
 # Set up timing information and simple routine. 
 import time
@@ -34,9 +35,12 @@ wavelen_max = lsstbp[filterlist[0]].wavelen.max() - wavelen_step
 
 # Read in galaxy seds. (there aren't many, so just read them all).
 # Replace galdir with your root galaxy sed directory.
-galdir = os.path.join(os.getenv('HOME'), 'seds/galaxies')
+galdir = os.path.join(os.getenv('CAT_SHARE_DATA'), 'data', 'galaxySED')
 gals = {}
 gallist = os.listdir(galdir)
+if len(gallist) > 1000:
+    # The number of files in the directory could be huge.  Just deal with a subset of 
+    gallist = random.sample(gallist, 1000)
 for gal in gallist:
     gals[gal] = Sed()
     gals[gal].readSED_flambda(os.path.join(galdir,gal))

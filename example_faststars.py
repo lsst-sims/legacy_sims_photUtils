@@ -15,6 +15,7 @@
 # the time requirements. 
 
 import os
+import random
 
 # Set up timing information and simple routine. 
 import time
@@ -45,9 +46,12 @@ print "Reading %d filters took %f s" %(len(filterlist), dt)
 
 # Read in a set of star seds. 
 # Replace stardir with your root galaxy sed directory.
-stardir = os.path.join(os.getenv('HOME'), 'seds/kurucz_r')
+stardir = os.path.join(os.getenv('CAT_SHARE_DATA'), 'data', 'starSED', 'kurucz')
 stars = {}
 starlist = os.listdir(stardir)
+if len(starlist) > 1000:
+    # Since the directory may have lots of SEDs, let's just pick 1000 to deal with
+    starlist = random.sample(starlist, 1000)
 for star in starlist:
     stars[star] = Sed()
     stars[star].readSED_flambda(os.path.join(stardir,star))
