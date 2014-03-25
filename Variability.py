@@ -13,7 +13,44 @@ class Variability(object):
     magnitude offsets.
     """
     
+    variabilityInitialized=False
+    
+    def initializeVariability(self,doCache=False):
+        self.variabilityInitialized=True
+    #below are variables to cache the light curves of variability models
+        self.variabilityMethods={}
+        if(hasattr(self,"applyMflare")):
+            self.variabilityMethods['applyMflare'] = self.applyMflare
+        if(hasattr(self,"applyRRly")):
+            self.variabilityMethods['applyRRly'] = self.applyRRly
+        if(hasattr(self,"applyCepheid")):
+            self.variabilityMethods['applyCepheid'] = self.applyCepheid
+        if(hasattr(self,"applyEb")):
+            self.variabilityMethods['applyEb'] = self.applyEb
+        if(hasattr(self,"applyMicrolens")):
+            self.variabilityMethods['applyMicrolens'] = self.applyMicrolens
+        if(hasattr(self,"applyAgn")):
+            self.variabilityMethods['applyAgn'] = self.applyAgn
+        if(hasattr(self,"applyMicrolensing")):
+            self.variabilityMethods['applyMicrolensing'] = self.applyMicrolensing
+        if(hasattr(self,"applyAmcvn")):
+            self.variabilityMethods['applyAmcvn'] = self.applyAmcvn
+        if(hasattr(self,"applyBHMicrolens")):
+            self.variabilityMethods['applyBHMicrolens'] = self.applyBHMicrolens
+        
+        self.variabilityLcCache = {}
+        self.variabilityCache = doCache
+        try:
+            self.variabilityDataDir = os.path.join(os.environ.get("CAT_SHARE_DATA"),"data","LightCurves")
+        except:
+            print "No directory specified and $CAT_SHARE_DATA is undefined"
+            raise
+    
+    
     def applyVariability(self, varParams):
+        if self.variabilityInitialized == False:
+            self.initializeVariability()
+            
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
         params = varCmd['pars']
