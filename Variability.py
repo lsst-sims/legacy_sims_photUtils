@@ -2,6 +2,7 @@ import numpy
 import linecache
 import math
 import os
+import json as json
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
@@ -11,11 +12,21 @@ class Variability(object):
     objects in the base catalog.  All methods should return a dictionary of
     magnitude offsets.
     """
-  
+    
+    def applyVariability(self, varParams):
+        varCmd = json.loads(varParams)
+        method = varCmd['varMethodName']
+        params = varCmd['pars']
+        #print "trying ",method
+        #print "par :",params
+        #print "expmjd: ",self.obs_metadata.metadata['Opsim_expmjd']
+        output = self.variabilityMethods[method](params)
+        return output
+    
     def applyStdPeriodic(self, params, keymap, inPeriod=None,
             inDays=True, interpFactory=None):
         #expmjd = numpy.asarray(expmjd)
-        expmjd = numpy.asarray(self.column_by_name('expmjd'))
+        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         
         filename = params[keymap['filename']]
         toff = float(params[keymap['t0']])
@@ -90,7 +101,7 @@ class Variability(object):
         return dMags
 
     def applyMicrolens(self, params):
-        expmjd = numpy.asarray(self.column_by_name('expmjd'))
+        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         epochs = expmjd - params['t0']
         dMags = {}
         u = numpy.sqrt(params['umin']**2 + ((2.0*epochs/params['that'])**2))
@@ -107,8 +118,8 @@ class Variability(object):
 
     def applyAgn(self, params):
         dMags = {}
-        expmjd = numpy.asarray(self.column_by_name('expmjd'))
-        toff = params['t0_mjd']
+        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        toff = numpy.float(params['t0_mjd'])
         seed = int(params['seed'])
         sfint = {}
         sfint['u'] = params['agn_sfu']
@@ -144,7 +155,7 @@ class Variability(object):
 
     def applyMicrolensing(self, params):
         dMags = {}
-        epochs = numpy.asarray(self.column_by_name('expmjd')) - params['t0']
+        epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float) - params['t0']
         u = numpy.sqrt(params['umin']**2 + (2.0 * epochs /\
             params['that'])**2)
         magnification = (u + 2.0) / (u * numpy.sqrt(u**2 + 4.0))
@@ -160,7 +171,7 @@ class Variability(object):
     def applyAmcvn(self, params):
         maxyears = 10.
         dMag = {}
-        epochs = numpy.asarray(self.column_by_name('expmjd'))
+        epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         # get the light curve of the typical variability
         uLc   = params['amplitude']*numpy.cos((epochs - params['t0'])/params['period'])
         gLc   = uLc
@@ -194,7 +205,7 @@ class Variability(object):
         return dMag
 
     def applyBHMicrolens(self, params):
-        expmjd = numpy.asarray(self.column_by_name('expmjd'))
+        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         filename = params['filename']
         toff = float(params['t0'])
         epoch = expmjd - toff
