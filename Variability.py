@@ -11,16 +11,7 @@ class Variability(object):
     objects in the base catalog.  All methods should return a dictionary of
     magnitude offsets.
     """
-
-    def __init__(self, baseDir=None, cache=False):
-        self.lcCache = {}
-        self.cache = cache
-        if baseDir is None:
-            try:
-                self.datadir = os.path.join(os.environ.get("CAT_SHARE_DATA"),"data","LightCurves")
-            except:
-                raise("No directory specified and $CAT_SHARE_DATA is undefined")
-            
+  
 
     def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
             inDays=True, interpFactory=None):
@@ -28,11 +19,11 @@ class Variability(object):
         filename = params[keymap['filename']]
         toff = float(params[keymap['t0']])
         epoch = expmjd - toff
-        if self.lcCache.has_key(filename):
-            splines = self.lcCache[filename]['splines']
-            period = self.lcCache[filename]['period']
+        if self.variabilityLcCache.has_key(filename):
+            splines = self.variabilityLcCache[filename]['splines']
+            period = self.variabilityLcCache[filename]['period']
         else:
-            lc = numpy.loadtxt(self.datadir+"/"+filename, unpack=True, comments='#')
+            lc = numpy.loadtxt(self.variabilityDataDir+"/"+filename, unpack=True, comments='#')
             if inPeriod is None:
                 dt = lc[0][1] - lc[0][0]
                 period = lc[0][-1] + dt
@@ -50,8 +41,8 @@ class Variability(object):
                 splines['i'] = interpFactory(lc[0], lc[4])
                 splines['z'] = interpFactory(lc[0], lc[5])
                 splines['y'] = interpFactory(lc[0], lc[6])
-                if self.cache:
-                    self.lcCache[filename] = {'splines':splines, 'period':period}
+                if self.variabilityCache:
+                    self.variabilityLcCache[filename] = {'splines':splines, 'period':period}
             else:
                 splines['u'] = interp1d(lc[0], lc[1])
                 splines['g'] = interp1d(lc[0], lc[2])
@@ -59,8 +50,8 @@ class Variability(object):
                 splines['i'] = interp1d(lc[0], lc[4])
                 splines['z'] = interp1d(lc[0], lc[5])
                 splines['y'] = interp1d(lc[0], lc[6])
-                if self.cache:
-                    self.lcCache[filename] = {'splines':splines, 'period':period}
+                if self.variabilityCache:
+                    self.variabilityLcCache[filename] = {'splines':splines, 'period':period}
 
         phase = epoch/period - epoch//period
         magoff = {}
@@ -203,7 +194,7 @@ class Variability(object):
         filename = params['filename']
         toff = float(params['t0'])
         epoch = expmjd - toff
-        lc = numpy.loadtxt(self.datadir+"/"+filename, unpack=True, comments='#')
+        lc = numpy.loadtxt(self.variabilityDataDir+"/"+filename, unpack=True, comments='#')
         dt = lc[0][1] - lc[0][0]
         period = lc[0][-1]
         #BH lightcurves are in years
