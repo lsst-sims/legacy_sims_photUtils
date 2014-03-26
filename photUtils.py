@@ -103,7 +103,15 @@ class Photometry(object):
         return numpy.array([uu,gg,rr,ii,zz,yy])
      
         
-        
+    def get_ug_color(self):
+        u = self.column_by_name('lsst_u')
+        g = self.column_by_name('lsst_g')
+        return u - g
+    
+    def get_gr_color(self):
+        g = self.column_by_name('lsst_g')
+        r = self.column_by_name('lsst_r')
+        return g - r    
     
     #the set_xxxx routines below will allow the user to point elsewhere for the dust maps
     def set_ebvMapNorth(self,word):
