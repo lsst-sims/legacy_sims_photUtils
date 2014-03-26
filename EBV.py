@@ -1,6 +1,9 @@
 import pyfits
 import math
 import numpy
+import os
+import palpy as pal
+from lsst.sims.catalogs.measures.instance import compound
 
 #scott's notes to self
 #mixin could have a method by which user sets data dir and dust map file 
@@ -154,6 +157,68 @@ class EbvMap():
         iy = int(y+0.5)
 
         return ix,iy
+
+class EBVmixin(object):
+    #these variables will tell the mixin where to get the dust maps
+    ebvDataDir=os.environ.get("CAT_SHARE_DATA")
+    ebvMapNorthName="data/Dust/SFD_dust_4096_ngp.fits"
+    ebvMapSouthName="data/Dust/SFD_dust_4096_sgp.fits"
+    ebvMapNorth=None
+    ebvMapSouth=None
+    
+        #the set_xxxx routines below will allow the user to point elsewhere for the dust maps
+    def set_ebvMapNorth(self,word):
+        self.ebvMapNorthName=word
+    
+    def set_ebvMapSouth(self,word):
+        self.ebvMapSouthName=word
+    
+    #these routines will load the dust maps for the galactic north and south hemispheres
+    def load_ebvMapNorth(self):
+        self.ebvMapNorth=EbvMap()
+        self.ebvMapNorth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapNorthName))
+    
+    def load_ebvMapSouth(self):
+        self.ebvMapSouth=EbvMap()
+        self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
+    
+    #and finally, here is the getter
+    #it relies ont he calculateEbv routine defined in EBV.py
+    def get_EBV(self):
+        if self.ebvMapNorth==None:
+            self.load_ebvMapNorth()
+        
+        if self.ebvMapSouth==None:
+            self.load_ebvMapSouth()
+        
+        glon=self.column_by_name("glon")
+        glat=self.column_by_name("glat")
+        
+        EBV_out=numpy.array(calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
+        #print EBV_out
+        return EBV_out
+    
+    @compound('glon','glat')
+    def get_galactic_coords(self):
+        ra=self.column_by_name('raJ2000')
+        dec=self.column_by_name('decJ2000')
+        
+        glon=numpy.zeros(len(ra))
+        glat=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            gg=pal.eqgal(ra[i],dec[i])
+            glon[i]=gg[0]
+            glat[i]=gg[1]
+        
+        return numpy.array([glon,glat])
+    
+    
+    def get_galacticRv(self):
+        av = self.column_by_name('galacticAv')
+        ee = self.column_by_name('EBV')
+        return av/ee
+
+
 
 def main():
     import sys
