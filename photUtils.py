@@ -162,7 +162,7 @@ class Photometry(object):
         return numpy.array([glon,glat])
     
     
-    get_galacticRv(self):
+    def get_galacticRv(self):
         av = self.column_by_name('galacticAv')
         ee = self.column_by_name('EBV')
         return av/ee
