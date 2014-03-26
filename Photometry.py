@@ -16,104 +16,55 @@ import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 from lsst.sims.catalogs.measures.instance import compound
 
 class Photometry(object):
-        
-    initializedPhotometry=False
-    masterBandpassDict=None
-    masterFilterList=None
-    masterPhiArray=None
-    masterWavelenStep=None
-    masterSedDirectory=None
     
-    def initializePhotometry(self,filterList=None,filterDir=None,filterRoot=None,sedDir=None):
-        self.initializedPhotometry=True
-        
-        if filterList == None:
-            filterList=('u','g','r','i','z','y')
-        
-        self.setFilters(filterList=filterList,filterDir=filterDir,filterRoot=filterRoot)
-        
-        if sedDir == None:
-            sedDir = os.environ.get("CAT_SHARE_DATA")+"data/starSED/kurucz/"
-        
-        self.setSedDir(sedDir)
-        
+    bandPasses = {}
+    bandPassKey = []   
+    phiArray = None
+    waveLenStep = None
     
-    def setFilters(self,filterList,filterDir,filterRoot):
-        self.masterFilterList=filterList
-        if filterRoot == None:
-            self.masterBandpassDict=self.loadBandpasses(filterlist=self.masterFilterList,dataDir=filterDir)
-        else:
-            self.masterBandpassDict=self.loadBandpasses(filterlist=self.masterFilterList,dataDir=filterDir,filterroot=filterRoot)
-        self.masterPhiArray, self.masterWavelenStep = self.setupPhiArray_dict(self.masterBandpassDict,self.masterFilterList)
-    
-    def setSedDir(self,sedDir):
-        self.masterSedDirectory=sedDir
-        
-    
-    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
-    def get_LSSTmagnitudes(self):
-        if self.initializedPhotometry == False:
-            self.initializePhotometry()
-        
-        """    
-        if self.masterBandpassDict == None:
-            print "cannot get magnitudes; BandpassDict is None"
-        
-        if self.masterFilterList == None:
-            print "cannot get magnitudes; FilterList is None"
-        
-        if self.masterPhiArray == None:
-            print "cannot get magnitudes; PhiArray is None"
-        
-        if self.masterWavelenStep == None:
-            print "cannot get magnitudes; WavelenStep is None"
-        
-        if self.masterSedDirectory == None:
-            print "cannot get magnitudes; Sed Dir is None"
-        """
-        
-        sedname=self.column_by_name('sedFilename')
-        print "sedname ",sedname,len(sedname),self.masterSedDirectory
-        sedObj=self.loadSeds(sedname,self.masterSedDirectory)
-        print "type sedObj ",type(sedObj)
-        
-        uu=numpy.zeros(len(sedname),dtype=float)
-        gg=numpy.zeros(len(sedname),dtype=float)
-        rr=numpy.zeros(len(sedname),dtype=float)
-        ii=numpy.zeros(len(sedname),dtype=float)
-        zz=numpy.zeros(len(sedname),dtype=float)
-        yy=numpy.zeros(len(sedname),dtype=float)
-        for i in range(len(sedname)):
-            magDict = self.manyMagCalc_dict(sedObj[sedname[i]],self.masterPhiArray,self.masterWavelenStep,self.masterBandpassDict,self.masterFilterList)
-            uu[i]=magDict['u']
-            gg[i]=magDict['g']
-            rr[i]=magDict['r']
-            ii[i]=magDict['i']
-            zz[i]=magDict['z']
-            yy[i]=magDict['y']
-            
-        #print magDict
+    def setupPhiArray_dict(self,bandpassDict, bandpassKeys):
+        """ Generate 2-dimensional numpy array for Phi values in the bandpassDict.
 
-        return numpy.array([uu,gg,rr,ii,zz,yy])
-     
+        You must pass in bandpassKeys so that the ORDER of the phiArray and the order of the magnitudes returned by
+        manyMagCalc can be preserved. You only have to do this ONCE and can then reuse phiArray many times for many
+        manyMagCalculations."""
+        # Make a list of the bandpassDict for phiArray - in the ORDER of the bandpassKeys
+        bplist = []
+        for f in bandpassKeys:
+            bplist.append(bandpassDict[f])
+        sedobj = Sed()
+        self.phiArray, self.waveLenStep = sedobj.setupPhiArray(bplist)
+
+    def loadBandPasses(self,bandPassList):
+        """
+        This will take the list of band passes in bandPassList and use them to set up
+        self.phiArray and self.waveLenStep (which is being cached so that it does not have
+        to be loaded again unless we change which bandpasses we want)
+        """
+        if self.bandPassKey != bandPassList:
+            self.bandPassKey=[]
+            self.bandPasses={}
+            path = os.getenv('LSST_THROUGHPUTS_DEFAULT')
+            for i in range(len(bandPassList)):
+                self.bandPassKey.append(bandPassList[i])
+            
+            for w in self.bandPassKey:    
+                self.bandPasses[w] = Bandpass()
+                self.bandPasses[w].readThroughput(os.path.join(path,"total_%s.dat"%w))
         
-    def get_ug_color(self):
-        u = self.column_by_name('lsst_u')
-        g = self.column_by_name('lsst_g')
-        return u - g
-    
-    def get_gr_color(self):
-        g = self.column_by_name('lsst_g')
-        r = self.column_by_name('lsst_r')
-        return g - r    
-    
-    
+            self.setupPhiArray_dict(self.bandPasses,self.bandPassKey)
+            
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self,sedList, dataDir = "./", resample_same=False):
+    def loadSeds(self,sedList, magNorm=15.0, resample_same=False):
         """Generate dictionary of SEDs required for generating magnitudes
 
         Given a dataDir and a list of seds return a dictionary with sedName and sed as key, value
         """    
+        
+        dataDir=os.getenv('SED_DATA')+"/starSED/kurucz/"
+        
+        imsimband = Bandpass()
+        imsimband.imsimBandpass()
         sedDict={}
         firstsed = True
         for sedName in sedList:
@@ -131,43 +82,13 @@ class Photometry(object):
                     else:
                         if sed.needResample(wavelen_same):
                             sed.resampleSED(wavelen_same)
+                
+                fNorm = sed.calcFluxNorm(magNorm, imsimband)
+                sed.multiplyFluxNorm(fNorm)
                 sedDict[sedName] = sed
+                
         return sedDict
-
-    def loadBandpasses(self,filterlist=('u', 'g', 'r', 'i', 'z', 'y'), dataDir=None, filterroot='total_'):
-        """ Generate dictionary of bandpasses for the LSST nominal throughputs
-
-        Given a list of filter keys (like u,g,r,i,z,y), return a dictionary of the total bandpasses.
-        dataDir is the directory where these bandpasses are stored; leave blank to use environment
-         variable 'LSST_THROUGHPUTS_DEFAULT' which is set if throughputs is setup using eups.
-        This routine uses the 'total' bandpass values by default, but can be changed (such as to 'filter') using
-         the filterroot option (filename = filterroot + filterkey + '.dat'). 
-        """
-        bandpassDict = {}
-        if dataDir == None:
-            dataDir = os.getenv("LSST_THROUGHPUTS_DEFAULT")
-            if dataDir == None:
-                raise Exception("dataDir not given and unable to access environment variable 'LSST_THROUGHPUTS_DEFAULT'")
-        for f in filterlist:
-            bandpassDict[f] = Bandpass()
-            bandpassDict[f].readThroughput(os.path.join(dataDir, filterroot + f + ".dat"))
-        
-        return bandpassDict
-
-    def setupPhiArray_dict(self,bandpassDict, bandpassKeys):
-        """ Generate 2-dimensional numpy array for Phi values in the bandpassDict.
-
-        You must pass in bandpassKeys so that the ORDER of the phiArray and the order of the magnitudes returned by
-        manyMagCalc can be preserved. You only have to do this ONCE and can then reuse phiArray many times for many
-        manyMagCalculations."""
-        # Make a list of the bandpassDict for phiArray - in the ORDER of the bandpassKeys
-        bplist = []
-        for f in bandpassKeys:
-            bplist.append(bandpassDict[f])
-        sedobj = Sed()
-        phiArray, wavelenstep = sedobj.setupPhiArray(bplist)
-        return phiArray, wavelenstep
-
+    
     def manyMagCalc_dict(self,sedobj, phiArray, wavelenstep, bandpassDict, bandpassKeys):
         """Return a dictionary of magnitudes for a single Sed object.
 
@@ -188,5 +109,44 @@ class Photometry(object):
             magDict[f] = magArray[i]
             i = i + 1
         return magDict
-
-
+    
+    def calculate_magnitudes(self,bandPassList,sedNames,magNorm=15.0):
+        """
+        This will return a dict of dicts of magnitudes.  The first index will be the SED name.
+        The second index will be the band pass key (which is taken form bandPassList).
+        """
+        
+        self.loadBandPasses(bandPassList)
+        sedDict=self.loadSeds(sedNames,magNorm)
+        magDict={}
+        for sedName in sedNames:
+            subdict=self.manyMagCalc_dict(sedDict[sedName],self.phiArray,self.waveLenStep,self.bandPasses,self.bandPassKey)
+            magDict[sedName]=subdict
+            
+        return magDict
+    
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    def get_magnitudes(self):
+        bandPassList=['u','g','r','i','z','y']
+        sedNames=self.column_by_name('sedFilename')
+        magDict=self.calculate_magnitudes(bandPassList,sedNames)
+        
+        uu=numpy.zeros(len(sedNames),dtype=float)
+        gg=numpy.zeros(len(sedNames),dtype=float)
+        rr=numpy.zeros(len(sedNames),dtype=float)
+        ii=numpy.zeros(len(sedNames),dtype=float)
+        zz=numpy.zeros(len(sedNames),dtype=float)
+        yy=numpy.zeros(len(sedNames),dtype=float)
+        
+        print "sedNames ",sedNames
+        for i in range(len(sedNames)):
+           name=sedNames[i]
+           uu[i]=magDict[name]['u']
+           gg[i]=magDict[name]['g']
+           rr[i]=magDict[name]['r']
+           ii[i]=magDict[name]['i']
+           zz[i]=magDict[name]['z']
+           yy[i]=magDict[name]['y']
+       
+       
+        return numpy.array([uu,gg,rr,ii,zz,yy])
