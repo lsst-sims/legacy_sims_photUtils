@@ -40,8 +40,10 @@ class Photometry(object):
         
         self.setFilters(filterList=filterList,filterDir=filterDir,filterRoot=filterRoot)
         
-        if sedDir != None:
-            self.setSedDir(sedDir)
+        if sedDir == None:
+            sedDir = os.environ.get("CAT_SHARE_DATA")+"data/starSED/kurucz/"
+        
+        self.setSedDir(sedDir)
         
     
     def setFilters(self,filterList,filterDir,filterRoot):
