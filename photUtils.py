@@ -25,6 +25,72 @@ class Photometry(object):
     ebvMapNorth=None
     ebvMapSouth=None
     
+    initializedMagnitudes=False
+    masterBandpassDict=None
+    masterFilterList=None
+    masterPhiArray=None
+    masterWavelenStep=None
+    masterSedDirectory=None
+    
+    def initializeMagnitudes(self):
+        self.initializedMagnitdues=True
+        self.setFilters(filterlist=('u','g','r','i','z'),filterDir='data/',filterRoot='test_bandpass_')
+        self.setSedDir('/Users/noldor/physics/lsststackW2013/cat_data/data/starSED/kurucz')
+    
+    def setFilters(self,filterlist,filterDir,filterRoot):
+        self.masterFilterList=filterlist
+        self.masterBandpassDict=self.loadBandpasses(filterlist=self.masterFilterList,dataDir=filterDir,filterroot=filterRoot)
+        self.masterPhiArray, self.masterWavelenStep = self.setupPhiArray_dict(self.masterBandpassDict,self.masterFilterList)
+    
+    def setSedDir(self,sedDir):
+        self.masterSedDirectory=sedDir
+    
+    @compound('sfd_u','sfd_g','sfd_r','sfd_i','sfd_z')
+    def get_sfdmagnitudes(self):
+        if self.initializedMagnitudes == False:
+            self.initializeMagnitudes()
+            
+        if self.masterBandpassDict == None:
+            print "cannot get magnitudes; BandpassDict is None"
+        
+        if self.masterFilterList == None:
+            print "cannot get magnitudes; FilterList is None"
+        
+        if self.masterPhiArray == None:
+            print "cannot get magnitudes; PhiArray is None"
+        
+        if self.masterWavelenStep == None:
+            print "cannot get magnitudes; WavelenStep is None"
+        
+        if self.masterSedDirectory == None:
+            print "cannot get magnitudes; Sed Dir is None"
+        
+        sedname=self.column_by_name('sedFilename')
+        #sedname=["km30_5250.fits_g00_5370.gz"]
+        print "sedname ",sedname,len(sedname)
+        sedObj=self.loadSeds(sedname,self.masterSedDirectory)
+        print "type sedObj ",type(sedObj)
+        
+        uu=numpy.zeros(len(sedname),dtype=float)
+        gg=numpy.zeros(len(sedname),dtype=float)
+        rr=numpy.zeros(len(sedname),dtype=float)
+        ii=numpy.zeros(len(sedname),dtype=float)
+        zz=numpy.zeros(len(sedname),dtype=float)
+        for i in range(len(sedname)):
+            magDict = self.manyMagCalc_dict(sedObj[sedname[i]],self.masterPhiArray,self.masterWavelenStep,self.masterBandpassDict,self.masterFilterList)
+            uu[i]=magDict['u']
+            gg[i]=magDict['g']
+            rr[i]=magDict['r']
+            ii[i]=magDict['i']
+            zz[i]=magDict['z']
+            
+        #print magDict
+
+        return numpy.array([uu,gg,rr,ii,zz])
+     
+        
+        
+    
     #the set_xxxx routines below will allow the user to point elsewhere for the dust maps
     def set_ebvMapNorth(self,word):
         self.ebvMapNorthName=word
@@ -54,7 +120,7 @@ class Photometry(object):
         glat=self.column_by_name("glat")
         
         EBV_out=numpy.array(EBV.calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
-        
+        #print EBV_out
         return EBV_out
     
     @compound('glon','glat')
