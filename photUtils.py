@@ -162,6 +162,11 @@ class Photometry(object):
         return numpy.array([glon,glat])
     
     
+    get_galacticRv(self):
+        av = self.column_by_name('galacticAv')
+        ee = self.column_by_name('EBV')
+        return av/ee
+    
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self,sedList, dataDir = "./", resample_same=False):
         """Generate dictionary of SEDs required for generating magnitudes
