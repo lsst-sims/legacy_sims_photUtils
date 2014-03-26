@@ -25,15 +25,15 @@ class Photometry(object):
     ebvMapNorth=None
     ebvMapSouth=None
     
-    initializedMagnitudes=False
+    initializedPhotometry=False
     masterBandpassDict=None
     masterFilterList=None
     masterPhiArray=None
     masterWavelenStep=None
     masterSedDirectory=None
     
-    def initializeMagnitudes(self,filterList=None,filterDir=None,filterRoot=None,sedDir=None):
-        self.initializedMagnitudes=True
+    def initializePhotometry(self,filterList=None,filterDir=None,filterRoot=None,sedDir=None):
+        self.initializedPhotometry=True
         
         if filterList == None:
             filterList=('u','g','r','i','z','y')
@@ -58,8 +58,8 @@ class Photometry(object):
     
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
     def get_LSSTmagnitudes(self):
-        if self.initializedMagnitudes == False:
-            self.initializeMagnitudes()
+        if self.initializedPhotometry == False:
+            self.initializePhotometry()
         
         """    
         if self.masterBandpassDict == None:
