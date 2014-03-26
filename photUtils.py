@@ -32,13 +32,20 @@ class Photometry(object):
     masterWavelenStep=None
     masterSedDirectory=None
     
-    def initializeMagnitudes(self):
-        self.initializedMagnitdues=True
-        self.setFilters(filterlist=('u','g','r','i','z','y'),filterDir=None,filterRoot=None)
-        self.setSedDir('/Users/noldor/physics/lsststackW2013/cat_data/data/starSED/kurucz')
+    def initializeMagnitudes(self,filterList=None,filterDir=None,filterRoot=None,sedDir=None):
+        self.initializedMagnitudes=True
+        
+        if filterList == None:
+            filterList=('u','g','r','i','z','y')
+        
+        self.setFilters(filterList=filterList,filterDir=filterDir,filterRoot=filterRoot)
+        
+        if sedDir != None:
+            self.setSedDir(sedDir)
+        
     
-    def setFilters(self,filterlist,filterDir,filterRoot):
-        self.masterFilterList=filterlist
+    def setFilters(self,filterList,filterDir,filterRoot):
+        self.masterFilterList=filterList
         if filterRoot == None:
             self.masterBandpassDict=self.loadBandpasses(filterlist=self.masterFilterList,dataDir=filterDir)
         else:
@@ -47,12 +54,14 @@ class Photometry(object):
     
     def setSedDir(self,sedDir):
         self.masterSedDirectory=sedDir
+        
     
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
     def get_LSSTmagnitudes(self):
         if self.initializedMagnitudes == False:
             self.initializeMagnitudes()
-            
+        
+        """    
         if self.masterBandpassDict == None:
             print "cannot get magnitudes; BandpassDict is None"
         
@@ -67,9 +76,10 @@ class Photometry(object):
         
         if self.masterSedDirectory == None:
             print "cannot get magnitudes; Sed Dir is None"
+        """
         
         sedname=self.column_by_name('sedFilename')
-        print "sedname ",sedname,len(sedname)
+        print "sedname ",sedname,len(sedname),self.masterSedDirectory
         sedObj=self.loadSeds(sedname,self.masterSedDirectory)
         print "type sedObj ",type(sedObj)
         
@@ -185,6 +195,7 @@ class Photometry(object):
         for f in filterlist:
             bandpassDict[f] = Bandpass()
             bandpassDict[f].readThroughput(os.path.join(dataDir, filterroot + f + ".dat"))
+        
         return bandpassDict
 
     def setupPhiArray_dict(self,bandpassDict, bandpassKeys):
