@@ -55,7 +55,7 @@ class Photometry(object):
             self.setupPhiArray_dict(self.bandPasses,self.bandPassKey)
             
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self,sedList, magNorm=15.0, resample_same=False, internalAv=None, redshift=None):
+    def loadSeds(self,sedList, magNorm=15.0, resample_same=False):
         """Generate dictionary of SEDs required for generating magnitudes
 
         Given a dataDir and a list of seds return a dictionary with sedName and sed as key, value
@@ -86,15 +86,23 @@ class Photometry(object):
                 fNorm = sed.calcFluxNorm(magNorm, imsimband)
                 sed.multiplyFluxNorm(fNorm)
                 
-                if internalAv:
-                    a_int, b_int = sed.setupCCMab()
-                    sed.addCCMDust(a_int, b_int, A_v=internalAv)
-                if redshift:
-                    sed.redshiftSED(redshift, dimming=True)
+
                 
                 sedDict[sedName] = sed
                 
         return sedDict
+    
+    def applyAvAndRedshift(self,sedNames,sedDict,internalAv=None,redshift=None):
+        
+        for sedName in sedNames:
+            if internalAv:
+                a_int, b_int = sedDict[sedName].setupCCMab()
+                sedDict[sedName].addCCMDust(a_int, b_int, A_v=internalAv)
+            if redshift:
+                sedDict[sedName].redshiftSED(redshift, dimming=True)
+                sedDict[sedName].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].waveln)
+            
+        
     
     def manyMagCalc_dict(self,sedobj, phiArray, wavelenstep, bandpassDict, bandpassKeys):
         """Return a dictionary of magnitudes for a single Sed object.
@@ -117,7 +125,7 @@ class Photometry(object):
             i = i + 1
         return magDict
     
-    def calculate_magnitudes(self,bandPassList,sedNames,magNorm=15.0):
+    def calculate_magnitudes(self,bandPassList,sedNames,magNorm=15.0, internalAv=None, redshift=None):
         """
         This will return a dict of dicts of magnitudes.  The first index will be the SED name.
         The second index will be the band pass key (which is taken form bandPassList).
@@ -125,6 +133,9 @@ class Photometry(object):
         
         self.loadBandPasses(bandPassList)
         sedDict=self.loadSeds(sedNames,magNorm)
+        
+        self.applyAvAndRedshift(sedNames,sedDict,internalAv=internalAv,redshift=redshift)
+        
         magDict={}
         for sedName in sedNames:
             subdict=self.manyMagCalc_dict(sedDict[sedName],self.phiArray,self.waveLenStep,self.bandPasses,self.bandPassKey)
