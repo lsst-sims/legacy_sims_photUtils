@@ -62,7 +62,7 @@ class Photometry(object):
         """    
         
         if subDir == None:
-            subDir = "/starSED/kurucz/
+            subDir = "/starSED/kurucz/"
         
         dataDir=os.getenv('SED_DATA')+subDir
         
@@ -146,7 +146,13 @@ class Photometry(object):
             
         return magDict
     
-    def calcGalaxyMags(self,bandPassList):\
+    def calculate_galaxy_mags(self,bandPassList):
+        """
+        will return a dict of magntiudes which is indexed by
+        galid
+        (total, bulge, disk, agn)
+        bandPass
+        """
         
         idName=self.column_by_name('galid')
         
@@ -168,20 +174,79 @@ class Photometry(object):
         agnMags = self.calculate_mags(bandPassList,agnNames,magNorm=agnmn,subDir="/agnSED/",redshift=redshift)
         
         total_mags = {}
+        masterDict={}
+        
+       
         
         m_o = 22.
         
         for ii,dd,bb,aa in zip(idName,diskNames,bulgeNames,agnNames):
+            total_mags={}
             for ff in bandPassList:
                 nn=numpy.power(10, (diskMags[dd][ff] - m_o)/-2.5)
                 nn+=numpy.power(10, (bulgeMags[bb][ff] - m_o)/-2.5)
                 nn+=numpy.power(10, (agnMags[bb][ff] - m_o)/-2.5)
-                total_mags[idName][ff] = -2.5*log10(nn) + m_o
-        
-        
+                total_mags[ff] = -2.5*log10(nn) + m_o
+              
+            
+            masterDict[idName]["total"] = total_mags
+            masterDict[idName]["bulge"] = bulgeMags[bb]
+            masterDict[idName]["disk"] = diskMags[dd]
+            masterDict[idName]["agn"] = agnMags[aa]
 
+        return masterDict
+        
+    def calculate_star_mags(self, bandPassList):
+        """
+        return a dictionary of magnitudes indexed first by sedName and then bandpass
+        """
+        sedNames = self.column_by_name('sedFilename')
+        magDict=self.calculate_magnitudes(bandPassList,sedNames)
+
+        return magDict
     
-    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    #for the case of galaxies which do not have an sedFilename
+    """
+    def get_sedFilename(self):
+        ra=self.column_by_name('raJ2000')
+        out=[]
+        for i in range(len(ra)):
+            out.append(None)
+        return numpy.array(out)
+    """
+    
+    
+    #for the case of stars, which do not have a galid  
+    """  
+    def get_galid(self):
+        ra=self.column_by_name('raJ2000')
+        out=[]
+        for i in range(len(ra)):
+            out.append(None)
+        return numpy.array(out)
+    
+    
+    def get_photometryID(self):
+        try:
+            print "trying to get galid\n"
+            name=self.column_by_name('galid')
+        except:
+            print "that did not work\n"
+            name=self.column_by_name('sedFilename')
+        
+        print "survived\n"
+        out=[]
+        for i in range(len(name)):
+            out.append(name[i])
+        
+        return numpy.array(out)
+    """
+    
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y',
+    'lsst_bulge_u','lsst_bulge_g','lsst_bulge_r','lsst_bulge_i',
+    'lsst_bulge_z','lsst_bulge_y','lsst_disk_u','lsst_disk_g','lsst_disk_r',
+    'lsst_disk_i','lsst_disk_z','lsst_disk_y','lsst_agn_u','lsst_agn_g','lsst_agn_r',
+    'lsst_agn_i','lsst_agn_z','lsst_agn_y')
     def get_magnitudes(self):
         bandPassList=['u','g','r','i','z','y']
         sedNames=self.column_by_name('sedFilename')
@@ -193,6 +258,24 @@ class Photometry(object):
         ii=numpy.zeros(len(sedNames),dtype=float)
         zz=numpy.zeros(len(sedNames),dtype=float)
         yy=numpy.zeros(len(sedNames),dtype=float)
+        buu=numpy.zeros(len(sedNames),dtype=float)
+        bgg=numpy.zeros(len(sedNames),dtype=float)
+        brr=numpy.zeros(len(sedNames),dtype=float)
+        bii=numpy.zeros(len(sedNames),dtype=float)
+        bzz=numpy.zeros(len(sedNames),dtype=float)
+        byy=numpy.zeros(len(sedNames),dtype=float)
+        duu=numpy.zeros(len(sedNames),dtype=float)
+        dgg=numpy.zeros(len(sedNames),dtype=float)
+        drr=numpy.zeros(len(sedNames),dtype=float)
+        dii=numpy.zeros(len(sedNames),dtype=float)
+        dzz=numpy.zeros(len(sedNames),dtype=float)
+        dyy=numpy.zeros(len(sedNames),dtype=float)
+        auu=numpy.zeros(len(sedNames),dtype=float)
+        agg=numpy.zeros(len(sedNames),dtype=float)
+        arr=numpy.zeros(len(sedNames),dtype=float)
+        aii=numpy.zeros(len(sedNames),dtype=float)
+        azz=numpy.zeros(len(sedNames),dtype=float)
+        ayy=numpy.zeros(len(sedNames),dtype=float)
         
         print "sedNames ",sedNames
         for i in range(len(sedNames)):
@@ -203,6 +286,27 @@ class Photometry(object):
            ii[i]=magDict[name]['i']
            zz[i]=magDict[name]['z']
            yy[i]=magDict[name]['y']
+           
+           buu[i]=0.0
+           bgg[i]=0.0
+           brr[i]=0.0
+           bii[i]=0.0
+           bzz[i]=0.0
+           byy[i]=0.0
+           
+           duu[i]=0.0
+           dgg[i]=0.0
+           drr[i]=0.0
+           dii[i]=0.0
+           dzz[i]=0.0
+           dyy[i]=0.0
+           
+           auu[i]=0.0
+           agg[i]=0.0
+           arr[i]=0.0
+           aii[i]=0.0
+           azz[i]=0.0
+           ayy[i]=0.0
        
        
-        return numpy.array([uu,gg,rr,ii,zz,yy])
+        return numpy.array([uu,gg,rr,ii,zz,yy,buu,bgg,brr,bii,bzz,byy,duu,dgg,drr,dii,dzz,dyy,auu,agg,arr,aii,azz,ayy])
