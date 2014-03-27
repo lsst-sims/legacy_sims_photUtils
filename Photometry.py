@@ -15,12 +15,13 @@ import lsst.sims.catalogs.measures.photometry.Sed as Sed
 import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 from lsst.sims.catalogs.measures.instance import compound
 
-class Photometry(object):
+class PhotometryBase(object):
     
     bandPasses = {}
     bandPassKey = []   
     phiArray = None
     waveLenStep = None
+    subDir = None
     
     def setupPhiArray_dict(self,bandpassDict, bandpassKeys):
         """ Generate 2-dimensional numpy array for Phi values in the bandpassDict.
@@ -55,22 +56,19 @@ class Photometry(object):
             self.setupPhiArray_dict(self.bandPasses,self.bandPassKey)
             
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self,sedList, magNorm=15.0, resample_same=False, subDir=None):
-        """Generate dictionary of SEDs required for generating magnitudes
-
-        Given a dataDir and a list of seds return a dictionary with sedName and sed as key, value
+    def loadSeds(self,sedList, magNorm=15.0, resample_same=False):
+        """
+        Generate list of SEDs required for generating magnitudes
         """    
         
-        if subDir == None:
-            subDir = "/starSED/kurucz/"
-        
-        dataDir=os.getenv('SED_DATA')+subDir
+        dataDir=os.getenv('SED_DATA')+self.subDir
         
         imsimband = Bandpass()
         imsimband.imsimBandpass()
-        sedDict={}
+        sedOut=[]
         firstsed = True
-        for sedName in sedList:
+        for i in range(len(sedList)):
+            sedName = sedList[i]
             if sedName == None:
                 continue
             elif sedName in sedDict:
@@ -86,28 +84,26 @@ class Photometry(object):
                         if sed.needResample(wavelen_same):
                             sed.resampleSED(wavelen_same)
                 
-                fNorm = sed.calcFluxNorm(magNorm, imsimband)
+                fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
                 sed.multiplyFluxNorm(fNorm)
                 
 
                 
-                sedDict[sedName] = sed
+                sedOut.append(sed)
                 
-        return sedDict
+        return sedOut
     
-    def applyAvAndRedshift(self,sedNames,sedDict,internalAv=None,redshift=None):
+    def applyAvAndRedshift(self,sedList,internalAv=None,redshift=None):
         
-        for sedName in sedNames:
+        for i in range(len(sedList)):
             if internalAv:
-                a_int, b_int = sedDict[sedName].setupCCMab()
-                sedDict[sedName].addCCMDust(a_int, b_int, A_v=internalAv)
+                a_int, b_int = sedList[i].setupCCMab()
+                sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
             if redshift:
-                sedDict[sedName].redshiftSED(redshift, dimming=True)
-                sedDict[sedName].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].waveln)
-            
-        
-    
-    def manyMagCalc_dict(self,sedobj, phiArray, wavelenstep, bandpassDict, bandpassKeys):
+                sedList[i].redshiftSED(redshift[i], dimming=True)
+                sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].waveln)
+
+    def manyMagCalc_dict(self,sedobj):
         """Return a dictionary of magnitudes for a single Sed object.
 
         You must pass the sed itself, phiArray and wavelenstep for the manyMagCalc itself, but
@@ -117,84 +113,104 @@ class Photometry(object):
         Note that THIS WILL change sedobj by resampling it onto the required wavelength range. """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
-        if sedobj.needResample(wavelen_match=bandpassDict[bandpassKeys[0]].wavelen):
-            sedobj.resampleSED(wavelen_match=bandpassDict[bandpassKeys[0]].wavelen)
+        if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
+            sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
         sedobj.flambdaTofnu()
-        magArray = sedobj.manyMagCalc(phiArray, wavelenstep)
+        magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
         magDict = {}
         i = 0
         for f in bandpassKeys:
             magDict[f] = magArray[i]
             i = i + 1
         return magDict
+
+######################################
+    class PhotometryGalaxies(PhotometryBase):
     
-    def calculate_magnitudes(self,bandPassList,sedNames,magNorm=15.0, internalAv=None, redshift=None, subDir=None):
-        """
-        This will return a dict of dicts of magnitudes.  The first index will be the SED name.
-        The second index will be the band pass key (which is taken form bandPassList).
-        """
+        def calculate_magnitudes(self,bandPassList):
+            """
+            will return a dict of magntiudes which is indexed by
+            galid
+            (total, bulge, disk, agn)
+            bandPass
+            """
+            self.loadBandPasses(bandPassList)
+  
+            idNames=self.column_by_name('galid')
         
-        self.loadBandPasses(bandPassList)
-        sedDict=self.loadSeds(sedNames,magNorm,subDir=subDir)
+            diskNames=self.column_by_name('sedFilenameDisk')
+            bulgeNames=self.column_by_name('sedFilenameBulge')
+            agnNames=self.column_by_name('sedFilenameAgn')
+
+            diskmn = self.column_by_name('magNormDisk')
+            bulgemn = self.column_by_name('magNormBulge')
+            agnmn = self.column_by_name('magNormAgn')
         
-        self.applyAvAndRedshift(sedNames,sedDict,internalAv=internalAv,redshift=redshift)
+            bulgeAv = self.column_by_name('internalAvBulge')
+            diskAv = self.column_by_name('internalAvDisk')
+
+            redshift = self.column_by_name('redshift')
         
-        magDict={}
-        for sedName in sedNames:
-            subdict=self.manyMagCalc_dict(sedDict[sedName],self.phiArray,self.waveLenStep,self.bandPasses,self.bandPassKey)
-            magDict[sedName]=subdict
+            diskMags=[]
+            bulgeMags=[]
+            agnMags=[]
+        
+            if diskNames:
+                self.subDir="/galaxySED/"
+                diskSed = self.loadSeds(diskNames,magNorm = diskmn)
+                self.applyAvAndRedshift(diskSed,internalAv = bulgeAv, redshift = redshift)
             
-        return magDict
-    
-    def calculate_galaxy_mags(self,bandPassList):
-        """
-        will return a dict of magntiudes which is indexed by
-        galid
-        (total, bulge, disk, agn)
-        bandPass
-        """
+                for dd in diskSed:
+                    subDict=self.manyMagCalc_dict(dd)
+                    diskMags.append(subDict)
+                
         
-        idName=self.column_by_name('galid')
+            if bulgeNames:
+                self.subDir="/galaxySED/"
+                bulgeSed = self.loadSeds(bulgeNames,magNorm = bulgemn)
+                self.applyAvAndRedshift(bulgeSed,internalAv = diskAv, redshift = redshift)
+            
+                for bb in bulgeSed:
+                    subDict=self.manyMagCalc_dict(bb)
+                    bulgeMags.append(subDict)
         
-        diskNames=self.column_by_name('sedFilenameDisk')
-        bulgeNames=self.column_by_name('sedFilenameBulge')
-        agnNames=self.column_by_name('sedFilenameAgn')
-
-        diskmn = self.column_by_name('magNormDisk')
-        bulgemn = self.column_by_name('magNormBulge')
-        agnmn = self.column_by_name('magNormAgn')
-
-        bulgeAv = self.column_by_name('internalAvBulge')
-        diskAv = self.column_by_name('internalAvDisk')
-
-        redshift = self.column_by_name('redshift')
-        
-        diskMags = self.calculate_mags(bandPassList,diskNames,magNorm=diskmn,subDir="/galaxSED/",redshift=redshift,internalAv=diskAv)
-        bulgeMags = self.calculate_mags(bandPassList,bulgeNames,magNorm=bulgemn,subDir="/galaxySED/",redshift=redshift,internalAV=bulgeAv)
-        agnMags = self.calculate_mags(bandPassList,agnNames,magNorm=agnmn,subDir="/agnSED/",redshift=redshift)
-        
-        total_mags = {}
-        masterDict={}
-        
+            if agnNames: 
+                self.subDir="/agnSED/"    
+                agnSed = self.loadSeds(agnNames,magNorm = agnmn)
+                self.applyAvAndRedshift(agnSed,redshift = redshift)
+            
+                for aa in agnSed:
+                    subDict=self.manyMagCalc_dict(aa)
+                    agnMags.append(subDict)
        
-        
-        m_o = 22.
-        
-        for ii,dd,bb,aa in zip(idName,diskNames,bulgeNames,agnNames):
-            total_mags={}
-            for ff in bandPassList:
-                nn=numpy.power(10, (diskMags[dd][ff] - m_o)/-2.5)
-                nn+=numpy.power(10, (bulgeMags[bb][ff] - m_o)/-2.5)
-                nn+=numpy.power(10, (agnMags[bb][ff] - m_o)/-2.5)
-                total_mags[ff] = -2.5*log10(nn) + m_o
-              
-            
-            masterDict[idName]["total"] = total_mags
-            masterDict[idName]["bulge"] = bulgeMags[bb]
-            masterDict[idName]["disk"] = diskMags[dd]
-            masterDict[idName]["agn"] = agnMags[aa]
+            total_mags = {}
+            masterList={}
 
-        return masterDict
+            m_o = 22.
+        
+            for i in len(idNames):
+                total_mags={}
+                for ff in bandPassList:
+                    nn=0.0
+                    if diskMags:
+                        nn+=numpy.power(10, (diskMags[i][ff] - m_o)/-2.5)
+                
+                    if bulgeMags:
+                        nn+=numpy.power(10, (bulgeMags[i][ff] - m_o)/-2.5)
+                
+                    if agnMags:
+                        nn+=numpy.power(10, (agnMags[i][ff] - m_o)/-2.5)
+                
+                    total_mags[ff] = -2.5*log10(nn) + m_o
+              
+                masterDict[idNames[i]]["total"] = total_mags
+                masterDict[idNames[i]]["bulge"] = bulgeMags[bb]
+                masterDict[idNames[i]]["disk"] = diskMags[dd]
+                masterDict[idNames[i]]["agn"] = agnMags[aa]
+
+            return masterDict
+     
+     #spock put the galaxy getter here
         
     def calculate_star_mags(self, bandPassList):
         """
@@ -205,42 +221,7 @@ class Photometry(object):
 
         return magDict
     
-    #for the case of galaxies which do not have an sedFilename
-    """
-    def get_sedFilename(self):
-        ra=self.column_by_name('raJ2000')
-        out=[]
-        for i in range(len(ra)):
-            out.append(None)
-        return numpy.array(out)
-    """
-    
-    
-    #for the case of stars, which do not have a galid  
-    """  
-    def get_galid(self):
-        ra=self.column_by_name('raJ2000')
-        out=[]
-        for i in range(len(ra)):
-            out.append(None)
-        return numpy.array(out)
-    
-    
-    def get_photometryID(self):
-        try:
-            print "trying to get galid\n"
-            name=self.column_by_name('galid')
-        except:
-            print "that did not work\n"
-            name=self.column_by_name('sedFilename')
-        
-        print "survived\n"
-        out=[]
-        for i in range(len(name)):
-            out.append(name[i])
-        
-        return numpy.array(out)
-    """
+
     
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y',
     'lsst_bulge_u','lsst_bulge_g','lsst_bulge_r','lsst_bulge_i',
