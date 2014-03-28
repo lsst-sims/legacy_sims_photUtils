@@ -17,7 +17,8 @@ class Variability(object):
     
     def initializeVariability(self,doCache=False):
         self.variabilityInitialized=True
-    #below are variables to cache the light curves of variability models
+        
+        #construct a dict of the available variability models
         self.variabilityMethods={}
         if(hasattr(self,"applyMflare")):
             self.variabilityMethods['applyMflare'] = self.applyMflare
@@ -38,6 +39,7 @@ class Variability(object):
         if(hasattr(self,"applyBHMicrolens")):
             self.variabilityMethods['applyBHMicrolens'] = self.applyBHMicrolens
         
+        #below are variables to cache the light curves of variability models
         self.variabilityLcCache = {}
         self.variabilityCache = doCache
         try:
@@ -48,15 +50,23 @@ class Variability(object):
     
     
     def applyVariability(self, varParams):
+        """
+        varParams will be the varParamStr column from the data base
+        
+        This method uses json to convert that into a machine-readable object
+        
+        it uses the varMethodName to select the correct variability method from the
+        dict self.variabilityMethods
+        
+        it uses then feeds the pars array to that method, under the assumption
+        that the parameters needed by the method can be found therein
+        """
         if self.variabilityInitialized == False:
             self.initializeVariability()
             
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
         params = varCmd['pars']
-        #print "trying ",method
-        #print "par :",params
-        #print "expmjd: ",self.obs_metadata.metadata['Opsim_expmjd']
         output = self.variabilityMethods[method](params)
         return output
     
