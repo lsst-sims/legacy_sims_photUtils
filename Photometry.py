@@ -4,6 +4,8 @@ photUtils -
 
 ljones@astro.washington.edu  (and ajc@astro.washington.edu)
 
+and now (2014 March 28): scott.f.daniel@gmail.com
+
 Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 """
@@ -16,31 +18,61 @@ import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
 from lsst.sims.catalogs.measures.instance import compound
 
 class PhotometryBase(object):
+    """
+    This mixin provides the basic infrastructure for photometry.
+    It can read in SEDs and bandpasses, apply extinction and redshift, and, given
+    an SED object it can calculate magnitudes.
+    
+    In order to avoid duplication of work, the bandPasses, wavelength array, and phi array
+    are stored as instance variables once they are read in by self.loadBandPasses()
+    
+    To initiailize a different set of bandPasses, call self.loadBandPasses() with a different
+    set of arguments.
+    
+    Once self.loadBandPasses() as been called, self.loadSeds() can be used to return an array
+    of SED objects.  These objects can be passed to self.manyMagCalc_dict() which will calculate
+    the magnitudes of the the SEDs, integrated over the loaded bandPasses, and return them as a 
+    dict keeyed to the array of bandpass keys stored in self.bandPassKey
+    """
     
     bandPasses = {}
     bandPassKey = []   
     phiArray = None
     waveLenStep = None
-    subDir = None
+    subDir = None #this is a variable that is used to point loadSEDs to different sub directories of $SED_DATA
     
-    def setupPhiArray_dict(self,bandpassDict, bandpassKeys):
-        """ Generate 2-dimensional numpy array for Phi values in the bandpassDict.
+    def setupPhiArray_dict(self):
+        """ 
+        Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
+        self.bandPasses
 
-        You must pass in bandpassKeys so that the ORDER of the phiArray and the order of the magnitudes returned by
-        manyMagCalc can be preserved. You only have to do this ONCE and can then reuse phiArray many times for many
-        manyMagCalculations."""
+        self.bandpassKey is used so that the ORDER of the phiArray and the order of the magnitudes returned by
+        manyMagCalc can be preserved. 
+        
+        The results from this calculation will be stored in the instance variables
+        self.phiArray and self.waveLenStep for future use by self.manyMagCalc_dict()
+        """
         # Make a list of the bandpassDict for phiArray - in the ORDER of the bandpassKeys
         bplist = []
-        for f in bandpassKeys:
-            bplist.append(bandpassDict[f])
+        for f in self.bandPassKey:
+            bplist.append(self.bandPasses[f])
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(bplist)
 
     def loadBandPasses(self,bandPassList,bandPassRoot="total_"):
         """
         This will take the list of band passes in bandPassList and use them to set up
-        self.phiArray and self.waveLenStep (which is being cached so that it does not have
-        to be loaded again unless we change which bandpasses we want)
+        self.bandPasses, self.phiArray and self.waveLenStep (which are being cached so that 
+        they do not have to be loaded again unless we change which bandpasses we want)
+        
+        bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
+        that the bandPasses are stored in files of the type
+        
+        $LSST_THROUGHPUTS_DEFAULT/bandPassRoot_bandPassKey.dat
+        
+        if we want to load bandpasses for a telescope other than LSST, we would do so
+        by altering bandPassRoot (currently no infrastructure exists for altering the directory
+        in which bandpass files are stored)
         """
         if self.bandPassKey != bandPassList:
             self.bandPassKey=[]
@@ -53,12 +85,15 @@ class PhotometryBase(object):
                 self.bandPasses[w] = Bandpass()
                 self.bandPasses[w].readThroughput(os.path.join(path,"%s.dat" % (bandPassRoot + w)))
         
-            self.setupPhiArray_dict(self.bandPasses,self.bandPassKey)
+            self.setupPhiArray_dict()
             
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self,sedList, magNorm=15.0, resample_same=False):
         """
-        Generate list of SEDs required for generating magnitudes
+        Takes the list of filename sedList and returns an array of SED objects.
+        
+        This code will load identical SEDs twice because it is possible for
+        (astronomical) objects to have the same SEDs but different magNorms
         """    
         
         if self.subDir:
@@ -66,8 +101,11 @@ class PhotometryBase(object):
         else:
             dataDir=os.getenv('SED_DATA')
         
+        #initialize a delta function bandpass for use in applying magNorm
         imsimband = Bandpass()
         imsimband.imsimBandpass()
+        
+        
         sedOut=[]
         firstsed = True
         for i in range(len(sedList)):
@@ -75,13 +113,7 @@ class PhotometryBase(object):
             if sedName == "None":
                 #assign an empty Sed (one with wavelen==None)
                 sed = Sed()
-                #continue
-            #removed the code below because we now want to load all SEDs
-            #since objects can have identical SEDs, but different magNorms
-            #elif sedName in sedDict:
-                #continue
             else:          
-                #print "opening SED ",sedName  
                 sed = Sed()
                 sed.readSED_flambda(os.path.join(dataDir, sedName))
                 if resample_same:
@@ -96,13 +128,14 @@ class PhotometryBase(object):
                 sed.multiplyFluxNorm(fNorm)
 
             sedOut.append(sed)
-        
-        if len(sedOut) != len(sedList):
-            print "WARNING ",len(sedOut)," ",len(sedList)        
+    
         return sedOut
     
     def applyAvAndRedshift(self,sedList,internalAv=None,redshift=None):
-        
+        """
+        Take the array of SED objects sedList and apply the arrays of extinction and redshift
+        (internalAV and redshift)
+        """
         for i in range(len(sedList)):
             if sedList[i].wavelen != None:
                 if internalAv != None:
@@ -113,13 +146,14 @@ class PhotometryBase(object):
                     sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
 
     def manyMagCalc_dict(self,sedobj):
-        """Return a dictionary of magnitudes for a single Sed object.
-
-        You must pass the sed itself, phiArray and wavelenstep for the manyMagCalc itself, but
-        you must also pass the bandpassDictionary and keys so that the sedobj can be resampled onto
-        the correct wavelength range for the bandpass (i.e. maybe you redshifted sedobj??) and so that the
-        order of the magnitude calculation / dictionary assignment is preserved from the phiArray setup previously.
-        Note that THIS WILL change sedobj by resampling it onto the required wavelength range. """
+        """
+        Return a dictionary of magnitudes for a single Sed object.
+        
+        Bandpass information is taken from the instance variables self.bandPasses, self.bandPassKey,
+        self.phiArray, and self.waveLenStep
+        
+        Returns a dictionary of magnitudes keyed on self.bandPassKey
+        """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
         
@@ -139,19 +173,30 @@ class PhotometryBase(object):
                   
         return magDict
 
-######################################
+
 class PhotometryGalaxies(PhotometryBase):
+    """
+    This mixin provides the code necessary for calculating the component magnitudes associated with
+    galaxies.  It assumes that we want LSST filters.
+    """
     
     def calculate_magnitudes(self,bandPassList,idNames):
         """
-        will return a dict of magntiudes which is indexed by
-        galid
-        (total, bulge, disk, agn)
-        bandPass
+        Take the array of bandpass keys bandPassList and the array of galaxy
+        names idNames ane return a dict of dicts of dicts of magnitudes
+        
+        the first level key is galid (the name of the galaxy)
+        
+        the second level key is "total", "bulge", "disk", or "agn"
+        
+        the third level key is bandPassList
+        
+        We need to index the galaxies by some unique identifier, such as galid
+        because it is possible for galaxies to have the same sed filenames but 
+        different normalizations
+        
         """
         self.loadBandPasses(bandPassList)
-  
-        #idNames=self.column_by_name('galid')
         
         diskNames=self.column_by_name('sedFilenameDisk')
         bulgeNames=self.column_by_name('sedFilenameBulge')
@@ -222,12 +267,9 @@ class PhotometryGalaxies(PhotometryBase):
         total_mags = {}
         masterDict = {}
 
+        #No idea where this number came from; I copied it from earlier code
         m_o = 22.
-        
-       # print len(diskMags),len(bulgeMags),len(agnMags),len(idNames)
-       # print diskMags
-       # print bulgeMags
-       # print agnMags
+
         for i in range(len(idNames)):
             total_mags={}
             for ff in bandPassList:
@@ -358,8 +400,25 @@ class PhotometryGalaxies(PhotometryBase):
 
 
 class PhotometryStars(PhotometryBase):
+    """
+    This mixin provides the infrastructure for doing photometry on stars
+    
+    It assumes that we want LSST filters.
+    """
 
     def calculate_magnitudes(self,bandPassList,idNames):
+        """
+        Take the array of bandpass keys bandPassList and the array of
+        star names idNames and return a dict of dicts of magnitudes
+        
+        The first level key will be the name of the star (idName)
+        
+        The second level key will be the name of the filter (bandPassList)
+        
+        As with galaxies, it is important that we identify stars by a unique
+        identifier, rather than their sedFilename, because different stars
+        can have identical SEDs but different magnitudes.
+        """
         
         self.subDir="/starSED/kurucz/"
         
