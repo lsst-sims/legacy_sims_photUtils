@@ -72,13 +72,16 @@ class PhotometryBase(object):
         firstsed = True
         for i in range(len(sedList)):
             sedName = sedList[i]
-            if sedName == None:
-                continue
+            if sedName == "None":
+                #assign an empty Sed (one with wavelen==None)
+                sed = Sed()
+                #continue
             #removed the code below because we now want to load all SEDs
             #since objects can have identical SEDs, but different magNorms
             #elif sedName in sedDict:
                 #continue
-            else:            
+            else:          
+                #print "opening SED ",sedName  
                 sed = Sed()
                 sed.readSED_flambda(os.path.join(dataDir, sedName))
                 if resample_same:
@@ -92,19 +95,22 @@ class PhotometryBase(object):
                 fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
                 sed.multiplyFluxNorm(fNorm)
 
-                sedOut.append(sed)
-                
+            sedOut.append(sed)
+        
+        if len(sedOut) != len(sedList):
+            print "WARNING ",len(sedOut)," ",len(sedList)        
         return sedOut
     
     def applyAvAndRedshift(self,sedList,internalAv=None,redshift=None):
         
         for i in range(len(sedList)):
-            if internalAv:
-                a_int, b_int = sedList[i].setupCCMab()
-                sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
-            if redshift:
-                sedList[i].redshiftSED(redshift[i], dimming=True)
-                sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].waveln)
+            if sedList[i].wavelen != None:
+                if internalAv != None:
+                    a_int, b_int = sedList[i].setupCCMab()
+                    sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
+                if redshift != None:
+                    sedList[i].redshiftSED(redshift[i], dimming=True)
+                    sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
 
     def manyMagCalc_dict(self,sedobj):
         """Return a dictionary of magnitudes for a single Sed object.
@@ -116,15 +122,21 @@ class PhotometryBase(object):
         Note that THIS WILL change sedobj by resampling it onto the required wavelength range. """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
-        if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
-            sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
-        sedobj.flambdaTofnu()
-        magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
-        magDict = {}
-        i = 0
-        for f in self.bandPassKey:
-            magDict[f] = magArray[i]
-            i = i + 1
+        
+        magDict={}
+        if sedobj.wavelen != None:
+            if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
+                sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
+            sedobj.flambdaTofnu()
+            magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
+            i = 0
+            for f in self.bandPassKey:
+                magDict[f] = magArray[i]
+                i = i + 1
+        else:
+            for f in self.bandPassKey:
+                magDict[f] = None
+                  
         return magDict
 
 ######################################
@@ -154,76 +166,91 @@ class PhotometryGalaxies(PhotometryBase):
 
         redshift = self.column_by_name('redshift')
         
-        diskMags=[]
-        bulgeMags=[]
-        agnMags=[]
+        diskMags={}
+        bulgeMags={}
+        agnMags={}
             
-        if diskNames:
+        if diskNames != []:
             self.subDir="/galaxySED/"
             diskSed = self.loadSeds(diskNames,magNorm = diskmn)
             self.applyAvAndRedshift(diskSed,internalAv = bulgeAv, redshift = redshift)
-        
-            for dd in diskSed:
-                subDict=self.manyMagCalc_dict(dd)
-                diskMags.append(subDict)
+            
+            print "lenidNames ",len(idNames)," lenDiskSed ",len(diskSed)," lenDisknames ",len(diskNames)
+            
+            for i in range(len(idNames)):
+                subDict=self.manyMagCalc_dict(diskSed[i])
+                diskMags[idNames[i]]=subDict
         
         else:
             subDict={}
+            for b in bandPassList:
+                subDict[b]=None
             for i in range(len(idNames)):
-                diskMags.append(subDict)
+                distMags[idNames[i]]=subDict
          
-        if bulgeNames:
+        if bulgeNames != []:
             self.subDir="/galaxySED/"
             bulgeSed = self.loadSeds(bulgeNames,magNorm = bulgemn)
             self.applyAvAndRedshift(bulgeSed,internalAv = diskAv, redshift = redshift)
             
-            for bb in bulgeSed:
-                subDict=self.manyMagCalc_dict(bb)
-                bulgeMags.append(subDict)
+            for i in range(len(idNames)):
+                subDict=self.manyMagCalc_dict(bulgeSed[i])
+                bulgeMags[idNames[i]]=subDict
         else:
             subDict={}
+            for b in bandPassList:
+                subDict[b]=None
             for i in range(len(idNames)):
-                bulgeMags.append(subDict)
+                bulgeMags[idNames[i]]=subDict
         
-        if agnNames: 
+        if agnNames != []: 
             self.subDir="/agnSED/"    
             agnSed = self.loadSeds(agnNames,magNorm = agnmn)
             self.applyAvAndRedshift(agnSed,redshift = redshift)
             
-            for aa in agnSed:
-                subDict=self.manyMagCalc_dict(aa)
-                agnMags.append(subDict)
+            for i in range(len(idNames)):
+                subDict=self.manyMagCalc_dict(agnSed[i])
+                agnMags[idNames[i]]=subDict
         
         else:
             subDict={}
+            for b in bandPassList:
+                subDict[b]=None
             for i in range(len(idNames)):
-                agnMags.append(subDict)
+                agnMags[idNames[i]]=subDict
         
         total_mags = {}
-        masterList = {}
+        masterDict = {}
 
         m_o = 22.
         
-        for i in len(idNames):
+       # print len(diskMags),len(bulgeMags),len(agnMags),len(idNames)
+       # print diskMags
+       # print bulgeMags
+       # print agnMags
+        for i in range(len(idNames)):
             total_mags={}
             for ff in bandPassList:
                 nn=0.0
-                if diskMags[i]:
-                    nn+=numpy.power(10, (diskMags[i][ff] - m_o)/-2.5)
+                if diskMags[idNames[i]][ff]!=None:
+                    nn+=numpy.power(10, (diskMags[idNames[i]][ff] - m_o)/-2.5)
                 
-                if bulgeMags[i]:
-                    nn+=numpy.power(10, (bulgeMags[i][ff] - m_o)/-2.5)
+                if bulgeMags[idNames[i]][ff]!=None:
+                    nn+=numpy.power(10, (bulgeMags[idNames[i]][ff] - m_o)/-2.5)
             
-                if agnMags[i]:
-                    nn+=numpy.power(10, (agnMags[i][ff] - m_o)/-2.5)
+                if agnMags[idNames[i]][ff]!=None:
+                    nn+=numpy.power(10, (agnMags[idNames[i]][ff] - m_o)/-2.5)
                 
-                total_mags[ff] = -2.5*log10(nn) + m_o
-            
+                if nn>0.0:
+                    total_mags[ff] = -2.5*numpy.log10(nn) + m_o
+                else:
+                    total_mags[ff] = None
+                
             subDict={}
             subDict["total"] = total_mags
-            subDict["bulge"] = bulgeMags[i]
-            subDict["disk"] = diskMags[i]
-            subDict["agn"] = agnMags[i]
+            subDict["bulge"] = bulgeMags[idNames[i]]
+            subDict["disk"] = diskMags[idNames[i]]
+            subDict["agn"] = agnMags[idNames[i]]
             
             masterDict[idNames[i]] = subDict
 
@@ -238,7 +265,7 @@ class PhotometryGalaxies(PhotometryBase):
         bandPassList=['u','g','r','i','z','y']
         idNames=self.column_by_name('galid')
         magDict=self.calculate_magnitudes(bandPassList,idNames)
-        
+    
         utotal=numpy.zeros(len(idNames),dtype=float)
         gtotal=numpy.zeros(len(idNames),dtype=float)
         rtotal=numpy.zeros(len(idNames),dtype=float)
@@ -269,7 +296,9 @@ class PhotometryGalaxies(PhotometryBase):
         
         i=0
         failure=-999.0
-        for name in idNames:
+        for i in range(len(idNames)):
+            name=idNames[i]
+            
             utotal[i]=magDict[name]["total"]["u"]
             gtotal[i]=magDict[name]["total"]["g"]
             rtotal[i]=magDict[name]["total"]["r"]
