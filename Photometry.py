@@ -51,7 +51,7 @@ class PhotometryBase(object):
             
             for w in self.bandPassKey:    
                 self.bandPasses[w] = Bandpass()
-                self.bandPasses[w].readThroughput(os.path.join(path,"%s%s.dat"%bandPassRoot%w))
+                self.bandPasses[w].readThroughput(os.path.join(path,"total_%s.dat" % w))
         
             self.setupPhiArray_dict(self.bandPasses,self.bandPassKey)
             
@@ -61,7 +61,10 @@ class PhotometryBase(object):
         Generate list of SEDs required for generating magnitudes
         """    
         
-        dataDir=os.getenv('SED_DATA')+self.subDir
+        if self.subDir:
+            dataDir=os.getenv('SED_DATA')+self.subDir
+        else:
+            dataDir=os.getenv('SED_DATA')
         
         imsimband = Bandpass()
         imsimband.imsimBandpass()
@@ -71,8 +74,10 @@ class PhotometryBase(object):
             sedName = sedList[i]
             if sedName == None:
                 continue
-            elif sedName in sedDict:
-                continue
+            #removed the code below because we now want to load all SEDs
+            #since objects can have identical SEDs, but different magNorms
+            #elif sedName in sedDict:
+                #continue
             else:            
                 sed = Sed()
                 sed.readSED_flambda(os.path.join(dataDir, sedName))
@@ -117,7 +122,7 @@ class PhotometryBase(object):
         magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
         magDict = {}
         i = 0
-        for f in bandpassKeys:
+        for f in self.bandPassKey:
             magDict[f] = magArray[i]
             i = i + 1
         return magDict
@@ -326,7 +331,9 @@ class PhotometryGalaxies(PhotometryBase):
 class PhotometryStars(PhotometryBase):
 
     def calculate_magnitudes(self,bandPassList,idNames):
-    
+        
+        self.subDir="/starSED/kurucz/"
+        
         self.loadBandPasses(bandPassList)
         sedNames = self.column_by_name('sedFilename')
         magNorm = self.column_by_name('magNorm')
@@ -335,13 +342,13 @@ class PhotometryStars(PhotometryBase):
         magDict = {}
         for i in range(len(idNames)):
             name = idNames[i]
-            subDict = manyMagCalc_dict(sedList[i])
+            subDict = self.manyMagCalc_dict(sedList[i])
             magDict[name] = subDict
         
         return magDict
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
-    def get_magnitudes(self);
+    def get_magnitudes(self):
         idNames = self.column_by_name('id')
         bandPassList = ['u','g','r','i','z','y']
         
