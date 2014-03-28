@@ -24,17 +24,7 @@ def interp1D(z1 , z2, offset):
 
     return zPrime
 
-def calculateEbv(gLon, gLat, northMap, southMap, interp=False):
-    """ For an array of Gal long, lat calculate E(B-V)"""
-    ebv = numpy.zeros(len(gLon))
-                      
-    for i,lon in enumerate(gLon):
-        if (gLat[i] <= 0.):
-            ebv[i] = southMap.generateEbv(gLon[i],gLat[i],interpolate=interp)
-        else:
-            ebv[i] = northMap.generateEbv(gLon[i],gLat[i], interpolate=interp)
 
-    return ebv
             
 class EbvMap():
     '''Class  for describing a map of EBV
@@ -158,6 +148,8 @@ class EbvMap():
 
         return ix,iy
 
+
+
 class EBVmixin(object):
     #these variables will tell the mixin where to get the dust maps
     ebvDataDir=os.environ.get("CAT_SHARE_DATA")
@@ -182,8 +174,20 @@ class EBVmixin(object):
         self.ebvMapSouth=EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
+    def calculateEbv(self, gLon, gLat, northMap, southMap, interp=False):
+        """ For an array of Gal long, lat calculate E(B-V)"""
+        ebv = numpy.zeros(len(gLon))
+                      
+        for i,lon in enumerate(gLon):
+            if (gLat[i] <= 0.):
+                ebv[i] = southMap.generateEbv(gLon[i],gLat[i],interpolate=interp)
+            else:
+                ebv[i] = northMap.generateEbv(gLon[i],gLat[i], interpolate=interp)
+
+        return ebv
+
+    
     #and finally, here is the getter
-    #it relies ont he calculateEbv routine defined in EBV.py
     def get_EBV(self):
         if self.ebvMapNorth==None:
             self.load_ebvMapNorth()
@@ -194,8 +198,7 @@ class EBVmixin(object):
         glon=self.column_by_name("glon")
         glat=self.column_by_name("glat")
         
-        EBV_out=numpy.array(calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
-        #print EBV_out
+        EBV_out=numpy.array(self.calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
         return EBV_out
     
     @compound('glon','glat')
@@ -212,34 +215,4 @@ class EBVmixin(object):
         
         return numpy.array([glon,glat])
     
-    
-    def get_galacticRv(self):
-        av = self.column_by_name('galacticAv')
-        ee = self.column_by_name('EBV')
-        return av/ee
 
-
-
-def main():
-    import sys
-    import os
-    glon = []
-    glat = []
-    glon.append(float(sys.argv[1])*math.pi/180.)
-    glat.append(float(sys.argv[2])*math.pi/180.)
-
-    datadir = os.environ.get("CAT_SHARE_DATA")
-    ebvMapNorth = EbvMap()
-    ebvMapNorth.readMapFits(os.path.join(datadir, "data/Dust/SFD_dust_4096_ngp.fits"))
-    ebvMapSouth = EbvMap()
-    ebvMapSouth.readMapFits(os.path.join(datadir, "data/Dust/SFD_dust_4096_sgp.fits"))
-
-    print calculateEbv(glon, glat, ebvMapNorth, ebvMapSouth, interp = True)
-
-
-    ebv = ebvMapNorth.generateEbv(glon[0], glat[0], interpolate=False)
-
-    print ebv
-
-if __name__ == '__main__':
-    main()
