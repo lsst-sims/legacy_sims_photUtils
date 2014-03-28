@@ -36,7 +36,7 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(bplist)
 
-    def loadBandPasses(self,bandPassList,bandPassRoot="total"):
+    def loadBandPasses(self,bandPassList,bandPassRoot="total_"):
         """
         This will take the list of band passes in bandPassList and use them to set up
         self.phiArray and self.waveLenStep (which is being cached so that it does not have
@@ -51,7 +51,7 @@ class PhotometryBase(object):
             
             for w in self.bandPassKey:    
                 self.bandPasses[w] = Bandpass()
-                self.bandPasses[w].readThroughput(os.path.join(path,"%s_%s.dat" % bandPassRoot % w))
+                self.bandPasses[w].readThroughput(os.path.join(path,"%s.dat" % (bandPassRoot + w)))
         
             self.setupPhiArray_dict(self.bandPasses,self.bandPassKey)
             
