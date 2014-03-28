@@ -323,13 +323,44 @@ class PhotometryGalaxies(PhotometryBase):
             uagn,gagn,ragn,iagn,zagn,yagn])
 
 
+class PhotometryStars(PhotometryBase):
 
-        
-    def calculate_star_mags(self, bandPassList):
-        """
-        return a dictionary of magnitudes indexed first by sedName and then bandpass
-        """
+    def calculate_magnitudes(self,bandPassList,idNames):
+    
+        self.loadBandPasses(bandPassList)
         sedNames = self.column_by_name('sedFilename')
-        magDict=self.calculate_magnitudes(bandPassList,sedNames)
-
+        magNorm = self.column_by_name('magNorm')
+        sedList = self.loadSeds(sedNames,magNorm = magNorm)
+        
+        magDict = {}
+        for i in range(len(idNames)):
+            name = idNames[i]
+            subDict = manyMagCalc_dict(sedList[i])
+            magDict[name] = subDict
+        
         return magDict
+
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    def get_magnitudes(self);
+        idNames = self.column_by_name('id')
+        bandPassList = ['u','g','r','i','z','y']
+        
+        magDict = self.calculate_magnitudes(bandPassList,idNames)
+        
+        uu = numpy.zeros(len(idNames),dtype=float)
+        gg = numpy.zeros(len(idNames),dtype=float)
+        rr = numpy.zeros(len(idNames),dtype=float)
+        ii = numpy.zeros(len(idNames),dtype=float)
+        zz = numpy.zeros(len(idNames),dtype=float)
+        yy = numpy.zeros(len(idNames),dtype=float)
+        
+        for i in range(len(idNames)):
+            uu[i] = magDict[idNames[i]]["u"]
+            gg[i] = magDict[idNames[i]]["g"]
+            rr[i] = magDict[idNames[i]]["r"]
+            ii[i] = magDict[idNames[i]]["i"]
+            zz[i] = magDict[idNames[i]]["z"]
+            yy[i] = magDict[idNames[i]]["y"]
+        
+        return numpy.array([uu,gg,rr,ii,zz,yy])
+      
