@@ -39,8 +39,7 @@ class PhotometryBase(object):
     bandPassKey = []   
     phiArray = None
     waveLenStep = None
-    subDir = None #this is a variable that is used to point loadSEDs to different sub directories of $SED_DATA
-    
+        
     def setupPhiArray_dict(self):
         """ 
         Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
@@ -96,10 +95,7 @@ class PhotometryBase(object):
         (astronomical) objects to have the same SEDs but different magNorms
         """    
         
-        if self.subDir:
-            dataDir=os.getenv('SED_DATA')+self.subDir
-        else:
-            dataDir=os.getenv('SED_DATA')
+        dataDir=os.getenv('SED_DATA')
         
         #initialize a delta function bandpass for use in applying magNorm
         imsimband = Bandpass()
@@ -115,7 +111,7 @@ class PhotometryBase(object):
                 sed = Sed()
             else:          
                 sed = Sed()
-                sed.readSED_flambda(os.path.join(dataDir, sedName))
+                sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
                 if resample_same:
                     if firstsed:
                         wavelen_same = sed.wavelen
@@ -216,7 +212,6 @@ class PhotometryGalaxies(PhotometryBase):
         agnMags={}
             
         if diskNames != []:
-            self.subDir="/galaxySED/"
             diskSed = self.loadSeds(diskNames,magNorm = diskmn)
             self.applyAvAndRedshift(diskSed,internalAv = bulgeAv, redshift = redshift)
             
@@ -234,7 +229,6 @@ class PhotometryGalaxies(PhotometryBase):
                 distMags[idNames[i]]=subDict
          
         if bulgeNames != []:
-            self.subDir="/galaxySED/"
             bulgeSed = self.loadSeds(bulgeNames,magNorm = bulgemn)
             self.applyAvAndRedshift(bulgeSed,internalAv = diskAv, redshift = redshift)
             
@@ -248,8 +242,7 @@ class PhotometryGalaxies(PhotometryBase):
             for i in range(len(idNames)):
                 bulgeMags[idNames[i]]=subDict
         
-        if agnNames != []: 
-            self.subDir="/agnSED/"    
+        if agnNames != []:  
             agnSed = self.loadSeds(agnNames,magNorm = agnmn)
             self.applyAvAndRedshift(agnSed,redshift = redshift)
             
@@ -267,7 +260,6 @@ class PhotometryGalaxies(PhotometryBase):
         total_mags = {}
         masterDict = {}
 
-        #No idea where this number came from; I copied it from earlier code
         m_o = 22.
 
         for i in range(len(idNames)):
@@ -405,7 +397,7 @@ class PhotometryStars(PhotometryBase):
     
     It assumes that we want LSST filters.
     """
-
+                         
     def calculate_magnitudes(self,bandPassList,idNames):
         """
         Take the array of bandpass keys bandPassList and the array of
@@ -419,9 +411,7 @@ class PhotometryStars(PhotometryBase):
         identifier, rather than their sedFilename, because different stars
         can have identical SEDs but different magnitudes.
         """
-        
-        self.subDir="/starSED/kurucz/"
-        
+
         self.loadBandPasses(bandPassList)
         sedNames = self.column_by_name('sedFilename')
         magNorm = self.column_by_name('magNorm')
