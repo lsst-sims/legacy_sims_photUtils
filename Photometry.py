@@ -215,8 +215,6 @@ class PhotometryGalaxies(PhotometryBase):
             diskSed = self.loadSeds(diskNames,magNorm = diskmn)
             self.applyAvAndRedshift(diskSed,internalAv = bulgeAv, redshift = redshift)
             
-            print "lenidNames ",len(idNames)," lenDiskSed ",len(diskSed)," lenDisknames ",len(diskNames)
-            
             for i in range(len(idNames)):
                 subDict=self.manyMagCalc_dict(diskSed[i])
                 diskMags[idNames[i]]=subDict

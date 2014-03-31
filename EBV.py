@@ -195,8 +195,8 @@ class EBVmixin(object):
         if self.ebvMapSouth==None:
             self.load_ebvMapSouth()
         
-        glon=self.column_by_name("glon")
-        glat=self.column_by_name("glat")
+        glon=self.column_by_name('glon')
+        glat=self.column_by_name('glat')
         
         EBV_out=numpy.array(self.calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
         return EBV_out
@@ -214,5 +214,10 @@ class EBVmixin(object):
             glat[i]=gg[1]
         
         return numpy.array([glon,glat])
+    
+    def get_galacticRv(self):
+        Av=self.column_by_name('galacticAv')
+        EBV=self.column_by_name('EBV')
+        return numpy.array(Av/EBV)
     
 
