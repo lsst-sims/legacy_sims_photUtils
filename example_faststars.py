@@ -45,7 +45,7 @@ print "Reading %d filters took %f s" %(len(filterlist), dt)
 
 # Read in a set of star seds. 
 # Replace stardir with your root galaxy sed directory.
-stardir = os.path.join(os.getenv('HOME'), 'seds/kurucz_r')
+stardir = os.path.join(os.getenv('SED_DATA'), 'starSED/kurucz')
 stars = {}
 starlist = os.listdir(stardir)
 for star in starlist:
