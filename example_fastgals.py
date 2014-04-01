@@ -9,8 +9,9 @@ def dtime(time_prev):
 
 # Import other modules and classes. 
 import numpy
-import lsst.sims.catalogs.measures.photometry.Sed as Sed
-import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
+
+import lsst.sims.photUtils.Sed as Sed
+import lsst.sims.photUtils.Bandpass as Bandpass
 
 # Initialize starting time.
 t = time.time()
@@ -34,7 +35,7 @@ wavelen_max = lsstbp[filterlist[0]].wavelen.max() - wavelen_step
 
 # Read in galaxy seds. (there aren't many, so just read them all).
 # Replace galdir with your root galaxy sed directory.
-galdir = os.path.join(os.getenv('HOME'), 'seds/galaxies')
+galdir = os.path.join(os.getenv('SED_DATA'), 'galaxySED')
 gals = {}
 gallist = os.listdir(galdir)
 for gal in gallist:
