@@ -4,8 +4,8 @@
 # Only some of the (probably most often used) functionality is illustrated here,
 #  so please see the comments in Sed and Bandpass for more information.
 
-import lsst.sims.catalogs.measures.photometry.Sed as Sed
-import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
+import lsst.sims.photUtils.Sed as Sed
+import lsst.sims.photUtils.Bandpass as Bandpass
 
 # Note that Bandpass and Sed are set up for NANOMETERS units on input data
 
