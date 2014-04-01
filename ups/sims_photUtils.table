@@ -1,0 +1,11 @@
+setupRequired(base)
+setupRequired(sims_catalogs_generation)
+setupRequired(python)
+setupRequired(throughputs)
+setupRequired(pyfits)
+setupRequired(scipy)
+
+#This is needed by the mssql python module
+envPrepend(TDSVER, 7.0)
+envSet(SED_DATA, ${CAT_SHARE_DATA}/data)
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
