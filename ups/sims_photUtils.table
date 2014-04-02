@@ -1,5 +1,5 @@
 setupRequired(base)
-setupRequired(sims_catalogs_generation)
+setupRequired(sims_catalogs_measures)
 setupRequired(python)
 setupRequired(throughputs)
 setupRequired(pyfits)
