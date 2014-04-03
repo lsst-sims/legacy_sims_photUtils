@@ -67,13 +67,14 @@ class Variability(object):
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
         params = varCmd['pars']
-        output = self.variabilityMethods[method](params)
+        expmjd=numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        output = self.variabilityMethods[method](params,expmjd)
         return output
     
-    def applyStdPeriodic(self, params, keymap, inPeriod=None,
+    def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
             inDays=True, interpFactory=None):
-        #expmjd = numpy.asarray(expmjd)
-        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        expmjd = numpy.asarray(expmjd)
+        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         
         filename = params[keymap['filename']]
         toff = float(params[keymap['t0']])
@@ -118,37 +119,38 @@ class Variability(object):
             magoff[k] = splines[k](phase)
         return magoff
 
-    def applyMflare(self, params):
+    def applyMflare(self, params, expmjd):
         
         params['lcfilename'] = "mflare/"+params['lcfilename'][:-5]+"1.dat"
         keymap = {'filename':'lcfilename', 't0':'t0'}
-        magoff = self.applyStdPeriodic(params, keymap, inPeriod=params['length'])
+        magoff = self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['length'])
         for k in magoff.keys():
             magoff[k] = -magoff[k]
         return magoff
 
-    def applyRRly(self, params):
+    def applyRRly(self, params, expmjd):
     
         keymap = {'filename':'filename', 't0':'tStartMjd'}
-        return self.applyStdPeriodic(params, keymap,
+        return self.applyStdPeriodic(params, keymap, expmjd,
                 interpFactory=InterpolatedUnivariateSpline)
 
-    def applyCepheid(self, params):
+    def applyCepheid(self, params, expmjd):
     
         keymap = {'filename':'lcfile', 't0':'t0'}
-        return self.applyStdPeriodic(params, keymap, inPeriod=params['period'], inDays=False,
+        return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
 
-    def applyEb(self, params):
+    def applyEb(self, params, expmjd):
         keymap = {'filename':'lcfile', 't0':'t0'}
-        dMags = self.applyStdPeriodic(params, keymap, 
+        dMags = self.applyStdPeriodic(params, keymap, expmjd,
                 interpFactory=InterpolatedUnivariateSpline)
         for k in dMags.keys():
             dMags[k] = -2.5*numpy.log10(dMags[k])
         return dMags
 
-    def applyMicrolens(self, params):
-        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+    def applyMicrolens(self, params, expmjd_in):
+        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        expmjd = numpy.asarray(expmjd_in,dtype=float)
         epochs = expmjd - params['t0']
         dMags = {}
         u = numpy.sqrt(params['umin']**2 + ((2.0*epochs/params['that'])**2))
@@ -163,9 +165,10 @@ class Variability(object):
         return dMags
 
 
-    def applyAgn(self, params):
+    def applyAgn(self, params, expmjd_in):
         dMags = {}
-        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        expmjd = numpy.asarray(expmjd_in,dtype=float)
         toff = numpy.float(params['t0_mjd'])
         seed = int(params['seed'])
         sfint = {}
@@ -200,9 +203,10 @@ class Variability(object):
             dMags[k] = magoff
         return dMags
 
-    def applyMicrolensing(self, params):
+    def applyMicrolensing(self, params, expmjd_in):
         dMags = {}
-        epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float) - params['t0']
+        #epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float) - params['t0']
+        epochs = numpy.asarray(expmjd_in,dtype=float) - params['t0']
         u = numpy.sqrt(params['umin']**2 + (2.0 * epochs /\
             params['that'])**2)
         magnification = (u + 2.0) / (u * numpy.sqrt(u**2 + 4.0))
@@ -215,10 +219,11 @@ class Variability(object):
         dMags['y'] = dmag 
         return dMags
 
-    def applyAmcvn(self, params):
+    def applyAmcvn(self, params, expmjd_in):
         maxyears = 10.
         dMag = {}
-        epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        #epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        epochs = numpy.asarray(expmjd_in,dtype=float)
         # get the light curve of the typical variability
         uLc   = params['amplitude']*numpy.cos((epochs - params['t0'])/params['period'])
         gLc   = uLc
@@ -251,8 +256,9 @@ class Variability(object):
         dMag['y'] = yLc
         return dMag
 
-    def applyBHMicrolens(self, params):
-        expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+    def applyBHMicrolens(self, params, expmjd_in):
+        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename = params['filename']
         toff = float(params['t0'])
         epoch = expmjd - toff
