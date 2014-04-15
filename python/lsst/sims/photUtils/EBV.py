@@ -154,17 +154,29 @@ class EBVmixin(object):
     
         #the set_xxxx routines below will allow the user to point elsewhere for the dust maps
     def set_ebvMapNorth(self,word):
+        """
+        This allows the user to pick a new northern SFD map file
+        """
         self.ebvMapNorthName=word
     
     def set_ebvMapSouth(self,word):
+        """
+        This allows the user to pick a new southern SFD map file
+        """
         self.ebvMapSouthName=word
     
     #these routines will load the dust maps for the galactic north and south hemispheres
     def load_ebvMapNorth(self):
+        """
+        This will load the northern SFD map
+        """
         self.ebvMapNorth=EbvMap()
         self.ebvMapNorth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapNorthName))
     
     def load_ebvMapSouth(self):
+        """
+        This will load the southern SFD map
+        """
         self.ebvMapSouth=EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
@@ -183,6 +195,9 @@ class EBVmixin(object):
     
     #and finally, here is the getter
     def get_EBV(self):
+        """
+        Getter for the InstanceCatalog framework
+        """
         if self.ebvMapNorth==None:
             self.load_ebvMapNorth()
         
@@ -197,6 +212,9 @@ class EBVmixin(object):
     
     @compound('glon','glat')
     def get_galactic_coords(self):
+        """
+        getter for galactic coordinates, in case the catalog class does not provide that
+        """
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
         
@@ -210,6 +228,9 @@ class EBVmixin(object):
         return numpy.array([glon,glat])
     
     def get_galacticRv(self):
+        """
+        Returns galactic RV by getting galacticAv and EBV and assuming Rv = Av/EBV"
+        """
         Av=self.column_by_name('galacticAv')
         EBV=self.column_by_name('EBV')
         return numpy.array(Av/EBV)
