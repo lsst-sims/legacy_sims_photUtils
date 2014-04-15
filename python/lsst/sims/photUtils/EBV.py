@@ -170,13 +170,13 @@ class EBVmixin(object):
     
     def calculateEbv(self, gLon, gLat, northMap, southMap, interp=False):
         """ For an array of Gal long, lat calculate E(B-V)"""
-        ebv = numpy.zeros(len(gLon))
-                      
-        for i,lon in enumerate(gLon):
-            if (gLat[i] <= 0.):
-                ebv[i] = southMap.generateEbv(gLon[i],gLat[i],interpolate=interp)
+        
+        ebv=[]
+        for lon,lat in zip(gLon,gLat):
+            if (lat <= 0.):
+                ebv.append(southMap.generateEbv(lon,lat,interpolate=interp))
             else:
-                ebv[i] = northMap.generateEbv(gLon[i],gLat[i], interpolate=interp)
+                ebv.append(northMap.generateEbv(lon,lat, interpolate=interp))
 
         return ebv
 
