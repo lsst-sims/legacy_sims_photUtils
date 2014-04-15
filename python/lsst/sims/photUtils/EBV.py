@@ -31,8 +31,7 @@ class EbvMap(object):
 
     Images are read in from a fits file and assume a ZEA projection
     '''
-    def __init__(self):
-        data = None
+
         
     def readMapFits(self, fileName):
         """ read a fits file containing the ebv data"""
