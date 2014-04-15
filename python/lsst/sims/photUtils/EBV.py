@@ -31,7 +31,6 @@ class EbvMap(object):
 
     Images are read in from a fits file and assume a ZEA projection
     '''
-
         
     def readMapFits(self, fileName):
         """ read a fits file containing the ebv data"""
@@ -122,15 +121,11 @@ class EbvMap(object):
                 iyLow = iy
                 iyHigh = iy+1
                 dy = y - iy
-            try:
-                xLow = interp1D(self.data[iyLow][ixLow], self.data[iyLow][ixHigh], dx)
-                xHigh = interp1D(self.data[iyHigh][ixLow], self.data[iyHigh][ixHigh], dx)
-                ebvVal = interp1D(xLow, xHigh, dy)                
-            except:
-                print glon, glat, x, y
-                print ix,iy,self.nc, self.nr
-                print ixLow, ixHigh, iyLow, iyHigh, dx, dy
-                
+         
+            xLow = interp1D(self.data[iyLow][ixLow], self.data[iyLow][ixHigh], dx)
+            xHigh = interp1D(self.data[iyHigh][ixLow], self.data[iyHigh][ixHigh], dx)
+            ebvVal = interp1D(xLow, xHigh, dy)                
+         
             #xLow = interp1D(self.data[iy][ix], self.data[iy][ix+1], x - ix)
             #xHigh = interp1D(self.data[iy+1][ix], self.data[iy+1][ix+1], x - ix)
             #ebvVal = interp1D(xLow, xHigh, y - iy)                
