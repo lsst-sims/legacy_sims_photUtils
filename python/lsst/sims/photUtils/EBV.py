@@ -26,7 +26,7 @@ def interp1D(z1 , z2, offset):
 
 
             
-class EbvMap():
+class EbvMap(object):
     '''Class  for describing a map of EBV
 
     Images are read in from a fits file and assume a ZEA projection
