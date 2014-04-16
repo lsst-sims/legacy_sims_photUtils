@@ -176,6 +176,51 @@ class PhotometryGalaxies(PhotometryBase):
     galaxies.  It assumes that we want LSST filters.
     """
     
+    def calculate_component_magnitudes(self,objectNames, componentNames, bandPassList, \
+                                       magNorm = 15.0, internalAv = None, redshift = None):
+        
+        """
+        Calculate the magnitudes for different components (disk, bulge, agn, etc) of galaxies.
+        
+        @param [in] objectNames is the name of the galaxies (the whole galaxies)
+        
+        @param [in] componentNames gives the name of the SED files for the component in question
+        
+        @param [in] bandPassList lists the bandpasses for which we want magnitudes (this will come
+        from calculate_magnitudes()
+        
+        @param [in] magNorm is the normalizing magnitude
+        
+        @param [in] internalAv is the internal Av extinction
+        
+        @param [in] redshift is pretty self-explanatory
+        
+        This will return a dict of dicts such that
+        
+        magnitude["objectname"]["filter label"] will return the magnitude in that filter
+        for the component being calculated
+        
+        """
+        
+        componentMags = {}
+        
+        if componentNames != []:
+            componentSed = self.loadSeds(componentNames,magNorm = magNorm)
+            self.applyAvAndRedshift(componentSed,internalAv = internalAv, redshift = redshift)
+            
+            for i in range(len(objectNames)):
+                subDict=self.manyMagCalc_dict(componentSed[i])
+                componentMags[objectNames[i]]=subDict
+        
+        else:
+            subDict={}
+            for b in bandPassList:
+                subDict[b]=None
+            for i in range(len(objectNames)):
+                componentMags[objectNames[i]]=subDict
+    
+        return componentMags
+    
     def calculate_magnitudes(self,bandPassList,idNames):
         """
         Take the array of bandpass keys bandPassList and the array of galaxy
@@ -206,54 +251,15 @@ class PhotometryGalaxies(PhotometryBase):
         diskAv = self.column_by_name('internalAvDisk')
 
         redshift = self.column_by_name('redshift')
-        
-        diskMags={}
-        bulgeMags={}
-        agnMags={}
-            
-        if diskNames != []:
-            diskSed = self.loadSeds(diskNames,magNorm = diskmn)
-            self.applyAvAndRedshift(diskSed,internalAv = bulgeAv, redshift = redshift)
-            
-            for i in range(len(idNames)):
-                subDict=self.manyMagCalc_dict(diskSed[i])
-                diskMags[idNames[i]]=subDict
-        
-        else:
-            subDict={}
-            for b in bandPassList:
-                subDict[b]=None
-            for i in range(len(idNames)):
-                distMags[idNames[i]]=subDict
          
-        if bulgeNames != []:
-            bulgeSed = self.loadSeds(bulgeNames,magNorm = bulgemn)
-            self.applyAvAndRedshift(bulgeSed,internalAv = diskAv, redshift = redshift)
-            
-            for i in range(len(idNames)):
-                subDict=self.manyMagCalc_dict(bulgeSed[i])
-                bulgeMags[idNames[i]]=subDict
-        else:
-            subDict={}
-            for b in bandPassList:
-                subDict[b]=None
-            for i in range(len(idNames)):
-                bulgeMags[idNames[i]]=subDict
-        
-        if agnNames != []:  
-            agnSed = self.loadSeds(agnNames,magNorm = agnmn)
-            self.applyAvAndRedshift(agnSed,redshift = redshift)
-            
-            for i in range(len(idNames)):
-                subDict=self.manyMagCalc_dict(agnSed[i])
-                agnMags[idNames[i]]=subDict
-        
-        else:
-            subDict={}
-            for b in bandPassList:
-                subDict[b]=None
-            for i in range(len(idNames)):
-                agnMags[idNames[i]]=subDict
+        diskMags = self.calculate_component_magnitudes(idNames,diskNames,bandPassList,magNorm = diskmn, \
+                        internalAv = diskAv, redshift = redshift)
+                        
+        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,bandPassList,magNorm = bulgemn, \
+                        internalAv = bulgeAv, redshift = redshift)
+                        
+        agnMags = self.calculate_component_magnitudes(idNames,agnNames,bandPassList,magNorm = agnmn, \
+                        redshift = redshift)
         
         total_mags = {}
         masterDict = {}
