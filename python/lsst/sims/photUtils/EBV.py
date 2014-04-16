@@ -209,24 +209,7 @@ class EBVmixin(object):
         
         EBV_out=numpy.array(self.calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
         return EBV_out
-    
-    @compound('glon','glat')
-    def get_galactic_coords(self):
-        """
-        getter for galactic coordinates, in case the catalog class does not provide that
-        """
-        ra=self.column_by_name('raJ2000')
-        dec=self.column_by_name('decJ2000')
         
-        glon=numpy.zeros(len(ra))
-        glat=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            gg=pal.eqgal(ra[i],dec[i])
-            glon[i]=gg[0]
-            glat[i]=gg[1]
-        
-        return numpy.array([glon,glat])
-    
     def get_galacticRv(self):
         """
         Returns galactic RV by getting galacticAv and EBV and assuming Rv = Av/EBV"
