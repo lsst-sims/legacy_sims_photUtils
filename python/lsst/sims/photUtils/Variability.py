@@ -6,6 +6,7 @@ import json as json
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
+from lsst.sims.catalogs.measures.instance import compound
 
 class Variability(object):
     """Variability class for adding temporal variation to the magnitudes of
@@ -49,6 +50,38 @@ class Variability(object):
             raise
     
     
+    @compound('lsst_u_var','lsst_g_var','lsst_r_var','lsst_i_var',
+    'lsst_z_var','lsst_y_var')
+    def get_variable_magnitudes(self):
+        uu=self.column_by_name('lsst_u')
+        gg=self.column_by_name('lsst_g')
+        rr=self.column_by_name('lsst_r')
+        ii=self.column_by_name('lsst_i')
+        zz=self.column_by_name('lsst_z')
+        yy=self.column_by_name('lsst_y')
+        
+        varParams=self.column_by_name('varParamStr')
+        
+        uuout=[]
+        ggout=[]
+        rrout=[]
+        iiout=[]
+        zzout=[]
+        yyout=[]
+        
+        i=0
+        for vv in varParams:
+            deltaMag=self.applyVariability(vv)
+            uuout.append(uu[i]+deltaMag['u'])
+            ggout.append(gg[i]+deltaMag['g'])
+            rrout.append(rr[i]+deltaMag['r'])
+            iiout.append(ii[i]+deltaMag['i'])
+            zzout.append(zz[i]+deltaMag['z'])
+            yyout.append(yy[i]+deltaMag['y'])
+            i+=1
+            
+        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout])        
+    
     def applyVariability(self, varParams):
         """
         varParams will be the varParamStr column from the data base
@@ -67,7 +100,8 @@ class Variability(object):
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
         params = varCmd['pars']
-        expmjd=numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        #expmjd=numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
+        expmjd=self.obs_metadata.mjd
         output = self.variabilityMethods[method](params,expmjd)
         return output
     
