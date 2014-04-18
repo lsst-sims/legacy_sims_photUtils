@@ -221,6 +221,26 @@ class PhotometryGalaxies(PhotometryBase):
     
         return componentMags
     
+    def sum_magnitudes(self,disk = None, bulge = None, agn = None):
+        mm_o = 22.
+        
+        nn=0.0
+        if disk is not None:
+            nn+=numpy.power(10, (disk - mm_o)/-2.5)
+                
+        if bulge is not None:
+            nn+=numpy.power(10, (bulge - mm_o)/-2.5)
+            
+        if agn is not None:
+            nn+=numpy.power(10, (agn - mm_o)/-2.5)
+                
+        if nn>0.0:
+            outMag = -2.5*numpy.log10(nn) + mm_o
+        else:
+            outMag = None
+        
+        return outMag
+    
     def calculate_magnitudes(self,bandPassList,idNames):
         """
         Take the array of bandpass keys bandPassList and the array of galaxy
@@ -264,25 +284,12 @@ class PhotometryGalaxies(PhotometryBase):
         total_mags = {}
         masterDict = {}
 
-        m_o = 22.
-
         for i in range(len(idNames)):
             total_mags={}
             for ff in bandPassList:
-                nn=0.0
-                if diskMags[idNames[i]][ff]!=None:
-                    nn+=numpy.power(10, (diskMags[idNames[i]][ff] - m_o)/-2.5)
+                total_mags[ff]=self.sum_magnitudes(disk = diskMags[idNames[i]][ff],
+                                bulge = bulgeMags[idNames[i]][ff], agn = agnMags[idNames[i]][ff])
                 
-                if bulgeMags[idNames[i]][ff]!=None:
-                    nn+=numpy.power(10, (bulgeMags[idNames[i]][ff] - m_o)/-2.5)
-            
-                if agnMags[idNames[i]][ff]!=None:
-                    nn+=numpy.power(10, (agnMags[idNames[i]][ff] - m_o)/-2.5)
-                
-                if nn>0.0:
-                    total_mags[ff] = -2.5*numpy.log10(nn) + m_o
-                else:
-                    total_mags[ff] = None
                 
             subDict={}
             subDict["total"] = total_mags
