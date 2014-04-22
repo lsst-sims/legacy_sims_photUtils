@@ -210,7 +210,7 @@ class PhotometryBase(object):
             
             for filterName in filterDict:
                 mm = filterDict[filterName]
-                
+
                 xx=10**(0.4*(mm - m5[filterName]))
                 ss = (0.04 - gamma[filterName])*xx + \
                      gamma[filterName]*xx*xx
@@ -453,7 +453,51 @@ class PhotometryGalaxies(PhotometryBase):
             ubulge,gbulge,rbulge,ibulge,zbulge,ybulge,\
             udisk,gdisk,rdisk,idisk,zdisk,ydisk,\
             uagn,gagn,ragn,iagn,zagn,yagn])
+    
+    @compound('sigma_uRecalc','sigma_gRecalc','sigma_rRecalc',
+              'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc')
+    def get_photometric_uncertainties(self):
+        idNames = self.column_by_name('galid')
+        uu = self.column_by_name('uRecalc')
+        gg = self.column_by_name('gRecalc')
+        rr = self.column_by_name('rRecalc')
+        ii = self.column_by_name('iRecalc')
+        zz = self.column_by_name('zRecalc')
+        yy = self.column_by_name('yRecalc')
+        
+        inputDict={}
+        i=0
+        for name in idNames:
+            subDict = {}
+            subDict['u'] = uu[i]
+            subDict['g'] = gg[i]
+            subDict['r'] = rr[i]
+            subDict['i'] = ii[i]
+            subDict['z'] = zz[i]
+            subDict['y'] = yy[i]
+            
+            inputDict[name] = subDict
+            i += 1
+        
+        outputDict = self.calculatePhotometricUncertainty(inputDict)
+        
+        sig_uu = []
+        sig_gg = []
+        sig_rr = []
+        sig_ii = []
+        sig_zz = []
+        sig_yy = []
+        
+        for name in outputDict:
+            sig_uu.append(outputDict[name]['u'])
+            sig_gg.append(outputDict[name]['g'])
+            sig_rr.append(outputDict[name]['r'])
+            sig_ii.append(outputDict[name]['i'])
+            sig_zz.append(outputDict[name]['z'])
+            sig_yy.append(outputDict[name]['y'])
 
+        return numpy.array([sig_uu,sig_gg,sig_rr,sig_ii,sig_zz,sig_yy])
+        
 
 class PhotometryStars(PhotometryBase):
     """
