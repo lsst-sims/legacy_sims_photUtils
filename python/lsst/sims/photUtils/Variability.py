@@ -32,12 +32,17 @@ class Variability(object):
     variabilityMethods = {}
     
     def initializeVariability(self,doCache=False):
-        self.variabilityInitialized=True        
+        self.variabilityInitialized=True
+        
         listOfMembers=inspect.getmembers(self)
         for methodName, actualMethod in listOfMembers:
             self.logIt = False
-            if methodName != "initializeVariability": 
-            #so that we don't recursively call this function
+            if methodName[0] == "a": 
+            #This avoids calling initializeVariabilty recursively.
+            #It also avoid calling the getters, which will call a variability method
+            # and thus set the logIt flag to True, getting themselves a spot in the
+            #registry.
+            #It will require that all future variability methods be named "applyXXXX"
                 try:
                     actualMethod()
                 except:
@@ -45,7 +50,7 @@ class Variability(object):
                 
                 if self.logIt == True:
                     self.variabilityMethods[methodName] = actualMethod
-            
+             
         #below are variables to cache the light curves of variability models
         self.variabilityLcCache = {}
         self.variabilityCache = doCache
