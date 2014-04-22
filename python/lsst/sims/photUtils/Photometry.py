@@ -169,6 +169,59 @@ class PhotometryBase(object):
                   
         return magDict
 
+    def calculatePhotometricUncertainty(self,magDict):
+        """
+        This method is based on equations 3.1, 3.2 and Table 3.2
+        of the LSST Science Book (version 2.0)
+        
+        magDict will be two-level dict of magnitudes, i.e.
+        
+        magDict['name']['filter'] will be the magnitude of object 'name'
+        in the appropriate filter
+        
+        This method will return a similar dict of photometric uncertainties
+        """
+        sigma2Sys = 0.003*0.003 #also taken from the Science Book
+                         #see the paragraph between equations 3.1 and 3.2
+        
+        gamma = {}
+        m5 = {}
+        
+        gamma['u'] = 0.037
+        gamma['g'] = 0.038
+        gamma['r'] = 0.039
+        gamma['i'] = 0.039
+        gamma['z'] = 0.040
+        gamma['y'] = 0.040
+        
+        m5['u'] = 23.9
+        m5['g'] = 25.0
+        m5['r'] = 24.7
+        m5['i'] = 24.0
+        m5['z'] = 23.3
+        m5['y'] = 22.1
+        
+        sigOut={}
+        
+        for name in magDict:
+            filterDict = magDict[name]
+            
+            subDict = {}
+            
+            for filterName in filterDict:
+                mm = filterDict[filterName]
+                
+                xx=10**(0.4*(mm - m5[filterName]))
+                ss = (0.04 - gamma[filterName])*xx + \
+                     gamma[filterName]*xx*xx
+                
+                sigmaSquared = ss + sigma2Sys
+                
+                subDict[filterName] = numpy.sqrt(sigmaSquared)
+            
+            sigOut[name] = subDict
+        
+        return sigOut
 
 class PhotometryGalaxies(PhotometryBase):
     """
