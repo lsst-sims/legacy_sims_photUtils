@@ -2,11 +2,25 @@ import numpy
 import linecache
 import math
 import os
+import inspect
 import json as json
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 from lsst.sims.catalogs.measures.instance import compound
+
+def variabilityRegistration(ff):
+    """
+    A decorator to indicate which methods need to be added to the
+    register of variability methods
+    """
+
+    def decoratedFunction(*args,**kwargs):
+        args[0].logIt = True
+        return ff(*args,**kwargs)
+    
+    return decoratedFunction
+
 
 class Variability(object):
     """Variability class for adding temporal variation to the magnitudes of
@@ -14,32 +28,24 @@ class Variability(object):
     magnitude offsets.
     """
     
-    variabilityInitialized=False
+    variabilityInitialized = False
+    variabilityMethods = {}
     
     def initializeVariability(self,doCache=False):
-        self.variabilityInitialized=True
-        
-        #construct a dict of the available variability models
-        self.variabilityMethods={}
-        if(hasattr(self,"applyMflare")):
-            self.variabilityMethods['applyMflare'] = self.applyMflare
-        if(hasattr(self,"applyRRly")):
-            self.variabilityMethods['applyRRly'] = self.applyRRly
-        if(hasattr(self,"applyCepheid")):
-            self.variabilityMethods['applyCepheid'] = self.applyCepheid
-        if(hasattr(self,"applyEb")):
-            self.variabilityMethods['applyEb'] = self.applyEb
-        if(hasattr(self,"applyMicrolens")):
-            self.variabilityMethods['applyMicrolens'] = self.applyMicrolens
-        if(hasattr(self,"applyAgn")):
-            self.variabilityMethods['applyAgn'] = self.applyAgn
-        if(hasattr(self,"applyMicrolensing")):
-            self.variabilityMethods['applyMicrolensing'] = self.applyMicrolensing
-        if(hasattr(self,"applyAmcvn")):
-            self.variabilityMethods['applyAmcvn'] = self.applyAmcvn
-        if(hasattr(self,"applyBHMicrolens")):
-            self.variabilityMethods['applyBHMicrolens'] = self.applyBHMicrolens
-        
+        self.variabilityInitialized=True        
+        listOfMembers=inspect.getmembers(self)
+        for methodName, actualMethod in listOfMembers:
+            self.logIt = False
+            if methodName != "initializeVariability": 
+            #so that we don't recursively call this function
+                try:
+                    actualMethod()
+                except:
+                    pass
+                
+                if self.logIt == True:
+                    self.variabilityMethods[methodName] = actualMethod
+            
         #below are variables to cache the light curves of variability models
         self.variabilityLcCache = {}
         self.variabilityCache = doCache
@@ -260,6 +266,7 @@ class Variability(object):
             magoff[k] = splines[k](phase)
         return magoff
 
+    @variabilityRegistration
     def applyMflare(self, params, expmjd):
         
         params['lcfilename'] = "mflare/"+params['lcfilename'][:-5]+"1.dat"
@@ -269,18 +276,21 @@ class Variability(object):
             magoff[k] = -magoff[k]
         return magoff
 
+    @variabilityRegistration
     def applyRRly(self, params, expmjd):
     
         keymap = {'filename':'filename', 't0':'tStartMjd'}
         return self.applyStdPeriodic(params, keymap, expmjd,
                 interpFactory=InterpolatedUnivariateSpline)
-
+    
+    @variabilityRegistration
     def applyCepheid(self, params, expmjd):
     
         keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
 
+    @variabilityRegistration
     def applyEb(self, params, expmjd):
         keymap = {'filename':'lcfile', 't0':'t0'}
         dMags = self.applyStdPeriodic(params, keymap, expmjd,
@@ -289,6 +299,7 @@ class Variability(object):
             dMags[k] = -2.5*numpy.log10(dMags[k])
         return dMags
 
+    @variabilityRegistration
     def applyMicrolens(self, params, expmjd_in):
         #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         expmjd = numpy.asarray(expmjd_in,dtype=float)
@@ -306,6 +317,7 @@ class Variability(object):
         return dMags
 
 
+    @variabilityRegistration
     def applyAgn(self, params, expmjd_in):
         dMags = {}
         #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
@@ -344,6 +356,7 @@ class Variability(object):
             dMags[k] = magoff
         return dMags
 
+    @variabilityRegistration
     def applyMicrolensing(self, params, expmjd_in):
         dMags = {}
         #epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float) - params['t0']
@@ -360,6 +373,7 @@ class Variability(object):
         dMags['y'] = dmag 
         return dMags
 
+    @variabilityRegistration
     def applyAmcvn(self, params, expmjd_in):
         maxyears = 10.
         dMag = {}
@@ -397,6 +411,7 @@ class Variability(object):
         dMag['y'] = yLc
         return dMag
 
+    @variabilityRegistration
     def applyBHMicrolens(self, params, expmjd_in):
         #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         expmjd = numpy.asarray(expmjd_in,dtype=float)
