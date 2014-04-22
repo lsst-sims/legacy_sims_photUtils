@@ -10,9 +10,9 @@ $Id$
 import os
 import numpy
 import pylab
-import Sed
-import Bandpass
-import BandpassSet
+from .Sed import Sed
+from .Bandpass import Bandpass
+from .BandpassSet import BandpassSet
 
 # Step one: 
 # Set rootdir = to the directory where the throughput curves being tested are located.

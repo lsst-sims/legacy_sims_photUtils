@@ -4,10 +4,10 @@ import copy
 import numpy
 import scipy.optimize
 import pylab
-import Sed
-import SedSet
-import Bandpass
-import BandpassSet
+from .Sed import Sed
+from .SedSet import SedSet
+from .Bandpass import Bandpass
+from .BandpassSet import BandpassSet
 
 
 # Set some values for overall test. 

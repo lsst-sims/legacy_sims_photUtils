@@ -285,7 +285,6 @@ class Variability(PhotometryBase):
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
         params = varCmd['pars']
-        #expmjd=numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         expmjd=self.obs_metadata.mjd
         output = self.variabilityMethods[method](params,expmjd)
         return output
@@ -307,9 +306,7 @@ class Variability(PhotometryBase):
         be keyed to the filter names.
         """
         
-        expmjd = numpy.asarray(expmjd)
-        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
-        
+        expmjd = numpy.asarray(expmjd)        
         filename = params[keymap['filename']]
         toff = float(params[keymap['t0']])
         epoch = expmjd - toff
@@ -388,7 +385,6 @@ class Variability(PhotometryBase):
 
     @variabilityRegistration
     def applyMicrolens(self, params, expmjd_in):
-        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         epochs = expmjd - params['t0']
         dMags = {}
@@ -407,7 +403,6 @@ class Variability(PhotometryBase):
     @variabilityRegistration
     def applyAgn(self, params, expmjd_in):
         dMags = {}
-        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         toff = numpy.float(params['t0_mjd'])
         seed = int(params['seed'])
@@ -446,7 +441,6 @@ class Variability(PhotometryBase):
     @variabilityRegistration
     def applyMicrolensing(self, params, expmjd_in):
         dMags = {}
-        #epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float) - params['t0']
         epochs = numpy.asarray(expmjd_in,dtype=float) - params['t0']
         u = numpy.sqrt(params['umin']**2 + (2.0 * epochs /\
             params['that'])**2)
@@ -464,7 +458,6 @@ class Variability(PhotometryBase):
     def applyAmcvn(self, params, expmjd_in):
         maxyears = 10.
         dMag = {}
-        #epochs = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         epochs = numpy.asarray(expmjd_in,dtype=float)
         # get the light curve of the typical variability
         uLc   = params['amplitude']*numpy.cos((epochs - params['t0'])/params['period'])
@@ -500,7 +493,6 @@ class Variability(PhotometryBase):
 
     @variabilityRegistration
     def applyBHMicrolens(self, params, expmjd_in):
-        #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename = params['filename']
         toff = float(params['t0'])

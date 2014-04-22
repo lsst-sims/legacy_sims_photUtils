@@ -41,10 +41,10 @@ import os
 import copy
 import numpy as n
 import pylab as pyl
-import Bandpass
-import Sed
-import photUtils
-import BandpassSet
+from .Bandpass import Bandpass
+from .Sed import Sed
+import. photUtils
+from .BandpassSEt import BandpassSet
 
 figformat = 'png'
 

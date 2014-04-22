@@ -11,9 +11,9 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 import os
 import numpy
 import palpy as pal
-import lsst.sims.photUtils.Sed as Sed
-import lsst.sims.photUtils.Bandpass as Bandpass
-import lsst.sims.photUtils.EBV as EBV
+from .EBV import EBV
+from .Bandpass import Bandpass
+from .Sed import Sed
 from lsst.sims.catalogs.measures.instance import compound
 
 class Photometry(object):

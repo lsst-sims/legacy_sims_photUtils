@@ -44,8 +44,8 @@ import os
 import copy
 import numpy as n
 import pylab as pyl
-import Bandpass
-import Sed
+from .Bandpass import Bandpass
+from .Sed import Sed
 
 # airmass of standard atmosphere
 _stdX = 1.2
