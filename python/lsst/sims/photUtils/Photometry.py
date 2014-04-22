@@ -557,3 +557,48 @@ class PhotometryStars(PhotometryBase):
         
         return numpy.array([uu,gg,rr,ii,zz,yy])
       
+    @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
+              'sigma_lsst_z','sigma_lsst_y')
+    def get_photometric_uncertainties(self):
+        idNames = self.column_by_name('id')
+        
+        uu = self.column_by_name('lsst_u')
+        gg = self.column_by_name('lsst_g')
+        rr = self.column_by_name('lsst_r')
+        ii = self.column_by_name('lsst_i')
+        zz = self.column_by_name('lsst_z')
+        yy = self.column_by_name('lsst_y')
+        
+        inputDict={}
+        i = 0
+        for name in idNames:
+            subDict={}
+            subDict['u'] = uu[i]
+            subDict['g'] = gg[i]
+            subDict['r'] = rr[i]
+            subDict['i'] = ii[i]
+            subDict['z'] = zz[i]
+            subDict['y'] = yy[i]
+          
+            inputDict[name] = subDict
+          
+            i += 1
+        
+        outputDict = self.calculatePhotometricUncertainty(inputDict)
+        
+        uuOut = []
+        ggOut = []
+        rrOut = []
+        iiOut = []
+        zzOut = []
+        yyOut = []
+        
+        for name in idNames:
+            uuOut.append(outputDict[name]['u'])
+            ggOut.append(outputDict[name]['g'])
+            rrOut.append(outputDict[name]['r'])
+            iiOut.append(outputDict[name]['i'])
+            zzOut.append(outputDict[name]['z'])
+            yyOut.append(outputDict[name]['y'])    
+
+        return numpy.array([uuOut,ggOut,rrOut,iiOut,zzOut,yyOut])
