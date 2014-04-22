@@ -405,6 +405,10 @@ class PhotometryGalaxies(PhotometryBase):
               'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
               'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
     def get_allMags(self):
+        """
+        Getter for all of the component magnitudes of a galaxy (and their combined magnitude)
+        """
+    
         bandPassList=['u','g','r','i','z','y']
         idNames=self.column_by_name('galid')
         magDict=self.calculate_magnitudes(bandPassList,idNames)
@@ -508,6 +512,9 @@ class PhotometryGalaxies(PhotometryBase):
               'sigma_uAgn','sigma_gAgn','sigma_rAgn',
               'sigma_iAgn','sigma_zAgn','sigma_yAgn')
     def get_photometric_uncertainties(self):
+        """
+        Getter for photometric uncertainties associated with galaxies
+        """
         
         columnNames = {}
         columnNames['u'] = 'uRecalc'
@@ -597,6 +604,10 @@ class PhotometryStars(PhotometryBase):
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
     def get_magnitudes(self):
+        """
+        Getter for stellar magnitudes
+        """
+        
         idNames = self.column_by_name('id')
         bandPassList = ['u','g','r','i','z','y']
         
@@ -622,6 +633,11 @@ class PhotometryStars(PhotometryBase):
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
               'sigma_lsst_z','sigma_lsst_y')
     def get_photometric_uncertainties(self):
+        """
+        Getter for photometric uncertainties associated with stellar
+        magnitudes
+        """
+    
         columnNames = {}
         columnNames['u'] = 'lsst_u'
         columnNames['g'] = 'lsst_g'

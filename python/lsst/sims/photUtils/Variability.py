@@ -65,6 +65,10 @@ class Variability(PhotometryBase):
     @compound('lsst_u_var','lsst_g_var','lsst_r_var','lsst_i_var',
     'lsst_z_var','lsst_y_var')
     def get_stellar_variability(self):
+        """
+        Getter for variable stellar magnitudes
+        """
+    
         uu = self.column_by_name('lsst_u')
         gg = self.column_by_name('lsst_g')
         rr = self.column_by_name('lsst_r')
@@ -105,6 +109,10 @@ class Variability(PhotometryBase):
     @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
               'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
     def get_variable_undertainties(self):
+        """
+        Getter for photometric uncertainties associated with variable
+        stellar magnitudes
+        """
         
         columnNames={}
         columnNames['u'] = 'lsst_u_var'
@@ -124,6 +132,10 @@ class Variability(PhotometryBase):
           'zRecalc_var', 'yRecalc_var',
           'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var')
     def get_galaxy_variability(self):
+        
+        """
+        Getter for variable magnitudes associated with AGN
+        """
         
         uTotal = self.column_by_name("uRecalc")
         gTotal = self.column_by_name("gRecalc")
@@ -225,6 +237,10 @@ class Variability(PhotometryBase):
               'sigma_iAgn_var','sigma_zAgn_var','sigma_yAgn_var')
     def get_galaxy_variability_uncertainties(self):
         
+        """
+        Getter for photometric uncertainties associated with AGN variability
+        """
+        
         columnNames={}
         columnNames['u'] = 'uRecalc_var'
         columnNames['g'] = 'gRecalc_var'
@@ -276,6 +292,21 @@ class Variability(PhotometryBase):
     
     def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
             inDays=True, interpFactory=None):
+        
+        """
+        Applies an a specified variability method.
+        
+        The params for the method are provided in the dict params{}
+        
+        The keys for those parameters are in the dict keymap{}
+        
+        This is because the syntax used here is not necessarily the syntax
+        used in the data bases.
+        
+        The method will return a dict of magnitude offsets.  The dict will
+        be keyed to the filter names.
+        """
+        
         expmjd = numpy.asarray(expmjd)
         #expmjd = numpy.asarray(self.obs_metadata.metadata['Opsim_expmjd'][0],dtype=float)
         
