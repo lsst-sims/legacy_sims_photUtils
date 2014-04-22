@@ -8,6 +8,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 from lsst.sims.catalogs.measures.instance import compound
+from .Photometry import PhotometryBase
 
 def variabilityRegistration(ff):
     """
@@ -22,7 +23,7 @@ def variabilityRegistration(ff):
     return decoratedFunction
 
 
-class Variability(object):
+class Variability(PhotometryBase):
     """Variability class for adding temporal variation to the magnitudes of
     objects in the base catalog.  All methods should return a dictionary of
     magnitude offsets.
