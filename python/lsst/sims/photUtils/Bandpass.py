@@ -55,7 +55,7 @@ import os
 import warnings
 import numpy
 import gzip
-import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation. 
+from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation. 
 
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
 MINWAVELEN = 300
