@@ -219,6 +219,38 @@ class Variability(PhotometryBase):
                            uAgnOut,gAgnOut,rAgnOut,iAgnOut,zAgnOut,yAgnOut])
         
     
+    @compound('sigma_uRecalc_var','sigma_gRecalc_var','sigma_rRecalc_var',
+              'sigma_iRecalc_var','sigma_zRecalc_var','sigma_yRecalc_var',
+              'sigma_uAgn_var','sigma_gAgn_var','sigma_rAgn_var',
+              'sigma_iAgn_var','sigma_zAgn_var','sigma_yAgn_var')
+    def get_galaxy_variability_uncertainties(self):
+        
+        columnNames={}
+        columnNames['u'] = 'uRecalc_var'
+        columnNames['g'] = 'gRecalc_var'
+        columnNames['r'] = 'rRecalc_var'
+        columnNames['i'] = 'iRecalc_var'
+        columnNames['z'] = 'zRecalc_var'
+        columnNames['y'] = 'yRecalc_var'
+        
+        totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        
+        columnNames = {}
+        columnNames['u'] = 'uAgn_var'
+        columnNames['g'] = 'gAgn_var'
+        columnNames['r'] = 'rAgn_var'
+        columnNames['i'] = 'iAgn_var'
+        columnNames['z'] = 'zAgn_var'
+        columnNames['y'] = 'yAgn_var'
+        
+        agnDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        
+        return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
+                            totalDict['i'],totalDict['z'],totalDict['y'],
+                            agnDict['u'],agnDict['g'],agnDict['r'],
+                            agnDict['i'],agnDict['z'],agnDict['y']])
+        
+    
     def applyVariability(self, varParams):
         """
         varParams will be the varParamStr column from the data base

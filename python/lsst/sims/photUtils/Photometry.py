@@ -519,6 +519,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
         
+        columnNames = {}
         columnNames['u'] = 'uDisk'
         columnNames['g'] = 'gDisk'
         columnNames['r'] = 'rDisk'
@@ -528,6 +529,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         diskDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
         
+        columnNames = {}
         columnNames['u'] = 'uBulge'
         columnNames['g'] = 'gBulge'
         columnNames['r'] = 'rBulge'
@@ -537,6 +539,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         bulgeDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
         
+        columnNames = {}
         columnNames['u'] = 'uAgn'
         columnNames['g'] = 'gAgn'
         columnNames['r'] = 'rAgn'
