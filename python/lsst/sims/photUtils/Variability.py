@@ -101,7 +101,7 @@ class Variability(PhotometryBase):
             i+=1
             
         return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout])        
-    
+
     @compound('uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
           'zRecalc_var', 'yRecalc_var',
           'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var')

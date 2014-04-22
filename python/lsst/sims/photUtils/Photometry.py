@@ -169,6 +169,51 @@ class PhotometryBase(object):
                   
         return magDict
 
+    def calculatePhotometricUncertaintyFromColumn(self,nameTag,columnNames):
+        """
+        This method reads in a dict of column names and passes out
+        the associated photometric uncertainties.  The output will be
+        a dict of lists.
+        
+        The dict is such that  
+        
+        columnNames[filterName] gives the name of the column corresponding the 
+        filter denoted by filterName
+   
+        nameTag indicates what column is used for object names
+        """
+        
+        inputDict={}
+        
+        idNames = self.column_by_name(nameTag)
+        
+        magnitudes = {}
+        
+        for filterName in columnNames:
+            magnitudes[filterName] = self.column_by_name(columnNames[filterName])
+        
+        i=0
+        for name in idNames:
+            subDict={}
+            
+            for filterName in columnNames:
+                subDict[filterName] = magnitudes[filterName][i]
+            
+            inputDict[name] = subDict
+            i = i+1
+        
+        outputDict=self.calculatePhotometricUncertainty(inputDict)
+        
+        finalDict = {}
+        for filterName in columnNames:
+            subList = []
+            for name in idNames:
+                subList.append(outputDict[name][filterName])
+            
+            finalDict[filterName] = subList
+    
+        return finalDict
+        
     def calculatePhotometricUncertainty(self,magDict):
         """
         This method is based on equations 3.1, 3.2 and Table 3.2
@@ -457,46 +502,21 @@ class PhotometryGalaxies(PhotometryBase):
     @compound('sigma_uRecalc','sigma_gRecalc','sigma_rRecalc',
               'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc')
     def get_photometric_uncertainties(self):
-        idNames = self.column_by_name('galid')
-        uu = self.column_by_name('uRecalc')
-        gg = self.column_by_name('gRecalc')
-        rr = self.column_by_name('rRecalc')
-        ii = self.column_by_name('iRecalc')
-        zz = self.column_by_name('zRecalc')
-        yy = self.column_by_name('yRecalc')
         
-        inputDict={}
-        i=0
-        for name in idNames:
-            subDict = {}
-            subDict['u'] = uu[i]
-            subDict['g'] = gg[i]
-            subDict['r'] = rr[i]
-            subDict['i'] = ii[i]
-            subDict['z'] = zz[i]
-            subDict['y'] = yy[i]
-            
-            inputDict[name] = subDict
-            i += 1
+        columnNames = {}
+        columnNames['u'] = 'uRecalc'
+        columnNames['g'] = 'gRecalc'
+        columnNames['r'] = 'rRecalc'
+        columnNames['i'] = 'iRecalc'
+        columnNames['z'] = 'zRecalc'
+        columnNames['y'] = 'yRecalc'
         
-        outputDict = self.calculatePhotometricUncertainty(inputDict)
+        outputDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
         
-        sig_uu = []
-        sig_gg = []
-        sig_rr = []
-        sig_ii = []
-        sig_zz = []
-        sig_yy = []
+        return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
+                            outputDict['i'],outputDict['z'],outputDict['y']])
         
-        for name in outputDict:
-            sig_uu.append(outputDict[name]['u'])
-            sig_gg.append(outputDict[name]['g'])
-            sig_rr.append(outputDict[name]['r'])
-            sig_ii.append(outputDict[name]['i'])
-            sig_zz.append(outputDict[name]['z'])
-            sig_yy.append(outputDict[name]['y'])
-
-        return numpy.array([sig_uu,sig_gg,sig_rr,sig_ii,sig_zz,sig_yy])
+        
         
 
 class PhotometryStars(PhotometryBase):
