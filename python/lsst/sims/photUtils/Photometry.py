@@ -500,7 +500,13 @@ class PhotometryGalaxies(PhotometryBase):
             uagn,gagn,ragn,iagn,zagn,yagn])
     
     @compound('sigma_uRecalc','sigma_gRecalc','sigma_rRecalc',
-              'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc')
+              'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc',
+              'sigma_uBulge','sigma_gBulge','sigma_rBulge',
+              'sigma_iBulge','sigma_zBulge','sigma_yBulge',
+              'sigma_uDisk','sigma_gDisk','sigma_rDisk',
+              'sigma_iDisk','sigma_zDisk','sigma_yDisk',
+              'sigma_uAgn','sigma_gAgn','sigma_rAgn',
+              'sigma_iAgn','sigma_zAgn','sigma_yAgn')
     def get_photometric_uncertainties(self):
         
         columnNames = {}
@@ -511,10 +517,43 @@ class PhotometryGalaxies(PhotometryBase):
         columnNames['z'] = 'zRecalc'
         columnNames['y'] = 'yRecalc'
         
-        outputDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
         
-        return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
-                            outputDict['i'],outputDict['z'],outputDict['y']])
+        columnNames['u'] = 'uDisk'
+        columnNames['g'] = 'gDisk'
+        columnNames['r'] = 'rDisk'
+        columnNames['i'] = 'iDisk'
+        columnNames['z'] = 'zDisk'
+        columnNames['y'] = 'yDisk'
+        
+        diskDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        
+        columnNames['u'] = 'uBulge'
+        columnNames['g'] = 'gBulge'
+        columnNames['r'] = 'rBulge'
+        columnNames['i'] = 'iBulge'
+        columnNames['z'] = 'zBulge'
+        columnNames['y'] = 'yBulge'
+        
+        bulgeDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        
+        columnNames['u'] = 'uAgn'
+        columnNames['g'] = 'gAgn'
+        columnNames['r'] = 'rAgn'
+        columnNames['i'] = 'iAgn'
+        columnNames['z'] = 'zAgn'
+        columnNames['y'] = 'yAgn'
+        
+        agnDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        
+        return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
+                            totalDict['i'],totalDict['z'],totalDict['y'],
+                            bulgeDict['u'],bulgeDict['g'],bulgeDict['r'],
+                            bulgeDict['i'],bulgeDict['z'],bulgeDict['y'],
+                            diskDict['u'],diskDict['g'],diskDict['r'],
+                            diskDict['i'],diskDict['z'],diskDict['y'],
+                            agnDict['u'],agnDict['g'],agnDict['r'],
+                            agnDict['i'],agnDict['z'],agnDict['y']])
         
         
         
