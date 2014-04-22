@@ -101,7 +101,25 @@ class Variability(PhotometryBase):
             i+=1
             
         return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout])        
-
+    
+    @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
+              'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
+    def get_variable_undertainties(self):
+        
+        columnNames={}
+        columnNames['u'] = 'lsst_u_var'
+        columnNames['g'] = 'lsst_g_var'
+        columnNames['r'] = 'lsst_r_var'
+        columnNames['i'] = 'lsst_i_var'
+        columnNames['z'] = 'lsst_z_var'
+        columnNames['y'] = 'lsst_y_var'
+        
+        outputDict = self.calculatePhotometricUncertaintyFromColumn('id',columnNames)
+        
+        return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
+                            outputDict['i'],outputDict['z'],outputDict['y']])
+        
+    
     @compound('uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
           'zRecalc_var', 'yRecalc_var',
           'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var')
