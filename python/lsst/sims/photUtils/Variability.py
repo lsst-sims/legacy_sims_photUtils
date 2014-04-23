@@ -14,6 +14,10 @@ def variabilityRegistration(ff):
     """
     A decorator to indicate which methods need to be added to the
     register of variability methods
+    
+    Note that, in addition to containing this decorator, any cached methods
+    must have a name beginnging with the letter 'a'.  This was necessary to
+    avoid having the getters entered into the register.
     """
 
     def decoratedFunction(*args,**kwargs):
@@ -24,7 +28,8 @@ def variabilityRegistration(ff):
 
 
 class Variability(PhotometryBase):
-    """Variability class for adding temporal variation to the magnitudes of
+    """
+    Variability class for adding temporal variation to the magnitudes of
     objects in the base catalog.  All methods should return a dictionary of
     magnitude offsets.
     """
@@ -32,7 +37,17 @@ class Variability(PhotometryBase):
     variabilityInitialized = False
     variabilityMethods = {}
     
-    def initializeVariability(self,doCache=False):
+    def initializeVariability(self, doCache=False):
+        """
+        This method will build the register of variability methods.
+        It will only be called from applyVariability, and only
+        if self.variabilityInitiailized == True (which this method sets)
+        
+        @param [in] doCache controls whether or not the code caches calculated
+        light curves for future use (I think...this is older code)
+        
+        """
+    
         self.variabilityInitialized=True
         
         listOfMembers=inspect.getmembers(self)
@@ -42,7 +57,7 @@ class Variability(PhotometryBase):
             #This avoids calling initializeVariabilty recursively.
             #It also avoid calling the getters, which will call a variability method
             # and thus set the logIt flag to True, getting themselves a spot in the
-            #registry.
+            #register.
             #It will require that all future variability methods be named "applyXXXX"
                 try:
                     actualMethod()
@@ -278,6 +293,13 @@ class Variability(PhotometryBase):
         
         it uses then feeds the pars array to that method, under the assumption
         that the parameters needed by the method can be found therein
+        
+        @param [in] varParams is a string object (readable by json) that tells
+        us which variability model to use
+        
+        @param [out] output is a dict of magnitude offsets keyed to the filter name
+        e.g. output['u'] is the magnitude offset in the u band
+        
         """
         if self.variabilityInitialized == False:
             self.initializeVariability()
@@ -304,6 +326,25 @@ class Variability(PhotometryBase):
         
         The method will return a dict of magnitude offsets.  The dict will
         be keyed to the filter names.
+        
+        @param [in] params is a dict of parameters for the variability model
+        
+        @param [in] keymap is a dict mapping from the parameter naming convention
+        used by the database to the parameter naming convention used by the
+        variability methods below.
+        
+        @param [in] expmjd is the mjd of the observation
+        
+        @param [in] inPeriod is a priori period of the model
+        
+        @param [in] inDays controls whether or not the time grid
+        of the light curve is renormalized by the period
+        
+        @param [in] interpFactory is the method used for interpolating
+        the light curve
+        
+        @param [out] magoff is a dict of magnitude offsets so that magoff['u'] is the offset in the u band
+        
         """
         
         expmjd = numpy.asarray(expmjd)        
