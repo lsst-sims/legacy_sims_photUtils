@@ -78,7 +78,7 @@ class Variability(PhotometryBase):
     
     
     @compound('lsst_u_var','lsst_g_var','lsst_r_var','lsst_i_var',
-    'lsst_z_var','lsst_y_var')
+    'lsst_z_var','lsst_y_var','stellar_magNorm_var')
     def get_stellar_variability(self):
         """
         Getter for variable stellar magnitudes
@@ -91,6 +91,9 @@ class Variability(PhotometryBase):
         zz = self.column_by_name('lsst_z')
         yy = self.column_by_name('lsst_y')
         
+        magNorm = self.column_by_name('magNorm')
+        
+        
         varParams = self.column_by_name('varParamStr')
         
         uuout = []
@@ -99,17 +102,20 @@ class Variability(PhotometryBase):
         iiout = []
         zzout = []
         yyout = []
+        magNormVarOut = []
         
         i=0
         for vv in varParams:
             if vv != numpy.unicode_("None"):
-                deltaMag = self.applyVariability(vv)
+                deltaMag, deltaMagNorm = self.applyVariability(vv)
                 uuout.append(uu[i]+deltaMag['u'])
                 ggout.append(gg[i]+deltaMag['g'])
                 rrout.append(rr[i]+deltaMag['r'])
                 iiout.append(ii[i]+deltaMag['i'])
                 zzout.append(zz[i]+deltaMag['z'])
                 yyout.append(yy[i]+deltaMag['y'])
+                
+                magNormVarOut.append(magNorm[i]+deltaMagNorm)
             else:
                 uuout.append(uu[i])
                 ggout.append(gg[i])
@@ -117,9 +123,11 @@ class Variability(PhotometryBase):
                 iiout.append(ii[i])
                 zzout.append(zz[i])
                 yyout.append(yy[i])
+                
+                magNormVarOut.append(magNorm[i])
             i+=1
             
-        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout])        
+        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])        
     
     @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
               'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
@@ -145,7 +153,8 @@ class Variability(PhotometryBase):
     
     @compound('uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
           'zRecalc_var', 'yRecalc_var',
-          'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var')
+          'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var',
+          'magNorm_Recalc_var')
     def get_galaxy_variability(self):
         
         """
@@ -180,6 +189,11 @@ class Variability(PhotometryBase):
         zAgn = self.column_by_name("zAgn")
         yAgn = self.column_by_name("yAgn")
         
+        magNormAgn = self.column_by_name('magNormAgn')
+        magNormDisk = self.column_by_name('magNormDisk')
+        magNormBulge = self.column_by_name('magNormBulge')
+        
+        
         varParams = self.column_by_name("varParamStr")
         
         uTotalOut = []
@@ -196,10 +210,12 @@ class Variability(PhotometryBase):
         zAgnOut = []
         yAgnOut = []
         
+        magNormVarOut = []
+        
         i=0
         for vv in varParams:
             if vv != numpy.unicode_("None"):           
-                deltaMag=self.applyVariability(vv)
+                deltaMag, deltaMagNorm=self.applyVariability(vv)
                 uAgnOut.append(uAgn[i]+deltaMag['u'])
                 gAgnOut.append(gAgn[i]+deltaMag['g'])
                 rAgnOut.append(rAgn[i]+deltaMag['r'])
@@ -224,6 +240,9 @@ class Variability(PhotometryBase):
                 
                 yTotalOut.append(self.sum_magnitudes(disk = yDisk[i], bulge = yBulge[i],
                         agn = yAgnOut[i]))
+                
+                magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
+                        agn = magNormAgn[i] + deltaMagNorm))
             
             else:
                 uTotalOut.append(uTotal[i])
@@ -239,11 +258,14 @@ class Variability(PhotometryBase):
                 iAgnOut.append(iAgn[i])
                 zAgnOut.append(zAgn[i])
                 yAgnOut.append(yAgn[i])
+                
+                magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
+                        agn = magNormAgn[i]))
             
             i+=1
         
         return numpy.array([uTotalOut,gTotalOut,rTotalOut,iTotalOut,zTotalOut,yTotalOut,\
-                           uAgnOut,gAgnOut,rAgnOut,iAgnOut,zAgnOut,yAgnOut])
+                           uAgnOut,gAgnOut,rAgnOut,iAgnOut,zAgnOut,yAgnOut,magNormVarOut])
         
     
     @compound('sigma_uRecalc_var','sigma_gRecalc_var','sigma_rRecalc_var',
@@ -300,6 +322,8 @@ class Variability(PhotometryBase):
         @param [out] output is a dict of magnitude offsets keyed to the filter name
         e.g. output['u'] is the magnitude offset in the u band
         
+        @param [out] deltaMagNorm is the magnitude offset for magNorm
+        
         """
         if self.variabilityInitialized == False:
             self.initializeVariability()
@@ -309,7 +333,10 @@ class Variability(PhotometryBase):
         params = varCmd['pars']
         expmjd=self.obs_metadata.mjd
         output = self.variabilityMethods[method](params,expmjd)
-        return output
+        
+        deltaMagNorm = output[self.obs_metadata.Opsim_filter]
+        
+        return output, deltaMagNorm
     
     def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
             inDays=True, interpFactory=None):
