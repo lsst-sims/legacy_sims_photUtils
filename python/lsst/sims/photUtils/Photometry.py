@@ -26,6 +26,8 @@ class PhotometryBase(object):
     In order to avoid duplication of work, the bandPasses, wavelength array, and phi array
     are stored as instance variables once they are read in by self.loadBandPasses()
     
+    bandPassKey is a list of the names of the bandpasses being used (e.g. 'u','g','r','i','z','y')
+    
     To initiailize a different set of bandPasses, call self.loadBandPasses() with a different
     set of arguments.
     
@@ -58,7 +60,7 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(bplist)
 
-    def loadBandPasses(self,bandPassList,bandPassRoot="total_"):
+    def loadBandPasses(self,bandPassList, bandPassRoot="total_"):
         """
         This will take the list of band passes in bandPassList and use them to set up
         self.bandPasses, self.phiArray and self.waveLenStep (which are being cached so that 
@@ -87,12 +89,22 @@ class PhotometryBase(object):
             self.setupPhiArray_dict()
             
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self,sedList, magNorm=15.0, resample_same=False):
+    def loadSeds(self, sedList, magNorm=15.0, resample_same=False):
         """
         Takes the list of filename sedList and returns an array of SED objects.
         
         This code will load identical SEDs twice because it is possible for
         (astronomical) objects to have the same SEDs but different magNorms
+        
+        @param [in] sedList is a list of file names containing Seds
+        
+        @param [in] magNorm is the magnitude normalization
+        
+        @param [in] resample_same governs whether or not to resample the Seds
+        so that they are all on the same wavelength grid
+        
+        @param [out] sedOut is a list of Sed objects
+        
         """    
         
         dataDir=os.getenv('SED_DATA')
@@ -127,10 +139,20 @@ class PhotometryBase(object):
     
         return sedOut
     
-    def applyAvAndRedshift(self,sedList,internalAv=None,redshift=None):
+    def applyAvAndRedshift(self,sedList, internalAv=None, redshift=None):
         """
         Take the array of SED objects sedList and apply the arrays of extinction and redshift
         (internalAV and redshift)
+        
+        This method does not return anything.  It makes the necessary changes
+        to the Seds in SedList in situ.
+        
+        @param [in] sedList is a list of Sed objects
+        
+        @param [in] internalAv is the Av extinction internal to the object
+        
+        @param [in] redshift
+        
         """
         for i in range(len(sedList)):
             if sedList[i].wavelen != None:
@@ -141,14 +163,16 @@ class PhotometryBase(object):
                     sedList[i].redshiftSED(redshift[i], dimming=True)
                     sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
 
-    def manyMagCalc_dict(self,sedobj):
+    def manyMagCalc_dict(self, sedobj):
         """
         Return a dictionary of magnitudes for a single Sed object.
         
         Bandpass information is taken from the instance variables self.bandPasses, self.bandPassKey,
         self.phiArray, and self.waveLenStep
         
-        Returns a dictionary of magnitudes keyed on self.bandPassKey
+        @param [in] sedobj is an Sed object
+        
+        @param [out] magDict is a dict of magnitudes keyed on self.bandPassKey
         """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
@@ -169,18 +193,21 @@ class PhotometryBase(object):
                   
         return magDict
 
-    def calculatePhotometricUncertaintyFromColumn(self,nameTag,columnNames):
+    def calculatePhotometricUncertaintyFromColumn(self, nameTag, columnNames):
         """
         This method reads in a dict of column names and passes out
         the associated photometric uncertainties.  The output will be
         a dict of lists.
         
-        The dict is such that  
+        @param [in] nameTag is the name of the column used to identify each object
         
-        columnNames[filterName] gives the name of the column corresponding the 
-        filter denoted by filterName
-   
-        nameTag indicates what column is used for object names
+        @param [in] columnNames is a dict associating filter names with column names,
+        e.g. columnName['u'] = 'lsst_u' if the u magnitude is stored in the column
+        'lsst_u'
+        
+        @param [out] finalDict is a dict of lists such that finalDict['u'] is a list
+        of the u band photometric uncertainties for all of the objects queried
+        
         """
         
         inputDict={}
@@ -214,17 +241,17 @@ class PhotometryBase(object):
     
         return finalDict
         
-    def calculatePhotometricUncertainty(self,magDict):
+    def calculatePhotometricUncertainty(self, magDict):
         """
         This method is based on equations 3.1, 3.2 and Table 3.2
         of the LSST Science Book (version 2.0)
         
-        magDict will be two-level dict of magnitudes, i.e.
+        @param [in] magDict will be two-level dict of magnitudes, e.g.
+        magDict['A']['x'] will be the magnitude of object 'A'
+        in filter ['x']
         
-        magDict['name']['filter'] will be the magnitude of object 'name'
-        in the appropriate filter
-        
-        This method will return a similar dict of photometric uncertainties
+        @param [out] sigOut is a dict such that sigOut['A']['x'] is the
+        photometric uncertainty of object A in filter x
         """
         sigma2Sys = 0.003*0.003 #also taken from the Science Book
                          #see the paragraph between equations 3.1 and 3.2
@@ -279,10 +306,12 @@ class PhotometryGalaxies(PhotometryBase):
         
         """
         Calculate the magnitudes for different components (disk, bulge, agn, etc) of galaxies.
+        This method is designed to be used such that you feed it all of the disk Seds from your data
+        base and it returns the associated magnitudes.  Then you feed it all of the bulge Seds, etc.
         
         @param [in] objectNames is the name of the galaxies (the whole galaxies)
         
-        @param [in] componentNames gives the name of the SED files for the component in question
+        @param [in] componentNames gives the name of the SED filenames
         
         @param [in] bandPassList lists the bandpasses for which we want magnitudes (this will come
         from calculate_magnitudes()
@@ -293,22 +322,21 @@ class PhotometryGalaxies(PhotometryBase):
         
         @param [in] redshift is pretty self-explanatory
         
-        This will return a dict of dicts such that
-        
+        @param [out] componentMags is a dict of dicts such that
         magnitude["objectname"]["filter label"] will return the magnitude in that filter
-        for the component being calculated
+        for the associated component Sed
         
         """
         
         componentMags = {}
         
         if componentNames != []:
-            componentSed = self.loadSeds(componentNames,magNorm = magNorm)
-            self.applyAvAndRedshift(componentSed,internalAv = internalAv, redshift = redshift)
+            componentSed = self.loadSeds(componentNames, magNorm = magNorm)
+            self.applyAvAndRedshift(componentSed, internalAv = internalAv, redshift = redshift)
             
             for i in range(len(objectNames)):
-                subDict=self.manyMagCalc_dict(componentSed[i])
-                componentMags[objectNames[i]]=subDict
+                subDict = self.manyMagCalc_dict(componentSed[i])
+                componentMags[objectNames[i]] = subDict
         
         else:
             subDict={}
@@ -319,7 +347,19 @@ class PhotometryGalaxies(PhotometryBase):
     
         return componentMags
     
-    def sum_magnitudes(self,disk = None, bulge = None, agn = None):
+    def sum_magnitudes(self, disk = None, bulge = None, agn = None):
+        """
+        Sum the component magnitudes of a galaxy and return the answer
+        
+        @param [in] disk is the disk magnitude
+        
+        @param [in] bulge is the bulge magnitude
+        
+        @param [in] agn is the agn magnitude
+        
+        @param [out] outMag is the total magnitude of the galaxy
+        """
+        
         mm_o = 22.
         
         nn=0.0
@@ -339,7 +379,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         return outMag
     
-    def calculate_magnitudes(self,bandPassList,idNames):
+    def calculate_magnitudes(self, bandPassList, idNames):
         """
         Take the array of bandpass keys bandPassList and the array of galaxy
         names idNames ane return a dict of dicts of dicts of magnitudes
@@ -353,6 +393,16 @@ class PhotometryGalaxies(PhotometryBase):
         We need to index the galaxies by some unique identifier, such as galid
         because it is possible for galaxies to have the same sed filenames but 
         different normalizations
+        
+        @param [in] bandPassList is a list of bandPass names (e.g. 'u', 'g', 'r', 'i', 'z', 'y')
+        self.loadBandpasses will handle turning these into proper file names
+        
+        @param [in] idNames is a list of names uniquely identifying the objects whose magnitudes
+        are being calculated
+        
+        @param [out] masterDict is a dict of magnitudes such that
+        masterDict['AAA']['BBB']['x'] is the magnitude in filter x of component BBB of galaxy AAA
+        
         
         """
         self.loadBandPasses(bandPassList)
@@ -575,7 +625,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
                          
-    def calculate_magnitudes(self,bandPassList,idNames):
+    def calculate_magnitudes(self, bandPassList, idNames):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of dicts of magnitudes
@@ -587,6 +637,15 @@ class PhotometryStars(PhotometryBase):
         As with galaxies, it is important that we identify stars by a unique
         identifier, rather than their sedFilename, because different stars
         can have identical SEDs but different magnitudes.
+        
+        
+        @param [in] bandPassList is a list of filter names (e.g. 'u', 'g', 'r', 'i', 'z', 'y')
+        
+        @param [in] idNames is a list of names uniquely identifying the objects being considered
+        
+        @param [out] magDict is a dict such that
+        magDict['AAA']['x'] is the magnitude in filter x of object AAA
+        
         """
 
         self.loadBandPasses(bandPassList)
