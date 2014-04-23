@@ -61,6 +61,15 @@ class EbvMap(object):
         """ convert long, lat angles to pixel x y
 
         input angles are in radians but the conversion assumes radians
+        
+        @param [in] gLon galactic longitude in radians
+        
+        @param [in] gLat galactic latitude in radians
+        
+        @param [out] x is the x pixel coordinate
+        
+        @param [out] y is the y pixel coordinate
+        
         """
 
         rad2deg= 180./math.pi
@@ -96,7 +105,16 @@ class EbvMap(object):
         return x,y
 
     def generateEbv(self, glon, glat, interpolate = False):
-        """ Calculate EBV with option for interpolation"""
+        """ 
+        Calculate EBV with option for interpolation
+        
+        @param [in] glon galactic longitude in radians
+        
+        @param [in] galactic latitude in radians
+        
+        @param [out] ebvVal the scalar value of EBV extinction
+        
+        """
 
         # calculate pixel values
         x,y = self.skyToXY(glon, glat)
@@ -145,6 +163,15 @@ class EbvMap(object):
 
 
 class EBVmixin(object):
+    """
+    This mixin allows a catalog object to calculate EBV extinction values.
+    
+    The information regarding where the dust maps are located is stored in
+    member variables ebvDataDir, ebvMapNorthName, ebvMapSouthName
+    
+    The actual dust maps (when loaded) are stored in ebvMapNorth and ebvMapSouth
+    """
+
     #these variables will tell the mixin where to get the dust maps
     ebvDataDir=os.environ.get("CAT_SHARE_DATA")
     ebvMapNorthName="data/Dust/SFD_dust_4096_ngp.fits"
@@ -181,7 +208,23 @@ class EBVmixin(object):
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
     def calculateEbv(self, gLon, gLat, northMap, southMap, interp=False):
-        """ For an array of Gal long, lat calculate E(B-V)"""
+        """ 
+        For an array of Gal long, lat calculate E(B-V)
+        
+        
+        @param [in] gLon galactic longitude in radians
+        
+        @param [in] gLat galactic latitude in radians
+        
+        @param [in] northMap the northern dust map
+        
+        @param [in] southMap the southern dust map
+        
+        @param [in] whether or not to interpolate the EBV value
+        
+        @param [out] ebv is a list of EBV values for all of the gLon, gLat pairs
+        
+        """
         
         ebv=[]
         for lon,lat in zip(gLon,gLat):
