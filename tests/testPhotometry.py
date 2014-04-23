@@ -63,6 +63,7 @@ class testCatalog(InstanceCatalog,Astrometry,Variability,testDefaults):
 class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
     column_outputs=['id','ra_corr','dec_corr','magNorm',\
+    'stellar_magNorm_var', \
     'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
     'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
     'lsst_r','sigma_lsst_r','lsst_r_var','sigma_lsst_r_var',\
@@ -82,6 +83,7 @@ class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,
 class testGalaxies(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
     column_outputs=['galid','ra_corr','dec_corr',\
+        'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
         'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
         'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\
         'rRecalc', 'sigma_rRecalc', 'rRecalc_var', 'sigma_rRecalc_var',\
@@ -114,7 +116,6 @@ class variabilityUnitTest(unittest.TestCase):
         galcat = testCatalog(self.galaxy,obs_metadata = self.obs_metadata)
         rows = self.galaxy.query_columns(['varParamStr'], constraint = 'VarParamStr is not NULL',chunk_size=20)
         rows = rows.next()
-        print "len ",len(rows)
         for i in range(20):
             #print "i ",i
             mags=galcat.applyVariability(rows[i]['varParamStr'])
@@ -132,6 +133,8 @@ class photometryUnitTest(unittest.TestCase):
     def testStars(self):
         dbObj=DBObject.from_objid('rrly')
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        obs_metadata_pointed.metadata = {}
+        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=testStars(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testStarsOutput.txt")
     
@@ -139,10 +142,11 @@ class photometryUnitTest(unittest.TestCase):
     def testGalaxies(self):
         dbObj=DBObject.from_objid('galaxyBase')
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
+        obs_metadata_pointed.metadata = {}
+        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=testGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testGalaxiesOutput.txt")
-        
-        
+     
 def suite():
     utilsTests.init()
     suites = []

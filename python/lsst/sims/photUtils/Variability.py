@@ -115,7 +115,10 @@ class Variability(PhotometryBase):
                 zzout.append(zz[i]+deltaMag['z'])
                 yyout.append(yy[i]+deltaMag['y'])
                 
-                magNormVarOut.append(magNorm[i]+deltaMagNorm)
+                if deltaMagNorm != None and (not numpy.isnan(magNorm[i])):
+                    magNormVarOut.append(magNorm[i]+deltaMagNorm)
+                else:
+                    magNormVarOut.append(-999.0)
             else:
                 uuout.append(uu[i])
                 ggout.append(gg[i])
@@ -124,7 +127,10 @@ class Variability(PhotometryBase):
                 zzout.append(zz[i])
                 yyout.append(yy[i])
                 
-                magNormVarOut.append(magNorm[i])
+                if self.obs_metadata.metadata != None and self.obs_metadata.metadata['Opsim_filter']:
+                    magNormVarOut.append(magNorm[i])
+                else:
+                    magNormVarOut.append(-999.0)
             i+=1
             
         return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])        
@@ -241,9 +247,13 @@ class Variability(PhotometryBase):
                 yTotalOut.append(self.sum_magnitudes(disk = yDisk[i], bulge = yBulge[i],
                         agn = yAgnOut[i]))
                 
-                magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
-                        agn = magNormAgn[i] + deltaMagNorm))
-            
+                if deltaMagNorm != None and (not numpy.isnan(magNormAgn[i])):
+                    magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
+                            agn = magNormAgn[i] + deltaMagNorm))
+                else:
+                    magNormVarOut.append(-999.0)
+                
+                
             else:
                 uTotalOut.append(uTotal[i])
                 gTotalOut.append(gTotal[i])
@@ -259,8 +269,14 @@ class Variability(PhotometryBase):
                 zAgnOut.append(zAgn[i])
                 yAgnOut.append(yAgn[i])
                 
-                magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
+                if self.obs_metadata.metadata != None and \
+                    self.obs_metadata.metadata['Opsim_filter'] and \
+                    (not numpy.isnan(magNormAgn[i])):
+                    
+                    magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
                         agn = magNormAgn[i]))
+                else:
+                    magNormVarOut.append(-999.0)
             
             i+=1
         
@@ -334,7 +350,14 @@ class Variability(PhotometryBase):
         expmjd=self.obs_metadata.mjd
         output = self.variabilityMethods[method](params,expmjd)
         
-        deltaMagNorm = output[self.obs_metadata.Opsim_filter]
+        if self.obs_metadata.metadata != None:
+            if self.obs_metadata.metadata['Opsim_filter']:
+                deltaMagNorm = output[self.obs_metadata.metadata['Opsim_filter'][0]]
+            else:
+                deltaMagNorm = None
+        
+        else:
+            deltaMagNorm = None
         
         return output, deltaMagNorm
     

@@ -282,15 +282,19 @@ class PhotometryBase(object):
             
             for filterName in filterDict:
                 mm = filterDict[filterName]
-
-                xx=10**(0.4*(mm - m5[filterName]))
-                ss = (0.04 - gamma[filterName])*xx + \
-                     gamma[filterName]*xx*xx
+               
+                if mm != None:
+                    xx=10**(0.4*(mm - m5[filterName]))
+                    ss = (0.04 - gamma[filterName])*xx + \
+                         gamma[filterName]*xx*xx
                 
-                sigmaSquared = ss + sigma2Sys
+                    sigmaSquared = ss + sigma2Sys
                 
-                subDict[filterName] = numpy.sqrt(sigmaSquared)
-            
+                    subDict[filterName] = numpy.sqrt(sigmaSquared)
+                
+                else:
+                    subDict[filterName] = None
+                
             sigOut[name] = subDict
         
         return sigOut
@@ -363,13 +367,13 @@ class PhotometryGalaxies(PhotometryBase):
         mm_o = 22.
         
         nn=0.0
-        if disk is not None:
+        if disk is not None and (not numpy.isnan(disk)):
             nn+=numpy.power(10, (disk - mm_o)/-2.5)
                 
-        if bulge is not None:
+        if bulge is not None and (not numpy.isnan(bulge)):
             nn+=numpy.power(10, (bulge - mm_o)/-2.5)
             
-        if agn is not None:
+        if agn is not None and (not numpy.isnan(agn)):
             nn+=numpy.power(10, (agn - mm_o)/-2.5)
                 
         if nn>0.0:
