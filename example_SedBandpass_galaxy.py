@@ -1,5 +1,6 @@
-import lsst.sims.catalogs.measures.photometry.Sed as Sed
-import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
+import lsst.sims.photUtils.Sed as Sed
+import lsst.sims.photUtils.Bandpass as Bandpass
+
 import numpy as n
 
 # let's treat this galaxy as if it were many galaxies, with many redshifts, dust extinctions,

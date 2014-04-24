@@ -24,8 +24,8 @@ def dtime(time_prev):
 
 # Import other modules and classes. 
 import numpy
-import lsst.sims.catalogs.measures.photometry.Sed as Sed
-import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
+import lsst.sims.photUtils.Sed as Sed
+import lsst.sims.photUtils.Bandpass as Bandpass
 
 # Initialize starting time.
 t = time.time()
@@ -46,7 +46,11 @@ print "Reading %d filters took %f s" %(len(filterlist), dt)
 
 # Read in a set of star seds. 
 # Replace stardir with your root galaxy sed directory.
+<<<<<<< HEAD
 stardir = os.path.join(os.getenv('CAT_SHARE_DATA'), 'data', 'starSED', 'kurucz')
+=======
+stardir = os.path.join(os.getenv('SED_DATA'), 'starSED/kurucz')
+>>>>>>> u/danielsf/jira_catsim_12
 stars = {}
 starlist = os.listdir(stardir)
 if len(starlist) > 1000:

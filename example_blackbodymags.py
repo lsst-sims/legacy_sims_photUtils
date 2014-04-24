@@ -9,9 +9,8 @@
 import os
 import numpy
 
-import lsst.sims.catalogs.measures.photometry.Sed as Sed
-import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
-
+import lsst.sims.photUtils.Sed as Sed
+import lsst.sims.photUtils.Bandpass as Bandpass
 
 lsstdir = os.getenv("LSST_THROUGHPUTS_DEFAULT")
 sdssdir = os.getenv("SDSS_THROUGHPUTS")

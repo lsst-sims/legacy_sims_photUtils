@@ -10,8 +10,9 @@ def dtime(time_prev):
 
 # Import other modules and classes. 
 import numpy
-import lsst.sims.catalogs.measures.photometry.Sed as Sed
-import lsst.sims.catalogs.measures.photometry.Bandpass as Bandpass
+
+import lsst.sims.photUtils.Sed as Sed
+import lsst.sims.photUtils.Bandpass as Bandpass
 
 # Initialize starting time.
 t = time.time()
@@ -35,7 +36,11 @@ wavelen_max = lsstbp[filterlist[0]].wavelen.max() - wavelen_step
 
 # Read in galaxy seds. (there aren't many, so just read them all).
 # Replace galdir with your root galaxy sed directory.
+<<<<<<< HEAD
 galdir = os.path.join(os.getenv('CAT_SHARE_DATA'), 'data', 'galaxySED')
+=======
+galdir = os.path.join(os.getenv('SED_DATA'), 'galaxySED')
+>>>>>>> u/danielsf/jira_catsim_12
 gals = {}
 gallist = os.listdir(galdir)
 if len(gallist) > 1000:
