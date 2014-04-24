@@ -144,10 +144,6 @@ class EbvMap(object):
             xHigh = interp1D(self.data[iyHigh][ixLow], self.data[iyHigh][ixHigh], dx)
             ebvVal = interp1D(xLow, xHigh, dy)                
          
-            #xLow = interp1D(self.data[iy][ix], self.data[iy][ix+1], x - ix)
-            #xHigh = interp1D(self.data[iy+1][ix], self.data[iy+1][ix+1], x - ix)
-            #ebvVal = interp1D(xLow, xHigh, y - iy)                
-
         else:
             ebvVal = self.data[iy][ix]
 
