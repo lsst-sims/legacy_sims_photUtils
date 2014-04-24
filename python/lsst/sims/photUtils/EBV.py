@@ -229,7 +229,7 @@ class EBVmixin(object):
             else:
                 ebv.append(northMap.generateEbv(lon,lat, interpolate=interp))
 
-        return ebv
+        return numpy.asarray(ebv)
 
     
     #and finally, here is the getter
