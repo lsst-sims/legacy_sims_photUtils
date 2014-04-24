@@ -43,7 +43,7 @@ import numpy as n
 import pylab as pyl
 from .Bandpass import Bandpass
 from .Sed import Sed
-import. photUtils
+import .photUtils
 from .BandpassSEt import BandpassSet
 
 figformat = 'png'
