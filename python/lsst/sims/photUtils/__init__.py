@@ -1,5 +1,5 @@
-from Bandpass import * 
-from Sed import *
-from EBV import *
+from .Bandpass import * 
+from .Sed import *
+from .EBV import *
 
 
