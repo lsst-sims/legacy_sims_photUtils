@@ -11,7 +11,7 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.coordUtils.Astrometry import Astrometry
+from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.EBV import EBVmixin
 from lsst.sims.catalogs.measures.instance.Site import Site
@@ -53,14 +53,14 @@ class testDefaults(object):
         
         return out
 
-class testCatalog(InstanceCatalog,Astrometry,Variability,testDefaults):
+class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
     catalog_type = 'MISC'
     default_columns=[('expmjd',5000.0,float)]
     def db_required_columns(self):
         return ['raJ2000'],['varParamStr']
 
         
-class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,testDefaults):
+class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
     column_outputs=['id','ra_corr','dec_corr','magNorm',\
     'stellar_magNorm_var', \
@@ -80,7 +80,7 @@ class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,
     'EBV','varParamStr']
 """
     
-class testGalaxies(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
+class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
     column_outputs=['galid','ra_corr','dec_corr',\
         'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
