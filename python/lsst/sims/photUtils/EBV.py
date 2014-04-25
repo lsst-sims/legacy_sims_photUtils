@@ -2,8 +2,6 @@ import pyfits
 import math
 import numpy
 import os
-import palpy as pal
-from lsst.sims.catalogs.measures.instance import compound
 
 #scott's notes to self
 #mixin could have a method by which user sets data dir and dust map file 
@@ -169,9 +167,9 @@ class EBVmixin(object):
     """
 
     #these variables will tell the mixin where to get the dust maps
-    ebvDataDir=os.environ.get("CAT_SHARE_DATA")
-    ebvMapNorthName="data/Dust/SFD_dust_4096_ngp.fits"
-    ebvMapSouthName="data/Dust/SFD_dust_4096_sgp.fits"
+    ebvDataDir=os.environ.get("SIMS_DUSTMAPS_DIR")
+    ebvMapNorthName="DustMaps/SFD_dust_4096_ngp.fits"
+    ebvMapSouthName="DustMaps/SFD_dust_4096_sgp.fits"
     ebvMapNorth=None
     ebvMapSouth=None
     
