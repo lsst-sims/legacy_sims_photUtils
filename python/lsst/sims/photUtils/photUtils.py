@@ -14,7 +14,7 @@ import palpy as pal
 from .EBV import EBV
 from .Bandpass import Bandpass
 from .Sed import Sed
-from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.coordUtils import compound
 
 class Photometry(object):
         
@@ -34,7 +34,7 @@ class Photometry(object):
         self.setFilters(filterList=filterList,filterDir=filterDir,filterRoot=filterRoot)
         
         if sedDir == None:
-            sedDir = os.environ.get("CAT_SHARE_DATA")+"data/starSED/kurucz/"
+            sedDir = os.environ.get("SIMS_SED_LIBRARY_DIR")+"/starSED/kurucz/"
         
         self.setSedDir(sedDir)
         

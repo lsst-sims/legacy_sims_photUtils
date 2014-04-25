@@ -2,100 +2,64 @@ import numpy
 import linecache
 import math
 import os
-import inspect
 import json as json
+from lsst.sims.coordUtils import register_class, register_method
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
-from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.coordUtils import compound
 from .Photometry import PhotometryBase
 
-def variabilityRegistration(ff):
-    """
-    A decorator to indicate which methods need to be added to the
-    register of variability methods
-    
-    Note that, in addition to containing this decorator, any cached methods
-    must have a name beginnging with the letter 'a'.  This was necessary to
-    avoid having the getters entered into the register.
-    """
-
-    def decoratedFunction(*args,**kwargs):
-        args[0].logIt = True
-        return ff(*args,**kwargs)
-    
-    return decoratedFunction
-
-
+@register_class
 class Variability(PhotometryBase):
     """
     Variability class for adding temporal variation to the magnitudes of
     objects in the base catalog.  All methods should return a dictionary of
     magnitude offsets.
     """
-    
+
     variabilityInitialized = False
-    variabilityMethods = {}
-    
+
     def initializeVariability(self, doCache=False):
         """
-        This method will build the register of variability methods.
         It will only be called from applyVariability, and only
         if self.variabilityInitiailized == True (which this method sets)
-        
+
         @param [in] doCache controls whether or not the code caches calculated
         light curves for future use (I think...this is older code)
-        
+
         """
-    
+
         self.variabilityInitialized=True
-        
-        listOfMembers=inspect.getmembers(self)
-        for methodName, actualMethod in listOfMembers:
-            self.logIt = False
-            if methodName[0] == "a": 
-            #This avoids calling initializeVariabilty recursively.
-            #It also avoid calling the getters, which will call a variability method
-            # and thus set the logIt flag to True, getting themselves a spot in the
-            #register.
-            #It will require that all future variability methods be named "applyXXXX"
-                try:
-                    actualMethod()
-                except:
-                    pass
-                
-                if self.logIt == True:
-                    self.variabilityMethods[methodName] = actualMethod
-             
         #below are variables to cache the light curves of variability models
         self.variabilityLcCache = {}
         self.variabilityCache = doCache
         try:
-            self.variabilityDataDir = os.path.join(os.environ.get("CAT_SHARE_DATA"),"data","LightCurves")
+            self.variabilityDataDir = os.environ.get("SIMS_SED_LIBRARY_DIR")
         except:
-            print "No directory specified and $CAT_SHARE_DATA is undefined"
-            raise
-    
-    
+            raise RuntimeError("sims_sed_library must be setup to compute variability because it contains"+
+                               " the lightcurves")
+
+
     @compound('lsst_u_var','lsst_g_var','lsst_r_var','lsst_i_var',
     'lsst_z_var','lsst_y_var','stellar_magNorm_var')
     def get_stellar_variability(self):
         """
         Getter for variable stellar magnitudes
         """
-    
+
         uu = self.column_by_name('lsst_u')
         gg = self.column_by_name('lsst_g')
         rr = self.column_by_name('lsst_r')
         ii = self.column_by_name('lsst_i')
         zz = self.column_by_name('lsst_z')
         yy = self.column_by_name('lsst_y')
-        
+
         magNorm = self.column_by_name('magNorm')
-        
-        
+
+
         varParams = self.column_by_name('varParamStr')
-        
+
         uuout = []
         ggout = []
         rrout = []
@@ -327,7 +291,7 @@ class Variability(PhotometryBase):
         This method uses json to convert that into a machine-readable object
         
         it uses the varMethodName to select the correct variability method from the
-        dict self.variabilityMethods
+        dict self._methodRegistry
         
         it uses then feeds the pars array to that method, under the assumption
         that the parameters needed by the method can be found therein
@@ -348,7 +312,7 @@ class Variability(PhotometryBase):
         method = varCmd['varMethodName']
         params = varCmd['pars']
         expmjd=self.obs_metadata.mjd
-        output = self.variabilityMethods[method](params,expmjd)
+        output = self._methodRegistry[method](self, params,expmjd)
         
         if self.obs_metadata.metadata != None:
             if self.obs_metadata.metadata['Opsim_filter']:
@@ -441,7 +405,7 @@ class Variability(PhotometryBase):
             magoff[k] = splines[k](phase)
         return magoff
 
-    @variabilityRegistration
+    @register_method('applyMflare')
     def applyMflare(self, params, expmjd):
         
         params['lcfilename'] = "mflare/"+params['lcfilename'][:-5]+"1.dat"
@@ -451,21 +415,21 @@ class Variability(PhotometryBase):
             magoff[k] = -magoff[k]
         return magoff
 
-    @variabilityRegistration
+    @register_method('applyRRly')
     def applyRRly(self, params, expmjd):
     
         keymap = {'filename':'filename', 't0':'tStartMjd'}
         return self.applyStdPeriodic(params, keymap, expmjd,
                 interpFactory=InterpolatedUnivariateSpline)
     
-    @variabilityRegistration
+    @register_method('applyCepheid')
     def applyCepheid(self, params, expmjd):
     
         keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
 
-    @variabilityRegistration
+    @register_method('applyEb')
     def applyEb(self, params, expmjd):
         keymap = {'filename':'lcfile', 't0':'t0'}
         dMags = self.applyStdPeriodic(params, keymap, expmjd,
@@ -474,7 +438,7 @@ class Variability(PhotometryBase):
             dMags[k] = -2.5*numpy.log10(dMags[k])
         return dMags
 
-    @variabilityRegistration
+    @register_method('applyMicrolens')
     def applyMicrolens(self, params, expmjd_in):
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         epochs = expmjd - params['t0']
@@ -491,7 +455,7 @@ class Variability(PhotometryBase):
         return dMags
 
 
-    @variabilityRegistration
+    @register_method('applyAgn')
     def applyAgn(self, params, expmjd_in):
         dMags = {}
         expmjd = numpy.asarray(expmjd_in,dtype=float)
@@ -529,7 +493,7 @@ class Variability(PhotometryBase):
             dMags[k] = magoff
         return dMags
 
-    @variabilityRegistration
+    @register_method('applyMicrolensing')
     def applyMicrolensing(self, params, expmjd_in):
         dMags = {}
         epochs = numpy.asarray(expmjd_in,dtype=float) - params['t0']
@@ -545,7 +509,7 @@ class Variability(PhotometryBase):
         dMags['y'] = dmag 
         return dMags
 
-    @variabilityRegistration
+    @register_method('applyAmcvn')
     def applyAmcvn(self, params, expmjd_in):
         maxyears = 10.
         dMag = {}
@@ -582,7 +546,7 @@ class Variability(PhotometryBase):
         dMag['y'] = yLc
         return dMag
 
-    @variabilityRegistration
+    @register_method('applyBHMicrolens')
     def applyBHMicrolens(self, params, expmjd_in):
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename = params['filename']

@@ -9,12 +9,11 @@ import warnings
 import sys
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.EBV import EBVmixin
-from lsst.sims.catalogs.measures.instance.Site import Site
 
 from lsst.sims.photUtils.Variability import Variability
 
