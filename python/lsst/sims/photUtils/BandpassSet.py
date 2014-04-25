@@ -42,8 +42,8 @@
 
 import os
 import copy
-import numpy as n
-import pylab as pyl
+import numpy as np
+import matplotlib.pyplot as plt
 from .Bandpass import Bandpass
 from .Sed import Sed
 
@@ -58,7 +58,7 @@ WAVELEN_STEP = 0.1  # step size in wavelength grid (nm)
 # figure format to save output figures, if desired. (can choose 'png' or 'eps' or 'pdf' or a few others). 
 figformat = 'png'
 
-class BandpassSet:
+class BandpassSet():
     """ Set up a dictionary of a set of bandpasses (multi-filters).
     Run various engineering tests or visualizations."""
     
@@ -87,7 +87,7 @@ class BandpassSet:
             if verbose:
                 print "Reading throughput file %s" %(filename)
             # Initialize bandpass object.
-            bandpass[f] = Bandpass.Bandpass()
+            bandpass[f] = Bandpass()
             # Read the throughput curve, sampling onto grid of wavelen min/max/step.
             bandpass[f].readThroughput(filename, wavelen_min=WAVELEN_MIN,
                                             wavelen_max=WAVELEN_MAX,
@@ -120,7 +120,7 @@ class BandpassSet:
             if verbose:
                 print "Reading throughput curves ", complist, " for filter ", f
             # Initialize bandpass object.
-            bandpass[f] = Bandpass.Bandpass()
+            bandpass[f] = Bandpass()
             bandpass[f].readThroughputList(complist, wavelen_min=WAVELEN_MIN,
                                            wavelen_max=WAVELEN_MAX, wavelen_step=WAVELEN_STEP)
             bandpass[f].sbTophi()
@@ -138,7 +138,7 @@ class BandpassSet:
         for f in self.filterlist:
             wavelen, sb = self.bandpass[f].multiplyThroughputs(otherBpSet.bandpass[f].wavelen,
                                                                otherBpSet.bandpass[f].sb)
-            newBpDict[f] = Bandpass.Bandpass(wavelen=wavelen, sb=sb)
+            newBpDict[f] = Bandpass(wavelen=wavelen, sb=sb)
         newBpSet = BandpassSet()
         newBpSet.setBandpassSet(newBpDict, self.filterlist)
         return newBpSet
@@ -192,7 +192,7 @@ class BandpassSet:
     def calcZeroPoints(self, gain=1.0, verbose=True):
         """Calculate the theoretical zeropoints for the bandpass, in AB magnitudes."""
         exptime = 15   # Default exposure time.
-        effarea = n.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. 
+        effarea = np.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. 
         zpt = {}
         print "Filter Zeropoint"
         for f in self.filterlist:
@@ -238,7 +238,7 @@ class BandpassSet:
             d_peak = maxthruput[f] * drop_peak/100.0
             d_perc = drop_percent/100.0  # given in %, must translate to fraction.
             # Find the nearest spot on the wavelength grid used for filter, for edge lookup.
-            sbindex = n.where(abs(bandpass[f].wavelen - effsb[f]) < wavelenstep/2.0)
+            sbindex = np.where(abs(bandpass[f].wavelen - effsb[f]) < wavelenstep/2.0)
             sbindex = sbindex[0]
             # Now find where Sb drops below 'drop_peak_thruput' of max for the first time.
             # Calculate wavelength where dropoff X percent of max level.
@@ -353,7 +353,7 @@ class BandpassSet:
                 print " Meets SRD - This is less than %.4f%s of total throughput outside bandpass" \
                       %(out_of_band_limit, '%')
             # calculate transmission in each 10nm interval.
-            sb_10nm = n.zeros(len(bandpass[f].sb), dtype='float')
+            sb_10nm = np.zeros(len(bandpass[f].sb), dtype='float')
             gapsize_10nm = 10.0 # wavelen gap in nm
             meet_SRD=True
             maxsb_10nm = 0.
@@ -375,45 +375,45 @@ class BandpassSet:
             if sb_10nm.max() > ten_nm_limit_value:
                 meet_SRD = False
                 maxsb_10nm = sb_10nm.max()
-                maxwavelen_10nm = bandpass[f].wavelen[n.where(sb_10nm==sb_10nm.max())]
+                maxwavelen_10nm = bandpass[f].wavelen[np.where(sb_10nm==sb_10nm.max())]
             if meet_SRD==False:
                 print "Does not meet SRD - %s has at least one region not meeting the 10nm SRD filter leak requirement (max is %f%s of peak transmission at %.1f A)" %(f, maxsb_10nm, "%", maxwavelen_10nm)
             else:
                 print "10nm limit within SRD."
             if makeplot:
                 # make plot for this filter
-                pyl.figure()
+                plt.figure()
                 # set colors for filter in plot 
                 color = colors[colorindex]
                 colorindex = colorindex + 1
                 if colorindex == len(colors):
                     colorindex = 0
                 # Make lines on the plot. 
-                pyl.plot(bandpass[f].wavelen, bandpass[f].sb, color=color, linestyle="-")
-                pyl.plot(bandpass[f].wavelen, sb_10nm, 'r-',linewidth=2)
-                pyl.axvline(drop_peak_blue[f], color='b', linestyle=':')
-                pyl.axvline(drop_peak_red[f], color='b', linestyle=':')
-                pyl.axhline(ten_nm_limit_value, color='b', linestyle=':')
+                plt.plot(bandpass[f].wavelen, bandpass[f].sb, color=color, linestyle="-")
+                plt.plot(bandpass[f].wavelen, sb_10nm, 'r-',linewidth=2)
+                plt.axvline(drop_peak_blue[f], color='b', linestyle=':')
+                plt.axvline(drop_peak_red[f], color='b', linestyle=':')
+                plt.axhline(ten_nm_limit_value, color='b', linestyle=':')
                 legendstring = f + " filter thruput, 10nm average thruput in red\n"
                 legendstring = legendstring + "  Peak throughput is %.1f%s\n" \
                                %(peaktrans*100.0, '%')
                 legendstring = legendstring + "  Total throughput (in band) is %.0f%s\n" \
                                %(totaltrans*100.0, '%')
                 legendstring = legendstring + "  " + infotext
-                pyl.figtext(0.25, 0.76, legendstring)
-                pyl.xlabel("Wavelength (nm)")
-                pyl.ylabel("Throughput (0-1)")
-                pyl.yscale('log')
+                plt.figtext(0.25, 0.76, legendstring)
+                plt.xlabel("Wavelength (nm)")
+                plt.ylabel("Throughput (0-1)")
+                plt.yscale('log')
                 if extra_title != None:
                     titletext = extra_title + " " + f
                 else:
                     titletext = f
-                pyl.title(titletext)
-                pyl.ylim(1e-6, 1)
-                pyl.xlim(xmin=300, xmax=1200)
+                plt.title(titletext)
+                plt.ylim(1e-6, 1)
+                plt.xlim(xmin=300, xmax=1200)
                 if savefig:
                     figname = figroot + "_" + f + "_fleak."+ figformat            
-                    pyl.savefig(figname, format=figformat)
+                    plt.savefig(figname, format=figformat)
         # end of loop through filters
         return
 
@@ -447,7 +447,7 @@ class BandpassSet:
         # read files for atmosphere and optional comparison throughputs
         if atmos:
             atmosfile = os.path.join(rootdir, 'atmos.dat')
-            atmosphere = Bandpass.Bandpass()
+            atmosphere = Bandpass()
             atmosphere.readThroughput(atmosfile)
         Xatm=_stdX
         # set up colors for plot output
@@ -455,7 +455,7 @@ class BandpassSet:
         #colors = ('r', 'b', 'r', 'b', 'r', 'b', 'r', 'b')
         if (throughput):
             if newfig:
-                pyl.figure()
+                plt.figure()
             # plot throughputs
             colorindex = 0
             for f in filterlist:
@@ -463,11 +463,11 @@ class BandpassSet:
                 colorindex = colorindex+1
                 if colorindex == len(colors):
                     colorindex=0
-                pyl.plot(bandpass[f].wavelen, bandpass[f].sb, 
+                plt.plot(bandpass[f].wavelen, bandpass[f].sb, 
                          color=color, linestyle=linestyle, linewidth=linewidth)
             # add effective wavelengths (optional)
             if ploteffsb:
-                vertline = n.arange(0, 1.2, 0.1)
+                vertline = np.arange(0, 1.2, 0.1)
                 temp = vertline*0.0 + 1.0
                 colorindex = 0
                 for f in filterlist:
@@ -475,7 +475,7 @@ class BandpassSet:
                     colorindex = colorindex + 1            
                     if colorindex == len(colors):
                         colorindex = 0
-                    pyl.plot(effsb[f]*temp, vertline, color=color, linestyle='-')        
+                    plt.plot(effsb[f]*temp, vertline, color=color, linestyle='-')        
             # add dropoff limits if desired (usually only good with reduced x/y limits) (optional)
             if (plotdropoffs): 
                 colorindex = 0 
@@ -484,11 +484,11 @@ class BandpassSet:
                     colorindex = colorindex+1
                     if colorindex == len(colors):
                         colorindex = 0
-                    pyl.plot(drop_peak_red[f]*temp, vertline, color=color, linestyle='--') 
-                    pyl.plot(drop_peak_blue[f]*temp, vertline, color=color, linestyle='--')
+                    plt.plot(drop_peak_red[f]*temp, vertline, color=color, linestyle='--') 
+                    plt.plot(drop_peak_blue[f]*temp, vertline, color=color, linestyle='--')
             # plot atmosphere (optional)
             if atmos:
-                pyl.plot(atmosphere.wavelen, atmosphere.sb, 'k:')
+                plt.plot(atmosphere.wavelen, atmosphere.sb, 'k:')
             # plot comparison throughputs (optional)
             if compare!=None:
                 colorindex = 0
@@ -497,7 +497,7 @@ class BandpassSet:
                     colorindex = colorindex + 1
                     if colorindex == len(colors):
                         colorindex = 0
-                    pyl.plot(compare.bandpass[f].wavelen, compare.bandpass[f].sb, 
+                    plt.plot(compare.bandpass[f].wavelen, compare.bandpass[f].sb, 
                              color=color, linestyle='--')
             # add line legend (type of filter curves)
             legendtext = "%s = solid" %(leg_tag)
@@ -508,13 +508,13 @@ class BandpassSet:
                     legendtext= legendtext + "\n%s = dashed" %(compare_tag)
             if atmos: 
                 legendtext = legendtext + "\nAirmass %.1f" %(Xatm)
-            pyl.figtext(0.15, 0.8, legendtext)
+            plt.figtext(0.15, 0.8, legendtext)
             # add names to filter throughputs
             if filter_tags == 'side':
-                xtags = n.zeros(len(filterlist), dtype=float)
+                xtags = np.zeros(len(filterlist), dtype=float)
                 xtags = xtags + 0.15
                 spacing = (0.8 - 0.1) / len(filterlist)
-                ytags = n.arange(0.8, 0.1, -1*spacing, dtype=float)
+                ytags = np.arange(0.8, 0.1, -1*spacing, dtype=float)
                 ytags = ytags 
             else: # 'normal' tagging
                 xtags = (0.16, 0.27, 0.42, 0.585, 0.68, 0.8, 0.8, 0.8)
@@ -522,26 +522,26 @@ class BandpassSet:
             index= 0
             colorindex = 0
             for f in filterlist: 
-                pyl.figtext(xtags[index], ytags[index], f, color=colors[colorindex], 
+                plt.figtext(xtags[index], ytags[index], f, color=colors[colorindex], 
                             va='top', size='x-large')
                 index = index+1
                 colorindex = colorindex + 1
                 if colorindex == len(colors):
                     colorindex = 0
             # set x/y limits
-            pyl.xlim(xmin=xlim[0], xmax=xlim[1])
-            pyl.ylim(ymin=ylimthruput[0], ymax=ylimthruput[1])
-            pyl.xlabel("Wavelength (nm)")
-            pyl.ylabel("Throughput (0-1)")
-            pyl.grid()
+            plt.xlim(xmin=xlim[0], xmax=xlim[1])
+            plt.ylim(ymin=ylimthruput[0], ymax=ylimthruput[1])
+            plt.xlabel("Wavelength (nm)")
+            plt.ylabel("Throughput (0-1)")
+            plt.grid()
             if title!=None:
-                pyl.title(title)
+                plt.title(title)
             if savefig:
                 figname = figroot + "_thruputs." + figformat
-                pyl.savefig(figname, format=figformat)
+                plt.savefig(figname, format=figformat)
         if (phi):
             if newfig:
-                pyl.figure()
+                plt.figure()
             # plot LSST 'phi' curves
             colorindex = 0
             for f in filterlist:
@@ -549,11 +549,11 @@ class BandpassSet:
                 colorindex = colorindex+1
                 if colorindex == len(colors):
                         colorindex = 0
-                pyl.plot(bandpass[f].wavelen, bandpass[f].phi, color=color, 
+                plt.plot(bandpass[f].wavelen, bandpass[f].phi, color=color, 
                          linestyle=linestyle, linewidth=linewidth)
             # add effective wavelengths for main filter set (optional)
             if ploteffsb:
-                vertline = n.arange(0, .1, 0.01)
+                vertline = np.arange(0, .1, 0.01)
                 temp = vertline*0.0 + 1.0
                 colorindex = 0
                 for filter in filterlist:
@@ -561,7 +561,7 @@ class BandpassSet:
                     colorindex = colorindex + 1            
                     if colorindex == len(colors):
                         colorindex = 0
-                    pyl.plot(effphi[f]*temp, vertline, color=color, linestyle='-')        
+                    plt.plot(effphi[f]*temp, vertline, color=color, linestyle='-')        
             # plot comparison throughputs (optional)
             if compare!=None:
                 colorindex = 0
@@ -570,7 +570,7 @@ class BandpassSet:
                     colorindex = colorindex + 1
                     if colorindex == len(colors):
                         colorindex = 0
-                    pyl.plot(compare.bandpass[f].wavelen, compare.bandpass[f].phi,
+                    plt.plot(compare.bandpass[f].wavelen, compare.bandpass[f].phi,
                              color=color, linestyle='--')
             # add line legend
             legendtext = "%s = solid" %(leg_tag)
@@ -579,12 +579,12 @@ class BandpassSet:
             if compare!=None:
                 if compare_tag!=None:
                     legendtext = legendtext + "\n%s = dashed" %(compare_tag)
-            pyl.figtext(0.15, 0.78, legendtext)
+            plt.figtext(0.15, 0.78, legendtext)
             # add name tags to filters
             if filter_tags == 'side':
-                xtags = n.zeros(len(filterlist), dtype=float)
+                xtags = np.zeros(len(filterlist), dtype=float)
                 xtags = xtags + 0.15
-                ytags = n.arange(len(filterlist), 0, -1.0, dtype=float)
+                ytags = np.arange(len(filterlist), 0, -1.0, dtype=float)
                 ytags = ytags*0.04 + 0.35
             else:
                 xtags = (0.17, 0.27, 0.42, 0.585, 0.677, 0.82, 0.82, 0.82)
@@ -592,22 +592,22 @@ class BandpassSet:
             index= 0
             colorindex = 0
             for f in filterlist: 
-                pyl.figtext(xtags[index], ytags[index], f, color=colors[colorindex], va='top')
+                plt.figtext(xtags[index], ytags[index], f, color=colors[colorindex], va='top')
                 index = index+1
                 colorindex = colorindex+1 
                 if colorindex==len(colors):
                     colorindex=0
             # set x/y limits
-            pyl.xlim(xmin=xlim[0], xmax=xlim[1])
-            pyl.ylim(ymin=ylimphi[0], ymax=ylimphi[1])
-            pyl.xlabel("Wavelength (nm)")
-            pyl.ylabel("Phi")
-            pyl.grid()
+            plt.xlim(xmin=xlim[0], xmax=xlim[1])
+            plt.ylim(ymin=ylimphi[0], ymax=ylimphi[1])
+            plt.xlabel("Wavelength (nm)")
+            plt.ylabel("Phi")
+            plt.grid()
             if title!=None:
-                pyl.title(title)
+                plt.title(title)
             if savefig:
                 figname = figroot + "_phi." + figformat
-                pyl.savefig(figname, format=figformat)
+                plt.savefig(figname, format=figformat)
         return
 
 

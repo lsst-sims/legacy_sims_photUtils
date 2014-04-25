@@ -1,8 +1,6 @@
 """
   Questions or comments, email : ljones.uw@gmail.com
 
-$Id$
-
 Similarly to the explanation given in BandpassSet, the main 
 point of this class is to provide a way to group many seds 
 together (into one object which has some useful methods: like 
@@ -39,18 +37,18 @@ calcAllColors - similar to above, but calculates adjacent colors for all bandpas
 
 import os
 import copy
-import numpy as n
-import pylab as pyl
+import numpy as np
+import matplotlib.pyplot as plt
 from .Bandpass import Bandpass
 from .Sed import Sed
 import .photUtils
-from .BandpassSEt import BandpassSet
+from .BandpassSet import BandpassSet
 
 figformat = 'png'
 
-class SedSet:
+class SedSet():
     """ Set up a dictionary of a bunch of seds."""
-    def __init__(self, sedlist=None, rootdir='.', sedtype=None, verbose=True):
+    def __init__(self, sedlist=None, rootdir='.', sedtype=None, verbose=True, **kwargs):
         """Initialize Seds.
 
         Give root directory for SED location (rootdir). Will read all files from that directory unless you - 
@@ -77,7 +75,7 @@ class SedSet:
         if self.sedtype != None:                
             if verbose:
                 print "Using sedtype of %s."
-            self.setupSedType(rootdir)
+            self.setupSedType(rootdir, **kwargs)
         # Read seds.
         if self.sedtype == 'quasar':
             if verbose:
@@ -86,14 +84,14 @@ class SedSet:
             self.readSeds(rootdir=rootdir, verbose=verbose)
         # Convert data into numpy arrays so masking/conditions can work. 
         for key in self.data.keys():
-            self.data[key] = n.array(self.data[key])
+            self.data[key] = np.array(self.data[key])
         return
 
     def readSeds(self, rootdir, verbose=True):
         """Read sim object sed files specified in self.sedlist, removing invalid sed files from list."""
         # Set up the dictionary and good sed list.
         self.seds = {}
-        tmpsed = Sed.Sed()
+        tmpsed = Sed()
         validsedlist = []
         i = 0 
         # Attempt to read seds from sedlist.
@@ -105,7 +103,7 @@ class SedSet:
                 tmpsed.readSED_flambda(filename)
                 validsedlist.append(sedname)
                 # Store the SED in the self.seds dictionary. 
-                self.seds[sedname] = Sed.Sed(wavelen=tmpsed.wavelen, flambda=tmpsed.flambda)
+                self.seds[sedname] = Sed(wavelen=tmpsed.wavelen, flambda=tmpsed.flambda)
                 # Set up fnu while we're here.
                 self.seds[sedname].flambdaTofnu()
                 i = i + 1
@@ -117,12 +115,17 @@ class SedSet:
         self.sedlist = validsedlist                
         return 
 
-    def setupSedType(self, rootdir):
+    def setupSedType(self, rootdir, logg=None, verbose=False):
         """Use self.sedlist to trim sedlist to only seds known to be of this 'type' and gather
         additional data appropriate to type (such as Teff/FeH/logg/asteroid type)."""
         self.data = {}
         # Kurucz
         if self.sedtype == 'kurucz':
+            if logg != None:
+                if isinstance(logg, list):
+                    pass
+                else:
+                    logg = [logg,]
             kuruczlist = []
             self.data['Teff'] = []
             self.data['FeH'] = []
@@ -132,6 +135,10 @@ class SedSet:
             for sedname in self.sedlist:
                 tmp = sedname.split('_')
                 if (tmp[0][0] == 'k'):
+                    if logg != None:
+                        g = float(tmp[2][1:])/10.0
+                        if g not in logg:
+                            continue
                     kuruczlist.append(sedname)
                     # Teff will either be tmp[1] or tmp[3]
                     if len(tmp) > 3:
@@ -219,18 +226,18 @@ class SedSet:
         # Quasars
         elif self.sedtype == 'quasar':
             # This is a special case .. there is only one quasar spectrum, but we can 'shift' the slope.
-            quasar = Sed.Sed()
+            quasar = Sed()
             quasar.readSED_flambda(os.path.join(rootdir, 'quasar.dat'))
-            self.data['alpha'] = n.arange(-0.5, 0.6, 0.5, dtype='float')
+            self.data['alpha'] = np.arange(-0.5, 0.6, 0.5, dtype='float')
             self.seds = {}
             self.sedlist = []
             for alpha in self.data['alpha']:
                 dictkey = "q_" + "%.1f" %(alpha)
                 self.sedlist.append(dictkey)
-                self.seds[dictkey] = Sed.Sed(wavelen=quasar.wavelen, flambda=quasar.flambda)
-                # Add 'color' variation.
+                self.seds[dictkey] = Sed(wavelen=quasar.wavelen, flambda=quasar.flambda)
+                # Add 'color' variationp.
                 self.seds[dictkey].flambda = self.seds[dictkey].flambda * \
-                                             n.power(self.seds[dictkey].wavelen/400.0, alpha)
+                                             np.power(self.seds[dictkey].wavelen/400.0, alpha)
         return
 
     def redshiftSEDS(self, redshiftlim=(0, 8), redshiftstep=0.2, dimming=False, verbose=True):
@@ -240,7 +247,7 @@ class SedSet:
         # This is really only applicable to galaxies or SN or quasars. 
         if verbose:
             print "Now adding redshifts to these seds"
-        redshifts = n.arange(redshiftlim[0], redshiftlim[1]+redshiftstep, redshiftstep)
+        redshifts = np.arange(redshiftlim[0], redshiftlim[1]+redshiftstep, redshiftstep)
         newsedlist = []
         basesedlist = self.sedlist
         newseds = {}
@@ -258,7 +265,7 @@ class SedSet:
                 newredshift.append(redshift)
                 wavelen, flambda = basesed.redshiftSED(redshift, wavelen=basesed.wavelen, 
                                                        flambda=basesed.flambda)
-                newseds[sedname] = Sed.Sed(wavelen=wavelen, flambda=flambda)
+                newseds[sedname] = Sed(wavelen=wavelen, flambda=flambda)
                 newseds[sedname].flambdaTofnu()
         self.data['redshift'] = newredshift
         self.data['alpha'] = newalpha
@@ -284,7 +291,7 @@ class SedSet:
         colors = ('c', 'k', 'r', 'y', 'g', 'b', 'm')
         if (fnu):
             if newfig:
-                pyl.figure()
+                plt.figure()
             # plot fnus
             colorindex = 0
             for sedname in sedlist:
@@ -292,7 +299,7 @@ class SedSet:
                 colorindex = colorindex+1
                 if colorindex == len(colors):
                     colorindex = 0 
-                pyl.plot(seds[sedname].wavelen, seds[sedname].fnu, color+linestyle)
+                plt.plot(seds[sedname].wavelen, seds[sedname].fnu, color+linestyle)
             # add names to fnu values
             # x location specified by sed_xtags (can be turned off by setting sed_xtags to None)
             colorindex = 0
@@ -303,23 +310,23 @@ class SedSet:
                     colorindex = colorindex + 1
                     if colorindex == len(colors):
                         colorindex = 0
-                    pyl.figtext(sed_xtags, ytag, sedname, color=color, va='top')
+                    plt.figtext(sed_xtags, ytag, sedname, color=color, va='top')
                     ytag = ytag - 0.04
             # set x/y limits
-            pyl.xlim(xmin=xlim[0], xmax=xlim[1])
+            plt.xlim(xmin=xlim[0], xmax=xlim[1])
             if ylimfnu != None:
-                pyl.ylim(ymin=ylimfnu[0], ymax=ylimfnu[1])
-            pyl.xlabel("Wavelength (A)")
+                plt.ylim(ymin=ylimfnu[0], ymax=ylimfnu[1])
+            plt.xlabel("Wavelength (A)")
             if ylabel!= None:
                 if ylabel=='auto':
                     ylabel = "F_nu (Jansky)  "
-                pyl.ylabel(ylabel)
+                plt.ylabel(ylabel)
             if savefig:
                 figname = figroot + "_fnu.png"
-                pyl.savefig(figname, format=figformat)   
+                plt.savefig(figname, format=figformat)   
         if (flambda):
             if newfig:
-                pyl.figure()
+                plt.figure()
             # plot flambda
             colorindex = 0
             for sedname in sedlist:
@@ -328,10 +335,10 @@ class SedSet:
                 if colorindex == len(colors):
                     colorindex = 0 
                 if lambdaflambda:
-                    pyl.plot(seds[sedname].wavelen, seds[sedname].flambda*seds[sedname].wavelen, 
+                    plt.plot(seds[sedname].wavelen, seds[sedname].flambda*seds[sedname].wavelen, 
                              color+linestyle)
                 else:
-                    pyl.plot(seds[sedname].wavelen, seds[sedname].flambda, color+linestyle)
+                    plt.plot(seds[sedname].wavelen, seds[sedname].flambda, color+linestyle)
             # add names to filter throughputs
             # x location specified by sed_xtags (can be turned off by setting sed_xtags to None)
             colorindex = 0
@@ -342,20 +349,20 @@ class SedSet:
                     colorindex = colorindex + 1
                     if colorindex == len(colors):
                         colorindex = 0
-                    pyl.figtext(sed_xtags, ytag, sedname, color=color, va='top')
+                    plt.figtext(sed_xtags, ytag, sedname, color=color, va='top')
                     ytag = ytag - 0.04
             # set x/y limits
-            pyl.xlim(xmin=xlim[0], xmax=xlim[1])
+            plt.xlim(xmin=xlim[0], xmax=xlim[1])
             if ylimflambda != None:
-                pyl.ylim(ymin=ylimflambda[0], ymax=ylimflambda[1])
-            pyl.xlabel("Wavelength (A)")
+                plt.ylim(ymin=ylimflambda[0], ymax=ylimflambda[1])
+            plt.xlabel("Wavelength (A)")
             if ylabel!= None:
                 if (ylabel=='F_nu (Jansky)  ') | (ylabel=='auto'):
                     ylabel="F_lambda (ergs/s/cm^2/A)"
-                pyl.ylabel(ylabel)
+                plt.ylabel(ylabel)
             if savefig:
                 figname = figroot + "_flambda.png"
-                pyl.savefig(figname, format=figformat)      
+                plt.savefig(figname, format=figformat)      
         return
    
     def normalizeSEDS(self, mags, bandpass):
@@ -419,7 +426,7 @@ class SedSet:
         """ Calculate magnitudes in bandpass and returns numpy array"""
         # Please note - this is not the *fastest* way to do this calculation, but it is
         #  easy to read and quick to write like this. But look at manyMagsCalc versions in Sed and Bandpass.
-        mags = n.empty(len(self.sedlist), float)
+        mags = np.empty(len(self.sedlist), float)
         i = 0
         for sedname in self.sedlist:
             mags[i] = self.seds[sedname].calcMag(bandpass)
@@ -429,7 +436,7 @@ class SedSet:
     def calcDeltaMag(self, bandpass1, bandpass2):
         """ Calculates the difference in magnitudes between filter (bandpass) 1 and 2 """
         """  Returns numpy array """
-        deltamags = n.empty(len(self.sedlist), float)
+        deltamags = np.empty(len(self.sedlist), float)
         i = 0
         for sedname in self.sedlist:
             deltamags[i] = (self.seds[sedname].calcMag(bandpass1) - 
@@ -443,7 +450,7 @@ class SedSet:
         # Set up storage dictionary for resulting magnitudes.
         self.mags = {}
         for f in filterlist:
-            self.mags[f] = n.zeros(len(self.sedlist), dtype='float')
+            self.mags[f] = np.zeros(len(self.sedlist), dtype='float')
         # First set up bandpass list (in filterlist order).
         phiarray, dlambda = photUtils.setupPhiArray_dict(bandpassDict, filterlist)
         # Now get set to resample SEDs onto the bandpass wavelength grid.
@@ -504,7 +511,7 @@ class SedSet:
     def plotColorColor(self, xcolor, ycolor, ptcolor='r', linestyle='.', withlines=True,
                        xlim=None, ylim=None, newfig=True, savefig=False, figroot='colorcolor'):
         if newfig:
-            pyl.figure()
+            plt.figure()
         try:
             self.colors[xcolor]
         except AttributeError:
@@ -519,31 +526,31 @@ class SedSet:
             # figure out what to connect.
             if self.sedtype == 'kurucz':
                 # connect stars with the same metallicity, same logg but different temperatures.
-                mets = n.unique(self.data['FeH'])
-                loggs = n.unique(self.data['logg'])
+                mets = np.unique(self.data['FeH'])
+                loggs = np.unique(self.data['logg'])
                 for met in mets:
                     for logg in loggs:
                         condition = ((self.data['FeH'] == met) & (self.data['logg']==logg))
-                        pyl.plot(self.colors[xcolor][condition], self.colors[ycolor][condition], ptcolor+"-")
+                        plt.plot(self.colors[xcolor][condition], self.colors[ycolor][condition], ptcolor+"-")
             elif self.sedtype == 'quasar':
                 # connect stars with the same alpha, but different redshifts
-                alphas = n.unique(self.data['alpha'])
+                alphas = np.unique(self.data['alpha'])
                 for alpha in alphas:
                     condition = (self.data['alpha'] == alpha)
-                    pyl.plot(self.colors[xcolor][condition], self.colors[ycolor][condition], ptcolor+"-")
+                    plt.plot(self.colors[xcolor][condition], self.colors[ycolor][condition], ptcolor+"-")
             elif self.sedtype == 'white_dwarf':
                 # connect stars with the same logg but different temperatures
-                loggs = n.unique(self.data['logg'])
+                loggs = np.unique(self.data['logg'])
                 for logg in loggs:
                     condition = (self.data['logg'] == logg)
-                    pyl.plot(self.colors[xcolor][condition], self.colors[ycolor][condition],  ptcolor+"-")
+                    plt.plot(self.colors[xcolor][condition], self.colors[ycolor][condition],  ptcolor+"-")
             else:
-                pyl.plot(self.colors[xcolor], self.colors[ycolor], color=ptcolor, linestyle='-')
-        pyl.plot(self.colors[xcolor], self.colors[ycolor], ptcolor+linestyle, label=self.sedtype)
-        pyl.xlabel(xcolor)
-        pyl.ylabel(ycolor)
+                plt.plot(self.colors[xcolor], self.colors[ycolor], color=ptcolor, linestyle='-')
+        plt.plot(self.colors[xcolor], self.colors[ycolor], ptcolor+linestyle, label=self.sedtype)
+        plt.xlabel(xcolor)
+        plt.ylabel(ycolor)
         if savefig:
             figname = figroot + '.' + figformat
-            pyl.savefig(figname, format=figformat)
+            plt.savefig(figname, format=figformat)
         return
 
