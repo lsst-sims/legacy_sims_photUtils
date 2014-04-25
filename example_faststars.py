@@ -46,11 +46,7 @@ print "Reading %d filters took %f s" %(len(filterlist), dt)
 
 # Read in a set of star seds. 
 # Replace stardir with your root galaxy sed directory.
-<<<<<<< HEAD
-stardir = os.path.join(os.getenv('CAT_SHARE_DATA'), 'data', 'starSED', 'kurucz')
-=======
-stardir = os.path.join(os.getenv('SED_DATA'), 'starSED/kurucz')
->>>>>>> u/danielsf/jira_catsim_12
+stardir = os.path.join(os.getenv('SIMS_SED_LIBRARY_DIR'), 'starSED/kurucz')
 stars = {}
 starlist = os.listdir(stardir)
 if len(starlist) > 1000:

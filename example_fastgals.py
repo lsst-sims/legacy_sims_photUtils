@@ -36,11 +36,7 @@ wavelen_max = lsstbp[filterlist[0]].wavelen.max() - wavelen_step
 
 # Read in galaxy seds. (there aren't many, so just read them all).
 # Replace galdir with your root galaxy sed directory.
-<<<<<<< HEAD
-galdir = os.path.join(os.getenv('CAT_SHARE_DATA'), 'data', 'galaxySED')
-=======
-galdir = os.path.join(os.getenv('SED_DATA'), 'galaxySED')
->>>>>>> u/danielsf/jira_catsim_12
+galdir = os.path.join(os.getenv('SIMS_SED_LIBRARY_DIR'), 'galaxySED')
 gals = {}
 gallist = os.listdir(galdir)
 if len(gallist) > 1000:
