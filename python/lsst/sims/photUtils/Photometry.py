@@ -112,7 +112,13 @@ class PhotometryBase(object):
         imsimband = Bandpass()
         imsimband.imsimBandpass()
         
-        
+        #right now, this is very slow since object with the same SED still have to call
+        #readSED_flambda again for fear that they will have different magNorms
+        #
+        #in order ot get around that, we will need to add an operator to
+        #the Sed class that allows one Sed to copy another, but still be
+        #an independent instantiation of the class (so that we can then
+        #renormalize one without renormalizing the other)
         sedOut=[]
         firstsed = True
         for i in range(len(sedList)):
