@@ -52,32 +52,6 @@ class testDefaults(object):
         
         return out
 
-class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
-    catalog_type = 'MISC'
-    default_columns=[('expmjd',5000.0,float)]
-    def db_required_columns(self):
-        return ['raJ2000'],['varParamStr']
-
-        
-class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
-    catalog_type = 'test_stars'
-    column_outputs=['id','ra_corr','dec_corr','magNorm',\
-    'stellar_magNorm_var', \
-    'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
-    'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
-    'lsst_r','sigma_lsst_r','lsst_r_var','sigma_lsst_r_var',\
-    'lsst_i','sigma_lsst_i','lsst_i_var','sigma_lsst_i_var',\
-    'lsst_z','sigma_lsst_z','lsst_z_var','sigma_lsst_z_var',\
-    'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
-    'EBV','varParamStr']
-
-"""
-class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,testDefaults):
-    catalog_type = 'test_stars'
-    column_outputs=['id','ra_corr','dec_corr','magNorm',\
-    'lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y',\
-    'EBV','varParamStr']
-"""
     
 class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
@@ -103,58 +77,10 @@ class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,Photo
         'yAgn', 'sigma_yAgn', 'yAgn_var', 'sigma_yAgn_var', 'varParamStr']
 
 
-class variabilityUnitTest(unittest.TestCase):
-
-    galaxy = DBObject.from_objid('galaxyBase')
-    rrly = DBObject.from_objid('rrly')
-    obsMD = DBObject.from_objid('opsim3_61')
-    obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds = True)
-    
-    def testGalaxyVariability(self):   
-                
-        galcat = testCatalog(self.galaxy,obs_metadata = self.obs_metadata)
-        rows = self.galaxy.query_columns(['varParamStr'], constraint = 'VarParamStr is not NULL',chunk_size=20)
-        rows = rows.next()
-        for i in range(20):
-            #print "i ",i
-            mags=galcat.applyVariability(rows[i]['varParamStr'])
-            #print mags
-
-    def testRRlyVariability(self):
-        rrlycat = testCatalog(self.rrly,obs_metadata = self.obs_metadata)
-        rows = self.rrly.query_columns(['varParamStr'], constraint = 'VarParamStr is not NULL',chunk_size=20)
-        rows = rows.next()
-        for i in range(20):
-            mags=rrlycat.applyVariability(rows[i]['varParamStr'])
-
-class photometryUnitTest(unittest.TestCase):
-       
-    def testStars(self):
-        dbObj=DBObject.from_objid('rrly')
-        obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-        test_cat=testStars(dbObj,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("testStarsOutput.txt")
-    
-    
-    def testGalaxies(self):
-        dbObj=DBObject.from_objid('galaxyBase')
-        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-        test_cat=testGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("testGalaxiesOutput.txt")
+dbObj=DBObject.from_objid('galaxyBase')
+obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.02))
+obs_metadata_pointed.metadata = {}
+obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+test_cat=testGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
+test_cat.write_catalog("test_galaxies_output.txt")
      
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(variabilityUnitTest)
-    suites += unittest.makeSuite(photometryUnitTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
-
-if __name__ == "__main__":
-    run(True)

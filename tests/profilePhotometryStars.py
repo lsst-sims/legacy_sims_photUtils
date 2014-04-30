@@ -63,23 +63,24 @@ class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryS
     'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
     'EBV','varParamStr']
 
-"""
+
 rrlyDB=DBObject.from_objid('rrly')
 obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=9.))
 obs_metadata_pointed.metadata = {}
 obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
 test_rrly=testStars(rrlyDB,obs_metadata=obs_metadata_pointed)
 test_rrly.write_catalog("test_rrly_output.txt")
-"""
 
-"""
+
+
 msDB=DBObject.from_objid('msstars')
 obs_metadata_ms=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=0.1))
 obs_metadata_ms.metadata = {}
 obs_metadata_ms.metadata['Opsim_filter'] = 'i'
 test_ms=testStars(msDB,obs_metadata=obs_metadata_ms)
 test_ms.write_catalog("test_ms_output.txt")
-"""
+
+
 
 wdDB=DBObject.from_objid('wdstars')
 
