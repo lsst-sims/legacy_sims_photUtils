@@ -40,6 +40,8 @@ class PhotometryBase(object):
     bandPassKey = []   
     phiArray = None
     waveLenStep = None
+    
+    loadedFiles = {}
         
     def setupPhiArray_dict(self):
         """ 
@@ -139,9 +141,14 @@ class PhotometryBase(object):
                 
                 fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
                 sed.multiplyFluxNorm(fNorm)
+            
+            if sedName not in self.loadedFiles:
+                self.loadedFiles[sedName] = 1
 
             sedOut.append(sed)
-    
+        
+        print "\n",len(self.loadedFiles),len(sedOut)
+        
         return sedOut
     
     def applyAvAndRedshift(self,sedList, internalAv=None, redshift=None):
@@ -186,7 +193,12 @@ class PhotometryBase(object):
         if sedobj.wavelen != None:
             if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
                 sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
+            
+            #might be able to save a little time by
+            #moving this call to loadSeds()
             sedobj.flambdaTofnu()
+            
+            
             magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
             i = 0
             for f in self.bandPassKey:
