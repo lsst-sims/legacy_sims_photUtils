@@ -122,30 +122,53 @@ class PhotometryBase(object):
         #an independent instantiation of the class (so that we can then
         #renormalize one without renormalizing the other)
         sedOut=[]
+       
+        uniqueSedDict={}
+       
         firstsed = True
         for i in range(len(sedList)):
             sedName = sedList[i]
             if sedName == "None":
                 #assign an empty Sed (one with wavelen==None)
-                sed = Sed()
-            else:          
-                sed = Sed()
-                sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
-                if resample_same:
-                    if firstsed:
-                        wavelen_same = sed.wavelen
-                        firstsed = False
-                    else:
-                        if sed.needResample(wavelen_same):
-                            sed.resampleSED(wavelen_same)
+                #sed = Sed()
                 
-                fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
-                sed.multiplyFluxNorm(fNorm)
+                if "None" not in uniqueSedDict:
+                    uniqueSedDict["None"] = Sed()
+                
+            else:          
+                if sedName not in uniqueSedDict:
+                    sed = Sed()
+                    sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
+                    if resample_same:
+                        if firstsed:
+                            wavelen_same = sed.wavelen
+                            firstsed = False
+                        else:
+                            if sed.needResample(wavelen_same):
+                                sed.resampleSED(wavelen_same)
+                
+                    uniqueSedDict[sedName]=sed
+                
+                #fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
+                #sed.multiplyFluxNorm(fNorm)
             
             if sedName not in self.loadedFiles:
                 self.loadedFiles[sedName] = 1
 
+            #sedOut.append(sed)
+        
+        for i in range(len(sedList)):
+            sed = Sed()
+            ss = uniqueSedDict[sedName]
+     
+            sed.wavelen = numpy.copy(ss.wavelen)
+            sed.flambda = numpy.copy(ss.flambda)
+            sed.zp = ss.zp
+            
+            fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
+            sed.multiplyFluxNorm(fNorm)
             sedOut.append(sed)
+ 
         
         print "\n",len(self.loadedFiles),len(sedOut)
         
