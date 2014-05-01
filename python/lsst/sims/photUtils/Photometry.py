@@ -156,35 +156,17 @@ class PhotometryBase(object):
             #old line
             #sedOut.append(sed)
         
-        fNorm_control = []
-        flambda_control = []
         for i in range(len(sedList)):
             
             ss = uniqueSedDict[sedList[i]]
     
             sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu)
             
-            fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
-            
-            sed.multiplyFluxNorm(fNorm)
+            if sedList[i] != "None":
+                fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
+                sed.multiplyFluxNorm(fNorm)
+           
             sedOut.append(sed)
-            
-            
-            fNorm_control.append(sed.calcFluxNorm(magNorm[i],imsimband))
-            flambda_control.append(sed.flambda)
- 
-        
-        for i in range(len(sedList)):
-            
-            fNorm = sedOut[i].calcFluxNorm(magNorm[i], imsimband)
-            if fNorm != fNorm_control[i]:
-                print "WARNING ",fNorm,fNorm_control[i]
-                for j in range(len(flambda_control[i])):
-                    print flambda_control[i][j],sedOut[i].flambda[j]
-                exit()
-        
-        print "\n",len(self.loadedFiles),len(sedOut)
-        
         
         return sedOut
     
