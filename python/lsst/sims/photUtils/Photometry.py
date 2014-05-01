@@ -40,9 +40,7 @@ class PhotometryBase(object):
     bandPassKey = []   
     phiArray = None
     waveLenStep = None
-    
-    loadedFiles = {}
-        
+
     def setupPhiArray_dict(self):
         """ 
         Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
@@ -145,17 +143,7 @@ class PhotometryBase(object):
                                 sed.resampleSED(wavelen_same)
                 
                     uniqueSedDict[sedName]=sed
-                
-                #old lines
-                #fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
-                #sed.multiplyFluxNorm(fNorm)
-            
-            if sedName not in self.loadedFiles:
-                self.loadedFiles[sedName] = 1
-            
-            #old line
-            #sedOut.append(sed)
-        
+  
         for i in range(len(sedList)):
             
             ss = uniqueSedDict[sedList[i]]
