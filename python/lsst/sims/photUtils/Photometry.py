@@ -129,15 +129,11 @@ class PhotometryBase(object):
         for i in range(len(sedList)):
             sedName = sedList[i]
             if sedName == "None":
-                #assign an empty Sed (one with wavelen==None)
-                sed = Sed()
-                
                 if "None" not in uniqueSedDict:
                     uniqueSedDict["None"] = Sed()
                 
             else:          
-                #if sedName not in uniqueSedDict:
-                if 1==1:
+                if sedName not in uniqueSedDict:
                     sed = Sed()
                     sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
                     if resample_same:
@@ -151,20 +147,20 @@ class PhotometryBase(object):
                     uniqueSedDict[sedName]=sed
                 
                 #old lines
-                fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
-                sed.multiplyFluxNorm(fNorm)
+                #fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
+                #sed.multiplyFluxNorm(fNorm)
             
             if sedName not in self.loadedFiles:
                 self.loadedFiles[sedName] = 1
             
             #old line
-            sedOut.append(sed)
-        """
+            #sedOut.append(sed)
+        
         fNorm_control = []
         flambda_control = []
         for i in range(len(sedList)):
             
-            ss = uniqueSedDict[sedName]
+            ss = uniqueSedDict[sedList[i]]
     
             sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu)
             
@@ -188,7 +184,7 @@ class PhotometryBase(object):
                 exit()
         
         print "\n",len(self.loadedFiles),len(sedOut)
-        """
+        
         
         return sedOut
     
