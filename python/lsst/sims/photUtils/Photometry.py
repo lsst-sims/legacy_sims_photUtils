@@ -130,13 +130,14 @@ class PhotometryBase(object):
             sedName = sedList[i]
             if sedName == "None":
                 #assign an empty Sed (one with wavelen==None)
-                #sed = Sed()
+                sed = Sed()
                 
                 if "None" not in uniqueSedDict:
                     uniqueSedDict["None"] = Sed()
                 
             else:          
-                if sedName not in uniqueSedDict:
+                #if sedName not in uniqueSedDict:
+                if 1==1:
                     sed = Sed()
                     sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
                     if resample_same:
@@ -149,28 +150,45 @@ class PhotometryBase(object):
                 
                     uniqueSedDict[sedName]=sed
                 
-                #fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
-                #sed.multiplyFluxNorm(fNorm)
+                #old lines
+                fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
+                sed.multiplyFluxNorm(fNorm)
             
             if sedName not in self.loadedFiles:
                 self.loadedFiles[sedName] = 1
-
-            #sedOut.append(sed)
-        
+            
+            #old line
+            sedOut.append(sed)
+        """
+        fNorm_control = []
+        flambda_control = []
         for i in range(len(sedList)):
-            sed = Sed()
+            
             ss = uniqueSedDict[sedName]
-     
-            sed.wavelen = numpy.copy(ss.wavelen)
-            sed.flambda = numpy.copy(ss.flambda)
-            sed.zp = ss.zp
+    
+            sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu)
             
             fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
+            
             sed.multiplyFluxNorm(fNorm)
             sedOut.append(sed)
+            
+            
+            fNorm_control.append(sed.calcFluxNorm(magNorm[i],imsimband))
+            flambda_control.append(sed.flambda)
  
         
+        for i in range(len(sedList)):
+            
+            fNorm = sedOut[i].calcFluxNorm(magNorm[i], imsimband)
+            if fNorm != fNorm_control[i]:
+                print "WARNING ",fNorm,fNorm_control[i]
+                for j in range(len(flambda_control[i])):
+                    print flambda_control[i][j],sedOut[i].flambda[j]
+                exit()
+        
         print "\n",len(self.loadedFiles),len(sedOut)
+        """
         
         return sedOut
     
