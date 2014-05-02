@@ -1,4 +1,4 @@
-setupRequired(sims_catalogs_measures)
+#setupRequired(sims_catalogs_measures)
 setupRequired(sims_sed_library)
 setupRequired(sims_dustmaps)
 setupRequired(sims_coordUtils)
