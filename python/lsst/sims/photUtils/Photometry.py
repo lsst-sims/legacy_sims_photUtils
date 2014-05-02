@@ -122,7 +122,8 @@ class PhotometryBase(object):
         sedOut=[]
        
         uniqueSedDict={}
-       
+
+        
         firstsed = True
         for i in range(len(sedList)):
             sedName = sedList[i]
@@ -134,6 +135,7 @@ class PhotometryBase(object):
                 if sedName not in uniqueSedDict:
                     sed = Sed()
                     sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
+
                     if resample_same:
                         if firstsed:
                             wavelen_same = sed.wavelen
@@ -143,7 +145,7 @@ class PhotometryBase(object):
                                 sed.resampleSED(wavelen_same)
                 
                     uniqueSedDict[sedName]=sed
-  
+        
         for i in range(len(sedList)):
             
             ss = uniqueSedDict[sedList[i]]
