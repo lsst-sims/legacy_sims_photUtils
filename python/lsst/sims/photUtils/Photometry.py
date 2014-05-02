@@ -173,10 +173,16 @@ class PhotometryBase(object):
         @param [in] redshift
         
         """
+        
+        wavelen_sampled=[]
+        
         for i in range(len(sedList)):
             if sedList[i].wavelen != None:
                 if internalAv != None:
-                    a_int, b_int = sedList[i].setupCCMab()
+                    if wavelen_sampled == [] or (sedList[i].wavelen!=wavelen_sampled).any():
+                        a_int, b_int = sedList[i].setupCCMab()
+                        wavelen_sampled=sedList[i].wavelen
+                    
                     sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
                 if redshift != None:
                     sedList[i].redshiftSED(redshift[i], dimming=True)
