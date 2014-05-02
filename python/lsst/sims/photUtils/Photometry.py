@@ -179,6 +179,10 @@ class PhotometryBase(object):
         for i in range(len(sedList)):
             if sedList[i].wavelen != None:
                 if internalAv != None:
+                    #setupCCMab only depends on the wavelen array
+                    #because this is supposed to be the same for every
+                    #SED object in sedList, it is only called once for
+                    #each invocation of applyAvAndRedshift
                     if wavelen_sampled == [] or (sedList[i].wavelen!=wavelen_sampled).any():
                         a_int, b_int = sedList[i].setupCCMab()
                         wavelen_sampled=sedList[i].wavelen
