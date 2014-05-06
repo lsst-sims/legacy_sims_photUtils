@@ -112,18 +112,13 @@ class PhotometryBase(object):
         imsimband = Bandpass()
         imsimband.imsimBandpass()
         
-        #right now, this is very slow since object with the same SED still have to call
-        #readSED_flambda again for fear that they will have different magNorms
-        #
-        #in order ot get around that, we will need to add an operator to
-        #the Sed class that allows one Sed to copy another, but still be
-        #an independent instantiation of the class (so that we can then
-        #renormalize one without renormalizing the other)
         sedOut=[]
        
+        #uniqueSedDict will store all of the unique SED files that have been
+        #loaded.  If an object requires an SED that has already been loaded,
+        #it will just copy it from the dict.
         uniqueSedDict={}
 
-        
         firstsed = True
         for i in range(len(sedList)):
             sedName = sedList[i]
@@ -146,6 +141,8 @@ class PhotometryBase(object):
                 
                     uniqueSedDict[sedName]=sed
         
+        #now that we have loaded and copied all of the necessary SEDs,
+        #we can apply magNorms
         for i in range(len(sedList)):
             
             ss = uniqueSedDict[sedList[i]]
@@ -213,8 +210,10 @@ class PhotometryBase(object):
             if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
                 sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
             
-            #might be able to save a little time by
-            #moving this call to loadSeds()
+
+            #for some reason, moving this call to flambdaTofnu() 
+            #to a point earlier in the 
+            #process results in some SEDs having 'None' for fnu.
             sedobj.flambdaTofnu()
             
             
