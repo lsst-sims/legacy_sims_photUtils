@@ -286,7 +286,7 @@ class PhotometryBase(object):
             for filterName in filterDict:
                 mm = filterDict[filterName]
                
-                if mm != None:
+                if mm != None and mm>-990.0:
                     xx=10**(0.4*(mm - m5[filterName]))
                     ss = (0.04 - gamma[filterName])*xx + \
                          gamma[filterName]*xx*xx
