@@ -408,7 +408,7 @@ class PhotometryGalaxies(PhotometryBase):
         are being calculated
         
         @param [in] bandPassRoot is the root of the filename of bandpasses (i.e. bandpasses are
-        stored in files of the type bandPassRoot_u.dat etc.).  If 'None,' defaults to
+        stored in files named bandPassRoot_u.dat etc.).  If 'None,' defaults to
         'total_'
         
         @param [out] masterDict is a dict of magnitudes such that
@@ -416,7 +416,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         
         """
-        self.loadBandPasses(bandPassList,bandPassRoot)
+        self.loadBandPasses(bandPassList,bandPassRoot = bandPassRoot)
         
         diskNames=self.column_by_name('sedFilenameDisk')
         bulgeNames=self.column_by_name('sedFilenameBulge')
@@ -655,7 +655,7 @@ class PhotometryStars(PhotometryBase):
         @param [in] idNames is a list of names uniquely identifying the objects being considered
         
         @param [in] bandPassRoot is the root of the filename for bandpasses (i.e. bandpasses
-        are stored in files of the foorm bandPassRoot_u.dat etc.).  If 'None' defaults to
+        are stored in files named bandPassRoot_u.dat etc.).  If 'None' defaults to
         'total_'
         
         @param [out] magDict is a dict such that
@@ -663,7 +663,7 @@ class PhotometryStars(PhotometryBase):
         
         """
 
-        self.loadBandPasses(bandPassList,bandPassRoot)
+        self.loadBandPasses(bandPassList,bandPassRoot = bandPassRoot)
         sedNames = self.column_by_name('sedFilename')
         magNorm = self.column_by_name('magNorm')
         sedList = self.loadSeds(sedNames,magNorm = magNorm)
@@ -677,15 +677,23 @@ class PhotometryStars(PhotometryBase):
         return magDict
 
     
-    def meta_magnitudes_getter(self, idNames, bandPassList):
+    def meta_magnitudes_getter(self, idNames, bandPassList, bandPassRoot = None):
         """
-        Getter for LSST stellar magnitudes
+        This method does most of the work for stellar magnitude getters
+        
+        @param [in] idNames is a list of object names
+        
+        @param [in] bandPassList is a list of bandpass names ('u', 'g', 'r', 'i,', etc.)
+        
+        @param [in] bandPassRoot is the root of bandpass filenames (i.e. bandpasses are
+        stored in files named bandPassRoot_u.dat etc.).  If 'None' defaults to 'total_'
+        
+        @param [out] output is a 2d numpy array in which the rows are the bandpasses
+        from bandPassList and the columns are the objects from idNames
+        
         """
-        
-        #idNames = self.column_by_name('id')
-        #bandPassList = ['u','g','r','i','z','y']
-        
-        magDict = self.calculate_magnitudes(bandPassList,idNames)
+
+        magDict = self.calculate_magnitudes(bandPassList,idNames,bandPassRoot = bandPassRoot)
         
         firstRow = []
         for name in idNames:
