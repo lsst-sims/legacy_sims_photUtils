@@ -481,18 +481,18 @@ class PhotometryGalaxies(PhotometryBase):
             
             firstRowTotal.append(magDict[name]["total"][bandPassList[0]])
             
-            if magDict[name]["bulge"][bandPassList[0]]:
+            if magDict[name]["bulge"]:
                 firstRowBulge.append(magDict[name]["bulge"][bandPassList[0]])
             else:
                 firstRowBulge.append(failure)
             
-            if magDict[name]["disk"][bandPassList[0]]:
+            if magDict[name]["disk"]:
                 firstRowDisk.append(magDict[name]["disk"][bandPassList[0]])
             else:
                 firstRowDisk.append(failure)
             
             
-            if magDict[name]["agn"][bandPassList[0]]:
+            if magDict[name]["agn"]:
                 firstRowAgn.append(magDict[name]["agn"][bandPassList[0]])
             else:
                 firstRowAgn.append(failure)
@@ -513,17 +513,17 @@ class PhotometryGalaxies(PhotometryBase):
             for name in idNames:
                 rowTotal.append(magDict[name]["total"][bandPassList[i]])
             
-                if magDict[name]["bulge"][bandPassList[i]]:
+                if magDict[name]["bulge"]:
                     rowBulge.append(magDict[name]["bulge"][bandPassList[i]])
                 else:
                     rowBulge.append(failure)
                 
-                if magDict[name]["disk"][bandPassList[i]]:
+                if magDict[name]["disk"]:
                     rowDisk.append(magDict[name]["disk"][bandPassList[i]])
                 else:
                     rowDisk.append(failure)
                 
-                if magDict[name]["agn"][bandPassList[i]]:
+                if magDict[name]["agn"]:
                     rowAgn.append(magDict[name]["agn"][bandPassList[i]])
                 else:
                     rowAgn.append(failure)
