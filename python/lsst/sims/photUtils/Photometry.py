@@ -713,12 +713,6 @@ class PhotometryStars(PhotometryBase):
         
         return output
     
-    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
-    def get_magnitudes(self):
-        idNames = self.column_by_name('id')
-        bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames,bandPassList)
-      
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
               'sigma_lsst_z','sigma_lsst_y')
     def get_photometric_uncertainties(self):
@@ -740,3 +734,10 @@ class PhotometryStars(PhotometryBase):
 
         return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
                             outputDict['i'],outputDict['z'],outputDict['y']])
+
+
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    def get_magnitudes(self):
+        idNames = self.column_by_name('id')
+        bandPassList = ['u','g','r','i','z','y']
+        return self.meta_magnitudes_getter(idNames,bandPassList)
