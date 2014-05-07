@@ -59,7 +59,7 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(bplist)
 
-    def loadBandPasses(self,bandPassList, bandPassRoot="total_"):
+    def loadBandPasses(self,bandPassList, bandPassRoot = None):
         """
         This will take the list of band passes in bandPassList and use them to set up
         self.bandPasses, self.phiArray and self.waveLenStep (which are being cached so that 
@@ -68,12 +68,16 @@ class PhotometryBase(object):
         bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
         that the bandPasses are stored in files of the type
         
-        $LSST_THROUGHPUTS_DEFAULT/bandPassRoot_bandPassKey.dat
+        $LSST_THROUGHPUTS_DEFAULT/bandPassRoot_bandPassList[i].dat
         
         if we want to load bandpasses for a telescope other than LSST, we would do so
         by altering bandPassRoot (currently no infrastructure exists for altering the directory
         in which bandpass files are stored)
         """
+        
+        if bandPassRoot == None:
+            bandPassRoot = 'total_'
+        
         if self.bandPassKey != bandPassList:
             self.bandPassKey=[]
             self.bandPasses={}
@@ -382,7 +386,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         return outMag
     
-    def calculate_magnitudes(self, bandPassList, idNames):
+    def calculate_magnitudes(self, bandPassList, idNames, bandPassRoot=None):
         """
         Take the array of bandpass keys bandPassList and the array of galaxy
         names idNames ane return a dict of dicts of dicts of magnitudes
@@ -403,12 +407,16 @@ class PhotometryGalaxies(PhotometryBase):
         @param [in] idNames is a list of names uniquely identifying the objects whose magnitudes
         are being calculated
         
+        @param [in] bandPassRoot is the root of the filename of bandpasses (i.e. bandpasses are
+        stored in files of the type bandPassRoot_u.dat etc.).  If 'None,' defaults to
+        'total_'
+        
         @param [out] masterDict is a dict of magnitudes such that
         masterDict['AAA']['BBB']['x'] is the magnitude in filter x of component BBB of galaxy AAA
         
         
         """
-        self.loadBandPasses(bandPassList)
+        self.loadBandPasses(bandPassList,bandPassRoot)
         
         diskNames=self.column_by_name('sedFilenameDisk')
         bulgeNames=self.column_by_name('sedFilenameBulge')
@@ -628,7 +636,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
                          
-    def calculate_magnitudes(self, bandPassList, idNames):
+    def calculate_magnitudes(self, bandPassList, idNames, bandPassRoot = None):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of dicts of magnitudes
@@ -646,12 +654,16 @@ class PhotometryStars(PhotometryBase):
         
         @param [in] idNames is a list of names uniquely identifying the objects being considered
         
+        @param [in] bandPassRoot is the root of the filename for bandpasses (i.e. bandpasses
+        are stored in files of the foorm bandPassRoot_u.dat etc.).  If 'None' defaults to
+        'total_'
+        
         @param [out] magDict is a dict such that
         magDict['AAA']['x'] is the magnitude in filter x of object AAA
         
         """
 
-        self.loadBandPasses(bandPassList)
+        self.loadBandPasses(bandPassList,bandPassRoot)
         sedNames = self.column_by_name('sedFilename')
         magNorm = self.column_by_name('magNorm')
         sedList = self.loadSeds(sedNames,magNorm = magNorm)
