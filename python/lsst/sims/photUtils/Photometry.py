@@ -461,108 +461,96 @@ class PhotometryGalaxies(PhotometryBase):
 
         return masterDict
      
-    @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
-              'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
-              'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
-              'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
-    def get_allMags(self):
+
+    def meta_magnitudes_getter(self, idNames, bandPassList, bandPassRoot = None):
         """
         Getter for all of the component magnitudes of a galaxy (and their combined magnitude)
         """
     
-        bandPassList=['u','g','r','i','z','y']
-        idNames=self.column_by_name('galid')
-        magDict=self.calculate_magnitudes(bandPassList,idNames)
-    
-        utotal=numpy.zeros(len(idNames),dtype=float)
-        gtotal=numpy.zeros(len(idNames),dtype=float)
-        rtotal=numpy.zeros(len(idNames),dtype=float)
-        itotal=numpy.zeros(len(idNames),dtype=float)
-        ztotal=numpy.zeros(len(idNames),dtype=float)
-        ytotal=numpy.zeros(len(idNames),dtype=float)
+        #bandPassList=['u','g','r','i','z','y']
+        #idNames=self.column_by_name('galid')
+        magDict=self.calculate_magnitudes(bandPassList,idNames, bandPassRoot = bandPassRoot)
         
-        ubulge=numpy.zeros(len(idNames),dtype=float)
-        gbulge=numpy.zeros(len(idNames),dtype=float)
-        rbulge=numpy.zeros(len(idNames),dtype=float)
-        ibulge=numpy.zeros(len(idNames),dtype=float)
-        zbulge=numpy.zeros(len(idNames),dtype=float)
-        ybulge=numpy.zeros(len(idNames),dtype=float)
+        firstRowTotal = []
+        firstRowDisk = []
+        firstRowBulge = []
+        firstRowAgn = []
         
-        udisk=numpy.zeros(len(idNames),dtype=float)
-        gdisk=numpy.zeros(len(idNames),dtype=float)
-        rdisk=numpy.zeros(len(idNames),dtype=float)
-        idisk=numpy.zeros(len(idNames),dtype=float)
-        zdisk=numpy.zeros(len(idNames),dtype=float)
-        ydisk=numpy.zeros(len(idNames),dtype=float)
-        
-        uagn=numpy.zeros(len(idNames),dtype=float)
-        gagn=numpy.zeros(len(idNames),dtype=float)
-        ragn=numpy.zeros(len(idNames),dtype=float)
-        iagn=numpy.zeros(len(idNames),dtype=float)
-        zagn=numpy.zeros(len(idNames),dtype=float)
-        yagn=numpy.zeros(len(idNames),dtype=float)
-        
-        i=0
-        failure=-999.0
-        for i in range(len(idNames)):
-            name=idNames[i]
+        failure = -999.0
+        for name in idNames:
             
-            utotal[i]=magDict[name]["total"]["u"]
-            gtotal[i]=magDict[name]["total"]["g"]
-            rtotal[i]=magDict[name]["total"]["r"]
-            itotal[i]=magDict[name]["total"]["i"]
-            ztotal[i]=magDict[name]["total"]["z"]
-            ytotal[i]=magDict[name]["total"]["y"]
-           
-            if magDict[name]["bulge"]:
-                ubulge[i]=magDict[name]["bulge"]["u"]
-                gbulge[i]=magDict[name]["bulge"]["g"]
-                rbulge[i]=magDict[name]["bulge"]["r"]
-                ibulge[i]=magDict[name]["bulge"]["i"]
-                zbulge[i]=magDict[name]["bulge"]["z"]
-                ybulge[i]=magDict[name]["bulge"]["y"]
+            firstRowTotal.append(magDict[name]["total"][bandPassList[0]])
+            
+            if magDict[name]["bulge"][bandPassList[0]]:
+                firstRowBulge.append(magDict[name]["bulge"][bandPassList[0]])
             else:
-                ubulge[i]=failure
-                gbulge[i]=failure
-                rbulge[i]=failure
-                ibulge[i]=failure
-                zbulge[i]=failure
-                ybulge[i]=failure
-           
-            if magDict[name]["disk"]:
-                udisk[i]=magDict[name]["disk"]["u"]
-                gdisk[i]=magDict[name]["disk"]["g"]
-                rdisk[i]=magDict[name]["disk"]["r"]
-                idisk[i]=magDict[name]["disk"]["i"]
-                zdisk[i]=magDict[name]["disk"]["z"]
-                ydisk[i]=magDict[name]["disk"]["y"]
+                firstRowBulge.append(failure)
+            
+            if magDict[name]["disk"][bandPassList[0]]:
+                firstRowDisk.append(magDict[name]["disk"][bandPassList[0]])
             else:
-                udisk[i]=failure
-                gdisk[i]=failure
-                rdisk[i]=failure
-                idisk[i]=failure
-                zdisk[i]=failure
-                ydisk[i]=failure
-           
-            if magDict[name]["agn"]:
-                uagn[i]=magDict[name]["agn"]["u"]
-                gagn[i]=magDict[name]["agn"]["g"]
-                ragn[i]=magDict[name]["agn"]["r"]
-                iagn[i]=magDict[name]["agn"]["i"]
-                zagn[i]=magDict[name]["agn"]["z"]
-                yagn[i]=magDict[name]["agn"]["y"]
+                firstRowDisk.append(failure)
+            
+            
+            if magDict[name]["agn"][bandPassList[0]]:
+                firstRowAgn.append(magDict[name]["agn"][bandPassList[0]])
             else:
-                uagn[i]=failure
-                gagn[i]=failure
-                ragn[i]=failure
-                iagn[i]=failure
-                zagn[i]=faiure
-                yagn[i]=failure
+                firstRowAgn.append(failure)
         
-        return numpy.array([utotal,gtotal,rtotal,itotal,ztotal,ytotal,\
-            ubulge,gbulge,rbulge,ibulge,zbulge,ybulge,\
-            udisk,gdisk,rdisk,idisk,zdisk,ydisk,\
-            uagn,gagn,ragn,iagn,zagn,yagn])
+        
+        outputTotal = numpy.array(firstRowTotal)
+        outputBulge = numpy.array(firstRowBulge)
+        outputDisk = numpy.array(firstRowDisk)
+        outputAgn = numpy.array(firstRowAgn)
+        
+        i = 1
+        while i<len(bandPassList):
+            rowTotal = []
+            rowDisk = []
+            rowBulge = []
+            rowAgn = []
+            
+            for name in idNames:
+                rowTotal.append(magDict[name]["total"][bandPassList[i]])
+            
+                if magDict[name]["bulge"][bandPassList[i]]:
+                    rowBulge.append(magDict[name]["bulge"][bandPassList[i]])
+                else:
+                    rowBulge.append(failure)
+                
+                if magDict[name]["disk"][bandPassList[i]]:
+                    rowDisk.append(magDict[name]["disk"][bandPassList[i]])
+                else:
+                    rowDisk.append(failure)
+                
+                if magDict[name]["agn"][bandPassList[i]]:
+                    rowAgn.append(magDict[name]["agn"][bandPassList[i]])
+                else:
+                    rowAgn.append(failure)
+                
+            outputTotal = numpy.vstack([outputTotal,rowTotal])
+            outputBulge = numpy.vstack([outputBulge,rowBulge])
+            outputDisk = numpy.vstack([outputDisk,rowDisk])
+            outputAgn = numpy.vstack([outputAgn,rowAgn])
+        
+            i += 1
+        
+        
+        outputTotal = numpy.vstack([outputTotal,outputBulge])
+        outputTotal = numpy.vstack([outputTotal,outputDisk])
+        outputTotal = numpy.vstack([outputTotal,outputAgn])
+        
+        return outputTotal
+
+    @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+              'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+              'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+              'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
+    def get_all_mags(self):
+        idNames = self.column_by_name('galid')
+        bandPassList = ['u','g','r','i','z','y']
+        return self.meta_magnitudes_getter(idNames,bandPassList)
+    
     
     @compound('sigma_uRecalc','sigma_gRecalc','sigma_rRecalc',
               'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc',
