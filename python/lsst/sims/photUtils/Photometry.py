@@ -408,7 +408,7 @@ class PhotometryGalaxies(PhotometryBase):
         are being calculated
         
         @param [in] bandPassRoot is the root of the filename of bandpasses (i.e. bandpasses are
-        stored in files named bandPassRoot_u.dat etc.).  If 'None,' defaults to
+        stored in files named bandPassRoot_u.dat etc.).  If None, defaults to
         'total_'
         
         @param [out] masterDict is a dict of magnitudes such that
@@ -464,7 +464,15 @@ class PhotometryGalaxies(PhotometryBase):
 
     def meta_magnitudes_getter(self, idNames, bandPassList, bandPassRoot = None):
         """
-        Getter for all of the component magnitudes of a galaxy (and their combined magnitude)
+        This method will return the magnitudes for arbitrary galaxy bandpasses
+        
+        @param [in] idNames is a list of object IDs
+        
+        @param [in] bandPassList is a list of bandpass names (e.g. 'u', 'g', 'r', 'i', etc)
+        
+        @param [in] bandPassRoot is the root of the bandpass file names (i.e. bandpasses
+        are stored in files with names bandPassRoot_u.dat etc).  If None, default to
+        'total_'
         """
     
         #bandPassList=['u','g','r','i','z','y']
@@ -547,9 +555,26 @@ class PhotometryGalaxies(PhotometryBase):
               'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
               'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
     def get_all_mags(self):
+        """
+        Getter for LSST galaxy magnitudes
+        """
         idNames = self.column_by_name('galid')
         bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames,bandPassList)
+        return self.meta_magnitudes_getter(idNames, bandPassList)
+    
+    @compound('sdss_uRecalc', 'sdss_gRecalc', 'sdss_rRecalc', 
+              'sdss_iRecalc', 'sdss_zRecalc',
+              'sdss_uBulge', 'sdss_gBulge', 'sdss_rBulge', 'sdss_iBulge', 'sdss_zBulge',
+              'sdss_uDisk', 'sdss_gDisk', 'sdss_rDisk', 'sdss_iDisk', 'sdss_zDisk',
+              'sdss_uAgn', 'sdss_gAgn', 'sdss_rAgn', 'sdss_iAgn', 'sdss_zAgn')
+    def get_all_mags(self):
+        """
+        example getter for sdss galaxy magnitudes
+        """
+        idNames = self.column_by_name('galid')
+        bandPassList = ['u','g','r','i','z','y']
+        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = 'sdss_')
+    
     
     
     @compound('sigma_uRecalc','sigma_gRecalc','sigma_rRecalc',
@@ -674,7 +699,7 @@ class PhotometryStars(PhotometryBase):
         @param [in] bandPassList is a list of bandpass names ('u', 'g', 'r', 'i,', etc.)
         
         @param [in] bandPassRoot is the root of bandpass filenames (i.e. bandpasses are
-        stored in files named bandPassRoot_u.dat etc.).  If 'None' defaults to 'total_'
+        stored in files named bandPassRoot_u.dat etc.).  If None defaults to 'total_'
         
         @param [out] output is a 2d numpy array in which the rows are the bandpasses
         from bandPassList and the columns are the objects from idNames
@@ -726,6 +751,19 @@ class PhotometryStars(PhotometryBase):
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
     def get_magnitudes(self):
+        """
+        getter for LSST stellar magnitudes
+        """
         idNames = self.column_by_name('id')
         bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames,bandPassList)
+        return self.meta_magnitudes_getter(idNames, bandPassList)
+    
+    @compound('sdss_u','sdss_g','sdss_r','sdss_i','sdss_z')
+    def get_sdss_magnitudes(self):
+        """
+        example getter for sdss stellar magnitudes
+        """
+        idNames = self.column_by_name('id')
+        bandPassList = ['u','g','r','i','z']
+        bandPassRoot = 'sdss_'
+        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = bandPassRoot)
