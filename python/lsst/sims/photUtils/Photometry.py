@@ -567,7 +567,7 @@ class PhotometryGalaxies(PhotometryBase):
               'sdss_uBulge', 'sdss_gBulge', 'sdss_rBulge', 'sdss_iBulge', 'sdss_zBulge',
               'sdss_uDisk', 'sdss_gDisk', 'sdss_rDisk', 'sdss_iDisk', 'sdss_zDisk',
               'sdss_uAgn', 'sdss_gAgn', 'sdss_rAgn', 'sdss_iAgn', 'sdss_zAgn')
-    def get_all_mags(self):
+    def get_all_sdss_mags(self):
         """
         example getter for sdss galaxy magnitudes
         """
