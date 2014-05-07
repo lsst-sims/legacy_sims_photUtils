@@ -676,33 +676,40 @@ class PhotometryStars(PhotometryBase):
         
         return magDict
 
-    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
-    def get_magnitudes(self):
+    
+    def meta_magnitudes_getter(self, idNames, bandPassList):
         """
-        Getter for stellar magnitudes
+        Getter for LSST stellar magnitudes
         """
         
-        idNames = self.column_by_name('id')
-        bandPassList = ['u','g','r','i','z','y']
+        #idNames = self.column_by_name('id')
+        #bandPassList = ['u','g','r','i','z','y']
         
         magDict = self.calculate_magnitudes(bandPassList,idNames)
         
-        uu = numpy.zeros(len(idNames),dtype=float)
-        gg = numpy.zeros(len(idNames),dtype=float)
-        rr = numpy.zeros(len(idNames),dtype=float)
-        ii = numpy.zeros(len(idNames),dtype=float)
-        zz = numpy.zeros(len(idNames),dtype=float)
-        yy = numpy.zeros(len(idNames),dtype=float)
+        firstRow = []
+        for name in idNames:
+            firstRow.append(magDict[name][bandPassList[0]])
         
-        for i in range(len(idNames)):
-            uu[i] = magDict[idNames[i]]["u"]
-            gg[i] = magDict[idNames[i]]["g"]
-            rr[i] = magDict[idNames[i]]["r"]
-            ii[i] = magDict[idNames[i]]["i"]
-            zz[i] = magDict[idNames[i]]["z"]
-            yy[i] = magDict[idNames[i]]["y"]
+        output = numpy.array(firstRow)
         
-        return numpy.array([uu,gg,rr,ii,zz,yy])
+        i = 1
+        while i<len(bandPassList):
+            row = []
+            for name in idNames:
+                row.append(magDict[name][bandPassList[i]])
+            
+            i += 1
+            
+            output=numpy.vstack([output,row])
+        
+        return output
+    
+    @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
+    def get_magnitudes(self):
+        idNames = self.column_by_name('id')
+        bandPassList = ['u','g','r','i','z','y']
+        return self.meta_magnitudes_getter(idNames,bandPassList)
       
     @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r','sigma_lsst_i',
               'sigma_lsst_z','sigma_lsst_y')
