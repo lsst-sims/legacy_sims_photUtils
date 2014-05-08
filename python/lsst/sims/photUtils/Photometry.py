@@ -211,6 +211,12 @@ class PhotometryBase(object):
             #for some reason, moving this call to flambdaTofnu() 
             #to a point earlier in the 
             #process results in some SEDs having 'None' for fnu.
+            #
+            #I looked more carefully at the documentation in Sed.py
+            #Any time you update flambda in any way, fnu gets set to 'None'
+            #This is to prevent the two arrays from getting out synch
+            #(e.g. renormalizing flambda but forgettint to renormalize fnu)
+            #
             sedobj.flambdaTofnu()
             
             
