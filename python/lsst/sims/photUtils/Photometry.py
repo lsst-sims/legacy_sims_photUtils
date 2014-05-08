@@ -120,26 +120,23 @@ class PhotometryBase(object):
         uniqueSedDict={}
 
         firstsed = True
+        uniqueSedDict["None"] = Sed()
         for i in range(len(sedList)):
             sedName = sedList[i]
-            if sedName == "None":
-                if "None" not in uniqueSedDict:
-                    uniqueSedDict["None"] = Sed()
-                
-            else:          
-                if sedName not in uniqueSedDict:
-                    sed = Sed()
-                    sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
+                     
+            if sedName not in uniqueSedDict:
+                sed = Sed()
+                sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
 
-                    if resample_same:
-                        if firstsed:
-                            wavelen_same = sed.wavelen
-                            firstsed = False
-                        else:
-                            if sed.needResample(wavelen_same):
-                                sed.resampleSED(wavelen_same)
+                if resample_same:
+                    if firstsed:
+                        wavelen_same = sed.wavelen
+                        firstsed = False
+                    else:
+                        if sed.needResample(wavelen_same):
+                            sed.resampleSED(wavelen_same)
                 
-                    uniqueSedDict[sedName]=sed
+                uniqueSedDict[sedName]=sed
         
         #now that we have loaded and copied all of the necessary SEDs,
         #we can apply magNorms
