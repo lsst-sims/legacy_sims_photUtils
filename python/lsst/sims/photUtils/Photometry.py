@@ -40,7 +40,7 @@ class PhotometryBase(object):
     bandPassKey = []   
     phiArray = None
     waveLenStep = None
-        
+
     def setupPhiArray_dict(self):
         """ 
         Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
@@ -112,17 +112,22 @@ class PhotometryBase(object):
         imsimband = Bandpass()
         imsimband.imsimBandpass()
         
-        
         sedOut=[]
+       
+        #uniqueSedDict will store all of the unique SED files that have been
+        #loaded.  If an object requires an SED that has already been loaded,
+        #it will just copy it from the dict.
+        uniqueSedDict={}
+
         firstsed = True
+        uniqueSedDict["None"] = Sed()
         for i in range(len(sedList)):
             sedName = sedList[i]
-            if sedName == "None":
-                #assign an empty Sed (one with wavelen==None)
-                sed = Sed()
-            else:          
+                     
+            if sedName not in uniqueSedDict:
                 sed = Sed()
                 sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
+
                 if resample_same:
                     if firstsed:
                         wavelen_same = sed.wavelen
@@ -131,11 +136,22 @@ class PhotometryBase(object):
                         if sed.needResample(wavelen_same):
                             sed.resampleSED(wavelen_same)
                 
+                uniqueSedDict[sedName]=sed
+        
+        #now that we have loaded and copied all of the necessary SEDs,
+        #we can apply magNorms
+        for i in range(len(sedList)):
+            
+            ss = uniqueSedDict[sedList[i]]
+    
+            sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu)
+            
+            if sedList[i] != "None":
                 fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
                 sed.multiplyFluxNorm(fNorm)
-
+           
             sedOut.append(sed)
-    
+        
         return sedOut
     
     def applyAvAndRedshift(self,sedList, internalAv=None, redshift=None):
@@ -153,10 +169,20 @@ class PhotometryBase(object):
         @param [in] redshift
         
         """
+        
+        wavelen_sampled=[]
+        
         for i in range(len(sedList)):
             if sedList[i].wavelen != None:
                 if internalAv != None:
-                    a_int, b_int = sedList[i].setupCCMab()
+                    #setupCCMab only depends on the wavelen array
+                    #because this is supposed to be the same for every
+                    #SED object in sedList, it is only called once for
+                    #each invocation of applyAvAndRedshift
+                    if wavelen_sampled == [] or (sedList[i].wavelen!=wavelen_sampled).any():
+                        a_int, b_int = sedList[i].setupCCMab()
+                        wavelen_sampled=sedList[i].wavelen
+                    
                     sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
                 if redshift != None:
                     sedList[i].redshiftSED(redshift[i], dimming=True)
@@ -180,7 +206,20 @@ class PhotometryBase(object):
         if sedobj.wavelen != None:
             if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
                 sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
+            
+
+            #for some reason, moving this call to flambdaTofnu() 
+            #to a point earlier in the 
+            #process results in some SEDs having 'None' for fnu.
+            #
+            #I looked more carefully at the documentation in Sed.py
+            #Any time you update flambda in any way, fnu gets set to 'None'
+            #This is to prevent the two arrays from getting out synch
+            #(e.g. renormalizing flambda but forgettint to renormalize fnu)
+            #
             sedobj.flambdaTofnu()
+            
+            
             magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
             i = 0
             for f in self.bandPassKey:
@@ -204,7 +243,7 @@ class PhotometryBase(object):
         e.g. columnName['u'] = 'lsst_u' if the u magnitude is stored in the column
         'lsst_u'
         
-        @param [out] finalDict is a dict of lists such that finalDict['u'] is a list
+        @param [out] outputDict is a dict of lists such that outputDict['u'] is a list
         of the u band photometric uncertainties for all of the objects queried
         
         """
@@ -218,39 +257,20 @@ class PhotometryBase(object):
         for filterName in columnNames:
             magnitudes[filterName] = self.column_by_name(columnNames[filterName])
         
-        i=0
-        for name in idNames:
-            subDict={}
-            
-            for filterName in columnNames:
-                subDict[filterName] = magnitudes[filterName][i]
-            
-            inputDict[name] = subDict
-            i = i+1
+        outputDict = self.calculatePhotometricUncertainty(magnitudes)
         
-        outputDict=self.calculatePhotometricUncertainty(inputDict)
+        return outputDict
         
-        finalDict = {}
-        for filterName in columnNames:
-            subList = []
-            for name in idNames:
-                subList.append(outputDict[name][filterName])
-            
-            finalDict[filterName] = subList
-    
-        return finalDict
-        
-    def calculatePhotometricUncertainty(self, magDict):
+    def calculatePhotometricUncertainty(self, magnitudes):
         """
         This method is based on equations 3.1, 3.2 and Table 3.2
         of the LSST Science Book (version 2.0)
         
-        @param [in] magDict will be two-level dict of magnitudes, e.g.
-        magDict['A']['x'] will be the magnitude of object 'A'
-        in filter ['x']
+        @param [in] magnitudes will be a dict of lists such that
+        magnitudes['A'] will be a list of all the magnitudes in filter A
         
-        @param [out] sigOut is a dict such that sigOut['A']['x'] is the
-        photometric uncertainty of object A in filter x
+        @param [out] sigOut is a dict of lists such that sigOut['A'] is
+        a list of the photometric uncertainties in filter A
         """
         sigma2Sys = 0.003*0.003 #also taken from the Science Book
                          #see the paragraph between equations 3.1 and 3.2
@@ -274,13 +294,12 @@ class PhotometryBase(object):
         
         sigOut={}
         
-        for name in magDict:
-            filterDict = magDict[name]
+        for filterName in magnitudes:
             
-            subDict = {}
+            subList = []
             
-            for filterName in filterDict:
-                mm = filterDict[filterName]
+            for i in range(len(magnitudes[filterName])):
+                mm = magnitudes[filterName][i]
                
                 if mm != None:
                     xx=10**(0.4*(mm - m5[filterName]))
@@ -289,12 +308,12 @@ class PhotometryBase(object):
                 
                     sigmaSquared = ss + sigma2Sys
                 
-                    subDict[filterName] = numpy.sqrt(sigmaSquared)
+                    subList.append(numpy.sqrt(sigmaSquared))
                 
                 else:
-                    subDict[filterName] = None
+                    subList.append(None)
                 
-            sigOut[name] = subDict
+            sigOut[filterName] = subList
         
         return sigOut
 
