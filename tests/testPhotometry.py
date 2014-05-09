@@ -17,7 +17,6 @@ from lsst.sims.photUtils.EBV import EBVmixin
 
 from lsst.sims.photUtils.Variability import Variability
 
-# test utilities
 class testDefaults(object):
 
     def get_proper_motion_ra(self):
