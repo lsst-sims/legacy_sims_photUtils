@@ -568,7 +568,7 @@ class PhotometryGalaxies(PhotometryBase):
         """
         idNames = self.column_by_name('galid')
         bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames, bandPassList)
+        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = 'total_')
     
     @compound('sdss_uRecalc', 'sdss_gRecalc', 'sdss_rRecalc', 
               'sdss_iRecalc', 'sdss_zRecalc',
@@ -775,7 +775,7 @@ class PhotometryStars(PhotometryBase):
         """
         idNames = self.column_by_name('id')
         bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames, bandPassList)
+        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = 'total_')
     
     @compound('sdss_u','sdss_g','sdss_r','sdss_i','sdss_z')
     def get_sdss_magnitudes(self):
