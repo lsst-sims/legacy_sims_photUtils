@@ -557,6 +557,8 @@ class PhotometryGalaxies(PhotometryBase):
     def get_all_mags(self):
         """
         Getter for LSST galaxy magnitudes
+        
+        
         """
         idNames = self.column_by_name('galid')
         bandPassList = ['u','g','r','i','z','y']
@@ -570,6 +572,10 @@ class PhotometryGalaxies(PhotometryBase):
     def get_all_sdss_mags(self):
         """
         example getter for sdss galaxy magnitudes
+        
+        bandPassRoot is the root of the names of the files in which
+        the bandpasses are stored
+        
         """
         idNames = self.column_by_name('galid')
         bandPassList = ['u','g','r','i','z','y']
@@ -753,6 +759,9 @@ class PhotometryStars(PhotometryBase):
     def get_magnitudes(self):
         """
         getter for LSST stellar magnitudes
+        
+        bandPassRoot is the root of the names of the files in which
+        the bandpasses are stored
         """
         idNames = self.column_by_name('id')
         bandPassList = ['u','g','r','i','z','y']
@@ -762,6 +771,9 @@ class PhotometryStars(PhotometryBase):
     def get_sdss_magnitudes(self):
         """
         example getter for sdss stellar magnitudes
+        
+        bandPassRoot is the root of the names of the files in which
+        the bandpasses are stored
         """
         idNames = self.column_by_name('id')
         bandPassList = ['u','g','r','i','z']
