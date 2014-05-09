@@ -75,6 +75,8 @@ class PhotometryBase(object):
         in which bandpass files are stored)
         """
         
+        print "photometry.py bandpasroot ",bandPassRoot
+        
         if bandPassRoot == None:
             bandPassRoot = 'total_'
         
