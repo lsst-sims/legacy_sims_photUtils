@@ -78,7 +78,8 @@ class PhotometryBase(object):
         print "photometry.py bandpasroot ",bandPassRoot,"\n\n"
         
         if bandPassRoot == None:
-            bandPassRoot = 'total_'
+            return
+            #bandPassRoot = 'total_'
         
         if self.bandPassKey != bandPassList:
             self.bandPassKey=[]

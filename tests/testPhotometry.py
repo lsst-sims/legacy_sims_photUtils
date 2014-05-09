@@ -11,7 +11,7 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars
+from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars, compound
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.EBV import EBVmixin
 
@@ -52,11 +52,28 @@ class testDefaults(object):
         
         return out
 
+class dummyPhotometry(PhotometryStars):
+    @compound('dummy_mag')
+    def get_dummy(self):
+        bandPassList=['u','g','r','i','z']
+        idnames = self.column_by_name('id')
+        bandPassRoot = "dummy_"
+        return self.meta_magnitudes_getter(idnames,bandPassList,bandPassRoot = 'dummy_')
+
 class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
     catalog_type = 'MISC'
     default_columns=[('expmjd',5000.0,float)]
     def db_required_columns(self):
         return ['raJ2000'],['varParamStr']
+
+
+  
+class dummyStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,dummyPhotometry,testDefaults):
+    catalog_type = 'test_dummy'
+    column_outputs=['id','ra_corr','dec_corr','magNorm',\
+    'stellar_magNorm_var', \
+    'dummy_mag']
+
 
         
 class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
@@ -134,10 +151,12 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-        test_cat=testStars(dbObj,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("testStarsOutput.txt")
+        #test_cat=testStars(dbObj,obs_metadata=obs_metadata_pointed)
+        #test_cat.write_catalog("testStarsOutput.txt")
+        
+        test_cat = dummyStars(dbObj,obs_metadata=obs_metadata_pointed)
     
-    
+    """
     def testGalaxies(self):
         dbObj=DBObject.from_objid('galaxyBase')
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
@@ -145,11 +164,11 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=testGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testGalaxiesOutput.txt")
-     
+     """
 def suite():
     utilsTests.init()
     suites = []
-    suites += unittest.makeSuite(variabilityUnitTest)
+    #suites += unittest.makeSuite(variabilityUnitTest)
     suites += unittest.makeSuite(photometryUnitTest)
     return unittest.TestSuite(suites)
 
