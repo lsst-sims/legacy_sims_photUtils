@@ -74,9 +74,7 @@ class PhotometryBase(object):
         by altering bandPassRoot (currently no infrastructure exists for altering the directory
         in which bandpass files are stored)
         """
-        
-        print "photometry.py bandpasroot ",bandPassRoot,"\n\n"
-        
+  
         if bandPassRoot == None:
             return
             #bandPassRoot = 'total_'
@@ -419,9 +417,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         
         """
-        
-        print "calculate magnitudes bandpassRoot ",bandPassRoot
-        
+  
         self.loadBandPasses(bandPassList,bandPassRoot = bandPassRoot)
         
         diskNames=self.column_by_name('sedFilenameDisk')
@@ -688,8 +684,6 @@ class PhotometryStars(PhotometryBase):
         
         """
 
-        print "calculate_magnitudes bpr ",bandPassRoot
-
         self.loadBandPasses(bandPassList,bandPassRoot = bandPassRoot)
         sedNames = self.column_by_name('sedFilename')
         magNorm = self.column_by_name('magNorm')
@@ -719,9 +713,7 @@ class PhotometryStars(PhotometryBase):
         from bandPassList and the columns are the objects from idNames
         
         """
-        
-        print "meta_mag_getter bandpass root ",bandPassRoot
-        
+
         magDict = self.calculate_magnitudes(bandPassList,idNames,bandPassRoot = bandPassRoot)
         
         firstRow = []
