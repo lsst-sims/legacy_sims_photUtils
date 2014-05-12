@@ -178,7 +178,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
 
 class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
     catalog_type = 'cartoonGalaxies'
-    column_outputs=['id','ra_corr','dec_corr',\
+    column_outputs=['galid','ra_corr','dec_corr',\
     'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
     
     sedMasterDict = {}
@@ -268,6 +268,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonStars(dbObj,obs_metadata=obs_metadata_pointed)
+        test_cat.write_catalog("testStarsCartoon.txt")
         
         cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
         testBandPasses = {}
@@ -311,6 +312,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
+        test_cat.write_catalog("testGalaxiesCartoon.txt")
         
         cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
         testBandPasses = {}
@@ -326,20 +328,21 @@ class photometryUnitTest(unittest.TestCase):
         sedObj = Sed()
         phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
         
+        components = ['Bulge', 'Disk', 'Agn']
         
+        for cc in components:
+            for ss in test_cat.sedMasterDict[cc]:
+                if ss.wavelen != None:
+                    ss.resampleSED(wavelen_match = bplist[0].wavelen)
+                    ss.flambdaTofnu()
         
-        for ss in test_cat.sedMasterDict["Disk"]:
-            ss.resampleSED(wavelen_match = bplist[0].wavelen)
-            ss.flambdaTofnu()
-
-        
-        i = 0
-        for ss in test_cat.sedMasterDict["Disk"]:
-            mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
-            for j in range(len(mags)):
-                self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict["Bulge"][i][j],10)
-                print mags[j],test_cat.magnitudeMasterDict["Bulge"][i][j]
-            i += 1
+            i = 0
+            for ss in test_cat.sedMasterDict[cc]:
+                if ss.wavelen != None:
+                    mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+                    for j in range(len(mags)):
+                        self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
+                i += 1
  
 
      
