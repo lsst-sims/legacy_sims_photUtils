@@ -283,14 +283,11 @@ class photometryUnitTest(unittest.TestCase):
         
         sedObj = Sed()
         phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
-        
+
+        i = 0
         for ss in test_cat.sedMasterList:
             ss.resampleSED(wavelen_match = bplist[0].wavelen)
             ss.flambdaTofnu()
-
-        
-        i = 0
-        for ss in test_cat.sedMasterList:
             mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
             for j in range(len(mags)):
                 self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
@@ -331,14 +328,11 @@ class photometryUnitTest(unittest.TestCase):
         components = ['Bulge', 'Disk', 'Agn']
         
         for cc in components:
+            i = 0
             for ss in test_cat.sedMasterDict[cc]:
                 if ss.wavelen != None:
                     ss.resampleSED(wavelen_match = bplist[0].wavelen)
                     ss.flambdaTofnu()
-        
-            i = 0
-            for ss in test_cat.sedMasterDict[cc]:
-                if ss.wavelen != None:
                     mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
                     for j in range(len(mags)):
                         self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
