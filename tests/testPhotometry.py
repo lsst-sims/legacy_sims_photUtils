@@ -72,14 +72,14 @@ class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
 
 class dummyStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,dummyPhotometry,testDefaults):
     catalog_type = 'test_dummy'
-    column_outputs=['id','raTrim','decTrim','magNorm',\
+    column_outputs=['id','ra_corr','dec_corr','magNorm',\
     'stellar_magNorm_var', \
     'dummy_mag']
 
         
 class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
-    column_outputs=['id','raTrim','decTrim','magNorm',\
+    column_outputs=['id','ra_corr','dec_corr','magNorm',\
     'stellar_magNorm_var', \
     'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
     'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
@@ -99,7 +99,7 @@ class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,
     
 class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
-    column_outputs=['galid','raTrim','decTrim',\
+    column_outputs=['galid','ra_corr','dec_corr',\
         'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
         'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
         'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\

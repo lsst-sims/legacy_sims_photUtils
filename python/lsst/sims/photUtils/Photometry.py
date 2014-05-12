@@ -59,7 +59,7 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(bplist)
 
-    def loadBandPasses(self,bandPassList, bandPassRoot = None):
+    def loadBandPasses(self,bandPassList, bandPassDir = None, bandPassRoot = None):
         """
         This will take the list of band passes in bandPassList and use them to set up
         self.bandPasses, self.phiArray and self.waveLenStep (which are being cached so that 
@@ -76,19 +76,19 @@ class PhotometryBase(object):
         """
   
         if bandPassRoot == None:
-            return
-            #bandPassRoot = 'total_'
+            bandPassRoot = 'total_'
         
         if self.bandPassKey != bandPassList:
             self.bandPassKey=[]
             self.bandPasses={}
-            path = os.getenv('LSST_THROUGHPUTS_DEFAULT')
+            if bandPassDir == None:
+                bandPassDir = os.getenv('LSST_THROUGHPUTS_DEFAULT')
             for i in range(len(bandPassList)):
                 self.bandPassKey.append(bandPassList[i])
             
             for w in self.bandPassKey:    
                 self.bandPasses[w] = Bandpass()
-                self.bandPasses[w].readThroughput(os.path.join(path,"%s.dat" % (bandPassRoot + w)))
+                self.bandPasses[w].readThroughput(os.path.join(bandPassDir,"%s.dat" % (bandPassRoot + w)))
         
             self.setupPhiArray_dict()
             
@@ -387,7 +387,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         return outMag
     
-    def calculate_magnitudes(self, bandPassList, idNames, bandPassRoot=None):
+    def calculate_magnitudes(self, bandPassList, idNames, bandPassDir = None, bandPassRoot = None):
         """
         Take the array of bandpass keys bandPassList and the array of galaxy
         names idNames ane return a dict of dicts of dicts of magnitudes
@@ -418,7 +418,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         """
   
-        self.loadBandPasses(bandPassList,bandPassRoot = bandPassRoot)
+        self.loadBandPasses(bandPassList,bandPassDir = bandPassDir, bandPassRoot = bandPassRoot)
         
         diskNames=self.column_by_name('sedFilenameDisk')
         bulgeNames=self.column_by_name('sedFilenameBulge')
@@ -464,7 +464,7 @@ class PhotometryGalaxies(PhotometryBase):
         return masterDict
      
 
-    def meta_magnitudes_getter(self, idNames, bandPassList, bandPassRoot = None):
+    def meta_magnitudes_getter(self, idNames, bandPassList, bandPassDir = None, bandPassRoot = None):
         """
         This method will return the magnitudes for arbitrary galaxy bandpasses
         
@@ -479,7 +479,8 @@ class PhotometryGalaxies(PhotometryBase):
     
         #bandPassList=['u','g','r','i','z','y']
         #idNames=self.column_by_name('galid')
-        magDict=self.calculate_magnitudes(bandPassList,idNames, bandPassRoot = bandPassRoot)
+        magDict=self.calculate_magnitudes(bandPassList,idNames, 
+                          bandPassDir = bandPassDir, bandPassRoot = bandPassRoot)
         
         firstRowTotal = []
         firstRowDisk = []
@@ -564,7 +565,7 @@ class PhotometryGalaxies(PhotometryBase):
         """
         idNames = self.column_by_name('galid')
         bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = 'total_')
+        return self.meta_magnitudes_getter(idNames, bandPassList)
     
     @compound('sdss_uRecalc', 'sdss_gRecalc', 'sdss_rRecalc', 
               'sdss_iRecalc', 'sdss_zRecalc',
@@ -657,7 +658,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
                          
-    def calculate_magnitudes(self, bandPassList, idNames, bandPassRoot = None):
+    def calculate_magnitudes(self, bandPassList, idNames, bandPassDir = None, bandPassRoot = None):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of dicts of magnitudes
@@ -684,7 +685,7 @@ class PhotometryStars(PhotometryBase):
         
         """
 
-        self.loadBandPasses(bandPassList,bandPassRoot = bandPassRoot)
+        self.loadBandPasses(bandPassList, bandPassDir = bandPassDir, bandPassRoot = bandPassRoot)
         sedNames = self.column_by_name('sedFilename')
         magNorm = self.column_by_name('magNorm')
         sedList = self.loadSeds(sedNames,magNorm = magNorm)
@@ -698,7 +699,7 @@ class PhotometryStars(PhotometryBase):
         return magDict
 
     
-    def meta_magnitudes_getter(self, idNames, bandPassList, bandPassRoot = None):
+    def meta_magnitudes_getter(self, idNames, bandPassList, bandPassDir = None, bandPassRoot = None):
         """
         This method does most of the work for stellar magnitude getters
         
@@ -714,7 +715,8 @@ class PhotometryStars(PhotometryBase):
         
         """
 
-        magDict = self.calculate_magnitudes(bandPassList,idNames,bandPassRoot = bandPassRoot)
+        magDict = self.calculate_magnitudes(bandPassList, idNames, 
+                      bandPassDir =bandPassDir, bandPassRoot = bandPassRoot)
         
         firstRow = []
         for name in idNames:
@@ -767,7 +769,7 @@ class PhotometryStars(PhotometryBase):
         """
         idNames = self.column_by_name('id')
         bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = 'total_')
+        return self.meta_magnitudes_getter(idNames, bandPassList)
     
     @compound('sdss_u','sdss_g','sdss_r','sdss_i','sdss_z')
     def get_sdss_magnitudes(self):
