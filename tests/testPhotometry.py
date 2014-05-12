@@ -56,7 +56,7 @@ class testDefaults(object):
 
 class cartoonPhotometryStars(PhotometryStars):
     """
-    This is a class to support loading cartoon SEDs and bandpasses into photometry so that we can be sure
+    This is a class to support loading cartoon bandpasses into photometry so that we can be sure
     that the photometry mixin is loading the right files and calculating the right magnitudes.
     """
 
@@ -176,13 +176,12 @@ class photometryUnitTest(unittest.TestCase):
         test_cat=testStars(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testStarsOutput.txt")
     
-    def testCartoon(self):
+    def testAlternateBandpassesStars(self):
         dbObj=DBObject.from_objid('rrly')
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonStars(dbObj,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("cartoonStarsOutput.txt")
         
         cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
         testBandPasses = {}
