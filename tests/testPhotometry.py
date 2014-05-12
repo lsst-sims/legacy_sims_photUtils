@@ -89,6 +89,76 @@ class cartoonPhotometryStars(PhotometryStars):
        
         return output
 
+
+class cartoonPhotometryGalaxies(PhotometryGalaxies):
+    """
+    This is a class to support loading cartoon bandpasses into photometry so that we can be sure
+    that the photometry mixin is loading the right files and calculating the right magnitudes.
+    """
+
+    @compound('ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z',
+              'cbulge_u','cbulge_g','cbulge_r','cbulge_i','cbulge_z',
+              'cdisk_u','cdisk_g','cdisk_r','cdisk_i','cdisk_z',
+              'cagn_u','cagn_g','cagn_r','cagn_i','cagn_z')
+    def get_magnitudes(self):
+        idNames = self.column_by_name('galid')
+        bandPassList=['u','g','r','i','z']
+        bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        output = self.meta_magnitudes_getter(idNames, bandPassList, 
+                  bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
+        
+        if len(output) > 0:
+            for i in range(len(output[0])):
+                j = 5
+                subList = []
+                while j < 10:
+                    subList.append(output[j][i])
+                    j += 1
+                self.magnitudeMasterDict['Bulge'].append(subList)
+                
+                subList = []
+                while j < 15:
+                    subList.append(output[j][i])
+                    j += 1
+                self.magnitudeMasterDict['Disk'].append(subList)
+                
+                subList = []
+                while j < 20:
+                    subList.append(output[j][i])
+                    j += 1
+                self.magnitudeMasterDict['Agn'].append(subList)
+                
+                
+        
+        
+        componentNames = ['Bulge','Disk','Agn']
+        
+        for cc in componentNames:
+            magName = "magNorm" + cc
+            magNormList = self.column_by_name(magName)
+            sName = "sedFilename" + cc
+            sedNames = self.column_by_name(sName)
+            
+            if cc == 'Bulge' or cc == 'Disk':
+                AvName = "internalAv"+cc
+                Av = self.column_by_name(AvName)
+            else:
+                Av = None
+        
+            
+            redshift = self.column_by_name("redshift")
+            
+            sublist = self.loadSeds(sedNames, magNorm = magNormList)
+            self.applyAvAndRedshift(sublist, internalAv = Av, redshift = redshift)
+            
+            for ss in sublist:
+                self.sedMasterDict[cc].append(ss)
+       
+        return output
+
+
+
+
 class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
     catalog_type = 'MISC'
     default_columns=[('expmjd',5000.0,float)]
@@ -98,13 +168,29 @@ class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
 
 
 class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonPhotometryStars,testDefaults):
-    catalog_type = 'cartoon'
+    catalog_type = 'cartoonStars'
     column_outputs=['id','ra_corr','dec_corr','magNorm',\
     'cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z']
     
     sedMasterList = []
     magnitudeMasterList = []
     
+
+class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
+    catalog_type = 'cartoonGalaxies'
+    column_outputs=['id','ra_corr','dec_corr',\
+    'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
+    
+    sedMasterDict = {}
+    sedMasterDict["Bulge"] = []
+    sedMasterDict["Disk"] = []
+    sedMasterDict["Agn"] = []
+    
+    magnitudeMasterDict = {}
+    magnitudeMasterDict["Bulge"] = []
+    magnitudeMasterDict["Disk"] = []
+    magnitudeMasterDict["Agn"] = []
+ 
         
 class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
@@ -218,6 +304,44 @@ class photometryUnitTest(unittest.TestCase):
 
         test_cat=testGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testGalaxiesOutput.txt")
+
+    def testAlternateBandpassesGalaxies(self):
+        dbObj=DBObject.from_objid('galaxyBase')
+        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
+        obs_metadata_pointed.metadata = {}
+        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+        test_cat=cartoonGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
+        
+        cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        testBandPasses = {}
+        keys = ['u','g','r','i','z']
+        
+        bplist = []
+
+        for kk in keys:
+            testBandPasses[kk] = Bandpass()
+            testBandPasses[kk].readThroughput(os.path.join(cartoonDir,"test_bandpass_%s.dat" % kk))
+            bplist.append(testBandPasses[kk])
+        
+        sedObj = Sed()
+        phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
+        
+        
+        
+        for ss in test_cat.sedMasterDict["Disk"]:
+            ss.resampleSED(wavelen_match = bplist[0].wavelen)
+            ss.flambdaTofnu()
+
+        
+        i = 0
+        for ss in test_cat.sedMasterDict["Disk"]:
+            mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+            for j in range(len(mags)):
+                self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict["Bulge"][i][j],10)
+                print mags[j],test_cat.magnitudeMasterDict["Bulge"][i][j]
+            i += 1
+ 
+
      
 def suite():
     utilsTests.init()
