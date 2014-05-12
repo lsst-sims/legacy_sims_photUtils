@@ -13,6 +13,8 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars, compound
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
+from lsst.sims.photUtils.Bandpass import Bandpass
+from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVmixin
 
 from lsst.sims.photUtils.Variability import Variability
@@ -57,7 +59,7 @@ class cartoonPhotometryStars(PhotometryStars):
     This is a class to support loading cartoon SEDs and bandpasses into photometry so that we can be sure
     that the photometry mixin is loading the right files and calculating the right magnitudes.
     """
-    
+
     @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
     def get_magnitudes(self):
         idNames = self.column_by_name('id')
@@ -70,23 +72,27 @@ class cartoonPhotometryStars(PhotometryStars):
         magNormList = self.column_by_name('magNorm')
         sedNames = self.column_by_name('sedFilename')
         
-        #these two variables will allow us to get at the SED and magnitude
+        #the two variables below will allow us to get at the SED and magnitude
         #data from within the unit test class, so that we can be sure
         #that the mixin loaded the correct bandPasses
-        self.sedMasterList = self.loadSeds(sedNames,magNorm = magNormList)
-        self.magnitudeMasterList = output
+        sublist = self.loadSeds(sedNames,magNorm = magNormList)
+        for ss in sublist:
+            self.sedMasterList.append(ss)
         
-        #
-        #somehwere in here we can validate the magnitudes 'by hand'
-        #using sedList and the fact that we know where the
-        #bandPasses are supposed to come from
-        #
-        
+        if len(output) > 0:
+            for i in range(len(output[0])):
+                subList = []
+                for j in range(len(output)):
+                    subList.append(output[j][i])
+            
+                self.magnitudeMasterList.append(subList)
+       
         return output
 
 class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
     catalog_type = 'MISC'
     default_columns=[('expmjd',5000.0,float)]
+    
     def db_required_columns(self):
         return ['raJ2000'],['varParamStr']
 
@@ -95,6 +101,9 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     catalog_type = 'cartoon'
     column_outputs=['id','ra_corr','dec_corr','magNorm',\
     'cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z']
+    
+    sedMasterList = []
+    magnitudeMasterList = []
     
         
 class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
@@ -109,14 +118,6 @@ class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryS
     'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
     'EBV','varParamStr']
 
-"""
-class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,testDefaults):
-    catalog_type = 'test_stars'
-    column_outputs=['id','ra_corr','dec_corr','magNorm',\
-    'lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y',\
-    'EBV','varParamStr']
-"""
-    
 class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
     column_outputs=['galid','ra_corr','dec_corr',\
@@ -183,7 +184,31 @@ class photometryUnitTest(unittest.TestCase):
         test_cat=cartoonStars(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("cartoonStarsOutput.txt")
         
-        print "\nSED list ",test_cat.sedMasterList,"\n"
+        cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        testBandPasses = {}
+        keys = ['u','g','r','i','z']
+        
+        bplist = []
+
+        for kk in keys:
+            testBandPasses[kk] = Bandpass()
+            testBandPasses[kk].readThroughput(os.path.join(cartoonDir,"test_bandpass_%s.dat" % kk))
+            bplist.append(testBandPasses[kk])
+        
+        sedObj = Sed()
+        phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
+        
+        for ss in test_cat.sedMasterList:
+            ss.resampleSED(wavelen_match = bplist[0].wavelen)
+            ss.flambdaTofnu()
+
+        
+        i = 0
+        for ss in test_cat.sedMasterList:
+            mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+            for j in range(len(mags)):
+                self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
+            i += 1
     
     
     def testGalaxies(self):
