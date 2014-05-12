@@ -66,10 +66,15 @@ class cartoonPhotometryStars(PhotometryStars):
         output = self.meta_magnitudes_getter(idNames, bandPassList, 
                   bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
         
-        
+       
         magNormList = self.column_by_name('magNorm')
         sedNames = self.column_by_name('sedFilename')
-        sedList = self.loadSeds(sedNames,magNorm = magNormList)
+        
+        #these two variables will allow us to get at the SED and magnitude
+        #data from within the unit test class, so that we can be sure
+        #that the mixin loaded the correct bandPasses
+        self.sedMasterList = self.loadSeds(sedNames,magNorm = magNormList)
+        self.magnitudeMasterList = output
         
         #
         #somehwere in here we can validate the magnitudes 'by hand'
@@ -90,7 +95,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     catalog_type = 'cartoon'
     column_outputs=['id','ra_corr','dec_corr','magNorm',\
     'cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z']
-
+    
         
 class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
@@ -177,6 +182,8 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonStars(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("cartoonStarsOutput.txt")
+        
+        print "\nSED list ",test_cat.sedMasterList,"\n"
     
     
     def testGalaxies(self):
