@@ -56,22 +56,28 @@ class cartoonPhotometryStars(PhotometryStars):
     """
     This is a class to support loading cartoon SEDs and bandpasses into photometry so that we can be sure
     that the photometry mixin is loading the right files and calculating the right magnitudes.
-    
-    This will not be a proper Instance Catalog.  It will not call on the data base.  We just need
-    something that can inherit from PhotometryStars and make sure that bandPassDir is handled correctly
     """
     
     @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
     def get_magnitudes(self):
-        """
-        This will not be a proper getter.  We never mean to build a catalog with this
-        """
-        
         idNames = self.column_by_name('id')
         bandPassList=['u','g','r','i','z']
         bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
-        return self.meta_magnitudes_getter(idNames, bandPassList, 
+        output = self.meta_magnitudes_getter(idNames, bandPassList, 
                   bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
+        
+        
+        magNormList = self.column_by_name('magNorm')
+        sedNames = self.column_by_name('sedFilename')
+        sedList = self.loadSeds(sedNames,magNorm = magNormList)
+        
+        #
+        #somehwere in here we can validate the magnitudes 'by hand'
+        #using sedList and the fact that we know where the
+        #bandPasses are supposed to come from
+        #
+        
+        return output
 
 class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
     catalog_type = 'MISC'
