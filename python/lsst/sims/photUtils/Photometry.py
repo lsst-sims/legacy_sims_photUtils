@@ -387,7 +387,7 @@ class PhotometryGalaxies(PhotometryBase):
         
         return outMag
     
-    def calculate_magnitudes(self, bandPassList, idNames, bandPassDir = None, bandPassRoot = None):
+    def calculate_magnitudes(self, idNames, bandPassList, bandPassDir = None, bandPassRoot = None):
         """
         Take the array of bandpass keys bandPassList and the array of galaxy
         names idNames ane return a dict of dicts of dicts of magnitudes
@@ -476,10 +476,8 @@ class PhotometryGalaxies(PhotometryBase):
         are stored in files with names bandPassRoot_u.dat etc).  If None, default to
         'total_'
         """
-    
-        #bandPassList=['u','g','r','i','z','y']
-        #idNames=self.column_by_name('galid')
-        magDict=self.calculate_magnitudes(bandPassList,idNames, 
+
+        magDict=self.calculate_magnitudes(idNames, bandPassList,  
                           bandPassDir = bandPassDir, bandPassRoot = bandPassRoot)
         
         firstRowTotal = []
@@ -560,7 +558,6 @@ class PhotometryGalaxies(PhotometryBase):
     def get_all_mags(self):
         """
         Getter for LSST galaxy magnitudes
-        
         
         """
         idNames = self.column_by_name('galid')
@@ -658,7 +655,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
                          
-    def calculate_magnitudes(self, bandPassList, idNames, bandPassDir = None, bandPassRoot = None):
+    def calculate_magnitudes(self, idNames, bandPassList, bandPassDir = None, bandPassRoot = None):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of dicts of magnitudes
@@ -715,7 +712,7 @@ class PhotometryStars(PhotometryBase):
         
         """
 
-        magDict = self.calculate_magnitudes(bandPassList, idNames, 
+        magDict = self.calculate_magnitudes(idNames, bandPassList, 
                       bandPassDir =bandPassDir, bandPassRoot = bandPassRoot)
         
         firstRow = []
