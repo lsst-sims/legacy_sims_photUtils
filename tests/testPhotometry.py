@@ -76,7 +76,7 @@ class cartoonPhotometryStars(PhotometryStars):
         output = self.meta_magnitudes_getter(idNames, bandPassList, 
                   bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
         
-       
+        #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
         #if you need to write a customized getter for photometry that uses non-LSST
         #bandpasses, you only need to emulate the code above this comment.
@@ -124,6 +124,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         output = self.meta_magnitudes_getter(idNames, bandPassList, 
                   bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
         
+        ##########################################################################
         #Everything below this comment exists only for the purposes of the unittest.
         #If you need to write your own customized getter for photometry using 
         #non-LSST bandpasses, you only need to emulate the code above this comment
@@ -282,10 +283,19 @@ class variabilityUnitTest(unittest.TestCase):
 class photometryUnitTest(unittest.TestCase):
        
     def testStars(self):
-        dbObj=DBObject.from_objid('rrly')
+        """
+        Try to generate a write an instance catalog of RRLyrae stars
+        """
+        
+        dbObj=DBObject.from_objid('rrly') # the data base from which objects will be drawn for the catalog
+        
+        #generate the metadate describing the observation
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
         obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+        obs_metadata_pointed.metadata['Opsim_filter'] = 'i' #the filter in which the normalizing magnitude 
+                                                            #resides
+        
+        
         test_cat=testStars(dbObj,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testStarsOutput.txt")
     
@@ -333,6 +343,10 @@ class photometryUnitTest(unittest.TestCase):
     
     
     def testGalaxies(self):
+        """
+        Attempt to generate and write an instance catalog of galaxies
+        """
+        
         dbObj=DBObject.from_objid('galaxyBase')
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
         obs_metadata_pointed.metadata = {}
