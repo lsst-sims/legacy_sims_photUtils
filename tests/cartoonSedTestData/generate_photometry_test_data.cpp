@@ -6,6 +6,22 @@
 #define NM2M 1.0e-9
 #define ERGSETC2JANSKY 1.0e23
 
+/*
+This code just generates artificial bandpasses and SEDs which can be used
+to test the photometry code against "known" answers.
+
+At this point, the photUtils unit tests only rely on the bandpass files
+test_bandpass_[u,g,r,i,z].dat
+
+However, this code will also produce SED's test_sed_[0-9].dat
+
+and test_magnitudes.dat which is the test bandpasses integrated over
+the testSEDs
+
+it also produces the phi arrays for the test bandpasses in test_phi_[u-z].dat,
+if an intermediate test is ever required
+
+*/
 
 main(){
 
