@@ -20,7 +20,11 @@ from lsst.sims.photUtils.EBV import EBVmixin
 from lsst.sims.photUtils.Variability import Variability
 
 class testDefaults(object):
-
+    """
+    This class just provides default values for quantities that
+    the astrometry mixins require in order to run
+    """
+    
     def get_proper_motion_ra(self):
         ra=self.column_by_name('raJ2000')
         out=numpy.zeros(len(ra))
@@ -62,12 +66,21 @@ class cartoonPhotometryStars(PhotometryStars):
 
     @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
     def get_magnitudes(self):
+        """
+        Example photometry getter for alternative (i.e. non-LSST) bandpasses
+        """
+        
         idNames = self.column_by_name('id')
         bandPassList=['u','g','r','i','z']
         bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
         output = self.meta_magnitudes_getter(idNames, bandPassList, 
                   bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
         
+       
+        #Everything below this comment exists solely for the purposes of the unit test
+        #if you need to write a customized getter for photometry that uses non-LSST
+        #bandpasses, you only need to emulate the code above this comment.
+       
        
         magNormList = self.column_by_name('magNorm')
         sedNames = self.column_by_name('sedFilename')
@@ -101,11 +114,19 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
               'cdisk_u','cdisk_g','cdisk_r','cdisk_i','cdisk_z',
               'cagn_u','cagn_g','cagn_r','cagn_i','cagn_z')
     def get_magnitudes(self):
+        """
+        getter for photometry of galaxies using non-LSST bandpasses
+        """
+        
         idNames = self.column_by_name('galid')
         bandPassList=['u','g','r','i','z']
         bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
         output = self.meta_magnitudes_getter(idNames, bandPassList, 
                   bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
+        
+        #Everything below this comment exists only for the purposes of the unittest.
+        #If you need to write your own customized getter for photometry using 
+        #non-LSST bandpasses, you only need to emulate the code above this comment
         
         if len(output) > 0:
             for i in range(len(output[0])):
@@ -172,6 +193,9 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     column_outputs=['id','ra_corr','dec_corr','magNorm',\
     'cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z']
     
+    #the lists below will contain the SED objects and the magnitudes
+    #in a form that unittest can access and validate
+    
     sedMasterList = []
     magnitudeMasterList = []
     
@@ -180,6 +204,9 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
     catalog_type = 'cartoonGalaxies'
     column_outputs=['galid','ra_corr','dec_corr',\
     'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
+    
+    #the dicts below will contain the SED objects and the magnitudes
+    #in a form that unittest can access and validate
     
     sedMasterDict = {}
     sedMasterDict["Bulge"] = []
@@ -263,6 +290,17 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog("testStarsOutput.txt")
     
     def testAlternateBandpassesStars(self):
+        """
+        This will test our ability to do photometry using non-LSST bandpasses.
+        
+        It will first calculate the magnitudes using the getters in cartoonPhotometryStars.
+        
+        It will then load the alternate bandpass files 'by hand' and re-calculate the magnitudes
+        and make sure that the magnitude values agree.  This is guarding against the possibility
+        that some default value did not change and the code actually ended up loading the
+        LSST bandpasses.
+        """
+        
         dbObj=DBObject.from_objid('rrly')
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
         obs_metadata_pointed.metadata = {}
@@ -304,6 +342,10 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog("testGalaxiesOutput.txt")
 
     def testAlternateBandpassesGalaxies(self):
+        """
+        the same as testAlternateBandpassesStars, but for galaxies
+        """
+        
         dbObj=DBObject.from_objid('galaxyBase')
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
         obs_metadata_pointed.metadata = {}
