@@ -551,35 +551,6 @@ class PhotometryGalaxies(PhotometryBase):
         
         return outputTotal
 
-    @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
-              'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
-              'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
-              'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
-    def get_all_mags(self):
-        """
-        Getter for LSST galaxy magnitudes
-        
-        """
-        idNames = self.column_by_name('galid')
-        bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames, bandPassList)
-    
-    @compound('sdss_uRecalc', 'sdss_gRecalc', 'sdss_rRecalc', 
-              'sdss_iRecalc', 'sdss_zRecalc',
-              'sdss_uBulge', 'sdss_gBulge', 'sdss_rBulge', 'sdss_iBulge', 'sdss_zBulge',
-              'sdss_uDisk', 'sdss_gDisk', 'sdss_rDisk', 'sdss_iDisk', 'sdss_zDisk',
-              'sdss_uAgn', 'sdss_gAgn', 'sdss_rAgn', 'sdss_iAgn', 'sdss_zAgn')
-    def get_all_sdss_mags(self):
-        """
-        example getter for sdss galaxy magnitudes
-        
-        bandPassRoot is the root of the names of the files in which
-        the bandpasses are stored
-        
-        """
-        idNames = self.column_by_name('galid')
-        bandPassList = ['u','g','r','i','z','y']
-        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = 'sdss_')
     
     
     
@@ -645,6 +616,35 @@ class PhotometryGalaxies(PhotometryBase):
                             agnDict['u'],agnDict['g'],agnDict['r'],
                             agnDict['i'],agnDict['z'],agnDict['y']])
         
+    @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+              'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+              'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+              'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')
+    def get_all_mags(self):
+        """
+        Getter for LSST galaxy magnitudes
+        
+        """
+        idNames = self.column_by_name('galid')
+        bandPassList = ['u','g','r','i','z','y']
+        return self.meta_magnitudes_getter(idNames, bandPassList)
+    
+    @compound('sdss_uRecalc', 'sdss_gRecalc', 'sdss_rRecalc', 
+              'sdss_iRecalc', 'sdss_zRecalc',
+              'sdss_uBulge', 'sdss_gBulge', 'sdss_rBulge', 'sdss_iBulge', 'sdss_zBulge',
+              'sdss_uDisk', 'sdss_gDisk', 'sdss_rDisk', 'sdss_iDisk', 'sdss_zDisk',
+              'sdss_uAgn', 'sdss_gAgn', 'sdss_rAgn', 'sdss_iAgn', 'sdss_zAgn')
+    def get_all_sdss_mags(self):
+        """
+        example getter for sdss galaxy magnitudes
+        
+        bandPassRoot is the root of the names of the files in which
+        the bandpasses are stored
+        
+        """
+        idNames = self.column_by_name('galid')
+        bandPassList = ['u','g','r','i','z','y']
+        return self.meta_magnitudes_getter(idNames, bandPassList, bandPassRoot = 'sdss_')
         
         
 
