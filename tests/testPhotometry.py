@@ -61,7 +61,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
         
 class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
-    column_outputs=['id','ra_corr','dec_corr','magNorm',\
+    column_outputs=['id','raObserved','decObserved','raTrim','decTrim','magNorm',\
     'stellar_magNorm_var', \
     'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
     'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
@@ -70,18 +70,11 @@ class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryS
     'lsst_z','sigma_lsst_z','lsst_z_var','sigma_lsst_z_var',\
     'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
     'EBV','varParamStr']
-
-"""
-class testStars(InstanceCatalog,Astrometry,EBVmixin,Variability,PhotometryStars,testDefaults):
-    catalog_type = 'test_stars'
-    column_outputs=['id','ra_corr','dec_corr','magNorm',\
-    'lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y',\
-    'EBV','varParamStr']
-"""
     
 class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
-    column_outputs=['galid','ra_corr','dec_corr',\
+    column_outputs=['galid','raObserved','decObserved',\
+        'raTrim','decTrim',
         'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
         'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
         'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\
