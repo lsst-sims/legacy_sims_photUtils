@@ -25,8 +25,9 @@ class selectStarSED():
         lsstPhiArray, lsstWavelenstep = lsstPhot.setupPhiArray_dict(lsstBandpassDict, bandpassKeys = lsstFilterList)
         return lsstFilterList, lsstBandpassDict, lsstPhiArray, lsstWavelenstep
 
-    def loadAllSEDs(self):
+    def loadKuruczSEDs(self):
         files = []
+        #Load Kurucz
         kDict = {}
         kuruczDir = str(self.sEDDir + '/starSED/kurucz/')
         
@@ -40,7 +41,7 @@ class selectStarSED():
         numFiles = len(files)
         numOn = 0
 
-        for file in files:
+        for file in files[0:201]:
             if numOn % 100 == 0:
                 print 'Loading %i of %i: Kurucz SEDs' % (numOn, numFiles)
             fileSED = Sed()
@@ -79,8 +80,109 @@ class selectStarSED():
         kDict['logZ'] = klogZ
         kDict['logg'] = klogg
         kDict['temp'] = kTemp
-        
+
         return kDict
+
+    def loadmltSEDs(self):
+
+        #Load WD SEDs
+        files = []
+        mltDict = {}
+        mltDir = str(self.sEDDir + '/starSED/mlt/')
+        
+        for fileName in os.listdir(mltDir):
+            files.append(fileName)
+        
+        filterlist, sdssBandpassDict, sdssPhiArray, wavelenstep = self.setupSDSS()
+
+        mltFiles = [] 
+        mltumg = []; mltgmr = []; mltrmi = []; mltimz = []
+        numFiles = len(files)
+        numOn = 0
+
+        for file in files:
+            if numOn % 100 == 0:
+                print 'Loading %i of %i: MLT SEDs' % (numOn, numFiles)
+            
+            fileSED = Sed()
+            fileSED.readSED_flambda(str(mltDir + file))
+
+            sEDPhotometry = phot()
+            sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, sdssPhiArray, wavelenstep, sdssBandpassDict, filterlist)
+
+            mltFiles.append(file)
+            mltumg.append(sEDMagDict['u']-sEDMagDict['g'])
+            mltgmr.append(sEDMagDict['g']-sEDMagDict['r'])
+            mltrmi.append(sEDMagDict['r']-sEDMagDict['i'])
+            mltimz.append(sEDMagDict['i']-sEDMagDict['z'])
+            
+            numOn += 1
+
+        mltDict['sEDName'] = mltFiles
+        mltDict['umg'] = mltumg
+        mltDict['gmr'] = mltgmr
+        mltDict['rmi'] = mltrmi
+        mltDict['imz'] = mltimz
+        
+        return mltDict
+
+
+    def loadwdSEDs(self):
+
+        #Load WD SEDs
+        files = []
+        wdAllDict = {}; wdDict = {}; wdHEDict = {}
+        wdDir = str(self.sEDDir + '/starSED/wDs/')
+        
+        for fileName in os.listdir(wdDir):
+            files.append(fileName)
+        
+        filterlist, sdssBandpassDict, sdssPhiArray, wavelenstep = self.setupSDSS()
+
+        wdFiles = []; wdHEFiles = [] 
+        wdumg = []; wdHEumg = []
+        wdgmr = []; wdHEgmr = []
+        wdrmi = []; wdHErmi = [] 
+        wdimz = []; wdHEimz = []
+        numFiles = len(files)
+        numOn = 0
+
+        for file in files:
+            if numOn % 100 == 0:
+                print 'Loading %i of %i: WD SEDs' % (numOn, numFiles)
+            
+            fileSED = Sed()
+            fileSED.readSED_flambda(str(wdDir + file))
+
+            sEDPhotometry = phot()
+            sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, sdssPhiArray, wavelenstep, sdssBandpassDict, filterlist)
+
+            if file.split("_")[1] == 'He':
+
+                wdHEFiles.append(file)
+                wdHEumg.append(sEDMagDict['u']-sEDMagDict['g'])
+                wdHEgmr.append(sEDMagDict['g']-sEDMagDict['r'])
+                wdHErmi.append(sEDMagDict['r']-sEDMagDict['i'])
+                wdHEimz.append(sEDMagDict['i']-sEDMagDict['z'])
+            else:
+                wdFiles.append(file)
+                wdumg.append(sEDMagDict['u']-sEDMagDict['g'])
+                wdgmr.append(sEDMagDict['g']-sEDMagDict['r'])
+                wdrmi.append(sEDMagDict['r']-sEDMagDict['i'])
+                wdimz.append(sEDMagDict['i']-sEDMagDict['z'])
+
+            numOn += 1
+
+        wdDict['sEDName'] = wdFiles; wdHEDict['sEDName'] = wdHEFiles
+        wdDict['umg'] = wdumg; wdHEDict['umg'] = wdHEumg
+        wdDict['gmr'] = wdgmr; wdHEDict['gmr'] = wdHEgmr
+        wdDict['rmi'] = wdrmi; wdHEDict['rmi'] = wdHErmi
+        wdDict['imz'] = wdimz; wdHEDict['imz'] = wdHEimz
+
+        wdAllDict['H'] = wdDict
+        wdAllDict['HE'] = wdHEDict
+
+        return wdAllDict
 
     def parseGalfast(self, headerLine):
         galfastDict = {}
@@ -180,47 +282,99 @@ class selectStarSED():
         
         return galumg, galgmr, galrmi, galimz
 
-    def findSED(self, kDict, magU, magG, magR, magI, magZ, absMagR, feH):
+    def findSED(self, sEDDict, magU, magG, magR, magI, magZ, absMagR, comp):
         
-        kumg = np.array(kDict['umg'])
-        kgmr = np.array(kDict['gmr'])
-        krmi = np.array(kDict['rmi'])
-        kimz = np.array(kDict['imz'])
+        if 10 <= comp < 20:
+            #This is a Galfast outputted WD
+            if 10 <= comp < 15:
+                wdDict = sEDDict['wdH']
+            else:
+                wdDict = sEDDict['wdHE']
 
-        kName = kDict['sEDName']
+            wdumg = np.array(wdDict['umg'])
+            wdgmr = np.array(wdDict['gmr'])
+            wdrmi = np.array(wdDict['rmi'])
+            wdimz = np.array(wdDict['imz'])
+            
+            sEDName = wdDict['sEDName']
+            
+            distance = np.power((mltumg - (magU - magG)),2) + np.power((mltgmr - (magG - magR)),2) +\
+                np.power((mltrmi - (magR - magI)),2) + np.power((mltimz - (magI - magZ)),2)
+            
+        else:
+            #For stars that are not WDs
+            if (magR - magI) > 0.6:
+            #Use mlt SEDs
 
-        distance = np.power((kumg - (magU - magG)),2) + np.power((kgmr - (magG - magR)),2) +\
-            np.power((krmi - (magR - magI)),2) + np.power((kimz - (magI - magZ)),2)
+                mltDict = sEDDict['mlt']
+                
+                mltumg = np.array(mltDict['umg'])
+                mltgmr = np.array(mltDict['gmr'])
+                mltrmi = np.array(mltDict['rmi'])
+                mltimz = np.array(mltDict['imz'])
+                
+                sEDName = mltDict['sEDName']
 
-        #Equation B2 from Ivezic et al. 2008
-        logT = 3.882 - (magG - magR)*(0.316 - (magG - magR)*(0.0488 + (magG - magR)*0.0283))
-        tEff = np.power(10, logT)
+                distance = np.power((mltumg - (magU - magG)),2) + np.power((mltgmr - (magG - magR)),2) +\
+                    np.power((mltrmi - (magR - magI)),2) + np.power((mltimz - (magI - magZ)),2)
 
-        return kName[np.argmin(distance)], tEff
+            else:
+            #Use Kurucz otherwise
+
+                kDict = sEDDict['kurucz']
+                
+                kumg = np.array(kDict['umg'])
+                kgmr = np.array(kDict['gmr'])
+                krmi = np.array(kDict['rmi'])
+                kimz = np.array(kDict['imz'])
+                
+                sEDName = kDict['sEDName']
+                
+                distance = np.power((kumg - (magU - magG)),2) + np.power((kgmr - (magG - magR)),2) +\
+                    np.power((krmi - (magR - magI)),2) + np.power((kimz - (magI - magZ)),2)
+            
+            #Equation B2 from Ivezic et al. 2008, only good for T>4000K, if we want this info need\
+                #to find another equation for mlt
+        #logT = 3.882 - (magG - magR)*(0.316 - (magG - magR)*(0.0488 + (magG - magR)*0.0283))
+        #tEff = np.power(10, logT)
+
+        return sEDName[np.argmin(distance)]
 
     def findLSSTMags(self, sEDName, absMagR):
         sEDObj = Sed()
         if sEDName.startswith('k'):
             #Kurucz SED
             sEDObj.readSED_flambda(self.sEDDir + '/starSED/kurucz/' + sEDName)
-            filterlist, sdssBandpassDict, sdssPhiArray, wavelenstep = self.setupSDSS()
-            sED_fluxnorm = sEDObj.calcFluxNorm(absMagR, sdssBandpassDict['r'])
-            sEDObj.multiplyFluxNorm(sED_fluxnorm)
-
-            lsstFilterList, lsstBandpassDict, lsstPhiArray, lsstWavelenstep = self.setupLSST()
-
-            sEDPhot = phot()
-            lsstMagDict = sEDPhot.manyMagCalc_dict(sEDObj, lsstPhiArray, lsstWavelenstep, lsstBandpassDict, bandpassKeys = ('u', 'g', 'r', 'i', 'z', 'y'))
-
+        else:
+            #mlt SED
+            sEDObj.readSED_flambda(self.sEDDir + '/starSED/mlt/' + sEDName)
+        filterlist, sdssBandpassDict, sdssPhiArray, wavelenstep = self.setupSDSS()
+        sED_fluxnorm = sEDObj.calcFluxNorm(absMagR, sdssBandpassDict['r'])
+        sEDObj.multiplyFluxNorm(sED_fluxnorm)
+        
+        lsstFilterList, lsstBandpassDict, lsstPhiArray, lsstWavelenstep = self.setupLSST()
+        
+        sEDPhot = phot()
+        lsstMagDict = sEDPhot.manyMagCalc_dict(sEDObj, lsstPhiArray, lsstWavelenstep, lsstBandpassDict, bandpassKeys = ('u', 'g', 'r', 'i', 'z', 'y'))
+        
             #For Testing only
-            sdssMagDict = sEDPhot.manyMagCalc_dict(sEDObj, sdssPhiArray, wavelenstep, sdssBandpassDict, bandpassKeys = ('u', 'g', 'r', 'i', 'z'))
-
+        sdssMagDict = sEDPhot.manyMagCalc_dict(sEDObj, sdssPhiArray, wavelenstep, sdssBandpassDict, bandpassKeys = ('u', 'g', 'r', 'i', 'z'))
+        
         return lsstMagDict, sdssMagDict #Test with SDSSr which should be same as galfast output
 
     def loadGalfast(self, filename):
         #Only adding support for .txt file at the moment, will add .fits support later
 
-        kDict = self.loadAllSEDs()
+        sEDDict = {}
+
+        kDict = self.loadKuruczSEDs()
+        mltDict = self.loadmltSEDs()
+        wdDict = self.loadwdSEDs()
+
+        sEDDict['kurucz'] = kDict
+        sEDDict['mlt'] = mltDict
+        sEDDict['wdH'] = wdDict['H']
+        sEDDict['wdHE'] = wdDict['HE']
 
         if filename.endswith('.txt'):
             galfastIn = open(filename, 'r')
@@ -235,6 +389,7 @@ class selectStarSED():
                 lineData = line.split()
                 DM = float(lineData[galfastDict['DM']])
                 absSDSSr = float(lineData[galfastDict['absSDSSr']])
+                comp = float(lineData[galfastDict['comp']])
                 feH = float(lineData[galfastDict['FeH']])
                 am = float(lineData[galfastDict['Am']])
                 sDSSu = float(lineData[galfastDict['SDSSu']])
@@ -243,7 +398,7 @@ class selectStarSED():
                 sDSSi = float(lineData[galfastDict['SDSSi']])
                 sDSSz = float(lineData[galfastDict['SDSSz']])
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
-                sEDName, tEff = self.findSED(kDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, feH)
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr)
                 print sdssMagDict
                 print float(sdssMagDict['r'] + DM + am), float(sdssMagDict['i'] + DM + (am*0.7431))
