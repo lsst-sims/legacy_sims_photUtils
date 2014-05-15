@@ -1,4 +1,6 @@
 import os
+import gzip
+import pyfits
 import numpy as np
 
 from lsst.sims.photUtils.Sed import Sed
@@ -298,8 +300,8 @@ class selectStarSED():
             
             sEDName = wdDict['sEDName']
             
-            distance = np.power((mltumg - (magU - magG)),2) + np.power((mltgmr - (magG - magR)),2) +\
-                np.power((mltrmi - (magR - magI)),2) + np.power((mltimz - (magI - magZ)),2)
+            distance = np.power((wdumg - (magU - magG)),2) + np.power((wdgmr - (magG - magR)),2) +\
+                np.power((wdrmi - (magR - magI)),2) + np.power((wdimz - (magI - magZ)),2)
             
         else:
             #For stars that are not WDs
@@ -345,6 +347,9 @@ class selectStarSED():
         if sEDName.startswith('k'):
             #Kurucz SED
             sEDObj.readSED_flambda(self.sEDDir + '/starSED/kurucz/' + sEDName)
+        elif sEDName.startswith('bergeron'):
+            #WD SED
+            sEDObj.readSED_flambda(self.sEDDir + '/starSED/wDs/' + sEDName)
         else:
             #mlt SED
             sEDObj.readSED_flambda(self.sEDDir + '/starSED/mlt/' + sEDName)
@@ -378,19 +383,52 @@ class selectStarSED():
 
         if filename.endswith('.txt'):
             galfastIn = open(filename, 'r')
+            inFits = False
+        elif filename.endswith('.gz'):
+            galfastIn = gzip.open(filename, 'r')
+            inFits = False
+        elif filename.endswith('fits'):
+            hdulist = pyfits.open(filename)
+            galfastIn = hdulist[1].data
+            inFits = True
+        else:
+            raise RuntimeError, '*** Unsupported File Format'
+
+        if inFits:
+            for lineNum in range(len(galfastIn)):
+                oID = float(lineNum)
+                starData = galfastIn[lineNum]
+                gall, galb = starData.field('lb')
+                ra, dec = starData.field('radec')
+                coordX, coordY, coordZ = starData.field('XYZ')
+                DM = starData.field('DM')
+                absSDSSr = starData.field('absSDSSr')
+                comp = starData.field('comp')
+                FeH = starData.field('FeH')
+                vR, vPhi, vZ = starData.field('vcyl')
+                pml, pmb, vRadlb = starData.field('pmlb')
+                pmRA, pmDec, vRad = starData.field('pmradec')
+                am = starData.field('Am')
+                amInf = starData.field('AmInf')
+                sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = starData.field('SDSSugriz')
+                sdssPhotFlag = starData.field('SDSSugrizPhotoFlags')
+                print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
+                lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr)
+                print float(sdssMagDict['r'] + DM + am), float(sdssMagDict['i'] + DM + (am*0.7431))
+        else:
             lineNum = 0
             for line in galfastIn:
                 if lineNum == 0:
                     galfastDict = self.parseGalfast(line)
                     lineNum += 1
                 if line[0] == '#': continue
-                lineNum += 1
                 oID = float(lineNum)
                 lineData = line.split()
                 DM = float(lineData[galfastDict['DM']])
                 absSDSSr = float(lineData[galfastDict['absSDSSr']])
                 comp = float(lineData[galfastDict['comp']])
-                feH = float(lineData[galfastDict['FeH']])
+                FeH = float(lineData[galfastDict['FeH']])
                 am = float(lineData[galfastDict['Am']])
                 sDSSu = float(lineData[galfastDict['SDSSu']])
                 sDSSg = float(lineData[galfastDict['SDSSg']])
@@ -400,7 +438,7 @@ class selectStarSED():
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
                 sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr)
-                print sdssMagDict
                 print float(sdssMagDict['r'] + DM + am), float(sdssMagDict['i'] + DM + (am*0.7431))
-        else:
-            raise RuntimeError, '*** Can only import .txt Galfast Catalogs at the moment'
+                lineNum += 1
+            
+
