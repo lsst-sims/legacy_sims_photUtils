@@ -30,13 +30,17 @@ Class data:
   wavelen/sb are guaranteed gridded. 
   phi will be None until specifically needed; 
      any updates to wavelen/sb within class will reset phi to None. 
-
+ the name of the bandpass file
+ 
 Note that Bandpass objects are required to maintain a uniform grid in wavelength, rather than
 being allowed to have variable wavelength bins. This is because of the method used in 'Sed' to
 calculate magnitudes, but is simpler to enforce here. 
 
 Methods: 
  __init__ : pass wavelen/sb arrays and set values (on grid) OR set data to None's
+ setWavelenLimits / getWavelenLimits: set or get the wavelength limits of bandpass
+ setBandpass: set bandpass using wavelen/sb input values
+ getBandpass: return copies of wavelen/sb values
  imsimBandpass : set up a bandpass which is 0 everywhere but one wavelength 
                  (this can be useful for imsim magnitudes)
  readThroughput : set up a bandpass by reading data from a single file
@@ -48,6 +52,8 @@ Methods:
  multiplyThroughputs : multiply self.wavelen/sb by given wavelen/sb and return 
                        new wavelen/sb arrays (gridded like self)
  calcZP_t : calculate instrumental zeropoint for this bandpass
+ calcM5: calculate the m5 value for a flat SED for this bandpass
+ calcEffWavelen: calculate the effective wavelength (using both Sb and Phi) for this bandpass 
  writeThroughput : utility to write bandpass information to file
 
 """
@@ -86,7 +92,8 @@ class Bandpass:
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
         self.wavelen=None
         self.sb=None
-        self.phi=None            
+        self.phi=None
+        self.bandpassname = None     
         if (wavelen!=None) & (sb!=None):
             self.setBandpass(wavelen, sb, wavelen_min, wavelen_max, wavelen_step)
         return
@@ -131,6 +138,7 @@ class Bandpass:
         self.sb = numpy.copy(sb)
         # Resample wavelen/sb onto grid. 
         self.resampleBandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=wavelen_step)
+        self.bandpassname = 'FromArrays'
         return
 
     def imsimBandpass(self, imsimwavelen=500.0, 
@@ -146,6 +154,7 @@ class Bandpass:
         # Set sb.
         self.sb = numpy.zeros(len(self.wavelen), dtype='float')
         self.sb[abs(self.wavelen-imsimwavelen)<self.wavelen_step/2.0] = 1.0
+        self.bandpassname = 'IMSIM'
         return
 
     def readThroughput(self, filename, wavelen_min=None, wavelen_max=None, wavelen_step=None):
@@ -191,7 +200,8 @@ class Bandpass:
                 continue
             wavelen.append(float(values[0]))
             sb.append(float(values[1]))
-        f.close()        
+        f.close()
+        self.bandpassname = filename   
         # Set up wavelen/sb.
         self.wavelen = numpy.array(wavelen, dtype='float')
         self.sb = numpy.array(sb, dtype='float')
@@ -239,6 +249,7 @@ class Bandpass:
             tempbandpass.readThroughput(os.path.join(rootDir, component))
             # Multiply self by new sb values.
             self.sb = self.sb * tempbandpass.sb
+        self.bandpassname = ''.join(componentList)
         return
 
     def getBandpass(self):

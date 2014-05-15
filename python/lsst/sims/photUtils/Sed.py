@@ -28,6 +28,7 @@ wavelen (nm)
 flambda (ergs/cm^s/s/nm)
 fnu (Jansky)
 zp  (basically translates to units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz))
+the name of the sed file 
 
 It is important to note the units are NANOMETERS, not ANGSTROMS. It is possible to rig this so you can
 use angstroms instead of nm, but you should know what you're doing and understand the wavelength grid
@@ -61,13 +62,14 @@ Method include:
   setSED / setFlatSED / readSED_flambda / readSED_fnu -- to input information into Sed wavelen/flambda.
   getSED_flambda / getSED_fnu -- to return wavelen / flambda or fnu to the user.
   clearSED -- set everything to 0.
-  synchronizeSED -- to grid wavelen/flambda/fnu onto the desired grid and calculate fnu.
+  synchronizeSED -- to calculate wavelen/flambda/fnu on the desired grid and calculate fnu.
   checkUseSelf / needResample -- not expected to be useful to the user, rather intended for internal use.
   resampleSED -- primarily internal use, but may be useful to user. Resamples SED onto specified grid.
   flambdaTofnu / fnuToflambda -- conversion methods, does not affect wavelen gridding.
-  redshiftSED -- as it says. 
+  redshiftSED -- redshifts the SED, optionally adding dimmingx
   setupCCMab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS
-if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupCCMab). 
+if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupCCMab).
+  addIGMattenuation -- attempt to generate intergalactic dust (but didn't really work)
   multiplySED -- multiply two SEDS together.
   calcADU / calcMag / calcFlux -- with a Bandpass, calculate the ADU/magnitude/flux of a SED.
   calcFluxNorm / multiplyFluxNorm -- handle fluxnorm parameters (from UW LSST database) properly. These 
@@ -76,7 +78,7 @@ methods are intended to give a user an easy way to scale an SED to match an expe
   writeSED -- keep a file record of your SED. 
   calcSNR_psf / calcSNR_mag -- two methods to calculate the SNR of a SED. (_psf is more accurate, but 
 requires knowing the sky count backgrounds. _mag assumes you know the m5 already). 
-  calcMagError / calcAstrometricError -- currently only very rough values.
+  calcMagError / calcAstrometricError -- calculated based on SciBook values, but just estimates.
   setPhiArray -- given a list of bandpasses, sets up the 2-d phiArray (for manyMagCalc) and dlambda value.
   manyMagCalc -- given 2-d phiArray and dlambda, this will return an array of magnitudes (in the same 
 order as the bandpasses) of this SED in each of those bandpasses. 
@@ -119,6 +121,7 @@ class Sed:
         self.flambda = None
         #self.zp = -8.9  # default units, Jansky.
         self.zp = -2.5*numpy.log10(3631)
+        self.sedname = None
         # If init was given data to initialize class, use it.
         if (wavelen!= None) & ((flambda!=None) | (fnu!=None)):
             self.setSED(wavelen, flambda=flambda, fnu=fnu)
@@ -153,6 +156,7 @@ class Sed:
                 raise ValueError("(No Flambda) - Fnu must be numpy array of same length as Wavelen.")
             # Convert fnu to flambda.
             self.wavelen, self.flambda = self.fnuToflambda(wavelen, fnu)
+        self.sedname = 'FromArray'
         return
 
     def setFlatSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
@@ -160,6 +164,7 @@ class Sed:
         self.wavelen = numpy.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
         self.fnu = numpy.ones(len(self.wavelen), dtype='float') * 3631 #jansky
         self.fnuToflambda()
+        self.sedname = 'FLAT'
         return
 
     def readSED_flambda(self, filename):
@@ -195,7 +200,8 @@ class Sed:
         f.close()
         self.wavelen = numpy.array(sourcewavelen)
         self.flambda = numpy.array(sourceflambda)
-        self.fnu = None 
+        self.fnu = None
+        self.sedname = filename
         return
 
     def readSED_fnu(self, filename):
@@ -233,6 +239,7 @@ class Sed:
         sourcefnu = numpy.array(sourcefnu)
         # Convert fnu to flambda 
         self.fnuToflambda(sourcewavelen, sourcefnu)
+        self.sedname = filename
         return
 
     def getSED_flambda(self):
@@ -358,10 +365,11 @@ class Sed:
         else:
             wavelen_grid = numpy.copy(wavelen_match)
         # Check if the wavelength range desired and the wavelength range of the object overlap.
-        # If not, raise an exception as presumably you don't really want to resample into a
-        # range where you had absolutely no information.
-        if (wavelen.max() < wavelen_grid.min()) | (wavelen.min() > wavelen_grid.max()):
-            raise Exception("No overlap between known wavelength range and desired wavelength range.")
+        # If there is any non-overlap, raise warning.
+        if (wavelen.max() < wavelen_grid.min()) | (wavelen.min() < wavelen_grid.min()):
+            warn = 'There is an area of non-overlap between desired wavelength range of bandpass (%.2f to %.2f) and sed %s (%.2f to %2.f)' \
+              % (wavelen_grid.min(), wavelen_grid.max(), self.sedname, wavelen.min(), wavelen.max())
+            warnings.warn(warn)
         flux_grid = numpy.empty(len(wavelen), dtype='float')
         # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
         flux_grid = numpy.interp(wavelen_grid, wavelen, flux, left=0.0, right=0.0)
