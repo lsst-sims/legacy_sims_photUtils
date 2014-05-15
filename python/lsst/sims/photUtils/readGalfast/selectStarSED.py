@@ -342,7 +342,7 @@ class selectStarSED():
 
         return sEDName[np.argmin(distance)]
 
-    def findLSSTMags(self, sEDName, absMagR):
+    def findLSSTMags(self, sEDName, absMagR, DM, am):
         sEDObj = Sed()
         if sEDName.startswith('k'):
             #Kurucz SED
@@ -362,10 +362,24 @@ class selectStarSED():
         sEDPhot = phot()
         lsstMagDict = sEDPhot.manyMagCalc_dict(sEDObj, lsstPhiArray, lsstWavelenstep, lsstBandpassDict, bandpassKeys = ('u', 'g', 'r', 'i', 'z', 'y'))
         
+        #Add DM and reddening the way mario does
+        #Find proportional reddening coeffecients to sdssr reddening from schlafly and finkbeiner
+        lsstFinalMagDict = {}
+        lsstExtCoords = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
+        for filter, ext in zip(['u', 'g', 'r', 'i', 'z', 'y'], lsstExtCoords):
+            mag = lsstMagDict[filter]
+            lsstFinalMagDict[filter] = mag + DM + (am * ext)
+
             #For Testing only
         sdssMagDict = sEDPhot.manyMagCalc_dict(sEDObj, sdssPhiArray, wavelenstep, sdssBandpassDict, bandpassKeys = ('u', 'g', 'r', 'i', 'z'))
-        
-        return lsstMagDict, sdssMagDict #Test with SDSSr which should be same as galfast output
+        sdssFinalMagDict = {}
+        sdssExtCoords = [1.8551, 1.4455, 1.0, 0.7431, 0.5527]
+        for filter, ext in zip(['u', 'g', 'r', 'i', 'z', 'y'], sdssExtCoords):
+            mag = sdssMagDict[filter]
+            sdssFinalMagDict[filter] = mag + DM + (am * ext)
+
+
+        return lsstFinalMagDict, sdssFinalMagDict #Test with SDSSr which should be same as galfast output
 
     def loadGalfast(self, filename):
         #Only adding support for .txt file at the moment, will add .fits support later
@@ -411,11 +425,11 @@ class selectStarSED():
                 am = starData.field('Am')
                 amInf = starData.field('AmInf')
                 sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = starData.field('SDSSugriz')
-                sdssPhotFlag = starData.field('SDSSugrizPhotoFlags')
+                sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
                 sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
-                lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr)
-                print float(sdssMagDict['r'] + DM + am), float(sdssMagDict['i'] + DM + (am*0.7431))
+                lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
+                print sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r']
         else:
             lineNum = 0
             for line in galfastIn:
@@ -425,20 +439,36 @@ class selectStarSED():
                 if line[0] == '#': continue
                 oID = float(lineNum)
                 lineData = line.split()
+                gall = float(lineData[galfastDict['l']])
+                galb = float(lineData[galfastDict['b']])
+                ra = float(lineData[galfastDict['ra']])
+                dec = float(lineData[galfastDict['dec']])
+                coordX = float(lineData[galfastDict['X']])
+                coordY = float(lineData[galfastDict['Y']])
+                coordZ = float(lineData[galfastDict['Z']])
                 DM = float(lineData[galfastDict['DM']])
                 absSDSSr = float(lineData[galfastDict['absSDSSr']])
                 comp = float(lineData[galfastDict['comp']])
                 FeH = float(lineData[galfastDict['FeH']])
+                vR = float(lineData[galfastDict['Vr']])
+                vPhi = float(lineData[galfastDict['Vphi']])
+                vZ = float(lineData[galfastDict['Vz']])
+                pml = float(lineData[galfastDict['pml']])
+                pmb = float(lineData[galfastDict['pmb']])
+                vRadlb = float(lineData[galfastDict['vRadlb']])
+                pmra = float(lineData[galfastDict['pmra']])
+                pmdec = float(lineData[galfastDict['pmdec']])
+                vRad = float(lineData[galfastDict['vRad']])
                 am = float(lineData[galfastDict['Am']])
+                amInf = float(lineData[galfastDict['AmInf']])
                 sDSSu = float(lineData[galfastDict['SDSSu']])
                 sDSSg = float(lineData[galfastDict['SDSSg']])
                 sDSSr = float(lineData[galfastDict['SDSSr']])
                 sDSSi = float(lineData[galfastDict['SDSSi']])
                 sDSSz = float(lineData[galfastDict['SDSSz']])
+                sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
                 sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
-                lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr)
-                print float(sdssMagDict['r'] + DM + am), float(sdssMagDict['i'] + DM + (am*0.7431))
+                lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
+                print sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r']
                 lineNum += 1
-            
-
