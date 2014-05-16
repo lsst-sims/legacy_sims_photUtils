@@ -43,7 +43,7 @@ class selectStarSED():
         numFiles = len(files)
         numOn = 0
 
-        for file in files[0:201]:
+        for file in files:
             if numOn % 100 == 0:
                 print 'Loading %i of %i: Kurucz SEDs' % (numOn, numFiles)
             fileSED = Sed()
@@ -284,8 +284,10 @@ class selectStarSED():
         
         return galumg, galgmr, galrmi, galimz
 
-    def findSED(self, sEDDict, magU, magG, magR, magI, magZ, absMagR, comp):
+    def findSED(self, sEDDict, magU, magG, magR, magI, magZ, absMagR, am, comp):
         
+        umg, gmr, rmi, imz = self.deReddenGalfast(am, magU, magG, magR, magI, magZ)
+
         if 10 <= comp < 20:
             #This is a Galfast outputted WD
             if 10 <= comp < 15:
@@ -300,8 +302,8 @@ class selectStarSED():
             
             sEDName = wdDict['sEDName']
             
-            distance = np.power((wdumg - (magU - magG)),2) + np.power((wdgmr - (magG - magR)),2) +\
-                np.power((wdrmi - (magR - magI)),2) + np.power((wdimz - (magI - magZ)),2)
+            distance = np.power((wdumg - umg),2) + np.power((wdgmr - gmr),2) +\
+                np.power((wdrmi - rmi),2) + np.power((wdimz - imz),2)
             
         else:
             #For stars that are not WDs
@@ -317,8 +319,8 @@ class selectStarSED():
                 
                 sEDName = mltDict['sEDName']
 
-                distance = np.power((mltumg - (magU - magG)),2) + np.power((mltgmr - (magG - magR)),2) +\
-                    np.power((mltrmi - (magR - magI)),2) + np.power((mltimz - (magI - magZ)),2)
+                distance = np.power((mltumg - umg),2) + np.power((mltgmr - gmr),2) +\
+                    np.power((mltrmi - rmi),2) + np.power((mltimz - imz),2)
 
             else:
             #Use Kurucz otherwise
@@ -332,8 +334,8 @@ class selectStarSED():
                 
                 sEDName = kDict['sEDName']
                 
-                distance = np.power((kumg - (magU - magG)),2) + np.power((kgmr - (magG - magR)),2) +\
-                    np.power((krmi - (magR - magI)),2) + np.power((kimz - (magI - magZ)),2)
+                distance = np.power((kumg - umg),2) + np.power((kgmr - gmr),2) +\
+                    np.power((krmi - rmi),2) + np.power((kimz - imz),2)
             
             #Equation B2 from Ivezic et al. 2008, only good for T>4000K, if we want this info need\
                 #to find another equation for mlt
@@ -382,7 +384,7 @@ class selectStarSED():
         return lsstFinalMagDict, sdssFinalMagDict #Test with SDSSr which should be same as galfast output
 
     def loadGalfast(self, filename):
-        #Only adding support for .txt file at the moment, will add .fits support later
+
 
         sEDDict = {}
 
@@ -427,7 +429,7 @@ class selectStarSED():
                 sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = starData.field('SDSSugriz')
                 sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
-                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, am, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
                 print sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r']
         else:
@@ -468,7 +470,40 @@ class selectStarSED():
                 sDSSz = float(lineData[galfastDict['SDSSz']])
                 sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
-                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, am, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
-                print sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r']
+                print sEDName
                 lineNum += 1
+        
+    def testMatching(self, testSet):
+        #Output file from catalog with following schema (objID, sedName, SDSSugriz, newSDSSugriz)
+        sEDDict = {}
+
+        kDict = self.loadKuruczSEDs()
+        mltDict = self.loadmltSEDs()
+        wdDict = self.loadwdSEDs()
+
+        sEDDict['kurucz'] = kDict
+        sEDDict['mlt'] = mltDict
+        sEDDict['wdH'] = wdDict['H']
+        sEDDict['wdHE'] = wdDict['HE']
+
+        testIn = open(testSet, 'r')
+        lineNum = 0
+        for line in galfastIn:
+
+            testData = line.split(' ')
+            oID = testData[0]
+            catalogSED = testData[1]
+            sDSSu = testData[2]
+            sDSSg = testData[3]
+            sDSSr = testData[4]
+            sDSSi = testData[5]
+            sDSSz = testData[6]
+            comp = 2
+            print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
+            sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
+            lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
+            print sEDName
+            lineNum += 1
+        
