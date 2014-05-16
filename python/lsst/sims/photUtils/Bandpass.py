@@ -81,7 +81,7 @@ SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Defaul
 class Bandpass:
     """Class for holding and utilizing telescope bandpasses"""    
     def __init__(self, wavelen=None, sb=None,
-                 wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+                 wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """Initialize bandpass object, with option to pass wavelen/sb arrays in directly.
         
         Also can specify wavelength grid min/max/step or use default - sb and wavelen will
@@ -89,13 +89,29 @@ class Bandpass:
         will be set to None. 
         Otherwise all set to None and user should call readThroughput, readThroughputList,
         or imsimBandpass to populate bandpass data."""
+        if wavelen_min == None:
+            if wavelen ==None:
+                wavelen_min = MINWAVELEN
+            else:
+                wavelen_min = wavelen.min()
+        if wavelen_max == None:
+            if wavelen == None:
+                wavelen_max = MAXWAVELEN
+            else:
+                wavelen_max = wavelen.max()
+        if wavelen_step == None:
+            if wavelen == None:
+                wavelen_step = WAVELENSTEP
+            else:
+                wavelen_step = numpy.diff(wavelen).min()
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
         self.wavelen=None
         self.sb=None
         self.phi=None
         self.bandpassname = None     
         if (wavelen!=None) & (sb!=None):
-            self.setBandpass(wavelen, sb, wavelen_min, wavelen_max, wavelen_step)
+            self.setBandpass(wavelen, sb, wavelen_min, wavelen_max, wavelen_step)        
+            
         return
 
     ## getters and setters
@@ -384,7 +400,8 @@ class Bandpass:
         # Set up flat source of arbitrary brightness,
         #   but where the units of fnu are Jansky (for AB mag zeropoint = -8.9).
         flatsource = Sed.Sed()
-        flatsource.setFlatSED()
+        flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
+                              wavelen_step=self.wavelen_step)
         adu = flatsource.calcADU(self, expTime=expTime, effarea=effarea, gain=gain)
         # Scale fnu so that adu is 1 count/expTime.
         flatsource.fnu = flatsource.fnu * (1/adu)
