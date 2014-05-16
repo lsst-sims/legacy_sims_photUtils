@@ -284,9 +284,15 @@ class selectStarSED():
         
         return galumg, galgmr, galrmi, galimz
 
-    def findSED(self, sEDDict, magU, magG, magR, magI, magZ, absMagR, am, comp):
+    def findSED(self, sEDDict, magU, magG, magR, magI, magZ, am, comp):
         
-        umg, gmr, rmi, imz = self.deReddenGalfast(am, magU, magG, magR, magI, magZ)
+#To Scott: This is where I'm questioning the method. Do I need the dereddengalfast step?
+
+#        umg, gmr, rmi, imz = self.deReddenGalfast(am, magU, magG, magR, magI, magZ)
+        umg = magU - magG
+        gmr = magG - magR
+        rmi = magR - magI
+        imz = magI - magZ
 
         if 10 <= comp < 20:
             #This is a Galfast outputted WD
@@ -307,7 +313,7 @@ class selectStarSED():
             
         else:
             #For stars that are not WDs
-            if (magR - magI) > 0.6:
+            if (magR - magI) > 0.62:
             #Use mlt SEDs
 
                 mltDict = sEDDict['mlt']
@@ -319,8 +325,9 @@ class selectStarSED():
                 
                 sEDName = mltDict['sEDName']
 
-                distance = np.power((mltumg - umg),2) + np.power((mltgmr - gmr),2) +\
-                    np.power((mltrmi - rmi),2) + np.power((mltimz - imz),2)
+                #distance = np.power((mltumg - umg),2) + np.power((mltgmr - gmr),2) +\
+                    #np.power((mltrmi - rmi),2) + np.power((mltimz - imz),2)
+                distance = np.power((mltrmi - rmi), 2) + np.power((mltimz - imz), 2)
 
             else:
             #Use Kurucz otherwise
@@ -385,7 +392,6 @@ class selectStarSED():
 
     def loadGalfast(self, filename):
 
-
         sEDDict = {}
 
         kDict = self.loadKuruczSEDs()
@@ -429,7 +435,7 @@ class selectStarSED():
                 sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = starData.field('SDSSugriz')
                 sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
-                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, am, comp)
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
                 print sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r']
         else:
@@ -470,7 +476,7 @@ class selectStarSED():
                 sDSSz = float(lineData[galfastDict['SDSSz']])
                 sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
                 print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
-                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, am, comp)
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
                 print sEDName
                 lineNum += 1
@@ -490,20 +496,25 @@ class selectStarSED():
 
         testIn = open(testSet, 'r')
         lineNum = 0
-        for line in galfastIn:
+        numWrong = 0
+        for line in testIn:
 
             testData = line.split(' ')
             oID = testData[0]
             catalogSED = testData[1]
-            sDSSu = testData[2]
-            sDSSg = testData[3]
-            sDSSr = testData[4]
-            sDSSi = testData[5]
-            sDSSz = testData[6]
-            comp = 2
-            print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
-            sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr, comp)
-            lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
-            print sEDName
+            sDSSu = float(testData[2])
+            sDSSg = float(testData[3])
+            sDSSr = float(testData[4])
+            sDSSi = float(testData[5])
+            sDSSz = float(testData[6])
+            comp = float(testData[7])
+            am = float(testData[8]) * 2.751
+            sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
+            if sEDName[0:len(catalogSED)] != catalogSED:
+                print sEDName, catalogSED, 'FALSE'
+                numWrong += 1
+
             lineNum += 1
+
+        print 'Percent Incorrectly Matched: ', float(numWrong/lineNum)*100
         
