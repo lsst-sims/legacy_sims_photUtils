@@ -796,7 +796,7 @@ class Sed:
         curmag = self.calcMag(bandpass, wavelen, fnu)
         if curmag == self.badval:
             return self.badval 
-        dmag = magmatch - self.calcMag(bandpass, wavelen, fnu)
+        dmag = magmatch - curmag
         fluxnorm = numpy.power(10, (-0.4*dmag))
         return fluxnorm 
    
