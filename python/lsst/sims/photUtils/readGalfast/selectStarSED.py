@@ -288,7 +288,7 @@ class selectStarSED():
         
 #To Scott: This is where I'm questioning the method. Do I need the dereddengalfast step?
 
-#        umg, gmr, rmi, imz = self.deReddenGalfast(am, magU, magG, magR, magI, magZ)
+        umg, gmr, rmi, imz = self.deReddenGalfast(am, magU, magG, magR, magI, magZ)
         umg = magU - magG
         gmr = magG - magR
         rmi = magR - magI
@@ -325,8 +325,7 @@ class selectStarSED():
                 
                 sEDName = mltDict['sEDName']
 
-                #distance = np.power((mltumg - umg),2) + np.power((mltgmr - gmr),2) +\
-                    #np.power((mltrmi - rmi),2) + np.power((mltimz - imz),2)
+                #u,g mags unreliable for cool stars
                 distance = np.power((mltrmi - rmi), 2) + np.power((mltimz - imz), 2)
 
             else:
