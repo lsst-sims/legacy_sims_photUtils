@@ -133,8 +133,7 @@ class PhotometryBase(object):
                         wavelen_same = sed.wavelen
                         firstsed = False
                     else:
-                        if sed.needResample(wavelen_same):
-                            sed.resampleSED(wavelen_same)
+                        sed.resampleSED(wavelen_same)
                 
                 uniqueSedDict[sedName]=sed
         
@@ -204,10 +203,14 @@ class PhotometryBase(object):
         
         magDict={}
         if sedobj.wavelen != None:
-            if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
+            try:
                 sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
+            except ValueError as e:
+                warnings.warn('%s' %(e))
+                for f in self.bandPassKey:
+                    magDict[f] = None
+                return magDict
             
-
             #for some reason, moving this call to flambdaTofnu() 
             #to a point earlier in the 
             #process results in some SEDs having 'None' for fnu.
