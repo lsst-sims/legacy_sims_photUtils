@@ -112,7 +112,7 @@ SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Defaul
 
 class Sed: 
     """Class for holding and utilizing spectral energy distributions (SEDs)"""
-    def __init__(self, wavelen=None, flambda=None, fnu=None, badval=numpy.NaN):
+    def __init__(self, wavelen=None, flambda=None, fnu=None, badval=numpy.NaN, name=None):
         """Initialize sed object by giving filename or lambda/flambda array.
 
         Note that this does *not* regrid flambda and leaves fnu undefined."""
@@ -121,16 +121,18 @@ class Sed:
         self.flambda = None
         #self.zp = -8.9  # default units, Jansky.
         self.zp = -2.5*numpy.log10(3631)
-        self.sedname = None
+        self.name = name
         self.badval = badval
         # If init was given data to initialize class, use it.
         if (wavelen!= None) & ((flambda!=None) | (fnu!=None)):
-            self.setSED(wavelen, flambda=flambda, fnu=fnu)
+            if name is None:
+                name = 'FromArray'
+            self.setSED(wavelen, flambda=flambda, fnu=fnu, name=name)
         return
 
     ### Methods for getters and setters.
 
-    def setSED(self, wavelen, flambda=None, fnu=None):
+    def setSED(self, wavelen, flambda=None, fnu=None, name='FromArray'):
         """Populate wavelen/flambda fields in sed by giving lambda/flambda or lambda/fnu array.
 
         If flambda present, this overrides fnu. Method sets fnu=None unless only fnu is given.
@@ -157,18 +159,18 @@ class Sed:
                 raise ValueError("(No Flambda) - Fnu must be numpy array of same length as Wavelen.")
             # Convert fnu to flambda.
             self.wavelen, self.flambda = self.fnuToflambda(wavelen, fnu)
-        self.sedname = 'FromArray'
+        self.name = name
         return
 
-    def setFlatSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP):
+    def setFlatSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP, name='Flat'):
         """Populate the wavelength/flambda/fnu fields in sed according to a flat fnu source."""
         self.wavelen = numpy.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
         self.fnu = numpy.ones(len(self.wavelen), dtype='float') * 3631 #jansky
         self.fnuToflambda()
-        self.sedname = 'FLAT'
+        self.name = name
         return
 
-    def readSED_flambda(self, filename):
+    def readSED_flambda(self, filename, name=None):
         """Read a file containing [lambda Flambda] (lambda in nm) (Flambda erg/cm^2/s/nm).
         
         Does not resample wavelen/flambda onto grid; leave fnu=None. """
@@ -202,10 +204,13 @@ class Sed:
         self.wavelen = numpy.array(sourcewavelen)
         self.flambda = numpy.array(sourceflambda)
         self.fnu = None
-        self.sedname = filename
+        if name is None:
+            self.name = filename
+        else:
+            self.name = name
         return
 
-    def readSED_fnu(self, filename):
+    def readSED_fnu(self, filename, name=None):
         """Read a file containing [lambda Fnu] (lambda in nm) (Fnu in Jansky).
 
         Does not resample wavelen/fnu/flambda onto a grid; leaves fnu set."""
@@ -240,7 +245,10 @@ class Sed:
         sourcefnu = numpy.array(sourcefnu)
         # Convert fnu to flambda 
         self.fnuToflambda(sourcewavelen, sourcefnu)
-        self.sedname = filename
+        if name is None:
+            self.name = filename
+        else:
+            self.name = name
         return
 
     def getSED_flambda(self):
@@ -271,6 +279,7 @@ class Sed:
         self.fnu = None
         self.flambda = None
         self.zp = -8.9
+        self.name = None
         return
     
     def synchronizeSED(self, wavelen_min=None, wavelen_max=None, wavelen_step=None):
@@ -368,10 +377,10 @@ class Sed:
             # Check if the wavelength range desired and the wavelength range of the object overlap.
             # If there is any non-overlap, raise exception.
             if (wavelen.max() < wavelen_grid.max()) | (wavelen.min() > wavelen_grid.min()):
-                raise ValueError('There is an area of non-overlap between desired wavelength range (%.2f to %.2f) and sed %s (%.2f to %2.f)' % (wavelen_grid.min(), wavelen_grid.max(), self.sedname, wavelen.min(), wavelen.max()))
+                warnings.warn('There is an area of non-overlap between desired wavelength range (%.2f to %.2f) and sed %s (%.2f to %2.f)' % (wavelen_grid.min(), wavelen_grid.max(), self.name, wavelen.min(), wavelen.max()))
             flux_grid = numpy.empty(len(wavelen), dtype='float')
             # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
-            flux_grid = numpy.interp(wavelen_grid, wavelen, flux, left=0.0, right=0.0)
+            flux_grid = numpy.interp(wavelen_grid, wavelen, flux, left=numpy.NaN, right=numpy.NaN)
             # Update self values if necessary.
             if update_self:
                 self.wavelen = wavelen_grid
@@ -697,11 +706,7 @@ class Sed:
             wavelen = self.wavelen
             fnu = self.fnu
         # Make sure wavelen/fnu are on the same wavelength grid as bandpass.
-        try:
-            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
-        except ValueError as e:  # probably bandpass and sed did not overlap fully
-            warnings.warn('%s' %(e))
-            return self.badval
+        wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate the number of photons.
         dlambda = wavelen[1] - wavelen[0]
         # Nphoton in units of 10^-23 ergs/cm^s/nm. 
@@ -734,11 +739,7 @@ class Sed:
             fnu = self.fnu
         # Continue with magnitude calculation.
         # Put bandpass and wavelen/fnu are on the same grid.
-        try:
-            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
-        except ValueError as e:
-            warnings.warn('%s' %(e))
-            return self.badval
+        wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate bandpass phi value if required.
         if bandpass.phi == None:
             bandpass.sbTophi()
@@ -765,11 +766,7 @@ class Sed:
             wavelen = self.wavelen
             fnu = self.fnu
         # Go on with magnitude calculation.
-        try:
-            wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
-        except ValueError as e:
-            warnings.warn('%s' %(e))
-            return self.badval
+        wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
         # Calculate bandpass phi value if required.
         if bandpass.phi == None:
             bandpass.sbTophi()
