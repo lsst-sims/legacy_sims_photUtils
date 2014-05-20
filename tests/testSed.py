@@ -81,9 +81,38 @@ class TestSedWavelenLimits(unittest.TestCase):
             self.assertEqual(len(w), 1)
             self.assertTrue("non-overlap" in str(w[-1].message))
         self.assertTrue(np.isnan(flux))
+
+
+class TestSedName(unittest.TestCase):
+    def setUp(self):
+        self.wmin = 500
+        self.wmax = 1500
+        self.wavelen = np.arange(self.wmin, self.wmax+.5, 1)
+        self.flambda = np.ones(len(self.wavelen))
+        self.name = 'TestSed'
+        self.testsed = Sed(self.wavelen, self.flambda, name=self.name)
+
+    def tearDown(self):
+        del self.wmin, self.wmax, self.wavelen, self.flambda
+
+
+    def testSetName(self):
+        self.assertEqual(self.testsed.name, self.name)
+
+    def testRedshiftName(self):
+        testsed = Sed(self.testsed.wavelen, self.testsed.flambda, name=self.testsed.name)
+        redshift = .2
+        testsed.redshiftSED(redshift=redshift)
+        newname = testsed.name + '_Z' + '%.2f' %(redshift)
+        testsed.name = newname
+        self.assertEqual(testsed.name, newname)
+        
+
+        
         
 if __name__ == "__main__":
     suitelist = []
     suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedWavelenLimits))
+    suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedName))
     suite = unittest.TestSuite(suitelist)
     unittest.TextTestRunner(verbosity=2).run(suite)                            

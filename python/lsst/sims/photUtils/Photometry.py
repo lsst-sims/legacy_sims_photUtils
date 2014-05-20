@@ -185,7 +185,7 @@ class PhotometryBase(object):
                     sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
                 if redshift != None:
                     sedList[i].redshiftSED(redshift[i], dimming=True)
-                    sedList[i].name = sedList[i].name + '_Z' + str(redshift[i])
+                    sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
                     sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
 
     def manyMagCalc_dict(self, sedobj):
