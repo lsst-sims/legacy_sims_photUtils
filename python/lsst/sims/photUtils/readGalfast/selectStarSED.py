@@ -286,13 +286,11 @@ class selectStarSED():
 
     def findSED(self, sEDDict, magU, magG, magR, magI, magZ, am, comp):
         
-#To Scott: This is where I'm questioning the method. Do I need the dereddengalfast step?
-
         umg, gmr, rmi, imz = self.deReddenGalfast(am, magU, magG, magR, magI, magZ)
-        umg = magU - magG
-        gmr = magG - magR
-        rmi = magR - magI
-        imz = magI - magZ
+#        umg = magU - magG
+#        gmr = magG - magR
+#        rmi = magR - magI
+#        imz = magI - magZ
 
         if 10 <= comp < 20:
             #This is a Galfast outputted WD
@@ -389,6 +387,11 @@ class selectStarSED():
 
         return lsstFinalMagDict, sdssFinalMagDict #Test with SDSSr which should be same as galfast output
 
+    def convDMtoKPc(DM): #Change from distance modulus to distance in kiloparsecs
+        distancePc = 10**((0.2*DM) + 1)
+        distanceKPc = distancePc / 1000.
+        return distanceKPc
+
     def loadGalfast(self, filename):
 
         sEDDict = {}
@@ -433,10 +436,9 @@ class selectStarSED():
                 amInf = starData.field('AmInf')
                 sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = starData.field('SDSSugriz')
                 sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
-                print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
                 sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
-                print sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r']
+                distKPc = self.convDMtoKPc(DM)
         else:
             lineNum = 0
             for line in galfastIn:
@@ -474,14 +476,14 @@ class selectStarSED():
                 sDSSi = float(lineData[galfastDict['SDSSi']])
                 sDSSz = float(lineData[galfastDict['SDSSz']])
                 sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
-                print sDSSu, sDSSg, sDSSr, sDSSi, sDSSz
                 sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
                 lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
-                print sEDName
+                distKPc = self.convDMtoKPc(DM)
                 lineNum += 1
         
     def testMatching(self, testSet):
-        #Output file from catalog with following schema (objID, sedName, SDSSugriz, newSDSSugriz)
+        #Output file from catalog with following schema (objID, sedName, SDSSugriz, pop, ebv, lsstmags, absMr, distance)
+        #Also be aware that database SDSS mags are unextincted already
         sEDDict = {}
 
         kDict = self.loadKuruczSEDs()
@@ -508,11 +510,18 @@ class selectStarSED():
             sDSSz = float(testData[6])
             comp = float(testData[7])
             am = float(testData[8]) * 2.751
+            lsstu = float(testData[9])
+            lsstg = float(testData[10])
+            lsstr = float(testData[11])
+            lssti = float(testData[12])
+            lsstz = float(testData[13])
+            lssty = float(testData[14])
+            absSDSSr = float(testData[15])
+            DM = (np.log10(float(testData[16])*1000.) - 1.0) / 0.2
             sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
             if sEDName[0:len(catalogSED)] != catalogSED:
                 print sEDName, catalogSED, 'FALSE'
                 numWrong += 1
-
             lineNum += 1
 
         print 'Percent Incorrectly Matched: ', float(numWrong/lineNum)*100
