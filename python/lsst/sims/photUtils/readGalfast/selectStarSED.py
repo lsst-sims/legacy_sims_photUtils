@@ -385,14 +385,16 @@ class selectStarSED():
             sdssFinalMagDict[filter] = mag + DM + (am * ext)
 
 
-        return lsstFinalMagDict, sdssFinalMagDict #Test with SDSSr which should be same as galfast output
+        return lsstFinalMagDict, sdssFinalMagDict, sED_fluxnorm #Test with SDSSr which should be same as galfast output
 
-    def convDMtoKPc(DM): #Change from distance modulus to distance in kiloparsecs
+    def convDMtoKPc(self, DM): #Change from distance modulus to distance in kiloparsecs
         distancePc = 10**((0.2*DM) + 1)
         distanceKPc = distancePc / 1000.
         return distanceKPc
 
-    def loadGalfast(self, filename):
+    def loadGalfast(self, filename, outFile):
+
+        fOut = open(outFile, 'w')
 
         sEDDict = {}
 
@@ -427,7 +429,7 @@ class selectStarSED():
                 coordX, coordY, coordZ = starData.field('XYZ')
                 DM = starData.field('DM')
                 absSDSSr = starData.field('absSDSSr')
-                comp = starData.field('comp')
+                pop = starData.field('comp')
                 FeH = starData.field('FeH')
                 vR, vPhi, vZ = starData.field('vcyl')
                 pml, pmb, vRadlb = starData.field('pmlb')
@@ -436,9 +438,20 @@ class selectStarSED():
                 amInf = starData.field('AmInf')
                 sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = starData.field('SDSSugriz')
                 sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
-                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
-                lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, pop)
+                lsstMagDict, sdssMagDict, fluxNorm = self.findLSSTMags(sEDName, absSDSSr, DM, am)
                 distKPc = self.convDMtoKPc(DM)
+                outFmt = '%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%i,%3.7f,' +\
+                         '%3.7f,%3.7f\n'
+                outDat = (ra, dec, gall, galb, sEDName, fluxNorm,
+                          lsstMagDict['u'], lsstMagDict['g'], lsstMagDict['r'], lsstMagDict['i'], lsstMagDict['z'], lsstMagDict['y'],
+                          sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r'], sdssMagDict['i'], sdssMagDict['z'], absSDSSr,
+                          pmRA, pmDec, vRad, FeH, pop, distKPc,
+                          am, amInf)
+                fOut.write(outFmt % outDat)
         else:
             lineNum = 0
             for line in galfastIn:
@@ -457,7 +470,7 @@ class selectStarSED():
                 coordZ = float(lineData[galfastDict['Z']])
                 DM = float(lineData[galfastDict['DM']])
                 absSDSSr = float(lineData[galfastDict['absSDSSr']])
-                comp = float(lineData[galfastDict['comp']])
+                pop = float(lineData[galfastDict['comp']])
                 FeH = float(lineData[galfastDict['FeH']])
                 vR = float(lineData[galfastDict['Vr']])
                 vPhi = float(lineData[galfastDict['Vphi']])
@@ -476,9 +489,20 @@ class selectStarSED():
                 sDSSi = float(lineData[galfastDict['SDSSi']])
                 sDSSz = float(lineData[galfastDict['SDSSz']])
                 sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
-                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, comp)
-                lsstMagDict, sdssMagDict = self.findLSSTMags(sEDName, absSDSSr, DM, am)
+                sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, pop)
+                lsstMagDict, sdssMagDict, fluxNorm = self.findLSSTMags(sEDName, absSDSSr, DM, am)
                 distKPc = self.convDMtoKPc(DM)
+                outFmt = '%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%i,%3.7f,' +\
+                         '%3.7f,%3.7f\n'
+                outDat = (ra, dec, gall, galb, sEDName, fluxNorm,
+                          lsstMagDict['u'], lsstMagDict['g'], lsstMagDict['r'], lsstMagDict['i'], lsstMagDict['z'], lsstMagDict['y'],
+                          sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r'], sdssMagDict['i'], sdssMagDict['z'], absSDSSr,
+                          pmRA, pmDec, vRad, FeH, pop, distKPc,
+                          am, amInf)
+                fOut.write(outFmt % outDat)
                 lineNum += 1
         
     def testMatching(self, testSet):
@@ -525,4 +549,3 @@ class selectStarSED():
             lineNum += 1
 
         print 'Percent Incorrectly Matched: ', float(numWrong/lineNum)*100
-        
