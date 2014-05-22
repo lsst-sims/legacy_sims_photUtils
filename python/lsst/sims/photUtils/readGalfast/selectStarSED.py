@@ -369,7 +369,7 @@ class selectStarSED():
         lsstMagDict = sEDPhot.manyMagCalc_dict(sEDObj, lsstPhiArray, lsstWavelenstep, lsstBandpassDict, bandpassKeys = ('u', 'g', 'r', 'i', 'z', 'y'))
         
         #Add DM and reddening the way mario does
-        #Find proportional reddening coeffecients to sdssr reddening from schlafly and finkbeiner
+        #Find proportional reddening coeffecients to sdssr reddening from schlafly and finkbeiner 2011, table 2
         lsstFinalMagDict = {}
         lsstExtCoords = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
         for filter, ext in zip(['u', 'g', 'r', 'i', 'z', 'y'], lsstExtCoords):
@@ -387,25 +387,21 @@ class selectStarSED():
 
         return lsstFinalMagDict, sdssFinalMagDict, sED_fluxnorm #Test with SDSSr which should be same as galfast output
 
-    def convDMtoKPc(self, DM): #Change from distance modulus to distance in kiloparsecs
+    def convDMtoKpc(self, DM): #Change from distance modulus to distance in kiloparsecs
         distancePc = 10**((0.2*DM) + 1)
-        distanceKPc = distancePc / 1000.
-        return distanceKPc
+        distanceKpc = distancePc / 1000.
+        return distanceKpc
 
     def loadGalfast(self, filename, outFile):
 
         fOut = open(outFile, 'w')
+        fOut.write('#ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm, ' +\
+                       'LSSTugrizy, SDSSugriz, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
+                       'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
 
-        sEDDict = {}
-
-        kDict = self.loadKuruczSEDs()
-        mltDict = self.loadmltSEDs()
-        wdDict = self.loadwdSEDs()
-
-        sEDDict['kurucz'] = kDict
-        sEDDict['mlt'] = mltDict
-        sEDDict['wdH'] = wdDict['H']
-        sEDDict['wdHE'] = wdDict['HE']
+        #Make sure input file exists and is readable format before processing SEDs
+        if os.path.isfile(filename) == False:
+            raise RuntimeError, '*** File does not exist'
 
         if filename.endswith('.txt'):
             galfastIn = open(filename, 'r')
@@ -419,6 +415,17 @@ class selectStarSED():
             inFits = True
         else:
             raise RuntimeError, '*** Unsupported File Format'
+
+        sEDDict = {}
+
+        kDict = self.loadKuruczSEDs()
+        mltDict = self.loadmltSEDs()
+        wdDict = self.loadwdSEDs()
+
+        sEDDict['kurucz'] = kDict
+        sEDDict['mlt'] = mltDict
+        sEDDict['wdH'] = wdDict['H']
+        sEDDict['wdHE'] = wdDict['HE']
 
         if inFits:
             for lineNum in range(len(galfastIn)):
@@ -440,17 +447,19 @@ class selectStarSED():
                 sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
                 sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, pop)
                 lsstMagDict, sdssMagDict, fluxNorm = self.findLSSTMags(sEDName, absSDSSr, DM, am)
-                distKPc = self.convDMtoKPc(DM)
-                outFmt = '%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
+                distKpc = self.convDMtoKpc(DM)
+                ebv = am / 2.285 #From Schlafly and Finkbeiner for sdssr
+                ebvInf = amInf / 2.285
+                outFmt = '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
                          '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
-                         '%3.7f,%3.7f,%3.7f,%3.7f,%i,%3.7f,' +\
-                         '%3.7f,%3.7f\n'
-                outDat = (ra, dec, gall, galb, sEDName, fluxNorm,
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f' +\
+                         '%3.7f,%i,%3.7f,%3.7f,%3.7f\n'
+                outDat = (ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm,
                           lsstMagDict['u'], lsstMagDict['g'], lsstMagDict['r'], lsstMagDict['i'], lsstMagDict['z'], lsstMagDict['y'],
                           sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r'], sdssMagDict['i'], sdssMagDict['z'], absSDSSr,
-                          pmRA, pmDec, vRad, FeH, pop, distKPc,
-                          am, amInf)
+                          pmRA, pmDec, vRad, pml, pmb, vRadlb, vR, vPhi, vZ,
+                          FeH, pop, distKpc, ebv, ebvInf)
                 fOut.write(outFmt % outDat)
         else:
             lineNum = 0
@@ -478,8 +487,8 @@ class selectStarSED():
                 pml = float(lineData[galfastDict['pml']])
                 pmb = float(lineData[galfastDict['pmb']])
                 vRadlb = float(lineData[galfastDict['vRadlb']])
-                pmra = float(lineData[galfastDict['pmra']])
-                pmdec = float(lineData[galfastDict['pmdec']])
+                pmRA = float(lineData[galfastDict['pmra']])
+                pmDec = float(lineData[galfastDict['pmdec']])
                 vRad = float(lineData[galfastDict['vRad']])
                 am = float(lineData[galfastDict['Am']])
                 amInf = float(lineData[galfastDict['AmInf']])
@@ -491,17 +500,19 @@ class selectStarSED():
                 sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
                 sEDName = self.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, pop)
                 lsstMagDict, sdssMagDict, fluxNorm = self.findLSSTMags(sEDName, absSDSSr, DM, am)
-                distKPc = self.convDMtoKPc(DM)
-                outFmt = '%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
+                distKpc = self.convDMtoKpc(DM)
+                ebv = am / 2.285 #From Schlafly and Finkbeiner for sdssr
+                ebvInf = amInf / 2.285
+                outFmt = '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
                          '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
-                         '%3.7f,%3.7f,%3.7f,%3.7f,%i,%3.7f,' +\
-                         '%3.7f,%3.7f\n'
-                outDat = (ra, dec, gall, galb, sEDName, fluxNorm,
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f' +\
+                         '%3.7f,%i,%3.7f,%3.7f,%3.7f\n'
+                outDat = (ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm,
                           lsstMagDict['u'], lsstMagDict['g'], lsstMagDict['r'], lsstMagDict['i'], lsstMagDict['z'], lsstMagDict['y'],
                           sdssMagDict['u'], sdssMagDict['g'], sdssMagDict['r'], sdssMagDict['i'], sdssMagDict['z'], absSDSSr,
-                          pmRA, pmDec, vRad, FeH, pop, distKPc,
-                          am, amInf)
+                          pmRA, pmDec, vRad, pml, pmb, vRadlb, vR, vPhi, vZ,
+                          FeH, pop, distKpc, ebv, ebvInf)
                 fOut.write(outFmt % outDat)
                 lineNum += 1
         
