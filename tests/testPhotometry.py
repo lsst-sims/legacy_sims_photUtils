@@ -13,7 +13,6 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_metho
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB
-#import lsst.sims.catUtils.baseCatalogModels
 from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.EBV import EBVmixin
