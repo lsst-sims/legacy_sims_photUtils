@@ -1,18 +1,13 @@
 import numpy
 
-import sqlite3
-from sqlite3 import dbapi2 as sqlite
-
 import os
 import unittest
-import warnings
-import sys
 import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
-                                                makeStarTestDB, makeGalTestDB
+                                                makeStarTestDB, makeGalTestDB, getOneChunk
 from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.EBV import EBVmixin
@@ -23,8 +18,8 @@ from lsst.sims.photUtils.Variability import Variability
 if os.path.exists('testDatabase.db'):
     print "deleting database"
     os.unlink('testDatabase.db')
-makeStarTestDB(size=100000, seedVal=1)
-makeGalTestDB(size=100000, seedVal=1)
+makeStarTestDB(size=10000, seedVal=1)
+makeGalTestDB(size=10000, seedVal=1)
 
 @register_class
 class MyVariability(Variability):
@@ -126,9 +121,9 @@ class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,MyVariability,Pho
 class variabilityUnitTest(unittest.TestCase):
 
     def setUp(self):
-        self.galaxy = myTestGals()
-        self.star = myTestStars() 
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.galaxy = myTestGals()
+        self.star = myTestStars()
 
     def tearDown(self):
         del self.galaxy
@@ -138,23 +133,23 @@ class variabilityUnitTest(unittest.TestCase):
     def testGalaxyVariability(self):
 
         galcat = testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
-        results = self.galaxy.query_columns(['varParamStr'], constraint='VarParamStr is not NULL')
-        for result in results:
-            for row in result:
-                mags=galcat.applyVariability(row['varParamStr'])
+        results = self.galaxy.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, constraint='VarParamStr is not NULL')
+        result = getOneChunk(results)
+        for row in result:
+            mags=galcat.applyVariability(row['varParamStr'])
 
     def testStarVariability(self):
         starcat = testStars(self.star, obs_metadata=self.obs_metadata)
-        results = self.star.query_columns(['varParamStr'], constraint='VarParamStr is not NULL')
-        for result in results:
-            for row in result:
-                mags=starcat.applyVariability(row['varParamStr'])
+        results = self.star.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, constraint='VarParamStr is not NULL')
+        result = getOneChunk(results)
+        for row in result:
+            mags=starcat.applyVariability(row['varParamStr'])
 
 class photometryUnitTest(unittest.TestCase):
     def setUp(self):
-        self.galaxy = myTestGals()
-        self.star = myTestStars() 
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.galaxy = myTestGals()
+        self.star = myTestStars()
 
     def tearDown(self):
         del self.galaxy
@@ -164,17 +159,22 @@ class photometryUnitTest(unittest.TestCase):
     def testStars(self):
         test_cat=testStars(self.star, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testStarsOutput.txt")
+        results = self.star.query_columns(obs_metadata=self.obs_metadata)
+        result = getOneChunk(results)
 
 
     def testGalaxies(self):
         test_cat=testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testGalaxiesOutput.txt")
+        results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
+        result = getOneChunk(results)
      
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(variabilityUnitTest)
     suites += unittest.makeSuite(photometryUnitTest)
+    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 
 def run(shouldExit = False):
