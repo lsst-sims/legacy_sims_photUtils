@@ -68,7 +68,7 @@ class testDefaults(object):
 
 class testStars(InstanceCatalog,AstrometryStars,EBVmixin,MyVariability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
-    column_outputs=['id','raObserved','decObserved','magNorm',\
+    column_outputs=['id','raObserved','decObserved','raTrim','decTrim','magNorm',\
     'stellar_magNorm_var', \
     'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
     'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
@@ -82,7 +82,8 @@ class testStars(InstanceCatalog,AstrometryStars,EBVmixin,MyVariability,Photometr
 
 class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
-    column_outputs=['galid','raObserved','decObserved', 'redshift',\
+    column_outputs=['galid','raObserved','decObserved',\
+        'raTrim','decTrim', 'redshift',
         'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
         'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
         'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\

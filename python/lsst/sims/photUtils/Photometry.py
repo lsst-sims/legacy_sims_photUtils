@@ -136,8 +136,7 @@ class PhotometryBase(object):
                         wavelen_same = sed.wavelen
                         firstsed = False
                     else:
-                        if sed.needResample(wavelen_same):
-                            sed.resampleSED(wavelen_same)
+                        sed.resampleSED(wavelen_same)
                 
                 uniqueSedDict[sedName]=sed
         
@@ -147,7 +146,7 @@ class PhotometryBase(object):
             
             ss = uniqueSedDict[sedList[i]]
     
-            sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu)
+            sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu, name=ss.name)
             
             if sedList[i] != "None":
                 fNorm = sed.calcFluxNorm(magNorm[i], imsimband)
@@ -189,6 +188,7 @@ class PhotometryBase(object):
                     sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
                 if redshift != None:
                     sedList[i].redshiftSED(redshift[i], dimming=True)
+                    sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
                     sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
 
     def manyMagCalc_dict(self, sedobj):
@@ -207,10 +207,8 @@ class PhotometryBase(object):
         
         magDict={}
         if sedobj.wavelen != None:
-            if sedobj.needResample(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen):
-                sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
+            sedobj.resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
             
-
             #for some reason, moving this call to flambdaTofnu() 
             #to a point earlier in the 
             #process results in some SEDs having 'None' for fnu.
@@ -220,8 +218,7 @@ class PhotometryBase(object):
             #This is to prevent the two arrays from getting out synch
             #(e.g. renormalizing flambda but forgettint to renormalize fnu)
             #
-            sedobj.flambdaTofnu()
-            
+            sedobj.flambdaTofnu()            
             
             magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
             i = 0

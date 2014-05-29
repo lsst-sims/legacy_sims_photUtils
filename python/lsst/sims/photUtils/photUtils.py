@@ -130,8 +130,7 @@ class Photometry(object):
                         wavelen_same = sed.wavelen
                         firstsed = False
                     else:
-                        if sed.needResample(wavelen_same):
-                            sed.resampleSED(wavelen_same)
+                        sed.resampleSED(wavelen_same)
                 sedDict[sedName] = sed
         return sedDict
 
@@ -179,8 +178,13 @@ class Photometry(object):
         Note that THIS WILL change sedobj by resampling it onto the required wavelength range. """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
-        if sedobj.needResample(wavelen_match=bandpassDict[bandpassKeys[0]].wavelen):
+        try:
             sedobj.resampleSED(wavelen_match=bandpassDict[bandpassKeys[0]].wavelen)
+        except ValueError as e:
+            warnings.warn('%s' %(e))
+            for f in bandpassKeys:
+                magDict[f] = sedobj.badval
+            return magDict
         sedobj.flambdaTofnu()
         magArray = sedobj.manyMagCalc(phiArray, wavelenstep)
         magDict = {}
