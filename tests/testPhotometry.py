@@ -8,7 +8,6 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_metho
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
-from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.EBV import EBVmixin
 
@@ -66,9 +65,9 @@ class testDefaults(object):
         
         return out
 
-class testStars(InstanceCatalog,AstrometryStars,EBVmixin,MyVariability,PhotometryStars,testDefaults):
+class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
-    column_outputs=['id','raObserved','decObserved','raTrim','decTrim','magNorm',\
+    column_outputs=['id','raJ2000','decJ2000','magNorm',\
     'stellar_magNorm_var', \
     'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
     'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
@@ -78,12 +77,13 @@ class testStars(InstanceCatalog,AstrometryStars,EBVmixin,MyVariability,Photometr
     'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
     'EBV','varParamStr']
     defSedName = 'sed_flat.txt'
-    default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,]
+    default_columns = [('sedFilename', defSedName, (str, len(defSedName))), ('glon', 180., float), 
+                       ('glat', 30., float)]
 
-class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
+class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
-    column_outputs=['galid','raObserved','decObserved',\
-        'raTrim','decTrim', 'redshift',
+    column_outputs=['galid','raJ2000','decJ2000',\
+        'redshift',
         'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
         'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
         'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\
@@ -108,6 +108,8 @@ class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,MyVariability,Pho
                        ('sedFilenameAgn', defSedName, (str, len(defSedName))),
                        ('sedFilenameBulge', defSedName, (str, len(defSedName))),
                        ('sedFilenameDisk', defSedName, (str, len(defSedName))),
+                       ('glon', 210., float),
+                       ('glat', 70., float),
                       ]
 
     def get_internalAvDisk(self):
