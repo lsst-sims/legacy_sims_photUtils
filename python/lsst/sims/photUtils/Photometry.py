@@ -77,7 +77,10 @@ class PhotometryBase(object):
         if self.bandPassKey != bandPassList:
             self.bandPassKey=[]
             self.bandPasses={}
-            path = os.getenv('LSST_THROUGHPUTS_DEFAULT')
+            #A hack to get around the fact that I can't get SCons to pass through env vars.
+            #path = os.getenv('LSST_THROUGHPUTS_DEFAULT_DIR')
+            path = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
+
             for i in range(len(bandPassList)):
                 self.bandPassKey.append(bandPassList[i])
             
