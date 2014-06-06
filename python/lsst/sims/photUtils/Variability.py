@@ -3,7 +3,7 @@ import linecache
 import math
 import os
 import json as json
-from lsst.sims.coordUtils import register_class, register_method
+from lsst.sims.catalogs.measures.instance import register_class, register_method
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
@@ -91,7 +91,7 @@ class Variability(PhotometryBase):
                 zzout.append(zz[i])
                 yyout.append(yy[i])
                 
-                if self.obs_metadata.metadata != None and self.obs_metadata.metadata['Opsim_filter']:
+                if self.obs_metadata.metadata != None and self.obs_metadata.bandpass:
                     magNormVarOut.append(magNorm[i])
                 else:
                     magNormVarOut.append(-999.0)
@@ -233,8 +233,8 @@ class Variability(PhotometryBase):
                 zAgnOut.append(zAgn[i])
                 yAgnOut.append(yAgn[i])
                 
-                if self.obs_metadata.metadata != None and \
-                    self.obs_metadata.metadata['Opsim_filter'] and \
+                if self.obs_metadata.metadata is not None and \
+                    self.obs_metadata.bandpass and \
                     (not numpy.isnan(magNormAgn[i])):
                     
                     magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
@@ -315,8 +315,8 @@ class Variability(PhotometryBase):
         output = self._methodRegistry[method](self, params,expmjd)
         
         if self.obs_metadata.metadata != None:
-            if self.obs_metadata.metadata['Opsim_filter']:
-                deltaMagNorm = output[self.obs_metadata.metadata['Opsim_filter'][0]]
+            if self.obs_metadata.bandpass:
+                deltaMagNorm = output[self.obs_metadata.bandpass]
             else:
                 deltaMagNorm = None
         
