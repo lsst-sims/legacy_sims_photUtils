@@ -18,8 +18,8 @@ from lsst.sims.photUtils.Variability import Variability
 if os.path.exists('testDatabase.db'):
     print "deleting database"
     os.unlink('testDatabase.db')
-makeStarTestDB(size=10000, seedVal=1)
-makeGalTestDB(size=10000, seedVal=1)
+makeStarTestDB(size=100000, seedVal=1)
+makeGalTestDB(size=100000, seedVal=1)
 
 @register_class
 class MyVariability(Variability):
