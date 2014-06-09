@@ -42,7 +42,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSED = Sed()
         testSEDsColors = selectStarSED()
 
-        testSED.setFlatSED()
+        testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
         testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.sdssBandpassDict['r']))
         #Give kurucz like filename just so it works
         testName = 'km99_9999.fits_g99_9999'
@@ -82,7 +82,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSED = Sed()
         testSEDsColors = selectStarSED()
 
-        testSED.setFlatSED()
+        testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
         testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.sdssBandpassDict['r']))
         #Give mlt like filename just so it works
         testName = 'm99.99Full.dat'
@@ -141,7 +141,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSED = Sed()
         testSEDsColors = selectStarSED()
 
-        testSED.setFlatSED()
+        testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
         testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.sdssBandpassDict['r']))
         #Give WD like filename just so it works
         testName = 'bergeron_9999_99.dat_9999'
