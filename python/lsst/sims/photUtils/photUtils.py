@@ -10,7 +10,6 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 import os
 import numpy
-from .EBV import EBV
 from .Bandpass import Bandpass
 from .Sed import Sed
 from lsst.sims.coordUtils import compound
