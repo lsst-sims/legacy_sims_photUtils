@@ -1,23 +1,41 @@
 import numpy
 
-import sqlite3
-from sqlite3 import dbapi2 as sqlite
-
 import os
 import unittest
-import warnings
-import sys
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
+from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.coordUtils.Astrometry import AstrometryGalaxies, AstrometryStars, compound
+from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
+from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
+                                                makeStarTestDB, makeGalTestDB, getOneChunk
+                                                
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVmixin
 
+from lsst.sims.catUtils.baseCatalogModels import *
+
 from lsst.sims.photUtils.Variability import Variability
+
+# Create test databases
+if os.path.exists('testDatabase.db'):
+    print "deleting database"
+    os.unlink('testDatabase.db')
+makeStarTestDB(size=100000, seedVal=1)
+makeGalTestDB(size=100000, seedVal=1)
+
+@register_class
+class MyVariability(Variability):
+    @register_method('testVar')
+    def applySineVar(self, varParams, expmjd):
+        period = varParams['period']
+        amplitude = varParams['amplitude']
+        phase = expmjd%period
+        magoff = amplitude*numpy.sin(2*numpy.pi*phase)
+        return {'u':magoff, 'g':magoff, 'r':magoff, 'i':magoff, 'z':magoff, 'y':magoff}
 
 class testDefaults(object):
     """
@@ -191,7 +209,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
 
 class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonPhotometryStars,testDefaults):
     catalog_type = 'cartoonStars'
-    column_outputs=['id','ra_corr','dec_corr','magNorm',\
+    column_outputs=['id','raObserved','decObserved','magNorm',\
     'cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z']
     
     #the lists below will contain the SED objects and the magnitudes
@@ -203,7 +221,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
 
 class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
     catalog_type = 'cartoonGalaxies'
-    column_outputs=['galid','ra_corr','dec_corr',\
+    column_outputs=['galid','raObserved','decObserved',\
     'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
     
     #the dicts below will contain the SED objects and the magnitudes
@@ -220,9 +238,9 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
     magnitudeMasterDict["Agn"] = []
  
         
-class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryStars,testDefaults):
+class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefaults):
     catalog_type = 'test_stars'
-    column_outputs=['id','ra_corr','dec_corr','magNorm',\
+    column_outputs=['id','raJ2000','decJ2000','magNorm',\
     'stellar_magNorm_var', \
     'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
     'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
@@ -231,10 +249,14 @@ class testStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,PhotometryS
     'lsst_z','sigma_lsst_z','lsst_z_var','sigma_lsst_z_var',\
     'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
     'EBV','varParamStr']
+    defSedName = 'sed_flat.txt'
+    default_columns = [('sedFilename', defSedName, (str, len(defSedName))), ('glon', 180., float), 
+                       ('glat', 30., float)]
 
-class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies,testDefaults):
+class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
     catalog_type = 'test_galaxies'
-    column_outputs=['galid','ra_corr','dec_corr',\
+    column_outputs=['galid','raJ2000','decJ2000',\
+        'redshift',
         'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
         'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
         'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\
@@ -254,51 +276,75 @@ class testGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,Photo
         'iAgn', 'sigma_iAgn', 'iAgn_var', 'sigma_iAgn_var',\
         'zAgn', 'sigma_zAgn', 'zAgn_var', 'sigma_zAgn_var',\
         'yAgn', 'sigma_yAgn', 'yAgn_var', 'sigma_yAgn_var', 'varParamStr']
+    defSedName = "sed_flat.txt"
+    default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,
+                       ('sedFilenameAgn', defSedName, (str, len(defSedName))),
+                       ('sedFilenameBulge', defSedName, (str, len(defSedName))),
+                       ('sedFilenameDisk', defSedName, (str, len(defSedName))),
+                       ('glon', 210., float),
+                       ('glat', 70., float),
+                      ]
 
+    def get_internalAvDisk(self):
+        return numpy.ones(len(self._current_chunk))*0.1
+
+    def get_internalAvBulge(self):
+        return numpy.ones(len(self._current_chunk))*0.1
+
+    def get_galid(self):
+        return self.column_by_name('id')
 
 class variabilityUnitTest(unittest.TestCase):
 
-    galaxy = DBObject.from_objid('galaxyBase')
-    rrly = DBObject.from_objid('rrly')
-    obsMD = DBObject.from_objid('opsim3_61')
-    obs_metadata = obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds = True)
-    
-    def testGalaxyVariability(self):   
-                
-        galcat = testCatalog(self.galaxy,obs_metadata = self.obs_metadata)
-        rows = self.galaxy.query_columns(['varParamStr'], constraint = 'VarParamStr is not NULL',chunk_size=20)
-        rows = rows.next()
-        for i in range(20):
-            #print "i ",i
-            mags=galcat.applyVariability(rows[i]['varParamStr'])
-            #print mags
+    def setUp(self):
+        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.galaxy = myTestGals()
+        self.star = myTestStars()
 
-    def testRRlyVariability(self):
-        rrlycat = testCatalog(self.rrly,obs_metadata = self.obs_metadata)
-        rows = self.rrly.query_columns(['varParamStr'], constraint = 'VarParamStr is not NULL',chunk_size=20)
-        rows = rows.next()
-        for i in range(20):
-            mags=rrlycat.applyVariability(rows[i]['varParamStr'])
+    def tearDown(self):
+        del self.galaxy
+        del self.star
+        del self.obs_metadata
+
+    def testGalaxyVariability(self):
+
+        galcat = testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
+        results = self.galaxy.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, constraint='VarParamStr is not NULL')
+        result = getOneChunk(results)
+        for row in result:
+            mags=galcat.applyVariability(row['varParamStr'])
+
+    def testStarVariability(self):
+        starcat = testStars(self.star, obs_metadata=self.obs_metadata)
+        results = self.star.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, constraint='VarParamStr is not NULL')
+        result = getOneChunk(results)
+        for row in result:
+            mags=starcat.applyVariability(row['varParamStr'])
 
 class photometryUnitTest(unittest.TestCase):
-       
+    def setUp(self):
+        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.galaxy = myTestGals()
+        self.star = myTestStars()
+
+    def tearDown(self):
+        del self.galaxy
+        del self.star
+        del self.obs_metadata
+
     def testStars(self):
-        """
-        Try to generate a write an instance catalog of RRLyrae stars
-        """
-        
-        dbObj=DBObject.from_objid('rrly') # the data base from which objects will be drawn for the catalog
-        
-        #generate the metadate describing the observation
-        obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i' #the filter in which the normalizing magnitude 
-                                                            #resides
-        
-        
-        test_cat=testStars(dbObj,obs_metadata=obs_metadata_pointed)
+        test_cat=testStars(self.star, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testStarsOutput.txt")
-    
+        results = self.star.query_columns(obs_metadata=self.obs_metadata)
+        result = getOneChunk(results)
+
+
+    def testGalaxies(self):
+        test_cat=testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
+        test_cat.write_catalog("testGalaxiesOutput.txt")
+        results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
+        result = getOneChunk(results)
+
     def testAlternateBandpassesStars(self):
         """
         This will test our ability to do photometry using non-LSST bandpasses.
@@ -311,7 +357,7 @@ class photometryUnitTest(unittest.TestCase):
         LSST bandpasses.
         """
         
-        dbObj=DBObject.from_objid('rrly')
+        dbObj=DBObject.from_objid('rrlystars')
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
@@ -341,20 +387,6 @@ class photometryUnitTest(unittest.TestCase):
                 self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
             i += 1
     
-    
-    def testGalaxies(self):
-        """
-        Attempt to generate and write an instance catalog of galaxies
-        """
-        
-        dbObj=DBObject.from_objid('galaxyBase')
-        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-
-        test_cat=testGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
-        test_cat.write_catalog("testGalaxiesOutput.txt")
-
     def testAlternateBandpassesGalaxies(self):
         """
         the same as testAlternateBandpassesStars, but for galaxies
@@ -395,12 +427,13 @@ class photometryUnitTest(unittest.TestCase):
                 i += 1
  
 
-     
+    
 def suite():
     utilsTests.init()
     suites = []
     #suites += unittest.makeSuite(variabilityUnitTest)
     suites += unittest.makeSuite(photometryUnitTest)
+    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 
 def run(shouldExit = False):
