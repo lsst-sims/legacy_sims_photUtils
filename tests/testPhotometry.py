@@ -16,6 +16,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVmixin
 
+
 from lsst.sims.catUtils.baseCatalogModels import *
 
 from lsst.sims.photUtils.Variability import Variability
@@ -217,12 +218,31 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     
     sedMasterList = []
     magnitudeMasterList = []
-    
+
+    defSedName = 'km30_5250.fits_g00_5370'
+    default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float), 
+                       ('glat', 30., float)]
+
+   
 
 class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
     catalog_type = 'cartoonGalaxies'
     column_outputs=['galid','raObserved','decObserved',\
     'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
+
+    defSedName = "Inst.80E09.25Z.spec"
+    default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,
+                       ('sedFilenameAgn', defSedName, (str, len(defSedName))),
+                       ('sedFilenameBulge', defSedName, (str, len(defSedName))),
+                       ('sedFilenameDisk', defSedName, (str, len(defSedName))),
+                       ('glon', 210., float),
+                       ('glat', 70., float),
+                       ('internalAvBulge',3.1,float),
+                       ('internalAvDisk',3.1,float),
+                       ('galid','id',str)
+                      ]
+
+
     
     #the dicts below will contain the SED objects and the magnitudes
     #in a form that unittest can access and validate
@@ -250,7 +270,7 @@ class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefa
     'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
     'EBV','varParamStr']
     defSedName = 'sed_flat.txt'
-    default_columns = [('sedFilename', defSedName, (str, len(defSedName))), ('glon', 180., float), 
+    default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float), 
                        ('glat', 30., float)]
 
 class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
@@ -357,11 +377,10 @@ class photometryUnitTest(unittest.TestCase):
         LSST bandpasses.
         """
         
-        dbObj=DBObject.from_objid('rrlystars')
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-        test_cat=cartoonStars(dbObj,obs_metadata=obs_metadata_pointed)
+        test_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testStarsCartoon.txt")
         
         cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
@@ -392,11 +411,10 @@ class photometryUnitTest(unittest.TestCase):
         the same as testAlternateBandpassesStars, but for galaxies
         """
         
-        dbObj=DBObject.from_objid('galaxyBase')
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
-        test_cat=cartoonGalaxies(dbObj,obs_metadata=obs_metadata_pointed)
+        test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testGalaxiesCartoon.txt")
         
         cartoonDir = os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
