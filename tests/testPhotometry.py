@@ -458,7 +458,7 @@ class photometryUnitTest(unittest.TestCase):
 def suite():
     utilsTests.init()
     suites = []
-    #suites += unittest.makeSuite(variabilityUnitTest)
+    suites += unittest.makeSuite(variabilityUnitTest)
     suites += unittest.makeSuite(photometryUnitTest)
     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
