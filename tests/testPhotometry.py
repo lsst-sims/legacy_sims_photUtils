@@ -4,9 +4,8 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class
+from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
@@ -218,7 +217,8 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     
     sedMasterList = []
     magnitudeMasterList = []
-
+    
+    #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = 'km30_5250.fits_g00_5370'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float), 
                        ('glat', 30., float)]
@@ -229,7 +229,8 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
     catalog_type = 'cartoonGalaxies'
     column_outputs=['galid','raObserved','decObserved',\
     'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
-
+    
+    #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = "Inst.80E09.25Z.spec"
     default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,
                        ('sedFilenameAgn', defSedName, (str, len(defSedName))),
@@ -317,7 +318,8 @@ class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,tes
 class variabilityUnitTest(unittest.TestCase):
 
     def setUp(self):
-        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
+                            circ_bounds=dict(ra=200., dec=-30, radius=1.))
         self.galaxy = myTestGals()
         self.star = myTestStars()
 
@@ -329,21 +331,24 @@ class variabilityUnitTest(unittest.TestCase):
     def testGalaxyVariability(self):
 
         galcat = testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
-        results = self.galaxy.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, constraint='VarParamStr is not NULL')
+        results = self.galaxy.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, 
+                                             constraint='VarParamStr is not NULL')
         result = getOneChunk(results)
         for row in result:
             mags=galcat.applyVariability(row['varParamStr'])
 
     def testStarVariability(self):
         starcat = testStars(self.star, obs_metadata=self.obs_metadata)
-        results = self.star.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, constraint='VarParamStr is not NULL')
+        results = self.star.query_columns(['varParamStr'], obs_metadata=self.obs_metadata, 
+                                         constraint='VarParamStr is not NULL')
         result = getOneChunk(results)
         for row in result:
             mags=starcat.applyVariability(row['varParamStr'])
 
 class photometryUnitTest(unittest.TestCase):
     def setUp(self):
-        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
+                                                circ_bounds=dict(ra=200., dec=-30, radius=1.))
         self.galaxy = myTestGals()
         self.star = myTestStars()
 
@@ -398,13 +403,18 @@ class photometryUnitTest(unittest.TestCase):
         phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
 
         i = 0
-        for ss in test_cat.sedMasterList:
-            ss.resampleSED(wavelen_match = bplist[0].wavelen)
-            ss.flambdaTofnu()
-            mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
-            for j in range(len(mags)):
-                self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
-            i += 1
+        
+        #since all of the SEDs in the cartoon database are the same, just test on the first
+        #if we ever include more SEDs, this can be somethin like
+        #for ss in test_cata.sedMasterList:
+        #
+        ss=test_cat.sedMasterList[0]
+        ss.resampleSED(wavelen_match = bplist[0].wavelen)
+        ss.flambdaTofnu()
+        mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+        for j in range(len(mags)):
+            self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
+        i += 1
     
     def testAlternateBandpassesGalaxies(self):
         """
@@ -435,6 +445,7 @@ class photometryUnitTest(unittest.TestCase):
         
         for cc in components:
             i = 0
+            
             for ss in test_cat.sedMasterDict[cc]:
                 if ss.wavelen != None:
                     ss.resampleSED(wavelen_match = bplist[0].wavelen)
@@ -444,8 +455,6 @@ class photometryUnitTest(unittest.TestCase):
                         self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
                 i += 1
  
-
-    
 def suite():
     utilsTests.init()
     suites = []
