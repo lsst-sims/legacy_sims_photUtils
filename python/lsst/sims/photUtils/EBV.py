@@ -227,40 +227,48 @@ class EBVbase(object):
         
         """
         
+        #raise an error if the coordinates are only partially specified
         if (gLon == None and gLat != None) or \
            (gLat == None and gLon != None) or \
            (ra == None and dec != None) or \
            (dec == None and ra != None):
            
            if gLon == None:
-               print "gLon is None\n"
+               print "gLon is None"
            else:
-               print "gLon is not None\n"
+               print "gLon is not None"
            
            if gLat == None:
-               print "gLat is None\n"
+               print "gLat is None"
            else:
-               print "gLat is not None\n"
+               print "gLat is not None"
            
            if ra == None:
-               print "ra is None\n"
+               print "ra is None"
            else:
-               print "ra is not None\n"
+               print "ra is not None"
            
            if dec == None:
-               print "dec is None\n"
+               print "dec is None"
            else:
-               print "dec is not None\n"
+               print "dec is not None"
            
            raise RuntimeError("Inconsistent coordinates given to calculateEbv")  
-           
+         
         
+        #raise an error if the coordinates are specified in both systems 
+        if gLon != None and gLat != None:
+            if ra !=None or dec != None:
+                raise RuntimeError("Specified both (gLon, gLat) and (ra, dec) in calculateEbv")        
+        
+        #convert (ra,dec) into gLon, gLat
         if gLon==None and gLat==None:
-            if ra==None or dec==None:
-               raise RuntimeError("Must specify some coordinate system in calculateEbv")
-            
-            gLon, gLat = AstrometryBase.equatorialToGalactic(ra,dec)
         
+            #raise an error if you already specified ra or dec
+            if ra==None or dec==None:
+               raise RuntimeError("Must specify coordinates in calculateEbv")
+
+            gLon, gLat = AstrometryBase.equatorialToGalactic(ra,dec)
         
         if northMap == None:
             if self.ebvMapNorth == None:

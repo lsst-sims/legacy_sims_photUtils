@@ -177,11 +177,28 @@ class photometryUnitTest(unittest.TestCase):
         ebvObject = EBVbase()
         ra = []
         dec = []
+        gLat = []
+        gLon = []
         for i in range(10):
             ra.append(i*2.0*numpy.pi/10.0)
             dec.append(i*numpy.pi/10.0)
+            
+            gLat.append(-0.5*numpy.pi+i*numpy.pi/10.0)
+            gLon.append(i*2.0*numpy.pi/10.0)
         
         ebvOutput = ebvObject.calculateEbv(ra=ra, dec=dec)
+        ebvOutput = ebvObject.calculateEbv(gLon=gLon, gLat=gLat)
+        
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=None)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=None, dec=dec)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, gLat=gLat, gLon=None)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, gLat=None, gLon=gLon)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=dec, gLon=gLon, gLat=gLat)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=dec, gLon=gLon)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=dec, gLat=gLat)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, gLon=gLon, gLat=gLat)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, dec=dec, gLon=gLon, gLat=gLat)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv)
      
 def suite():
     utilsTests.init()
