@@ -9,7 +9,7 @@ from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
 from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
-from lsst.sims.photUtils.EBV import EBVmixin
+from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 
 from lsst.sims.photUtils.Variability import Variability
 
@@ -171,6 +171,17 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog("testGalaxiesOutput.txt")
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
+    
+    def testEBV(self):
+        
+        ebvObject = EBVbase()
+        ra = []
+        dec = []
+        for i in range(10):
+            ra.append(i*2.0*numpy.pi/10.0)
+            dec.append(i*numpy.pi/10.0)
+        
+        ebvOutput = ebvObject.calculateEbv(ra=ra, dec=dec)
      
 def suite():
     utilsTests.init()
