@@ -156,7 +156,7 @@ class EbvMap(object):
 
 
 
-class EBVmixin(object):
+class EBVbase(object):
     """
     This mixin allows a catalog object to calculate EBV extinction values.
     
@@ -201,7 +201,7 @@ class EBVmixin(object):
         self.ebvMapSouth=EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
-    def calculateEbv(self, gLon, gLat, northMap, southMap, interp=False):
+    def calculateEbv(self, gLon, gLat, northMap=None, southMap=None, interp=False):
         """ 
         For an array of Gal long, lat calculate E(B-V)
         
@@ -220,6 +220,18 @@ class EBVmixin(object):
         
         """
         
+        if northMap == None:
+            if self.ebvMapNorth == None:
+                self.load_ebvMapNorth()
+            
+            northMap = self.ebvMapNorth
+        
+        if southMap == None:
+            if self.ebvMapSouth == None:
+                self.load_ebvMapSouth()
+            
+            southMap = self.ebvMapSouth
+        
         ebv=[]
         for lon,lat in zip(gLon,gLat):
             if (lat <= 0.):
@@ -229,22 +241,19 @@ class EBVmixin(object):
 
         return numpy.asarray(ebv)
 
+
+class EBVmixin(EBVbase):
     
     #and finally, here is the getter
     def get_EBV(self):
         """
         Getter for the InstanceCatalog framework
         """
-        if self.ebvMapNorth==None:
-            self.load_ebvMapNorth()
-        
-        if self.ebvMapSouth==None:
-            self.load_ebvMapSouth()
-        
+
         glon=self.column_by_name('glon')
         glat=self.column_by_name('glat')
         
-        EBV_out=numpy.array(self.calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
+        EBV_out=numpy.array(self.calculateEbv(glon,glat,interp=True))
         return EBV_out
         
     def get_galacticRv(self):
