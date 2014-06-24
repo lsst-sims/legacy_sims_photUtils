@@ -3,6 +3,8 @@ import math
 import numpy
 import os
 
+from lsst.sims.coordUtils import AstrometryBase
+
 #scott's notes to self
 #mixin could have a method by which user sets data dir and dust map file 
 #(see main() below)
@@ -201,7 +203,8 @@ class EBVbase(object):
         self.ebvMapSouth=EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
-    def calculateEbv(self, gLon, gLat, northMap=None, southMap=None, interp=False):
+    def calculateEbv(self, gLon=None, gLat=None, ra=None, dec=None, northMap=None, southMap=None, 
+                     interp=False):
         """ 
         For an array of Gal long, lat calculate E(B-V)
         
@@ -209,6 +212,10 @@ class EBVbase(object):
         @param [in] gLon galactic longitude in radians
         
         @param [in] gLat galactic latitude in radians
+        
+        @param [in] ra right ascension in radians
+        
+        @param [in] dec declination in radians
         
         @param [in] northMap the northern dust map
         
@@ -219,6 +226,41 @@ class EBVbase(object):
         @param [out] ebv is a list of EBV values for all of the gLon, gLat pairs
         
         """
+        
+        if (gLon == None and gLat != None) or \
+           (gLat == None and gLon != None) or \
+           (ra == None and dec != None) or \
+           (dec == None and ra != None):
+           
+           if gLon == None:
+               print "gLon is None\n"
+           else:
+               print "gLon is not None\n"
+           
+           if gLat == None:
+               print "gLat is None\n"
+           else:
+               print "gLat is not None\n"
+           
+           if ra == None:
+               print "ra is None\n"
+           else:
+               print "ra is not None\n"
+           
+           if dec == None:
+               print "dec is None\n"
+           else:
+               print "dec is not None\n"
+           
+           raise RuntimeError("Inconsistent coordinates given to calculateEbv")  
+           
+        
+        if gLon==None and gLat==None:
+            if ra==None or dec==None:
+               raise RuntimeError("Must specify some coordinate system in calculateEbv")
+            
+            gLon, gLat = AstrometryBase.equatorialToGalactic(ra,dec)
+        
         
         if northMap == None:
             if self.ebvMapNorth == None:
@@ -253,7 +295,7 @@ class EBVmixin(EBVbase):
         glon=self.column_by_name('glon')
         glat=self.column_by_name('glat')
         
-        EBV_out=numpy.array(self.calculateEbv(glon,glat,interp=True))
+        EBV_out=numpy.array(self.calculateEbv(gLon=glon,gLat=glat,interp=True))
         return EBV_out
         
     def get_galacticRv(self):
