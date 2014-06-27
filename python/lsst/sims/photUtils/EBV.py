@@ -160,7 +160,23 @@ class EbvMap(object):
 
 class EBVbase(object):
     """
-    This mixin allows a catalog object to calculate EBV extinction values.
+    This class will give users access to calculateEbv oustide of the framework of a catalog.
+    
+    To find the value of EBV at a point on the sky, create an instance of this object, and
+    then call calculateEbv passing the coordinates of interest as kwargs
+    
+    e.g.
+    
+    ebvObject = EBVbase()
+    ebvValue = ebvObject(gLon = myLonValue, gLat = myLatValue)
+    
+    or 
+    
+    ebvValue = ebvObject(ra = myRA, dec = myDec)
+    
+    You can also specify dust maps in the northern and southern galactic hemispheres, but
+    there are default values that the code will automatically load (see the class variables
+    below).
     
     The information regarding where the dust maps are located is stored in
     member variables ebvDataDir, ebvMapNorthName, ebvMapSouthName
@@ -228,27 +244,27 @@ class EBVbase(object):
         """
         
         #raise an error if the coordinates are only partially specified
-        if (gLon == None and gLat != None) or \
-           (gLat == None and gLon != None) or \
-           (ra == None and dec != None) or \
-           (dec == None and ra != None):
+        if (gLon is None and gLat is not None) or \
+           (gLat is None and gLon is not None) or \
+           (ra is None and dec is not None) or \
+           (dec is None and ra is not None):
            
-           if gLon == None:
+           if gLon is None:
                print "gLon is None"
            else:
                print "gLon is not None"
            
-           if gLat == None:
+           if gLat is None:
                print "gLat is None"
            else:
                print "gLat is not None"
            
-           if ra == None:
+           if ra is None:
                print "ra is None"
            else:
                print "ra is not None"
            
-           if dec == None:
+           if dec is None:
                print "dec is None"
            else:
                print "dec is not None"
@@ -257,27 +273,27 @@ class EBVbase(object):
          
         
         #raise an error if the coordinates are specified in both systems 
-        if gLon != None and gLat != None:
-            if ra !=None or dec != None:
+        if gLon is not None and gLat is not None:
+            if ra is not None or dec is not None:
                 raise RuntimeError("Specified both (gLon, gLat) and (ra, dec) in calculateEbv")        
         
         #convert (ra,dec) into gLon, gLat
-        if gLon==None and gLat==None:
+        if gLon is None and gLat is None:
         
             #raise an error if you already specified ra or dec
-            if ra==None or dec==None:
+            if ra is None or dec is None:
                raise RuntimeError("Must specify coordinates in calculateEbv")
 
             gLon, gLat = AstrometryBase.equatorialToGalactic(ra,dec)
         
-        if northMap == None:
-            if self.ebvMapNorth == None:
+        if northMap is None:
+            if self.ebvMapNorth is None:
                 self.load_ebvMapNorth()
             
             northMap = self.ebvMapNorth
         
-        if southMap == None:
-            if self.ebvMapSouth == None:
+        if southMap is None:
+            if self.ebvMapSouth is None:
                 self.load_ebvMapSouth()
             
             southMap = self.ebvMapSouth
@@ -293,6 +309,11 @@ class EBVbase(object):
 
 
 class EBVmixin(EBVbase):
+    """
+    This mixin class contains the getters which a catalog object will use to call
+    calculateEbv in the EBVbase class
+    """
+    
     
     #and finally, here is the getter
     def get_EBV(self):
