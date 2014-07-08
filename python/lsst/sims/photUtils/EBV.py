@@ -3,6 +3,8 @@ import math
 import numpy
 import os
 
+from lsst.sims.coordUtils import AstrometryBase
+
 #scott's notes to self
 #mixin could have a method by which user sets data dir and dust map file 
 #(see main() below)
@@ -156,9 +158,25 @@ class EbvMap(object):
 
 
 
-class EBVmixin(object):
+class EBVbase(object):
     """
-    This mixin allows a catalog object to calculate EBV extinction values.
+    This class will give users access to calculateEbv oustide of the framework of a catalog.
+    
+    To find the value of EBV at a point on the sky, create an instance of this object, and
+    then call calculateEbv passing the coordinates of interest as kwargs
+    
+    e.g.
+    
+    ebvObject = EBVbase()
+    ebvValue = ebvObject(gLon = myLonValue, gLat = myLatValue)
+    
+    or 
+    
+    ebvValue = ebvObject(ra = myRA, dec = myDec)
+    
+    You can also specify dust maps in the northern and southern galactic hemispheres, but
+    there are default values that the code will automatically load (see the class variables
+    below).
     
     The information regarding where the dust maps are located is stored in
     member variables ebvDataDir, ebvMapNorthName, ebvMapSouthName
@@ -201,7 +219,8 @@ class EBVmixin(object):
         self.ebvMapSouth=EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
-    def calculateEbv(self, gLon, gLat, northMap, southMap, interp=False):
+    def calculateEbv(self, gLon=None, gLat=None, ra=None, dec=None, northMap=None, southMap=None, 
+                     interp=False):
         """ 
         For an array of Gal long, lat calculate E(B-V)
         
@@ -209,6 +228,10 @@ class EBVmixin(object):
         @param [in] gLon galactic longitude in radians
         
         @param [in] gLat galactic latitude in radians
+        
+        @param [in] ra right ascension in radians
+        
+        @param [in] dec declination in radians
         
         @param [in] northMap the northern dust map
         
@@ -220,6 +243,61 @@ class EBVmixin(object):
         
         """
         
+        #raise an error if the coordinates are only partially specified
+        if (gLon is None and gLat is not None) or \
+           (gLat is None and gLon is not None) or \
+           (ra is None and dec is not None) or \
+           (dec is None and ra is not None):
+           
+           if gLon is None:
+               print "gLon is None"
+           else:
+               print "gLon is not None"
+           
+           if gLat is None:
+               print "gLat is None"
+           else:
+               print "gLat is not None"
+           
+           if ra is None:
+               print "ra is None"
+           else:
+               print "ra is not None"
+           
+           if dec is None:
+               print "dec is None"
+           else:
+               print "dec is not None"
+           
+           raise RuntimeError("Inconsistent coordinates given to calculateEbv")  
+         
+        
+        #raise an error if the coordinates are specified in both systems 
+        if gLon is not None and gLat is not None:
+            if ra is not None or dec is not None:
+                raise RuntimeError("Specified both (gLon, gLat) and (ra, dec) in calculateEbv")        
+        
+        #convert (ra,dec) into gLon, gLat
+        if gLon is None and gLat is None:
+        
+            #raise an error if you already specified ra or dec
+            if ra is None or dec is None:
+               raise RuntimeError("Must specify coordinates in calculateEbv")
+
+            gLon, gLat = AstrometryBase.equatorialToGalactic(ra,dec)
+        
+        if northMap is None:
+            if self.ebvMapNorth is None:
+                self.load_ebvMapNorth()
+            
+            northMap = self.ebvMapNorth
+        
+        if southMap is None:
+            if self.ebvMapSouth is None:
+                self.load_ebvMapSouth()
+            
+            southMap = self.ebvMapSouth
+        
         ebv=[]
         for lon,lat in zip(gLon,gLat):
             if (lat <= 0.):
@@ -229,22 +307,24 @@ class EBVmixin(object):
 
         return numpy.asarray(ebv)
 
+
+class EBVmixin(EBVbase):
+    """
+    This mixin class contains the getters which a catalog object will use to call
+    calculateEbv in the EBVbase class
+    """
+    
     
     #and finally, here is the getter
     def get_EBV(self):
         """
         Getter for the InstanceCatalog framework
         """
-        if self.ebvMapNorth==None:
-            self.load_ebvMapNorth()
-        
-        if self.ebvMapSouth==None:
-            self.load_ebvMapSouth()
-        
+
         glon=self.column_by_name('glon')
         glat=self.column_by_name('glat')
         
-        EBV_out=numpy.array(self.calculateEbv(glon,glat,self.ebvMapNorth,self.ebvMapSouth,interp=True))
+        EBV_out=numpy.array(self.calculateEbv(gLon=glon,gLat=glat,interp=True))
         return EBV_out
         
     def get_galacticRv(self):
