@@ -15,6 +15,9 @@ class selectStarSED():
     This class provides a way to match incoming star colors to those of the approriate SED.
 
     In addition, provides ways to load in SED colors.
+
+    Can easily be used for bandpasses other than sdss by redefining self.filterList, 
+    self.bandpassDict, self.phiArray self.wavelenstep before using other methods after initalizing.
     """
 
     def __init__(self):
@@ -33,14 +36,16 @@ class selectStarSED():
         self.mltDir = str(self.sEDDir + '/' + specMapDict['mlt'] + '/')
         self.wdDir = str(self.sEDDir + '/' + specMapDict['wd'] + '/')
 
-        #Load Bandpasses for SDSS colors to match to galfast output
-        sdssPhot = phot()
-        self.sdssFilterList = ('u', 'g', 'r', 'i', 'z')
-        self.sdssBandpassDict = sdssPhot.loadBandpasses(filterlist=self.sdssFilterList, 
-                                                        dataDir = os.getenv("SDSS_THROUGHPUTS"), 
-                                                        filterroot='sdss_')
-        self.sdssPhiArray, self.sdssWavelenstep = sdssPhot.setupPhiArray_dict(self.sdssBandpassDict, 
-                                                                              self.sdssFilterList)
+        #Load Bandpasses for SDSS colors to match to galfast output.
+        #If somebody wants to use this with bandpasses other than sdss all they have to do is redefine
+        #self.filterList, self.bandpassDict, self.phiArray self.wavelenstep before using other methods
+        starPhot = phot()
+        self.filterList = ('u', 'g', 'r', 'i', 'z')
+        self.bandpassDict = starPhot.loadBandpasses(filterlist=self.filterList, 
+                                                    dataDir = os.getenv("SDSS_THROUGHPUTS"), 
+                                                    filterroot='sdss_')
+        self.phiArray, self.wavelenstep = starPhot.setupPhiArray_dict(self.bandpassDict, 
+                                                                      self.filterList)
 
         #Load Bandpasses for LSST colors to get colors from matched SEDs
         lsstPhot = phot()
@@ -74,7 +79,8 @@ class selectStarSED():
                 files.append(fileName)
         
         kFiles = []; klogZ = []; kTemp = []; klogg = []
-        kmagu = []; kumg = []; kgmr = []; krmi = []; kimz = []
+        kumg = []; kgmr = []; krmi = []; kimz = []; krMag = {}
+        lsstumg = {}; lsstgmr = {}; lsstrmi = {}; lsstimz = {}; lsstzmy = {}; lsstrMag = {}
         numFiles = len(files)
         numOn = 0
 
@@ -98,15 +104,26 @@ class selectStarSED():
                 fileSED.temp = float(fineTemp)
                 
                 sEDPhotometry = phot()
-                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.sdssPhiArray, 
-                                                            self.sdssWavelenstep, self.sdssBandpassDict, 
-                                                            self.sdssFilterList)
+                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.phiArray, 
+                                                            self.wavelenstep, self.bandpassDict, 
+                                                            self.filterList)
+                lsstSedMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.lsstPhiArray,
+                                                                self.lsstWavelenstep, 
+                                                                self.lsstBandpassDict,
+                                                                self.lsstFilterList)
                 
                 kFiles.append(fileName)
                 kumg.append(sEDMagDict['u']-sEDMagDict['g']) #Calculate colors for SED matching
                 kgmr.append(sEDMagDict['g']-sEDMagDict['r'])
                 krmi.append(sEDMagDict['r']-sEDMagDict['i'])
                 kimz.append(sEDMagDict['i']-sEDMagDict['z'])
+                lsstumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g']) #lsst for catalog entry
+                lsstgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
+                lsstrmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
+                lsstimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
+                lsstzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
+                krMag[fileName] = sEDMagDict['r']
+                lsstrMag[fileName] = lsstSedMagDict['r']
                 klogZ.append(fileSED.logZ)
                 klogg.append(fileSED.logg)
                 kTemp.append(fileSED.temp)
@@ -121,6 +138,13 @@ class selectStarSED():
         kDict['gmr'] = kgmr
         kDict['rmi'] = krmi
         kDict['imz'] = kimz
+        kDict['lsstumg'] = lsstumg
+        kDict['lsstgmr'] = lsstgmr
+        kDict['lsstrmi'] = lsstrmi
+        kDict['lsstimz'] = lsstimz
+        kDict['lsstzmy'] = lsstzmy
+        kDict['rMags'] = krMag
+        kDict['lsstrMags'] = lsstrMag
         kDict['logZ'] = klogZ
         kDict['logg'] = klogg
         kDict['temp'] = kTemp
@@ -152,7 +176,8 @@ class selectStarSED():
                 files.append(fileName)
         
         mltFiles = [] 
-        mltumg = []; mltgmr = []; mltrmi = []; mltimz = []
+        mltumg = []; mltgmr = []; mltrmi = []; mltimz = []; mrMag = {}
+        lsstumg = {}; lsstgmr = {}; lsstrmi = {}; lsstimz = {}; lsstzmy = {}; lsstrMag = {}
         numFiles = len(files)
         numOn = 0
 
@@ -165,14 +190,24 @@ class selectStarSED():
                 fileSED.readSED_flambda(str(self.mltDir + fileName))
                 
                 sEDPhotometry = phot()
-                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.sdssPhiArray, self.sdssWavelenstep,
-                                                            self.sdssBandpassDict, self.sdssFilterList)
+                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.phiArray, self.wavelenstep,
+                                                            self.bandpassDict, self.filterList)
+                lsstSedMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.lsstPhiArray,
+                                                                self.lsstWavelenstep,
+                                                                self.lsstBandpassDict, self.lsstFilterList)
 
                 mltFiles.append(fileName)
                 mltumg.append(sEDMagDict['u']-sEDMagDict['g'])
                 mltgmr.append(sEDMagDict['g']-sEDMagDict['r'])
                 mltrmi.append(sEDMagDict['r']-sEDMagDict['i'])
                 mltimz.append(sEDMagDict['i']-sEDMagDict['z'])
+                lsstumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g']) #lsst for catalog entry
+                lsstgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
+                lsstrmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
+                lsstimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
+                lsstzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
+                mrMag[fileName] = sEDMagDict['r']
+                lsstrMag[fileName] = lsstSedMagDict['r']
                 
                 numOn += 1
             
@@ -184,6 +219,13 @@ class selectStarSED():
         mltDict['gmr'] = mltgmr
         mltDict['rmi'] = mltrmi
         mltDict['imz'] = mltimz
+        mltDict['lsstumg'] = lsstumg
+        mltDict['lsstgmr'] = lsstgmr
+        mltDict['lsstrmi'] = lsstrmi
+        mltDict['lsstimz'] = lsstimz
+        mltDict['lsstzmy'] = lsstzmy
+        mltDict['rMags'] = mrMag
+        mltDict['lsstrMags'] = lsstrMag
         
         return mltDict
 
@@ -213,10 +255,12 @@ class selectStarSED():
                 files.append(fileName)
         
         wdFiles = []; wdHEFiles = [] 
-        wdumg = []; wdHEumg = []
-        wdgmr = []; wdHEgmr = []
-        wdrmi = []; wdHErmi = [] 
-        wdimz = []; wdHEimz = []
+        wdumg = []; wdHEumg = []; lsstumg = {}; lsstHEumg = {}
+        wdgmr = []; wdHEgmr = []; lsstgmr = {}; lsstHEgmr = {}
+        wdrmi = []; wdHErmi = []; lsstrmi = {}; lsstHErmi = {}
+        wdimz = []; wdHEimz = []; lsstimz = {}; lsstHEimz = {}
+        lsstzmy = {}; lsstHEzmy = {}
+        wdrMag = {}; wdHErMag = {}; wdlsstrMag = {}; wdHElsstrMag = {}
         numFiles = len(files)
         numOn = 0
 
@@ -229,8 +273,11 @@ class selectStarSED():
                 fileSED.readSED_flambda(str(self.wdDir + fileName))
                 
                 sEDPhotometry = phot()
-                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.sdssPhiArray, self.sdssWavelenstep,
-                                                        self.sdssBandpassDict, self.sdssFilterList)
+                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.phiArray, self.wavelenstep,
+                                                        self.bandpassDict, self.filterList)
+                lsstSedMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.lsstPhiArray,
+                                                                self.lsstWavelenstep,
+                                                                self.lsstBandpassDict, self.lsstFilterList)
 
                 if fileName.split("_")[1] == 'He':    
                     wdHEFiles.append(fileName)
@@ -238,12 +285,26 @@ class selectStarSED():
                     wdHEgmr.append(sEDMagDict['g']-sEDMagDict['r'])
                     wdHErmi.append(sEDMagDict['r']-sEDMagDict['i'])
                     wdHEimz.append(sEDMagDict['i']-sEDMagDict['z'])
+                    lsstHEumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g']) 
+                    lsstHEgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
+                    lsstHErmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
+                    lsstHEimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
+                    lsstHEzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
+                    wdHErMag[fileName] = sEDMagDict['r']
+                    wdHElsstrMag[fileName] = lsstSedMagDict['r']
                 else:
                     wdFiles.append(fileName)
                     wdumg.append(sEDMagDict['u']-sEDMagDict['g'])
                     wdgmr.append(sEDMagDict['g']-sEDMagDict['r'])
                     wdrmi.append(sEDMagDict['r']-sEDMagDict['i'])
                     wdimz.append(sEDMagDict['i']-sEDMagDict['z'])
+                    lsstumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g'])
+                    lsstgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
+                    lsstrmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
+                    lsstimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
+                    lsstzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
+                    wdrMag[fileName] = sEDMagDict['r']
+                    wdlsstrMag[fileName] = lsstSedMagDict['r']
                     
                 numOn += 1
 
@@ -255,6 +316,13 @@ class selectStarSED():
         wdDict['gmr'] = wdgmr; wdHEDict['gmr'] = wdHEgmr
         wdDict['rmi'] = wdrmi; wdHEDict['rmi'] = wdHErmi
         wdDict['imz'] = wdimz; wdHEDict['imz'] = wdHEimz
+        wdDict['lsstumg'] = lsstumg; wdHEDict['lsstumg'] = lsstHEumg
+        wdDict['lsstgmr'] = lsstgmr; wdHEDict['lsstgmr'] = lsstHEgmr
+        wdDict['lsstrmi'] = lsstrmi; wdHEDict['lsstrmi'] = lsstHErmi
+        wdDict['lsstimz'] = lsstimz; wdHEDict['lsstimz'] = lsstHEimz
+        wdDict['lsstzmy'] = lsstzmy; wdHEDict['lsstzmy'] = lsstHEzmy
+        wdDict['rMags'] = wdrMag; wdHEDict['rMags'] = wdHErMag
+        wdDict['lsstrMags'] = wdlsstrMag; wdHEDict['lsstrMags'] = wdHElsstrMag
 
         wdAllDict['H'] = wdDict
         wdAllDict['HE'] = wdHEDict
@@ -319,7 +387,7 @@ class selectStarSED():
         depending on which types you are inputting and will determine which it is based upon its 
         galfast component value
 
-        @param[in] sEDDict is a dictionary from the load(type) routines that are a part of this class
+        @param [in] sEDDict is a dictionary from the load(type) routines that are a part of this class
 
         @param [in] magU is the U-band magnitude from galfast output
 
