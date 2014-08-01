@@ -64,7 +64,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.sdssBandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
         #Give kurucz like filename just so it works
         testName = 'km99_9999.fits_g99_9999'
         testSED.writeSED(testName)
@@ -105,7 +105,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.sdssBandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
         #Give mlt like filename just so it works
         testName = 'm99.99Full.dat'
         testSED.writeSED(testName)
@@ -165,7 +165,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.sdssBandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
         #Give WD like filename just so it works
         testName = 'bergeron_9999_99.dat_9999'
         testNameHe = 'bergeron_He_9999_99.dat_9999'
@@ -247,12 +247,12 @@ class TestSelectStarSED(unittest.TestCase):
             testSEDName = testSubsetList[testSEDNum].strip('.gz')
             getSEDColors.readSED_flambda(str(testMatching.sEDDir + '/' + 
                                              str(specMap.__getitem__(testSEDName))))
-            getSEDColors.multiplyFluxNorm(getSEDColors.calcFluxNorm(10, testMatching.sdssBandpassDict['r']))
+            getSEDColors.multiplyFluxNorm(getSEDColors.calcFluxNorm(10, testMatching.bandpassDict['r']))
             testSEDPhotometry = phot()
-            testMagDict = testSEDPhotometry.manyMagCalc_dict(getSEDColors, testMatching.sdssPhiArray, 
-                                                             testMatching.sdssWavelenstep, 
-                                                             testMatching.sdssBandpassDict, 
-                                                             testMatching.sdssFilterList)
+            testMagDict = testSEDPhotometry.manyMagCalc_dict(getSEDColors, testMatching.phiArray, 
+                                                             testMatching.wavelenstep, 
+                                                             testMatching.bandpassDict, 
+                                                             testMatching.filterList)
 
             #First test without reddening
             testOutputName.append(testMatching.findSED(testMatchingDict, testMagDict['u'], testMagDict['g'], 
@@ -263,7 +263,7 @@ class TestSelectStarSED(unittest.TestCase):
             reddenCoeffs = np.array([1.2, 1.1, 1.0, 0.9, 0.8])
             testReddening = am * reddenCoeffs
             testReddenedMagDict = {}
-            for filter, coeffNum in zip(testMatching.sdssFilterList, range(0, len(testReddening))):
+            for filter, coeffNum in zip(testMatching.filterList, range(0, len(testReddening))):
                 testReddenedMagDict[filter] = testMagDict[filter] + testReddening[coeffNum]
             testOutputNameReddened.append(testMatching.findSED(testMatchingDict, testReddenedMagDict['u'], 
                                                                testReddenedMagDict['g'], 
@@ -325,25 +325,53 @@ class TestReadGalfast(unittest.TestCase):
         DM = 10.
         am = 0.5
         lsstExtCoords = [1.25, 1.15, 1.05, 0.95, 0.85, 0.75]
-        
+        sEDDict = {}
+
         #Test a kurucz, an mlt, and a wd
         testSpectra = ['bergeron_10000_75.dat_10100.gz', 'm0.0Full.dat.gz', 'km01_7000.fits_g40_7140.gz']
-        testTypes = ['wDs', 'mlt', 'kurucz']
-        for testSpectrum, testType in zip(testSpectra, testTypes):
+        testTypes = ['wdH', 'mlt', 'kurucz']
+        testDirs = ['wDs', 'mlt', 'kurucz']
+        #Build SedDict
+        for testSpectrum, testType, testDir in zip(testSpectra, testTypes, testDirs):
             sEDObj = Sed()
-            sEDObj.readSED_flambda(sEDParams.sEDDir + '/starSED/' + testType + '/' + testSpectrum)
+            sEDObj.readSED_flambda(sEDParams.sEDDir + '/starSED/' + testDir + '/' + testSpectrum)
+            rMagDict = {}
+            testTypeDict = {}
+            lsstgmrDict = {}; lsstumgDict = {}; lsstrmiDict = {}; lsstimzDict = {}; lsstzmyDict = {};
+            lsstrMagsDict = {}
+            rMagDict[testSpectrum] = sEDObj.calcMag(sEDParams.bandpassDict['r'])
+            testTypeDict['rMags'] = rMagDict
+            lsstTestMagDict =  testPhot.manyMagCalc_dict(sEDObj, sEDParams.lsstPhiArray,
+                                                         sEDParams.lsstWavelenstep,
+                                                         sEDParams.lsstBandpassDict,
+                                                         sEDParams.lsstFilterList)
+            lsstgmrDict[testSpectrum] = lsstTestMagDict['g'] - lsstTestMagDict['r']
+            lsstumgDict[testSpectrum] = lsstTestMagDict['u'] - lsstTestMagDict['g']
+            lsstrmiDict[testSpectrum] = lsstTestMagDict['r'] - lsstTestMagDict['i']
+            lsstimzDict[testSpectrum] = lsstTestMagDict['i'] - lsstTestMagDict['z']
+            lsstzmyDict[testSpectrum] = lsstTestMagDict['z'] - lsstTestMagDict['y']
+            lsstrMagsDict[testSpectrum] = lsstTestMagDict['r']
+            testTypeDict['lsstgmr'] = lsstgmrDict
+            testTypeDict['lsstumg'] = lsstumgDict
+            testTypeDict['lsstrmi'] = lsstrmiDict
+            testTypeDict['lsstimz'] = lsstimzDict
+            testTypeDict['lsstzmy'] = lsstzmyDict
+            testTypeDict['lsstrMags'] = lsstrMagsDict
+            sEDDict[testType] = testTypeDict
+
+        for testSpectrum, testType, testDir in zip(testSpectra, testTypes, testDirs):
+            sEDObj = Sed()
+            sEDObj.readSED_flambda(sEDParams.sEDDir + '/starSED/' + testDir + '/' + testSpectrum)
             #Calculate the SDSSr if the SED's LSSTr is set to absLSSTr above
             #Then Make sure with this input you get the same LSSTr out of findLSSTMags
             lsstFluxNorm = sEDObj.calcFluxNorm(absLSSTr, sEDParams.lsstBandpassDict['r'])
             sEDObj.multiplyFluxNorm(lsstFluxNorm)
-            absSDSSr = sEDObj.calcMag(sEDParams.sdssBandpassDict['r'])
-            testMags, testFluxNorm = testRG.findLSSTMags(testSpectrum, absSDSSr, DM, am, reddening=False)
-            self.assertAlmostEqual(testMags['r'] - DM, absLSSTr)
+            absSDSSr = sEDObj.calcMag(sEDParams.bandpassDict['r'])
+            testFluxNorm, testMagDict = testRG.findLSSTMags(testSpectrum, sEDDict, absSDSSr, 
+                                                            DM, am, lsstExtCoords)
             self.assertAlmostEqual(testFluxNorm, lsstFluxNorm)
-            testMagsReddened, testFluxNormReddened = testRG.findLSSTMags(testSpectrum, absSDSSr, DM, am, 
-                                                                         True, lsstExtCoords)
-            self.assertAlmostEqual(testMagsReddened['r'] - DM - (am * lsstExtCoords[2]), absLSSTr)
-            self.assertAlmostEqual(testFluxNormReddened, lsstFluxNorm)
+            self.assertAlmostEqual(testMagDict['r'] - DM - (am * lsstExtCoords[2]), absLSSTr)
+
             
 
     def testConvDMtoKpc(self):
