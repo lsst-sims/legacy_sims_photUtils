@@ -69,8 +69,6 @@ class applyIGM(object):
         #Resample incoming sed to new grid so that we don't get warnings from multiplySED
         #about matching wavelength grids
         sedobj.resampleSED(wavelen_match=finalSed.wavelen)
-        print finalSed.wavelen[240:280], finalSed.flambda[240:280]
-        print finalSed.wavelen, finalSed.flambda
 
         #Now multiply transmission curve by input SED to get final result and make it the new flambda
         #data in the original sed which also is now on a new grid starting at 300 nm
