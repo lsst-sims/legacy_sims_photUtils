@@ -5,27 +5,80 @@ from lsst.sims.photUtils.Sed import Sed
 
 class applyIGM(object):
 
-    def __init__(self):
+    """
+    This class applies IGM to SED objects using lookup tables. If users want to enter their
+    own lookup tables they can do that by specifying self.meanLookups and self.varLookups
+    which are dictionaries containing redshift as the keys with (wavelength, transmission)
+    arrays as the values.
+    """
 
-        self.zRange = np.arange(1.5, 3.0, 0.1)
-        pathToTable = str(os.environ['SIMS_PHOTUTILS_DIR'] + '/python/lsst/sims/photUtils/' + 
-                          'IGMLookupTables/')
+    def __init__(self, zMin = 1.5, zMax = 2.9, zDelta = 0.1, minWavelen = 300):
+
+        """
+        Initialize an applyIGM object with the desired redshift grid.
+        If lookup tables are not evenly spaced in redshift then input manually
+        desired zRange array.
+
+        @param [in] zMin is the minimum redshift.
+        
+        @param [in] zMax is the maximum redshift.
+
+        @param [in] zDelta is the redshift spacing.
+
+        @param [in] minWavelen is the minimum wavelength in the lookup tables
+        """
+        self.zMin = zMin
+        self.zMax = zMax
+        self.zDelta = zDelta
+        self.minWavelen = minWavelen 
+        #Don't have max wavelength since transmission goes to 1.0 at longest wavelengths
+        self.zRange = np.arange(zMin, zMax + (zDelta/2.), zDelta)
         self.meanLookups = {}
         self.varLookups = {}
+
+
+    def loadTables(self, filesDir, varianceTbl = True):
+        
+        """
+        Read in and store in dictionary the IGM Lookup Tables that contain IGM transmission
+        for a given redshift and must be formatted in two columns:
+        (wavelength (nm), IGM Transmission %) or for variance 
+        (wavelength (nm), IGM Transmission % Variance). Variance tables are not required and
+        can be turned off as a requirement. Names in directory formatted as 
+        'MeanLookupTable_zSourceX.X.tbl' or 'VarLookupTable_zSourceX.X.tbl' where X.X is the redshift
+        of the given lookup table.
+
+        @param [in] filesDir is the location of the directory where lookup table are stored
+
+        @param [in] varianceTbl is a boolean that is True if variance tables are present in dir
+        for loading.
+        """
+
         for zValue in self.zRange:
-            self.meanLookups[str(zValue)] = np.genfromtxt(str(pathToTable + 'MeanLookupTable_zSource' + 
+            self.meanLookups[str(zValue)] = np.genfromtxt(str(filesDir + '/MeanLookupTable_zSource' + 
                                                               str(zValue) + '.tbl'))
-            self.varLookups[str(zValue)] = np.genfromtxt(str(pathToTable + 'VarLookupTable_zSource' + 
-                                                             str(zValue) + '.tbl'))
+            if varianceTbl == True:
+                try:
+                    self.varLookups[str(zValue)] = np.genfromtxt(str(filesDir + '/VarLookupTable_zSource' + 
+                                                                     str(zValue) + '.tbl'))
+                except IOError:
+                    print "Cannot find variance tables."
 
     def applyIGM(self, redshift, sedobj):
 
-        """Apply IGM extinction to already redshifted sed with redshift  
-        between z=1.5-2.9 using transmission lookup tables provided by Alex Abate"""
+        """
+        Apply IGM extinction to already redshifted sed with redshift  
+        between zMin and zMax defined by range of lookup tables
+        
+        @param [in] redshift is the redshift of the incoming SED object
+
+        @param [in] sedobj is the SED object to which IGM extinction will be applied. This object
+        will be modified as a result of this.
+        """
 
         #First make sure redshift is in range of lookup tables.            
-        if (redshift < 1.5) or (redshift > 2.9):
-            warnings.warn("IGM Lookup tables only applicable for 1.5 < z < 2.9. No action taken")
+        if (redshift < self.zMin) or (redshift > self.zMax):
+            warnings.warn(str("IGM Lookup tables only applicable for " + str(self.zMin) + " < z < " + str(self.zMax) + ". No action taken"))
             return
 
         #Now read in closest two lookup tables for given redshift  
@@ -59,7 +112,7 @@ class applyIGM(object):
                                     
         #Weighted Average of Transmission from each lookup table to get final transmission 
         #table at desired redshift   
-        dzGrid = 0.1 #Step in redshift between transmission lookup table files 
+        dzGrid = self.zDelta #Step in redshift between transmission lookup table files 
         finalSed = Sed()
         finalFlambda = (lowerSed.flambda*(1.0 - ((redshift - lower)/dzGrid)) +
                         upperSed.flambda*(1.0 - ((upper - redshift)/dzGrid)))
