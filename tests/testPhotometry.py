@@ -240,10 +240,12 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
                        ('glat', 70., float),
                        ('internalAvBulge',3.1,float),
                        ('internalAvDisk',3.1,float),
-                       ('galid','id',str)
                       ]
 
 
+    
+    def get_galid(self):
+        return self.column_by_name('id')
     
     #the dicts below will contain the SED objects and the magnitudes
     #in a form that unittest can access and validate
