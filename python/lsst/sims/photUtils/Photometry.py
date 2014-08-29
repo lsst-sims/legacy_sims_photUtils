@@ -634,9 +634,10 @@ class PhotometryGalaxies(PhotometryBase):
         idNames = self.column_by_name('galid')
         bandPassNames = ['u','g','r','i','z','y']
         
-        self.loadBandPasses(bandPassNames)
-        self.setupPhiArray_dict()
-        
+        if self.bandPassList is None or self.phiArray is None:
+            self.loadBandPasses(bandPassNames)
+            self.setupPhiArray_dict()
+         
         return self.meta_magnitudes_getter(idNames)
        
         
@@ -757,7 +758,10 @@ class PhotometryStars(PhotometryBase):
         """
         idNames = self.column_by_name('id')
         bandPassNames = ['u','g','r','i','z','y']
-        self.loadBandPasses(bandPassNames)
-        self.setupPhiArray_dict()
+        
+        if self.bandPassList is None or self.phiArray is None:
+            self.loadBandPasses(bandPassNames)
+            self.setupPhiArray_dict()
+            
         return self.meta_magnitudes_getter(idNames)
    
