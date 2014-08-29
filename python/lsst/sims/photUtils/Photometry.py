@@ -23,12 +23,12 @@ class PhotometryBase(object):
     an SED object it can calculate magnitudes.
     
     In order to avoid duplication of work, the bandPasses, wavelength array, and phi array
-    are stored as instance variables once they are read in by self.loadBandPasses()
+    are stored as instance variables once they are read in by self.loadBandPassesFromFiles()
     
-    To initiailize a different set of bandPasses, call self.loadBandPasses() with a different
+    To initiailize a different set of bandPasses, call self.loadBandPassesFromFiles() with a different
     set of arguments.
     
-    Once self.loadBandPasses() as been called, self.loadSeds() can be used to return an array
+    Once self.loadBandPassesFromFiles() as been called, self.loadSeds() can be used to return an array
     of SED objects.  These objects can be passed to self.manyMagCalc_list() which will calculate
     the magnitudes of the the SEDs, integrated over the loaded bandPasses, and return them as a 
     dict keeyed to the array of bandpass keys stored in self.bandPassKey
@@ -50,7 +50,7 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandPassList)
 
-    def loadBandPasses(self,bandPassNames, bandPassDir = None, bandPassRoot = None):
+    def loadBandPassesFromFiles(self,bandPassNames, bandPassDir = None, bandPassRoot = None):
         """
         This will take the list of band passes named by bandPassNames and use them to set up
         self.bandPassList (which is being cached so that 
@@ -622,7 +622,7 @@ class PhotometryGalaxies(PhotometryBase):
         bandPassNames = ['u','g','r','i','z','y']
         
         if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPasses(bandPassNames)
+            self.loadBandPassesFromFiles(bandPassNames)
             self.setupPhiArray_dict()
          
         return self.meta_magnitudes_getter(idNames)
@@ -733,7 +733,7 @@ class PhotometryStars(PhotometryBase):
         bandPassNames = ['u','g','r','i','z','y']
         
         if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPasses(bandPassNames)
+            self.loadBandPassesFromFiles(bandPassNames)
             self.setupPhiArray_dict()
             
         return self.meta_magnitudes_getter(idNames)
