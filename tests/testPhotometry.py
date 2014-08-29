@@ -421,7 +421,7 @@ class photometryUnitTest(unittest.TestCase):
         the same as testAlternateBandpassesStars, but for galaxies
         """
         
-        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
+        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=10.0))
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
