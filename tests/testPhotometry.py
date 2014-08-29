@@ -251,11 +251,12 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
                        ('glon', 210., float),
                        ('glat', 70., float),
                        ('internalAvBulge',3.1,float),
-                       ('internalAvDisk',3.1,float),
-                       ('galid','id',str)
+                       ('internalAvDisk',3.1,float)
                       ]
 
-
+    
+    def get_galid(self):
+        return self.column_by_name('id')
     
     #the dicts below will contain the SED objects and the magnitudes
     #in a form that unittest can access and validate
@@ -433,7 +434,7 @@ class photometryUnitTest(unittest.TestCase):
         the same as testAlternateBandpassesStars, but for galaxies
         """
         
-        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=0.01))
+        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=10.0))
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
