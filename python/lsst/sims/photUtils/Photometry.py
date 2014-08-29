@@ -605,6 +605,12 @@ class PhotometryGalaxies(PhotometryBase):
         idNames = self.column_by_name('galid')
         bandPassNames = ['u','g','r','i','z','y']
         
+        """
+        Here is where we need some code to load a list of bandPass objects
+        into self.bandPassList and then call self.setupPhiArray_dict()
+        so that the bandPasses are available to the mixin.  Ideally, we
+        would only do this once for the whole catalog
+        """
         if self.bandPassList is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames)
             self.setupPhiArray_dict()
@@ -711,6 +717,12 @@ class PhotometryStars(PhotometryBase):
         idNames = self.column_by_name('id')
         bandPassNames = ['u','g','r','i','z','y']
         
+        """
+        Here is where we need some code to load a list of bandPass objects
+        into self.bandPassList and then call self.setupPhiArray_dict()
+        so that the bandPasses are available to the mixin.  Ideally, we
+        would only do this once for the whole catalog
+        """
         if self.bandPassList is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames)
             self.setupPhiArray_dict()
