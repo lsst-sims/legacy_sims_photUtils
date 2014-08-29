@@ -25,19 +25,17 @@ class PhotometryBase(object):
     In order to avoid duplication of work, the bandPasses, wavelength array, and phi array
     are stored as instance variables once they are read in by self.loadBandPasses()
     
-    bandPassKey is a list of the names of the bandpasses being used (e.g. 'u','g','r','i','z','y')
-    
     To initiailize a different set of bandPasses, call self.loadBandPasses() with a different
     set of arguments.
     
     Once self.loadBandPasses() as been called, self.loadSeds() can be used to return an array
-    of SED objects.  These objects can be passed to self.manyMagCalc_dict() which will calculate
+    of SED objects.  These objects can be passed to self.manyMagCalc_list() which will calculate
     the magnitudes of the the SEDs, integrated over the loaded bandPasses, and return them as a 
     dict keeyed to the array of bandpass keys stored in self.bandPassKey
     """
     
-    bandPassList = None
-    phiArray = None
+    bandPassList = None #bandpasses loaded in this particular catalog
+    phiArray = None #the response curves for the bandpasses
     waveLenStep = None
 
     def setupPhiArray_dict(self):
@@ -46,7 +44,7 @@ class PhotometryBase(object):
         self.bandPasses
   
         The results from this calculation will be stored in the instance variables
-        self.phiArray and self.waveLenStep for future use by self.manyMagCalc_dict()
+        self.phiArray and self.waveLenStep for future use by self.manyMagCalc_list()
         """
         
         sedobj = Sed()
@@ -54,9 +52,9 @@ class PhotometryBase(object):
 
     def loadBandPasses(self,bandPassNames, bandPassDir = None, bandPassRoot = None):
         """
-        This will take the list of band passes in bandPassList and use them to set up
-        self.bandPasses, self.phiArray and self.waveLenStep (which are being cached so that 
-        they do not have to be loaded again unless we change which bandpasses we want)
+        This will take the list of band passes named by bandPassNames and use them to set up
+        self.bandPassList (which is being cached so that 
+        it does not have to be loaded again unless we change which bandpasses we want)
         
         bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
         that the bandPasses are stored in files of the type
@@ -191,7 +189,7 @@ class PhotometryBase(object):
         """
         Return a list of magnitudes for a single Sed object.
         
-        Bandpass information is taken from the instance variables self.bandPasses, self.bandPassKey,
+        Bandpass information is taken from the instance variables self.bandPassList,
         self.phiArray, and self.waveLenStep
         
         @param [in] sedobj is an Sed object
@@ -396,31 +394,25 @@ class PhotometryGalaxies(PhotometryBase):
     
     def calculate_magnitudes(self, idNames):
         """
-        Take the array of bandpass keys bandPassList and the array of galaxy
-        names idNames ane return a dict of dicts of dicts of magnitudes
+        Take the array of bandpasses in self.bandPassList and the array of galaxy
+        names idNames ane return a dict of dicts of lists of magnitudes
         
         the first level key is galid (the name of the galaxy)
         
         the second level key is "total", "bulge", "disk", or "agn"
         
-        the third level key is bandPassList
+        this yields a list of magnitudes corresponding to the bandPasses in self.bandPassList
         
         We need to index the galaxies by some unique identifier, such as galid
         because it is possible for galaxies to have the same sed filenames but 
         different normalizations
         
-        @param [in] bandPassList is a list of bandPass names (e.g. 'u', 'g', 'r', 'i', 'z', 'y')
-        self.loadBandpasses will handle turning these into proper file names
-        
         @param [in] idNames is a list of names uniquely identifying the objects whose magnitudes
         are being calculated
-        
-        @param [in] bandPassRoot is the root of the filename of bandpasses (i.e. bandpasses are
-        stored in files named bandPassRoot_u.dat etc.).  If None, defaults to
-        'total_'
+
         
         @param [out] masterDict is a dict of magnitudes such that
-        masterDict['AAA']['BBB']['x'] is the magnitude in filter x of component BBB of galaxy AAA
+        masterDict['AAA']['BBB'][i] is the magnitude in the ith bandPass of component BBB of galaxy AAA
         
         
         """
@@ -473,15 +465,10 @@ class PhotometryGalaxies(PhotometryBase):
 
     def meta_magnitudes_getter(self, idNames):
         """
-        This method will return the magnitudes for arbitrary galaxy bandpasses
+        This method will return the magnitudes for galaxies in the bandpasses stored in self.bandPassList
         
         @param [in] idNames is a list of object IDs
-        
-        @param [in] bandPassList is a list of bandpass names (e.g. 'u', 'g', 'r', 'i', etc)
-        
-        @param [in] bandPassRoot is the root of the bandpass file names (i.e. bandpasses
-        are stored in files with names bandPassRoot_u.dat etc).  If None, default to
-        'total_'
+ 
         """
 
         magDict=self.calculate_magnitudes(idNames)
@@ -652,27 +639,19 @@ class PhotometryStars(PhotometryBase):
     def calculate_magnitudes(self, idNames):
         """
         Take the array of bandpass keys bandPassList and the array of
-        star names idNames and return a dict of dicts of magnitudes
+        star names idNames and return a dict of lists of magnitudes
         
         The first level key will be the name of the star (idName)
         
-        The second level key will be the name of the filter (bandPassList)
+        This will give you a list of magnitudes corresponding to self.bandPassList
         
         As with galaxies, it is important that we identify stars by a unique
         identifier, rather than their sedFilename, because different stars
         can have identical SEDs but different magnitudes.
-        
-        
-        @param [in] bandPassList is a list of filter names (e.g. 'u', 'g', 'r', 'i', 'z', 'y')
-        
+
         @param [in] idNames is a list of names uniquely identifying the objects being considered
         
-        @param [in] bandPassRoot is the root of the filename for bandpasses (i.e. bandpasses
-        are stored in files named bandPassRoot_u.dat etc.).  If 'None' defaults to
-        'total_'
-        
-        @param [out] magDict is a dict such that
-        magDict['AAA']['x'] is the magnitude in filter x of object AAA
+        magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
         
         """
 
@@ -681,9 +660,8 @@ class PhotometryStars(PhotometryBase):
         sedList = self.loadSeds(sedNames,magNorm = magNorm)
         
         magDict = {}
-        for i in range(len(idNames)):
-            name = idNames[i]
-            subList = self.manyMagCalc_list(sedList[i])
+        for (name,sed) in zip(idNames,sedList):
+            subList = self.manyMagCalc_list(sed)
             magDict[name] = subList
         
         return magDict
@@ -694,11 +672,6 @@ class PhotometryStars(PhotometryBase):
         This method does most of the work for stellar magnitude getters
         
         @param [in] idNames is a list of object names
-        
-        @param [in] bandPassList is a list of bandpass names ('u', 'g', 'r', 'i,', etc.)
-        
-        @param [in] bandPassRoot is the root of bandpass filenames (i.e. bandpasses are
-        stored in files named bandPassRoot_u.dat etc.).  If None defaults to 'total_'
         
         @param [out] output is a 2d numpy array in which the rows are the bandpasses
         from bandPassList and the columns are the objects from idNames
