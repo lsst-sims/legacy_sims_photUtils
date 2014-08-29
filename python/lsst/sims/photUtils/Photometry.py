@@ -710,9 +710,7 @@ class PhotometryStars(PhotometryBase):
     def get_magnitudes(self):
         """
         getter for LSST stellar magnitudes
-        
-        bandPassRoot is the root of the names of the files in which
-        the bandpasses are stored
+
         """
         idNames = self.column_by_name('id')
         bandPassNames = ['u','g','r','i','z','y']
