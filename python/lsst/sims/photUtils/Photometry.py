@@ -479,34 +479,13 @@ class PhotometryGalaxies(PhotometryBase):
         firstRowAgn = []
         
         failure = -999.0
-        for name in idNames:
-            
-            firstRowTotal.append(magDict[name]["total"][0])
-            
-            if magDict[name]["bulge"]:
-                firstRowBulge.append(magDict[name]["bulge"][0])
-            else:
-                firstRowBulge.append(failure)
-            
-            if magDict[name]["disk"]:
-                firstRowDisk.append(magDict[name]["disk"][0])
-            else:
-                firstRowDisk.append(failure)
-            
-            
-            if magDict[name]["agn"]:
-                firstRowAgn.append(magDict[name]["agn"][0])
-            else:
-                firstRowAgn.append(failure)
         
-        
-        outputTotal = numpy.array(firstRowTotal)
-        outputBulge = numpy.array(firstRowBulge)
-        outputDisk = numpy.array(firstRowDisk)
-        outputAgn = numpy.array(firstRowAgn)
-        
-        i = 1
-        while i<len(self.bandPassList):
+        outputTotal = None
+        outputBulge = None
+        outputDisk = None
+        outputAgn = None
+
+        for i in range(len(self.bandPassList)):
             rowTotal = []
             rowDisk = []
             rowBulge = []
@@ -529,13 +508,18 @@ class PhotometryGalaxies(PhotometryBase):
                     rowAgn.append(magDict[name]["agn"][i])
                 else:
                     rowAgn.append(failure)
-                
-            outputTotal = numpy.vstack([outputTotal,rowTotal])
-            outputBulge = numpy.vstack([outputBulge,rowBulge])
-            outputDisk = numpy.vstack([outputDisk,rowDisk])
-            outputAgn = numpy.vstack([outputAgn,rowAgn])
-        
-            i += 1
+            
+            if outputTotal is None:
+                outputTotal = numpy.array(rowTotal)
+                outputBulge = numpy.array(rowBulge)
+                outputDisk = numpy.array(rowDisk)
+                outputAgn = numpy.array(rowAgn)
+            else:    
+                outputTotal = numpy.vstack([outputTotal,rowTotal])
+                outputBulge = numpy.vstack([outputBulge,rowBulge])
+                outputDisk = numpy.vstack([outputDisk,rowDisk])
+                outputAgn = numpy.vstack([outputAgn,rowAgn])
+
         
         
         outputTotal = numpy.vstack([outputTotal,outputBulge])
@@ -678,23 +662,18 @@ class PhotometryStars(PhotometryBase):
         
         """
 
-        magDict = self.calculate_magnitudes(idNames)
-        
-        firstRow = []
-        for name in idNames:
-            firstRow.append(magDict[name][0])
-        
-        output = numpy.array(firstRow)
-        
-        i = 1
-        while i<len(self.bandPassList):
+        magDict = self.calculate_magnitudes(idNames) 
+        output = None
+       
+        for i in range(len(self.bandPassList)):
             row = []
             for name in idNames:
                 row.append(magDict[name][i])
             
-            i += 1
-            
-            output=numpy.vstack([output,row])
+            if output is None:
+                output = numpy.array(row)
+            else:
+                output=numpy.vstack([output,row])
         
         return output
     
