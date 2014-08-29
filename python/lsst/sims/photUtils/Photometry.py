@@ -67,7 +67,7 @@ class PhotometryBase(object):
         by altering bandPassRoot (currently no infrastructure exists for altering the directory
         in which bandpass files are stored)
         """
-  
+       
         if bandPassRoot == None:
             bandPassRoot = 'total_'
         
