@@ -89,10 +89,13 @@ class cartoonPhotometryStars(PhotometryStars):
         """
         
         idNames = self.column_by_name('id')
-        bandPassList=['u','g','r','i','z']
+        bandPassNames=['u','g','r','i','z']
         bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
-        output = self.meta_magnitudes_getter(idNames, bandPassList, 
-                  bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
+        
+        self.loadBandPasses(bandPassNames,bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
+        self.setupPhiArray_dict()
+        
+        output = self.meta_magnitudes_getter(idNames)
         
         #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
@@ -137,10 +140,13 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         """
         
         idNames = self.column_by_name('galid')
-        bandPassList=['u','g','r','i','z']
+        bandPassNames=['u','g','r','i','z']
         bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
-        output = self.meta_magnitudes_getter(idNames, bandPassList, 
-                  bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
+        
+        self.loadBandPasses(bandPassNames,bandPassDir = bandPassDir, bandPassRoot = 'test_bandpass_')
+        self.setupPhiArray_dict()
+        
+        output = self.meta_magnitudes_getter(idNames)
         
         ##########################################################################
         #Everything below this comment exists only for the purposes of the unittest.

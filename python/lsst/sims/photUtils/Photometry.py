@@ -185,7 +185,7 @@ class PhotometryBase(object):
                 if redshift != None:
                     sedList[i].redshiftSED(redshift[i], dimming=True)
                     sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
-                    sedList[i].resampleSED(wavelen_match=self.bandPasses[self.bandPassKey[0]].wavelen)
+                    sedList[i].resampleSED(wavelen_match=self.bandPassList[0].wavelen)
 
     def manyMagCalc_list(self, sedobj):
         """
@@ -203,7 +203,7 @@ class PhotometryBase(object):
         
         magList = []
         if sedobj.wavelen != None:
-            sedobj.resampleSED(wavelen_match=self.bandPasses[0].wavelen)
+            sedobj.resampleSED(wavelen_match=self.bandPassList[0].wavelen)
             
             #for some reason, moving this call to flambdaTofnu() 
             #to a point earlier in the 
@@ -438,20 +438,20 @@ class PhotometryGalaxies(PhotometryBase):
 
         redshift = self.column_by_name('redshift')
          
-        diskMags = self.calculate_component_magnitudes(idNames,diskNames,bandPassList,magNorm = diskmn, \
+        diskMags = self.calculate_component_magnitudes(idNames,diskNames,magNorm = diskmn, \
                         internalAv = diskAv, redshift = redshift)
                         
-        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,bandPassList,magNorm = bulgemn, \
+        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,magNorm = bulgemn, \
                         internalAv = bulgeAv, redshift = redshift)
                         
-        agnMags = self.calculate_component_magnitudes(idNames,agnNames,bandPassList,magNorm = agnmn, \
+        agnMags = self.calculate_component_magnitudes(idNames,agnNames,magNorm = agnmn, \
                         redshift = redshift)
         
         total_mags = []
         masterDict = {}
 
         for i in range(len(idNames)):
-            total_mags={}
+            total_mags=[]
             j=0
             for ff in self.bandPassList:
                 total_mags.append(self.sum_magnitudes(disk = diskMags[idNames[i]][j],
@@ -494,21 +494,21 @@ class PhotometryGalaxies(PhotometryBase):
         failure = -999.0
         for name in idNames:
             
-            firstRowTotal.append(magDict[name]["total"][self.bandPassList[0]])
+            firstRowTotal.append(magDict[name]["total"][0])
             
             if magDict[name]["bulge"]:
-                firstRowBulge.append(magDict[name]["bulge"][self.bandPassList[0]])
+                firstRowBulge.append(magDict[name]["bulge"][0])
             else:
                 firstRowBulge.append(failure)
             
             if magDict[name]["disk"]:
-                firstRowDisk.append(magDict[name]["disk"][self.bandPassList[0]])
+                firstRowDisk.append(magDict[name]["disk"][0])
             else:
                 firstRowDisk.append(failure)
             
             
             if magDict[name]["agn"]:
-                firstRowAgn.append(magDict[name]["agn"][self.bandPassList[0]])
+                firstRowAgn.append(magDict[name]["agn"][0])
             else:
                 firstRowAgn.append(failure)
         
@@ -526,20 +526,20 @@ class PhotometryGalaxies(PhotometryBase):
             rowAgn = []
             
             for name in idNames:
-                rowTotal.append(magDict[name]["total"][self.bandPassList[i]])
+                rowTotal.append(magDict[name]["total"][i])
             
                 if magDict[name]["bulge"]:
-                    rowBulge.append(magDict[name]["bulge"][self.bandPassList[i]])
+                    rowBulge.append(magDict[name]["bulge"][i])
                 else:
                     rowBulge.append(failure)
                 
                 if magDict[name]["disk"]:
-                    rowDisk.append(magDict[name]["disk"][self.bandPassList[i]])
+                    rowDisk.append(magDict[name]["disk"][i])
                 else:
                     rowDisk.append(failure)
                 
                 if magDict[name]["agn"]:
-                    rowAgn.append(magDict[name]["agn"][self.bandPassList[i]])
+                    rowAgn.append(magDict[name]["agn"][i])
                 else:
                     rowAgn.append(failure)
                 
@@ -637,7 +637,7 @@ class PhotometryGalaxies(PhotometryBase):
         self.loadBandPasses(bandPassNames)
         self.setupPhiArray_dict()
         
-        return self.meta_magnitudes_getter(idNames, bandPassList)
+        return self.meta_magnitudes_getter(idNames)
        
         
 
