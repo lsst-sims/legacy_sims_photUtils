@@ -295,7 +295,7 @@ class PhotometryBase(object):
             for i in range(len(magnitudes[filterName])):
                 mm = magnitudes[filterName][i]
                
-                if mm != None and mm>-990.0:
+                if mm != None:
                     xx=10**(0.4*(mm - m5[filterName]))
                     ss = (0.04 - gamma[filterName])*xx + \
                          gamma[filterName]*xx*xx
@@ -478,7 +478,7 @@ class PhotometryGalaxies(PhotometryBase):
         firstRowBulge = []
         firstRowAgn = []
         
-        failure = -999.0
+        failure = None
         
         outputTotal = None
         outputBulge = None
