@@ -121,7 +121,9 @@ class EbvMap(object):
         
         ix=numpy.array([int(xx+0.5) for xx in x])
         iy=numpy.array([int(yy+0.5) for yy in y])
-   
+        
+      
+        
         if (interpolate):
             ixLow=numpy.array([ii-1 if ii==self.nc-1 else ii for ii in ix])
             ixHigh=numpy.array([ii if ii==self.nc-1 else ii+1 for ii in ix])
@@ -141,13 +143,7 @@ class EbvMap(object):
             iyLow=numpy.array([ii-1 if ii==self.nr-1 else ii for ii in iy])
             iyHigh=numpy.array([ii if ii==self.nr-1 else ii+1 for ii in iy])
             dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,y)])
-            
-            
-            print x.size,y.size
-            print ixLow.size,iyLow.size
-            print ixHigh.size,iyHigh.size
-            print ix
-            
+      
             """    
             if (iy == self.nr-1):
                 iyLow = iy-1
@@ -332,30 +328,28 @@ class EBVbase(object):
         #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
         
         coordinates = numpy.array([[lon,lat] for (lon,lat) in zip(gLon,gLat)])
-        
-        print "\ncoordinates\n"
-        print coordinates
-        print "\n\n"
-        
+
         ebv = []
         
         if coordinates != []:
-            coordinateIsNorth=[coordinates[:][1]>0.]
+            coordinateIsNorth=[coordinates[:,1]>0.]
             #northernCoords,southernCoords = reduce(lambda x,y: x[y[1]<0.].append(y) or x, coordinates, ([],[]))
-            inorthLat, isouthLat = reduce(lambda x,y: x[y[1]<0.0].append(y[0]) or x, coordinates, ([],[]))
-            inorthLon, isouthLon = reduce(lambda x,y: x[y[1]<0.0].append(y[1]) or x, coordinates, ([],[]))
+            inorthLat, isouthLat = reduce(lambda x,y: x[y[1]<0.0].append(y[1]) or x, coordinates, ([],[]))
+            inorthLon, isouthLon = reduce(lambda x,y: x[y[1]<0.0].append(y[0]) or x, coordinates, ([],[]))
             
             northLon=numpy.array(inorthLon)
             northLat=numpy.array(inorthLat)
             southLon=numpy.array(isouthLon)
-            sourthLat=numpy.array(isouthLat)
+            southLat=numpy.array(isouthLat)
             
             northEBV = northMap.generateEbv(northLon,northLat,interpolate=interp)
             southEBV = southMap.generateEbv(southLon,southLat,interpolate=interp)
             
             iNorth=0
             iSouth=0
-            for ans in coordinateIsNorth:
+            
+            for ans in coordinateIsNorth[0]:
+                
                 if ans:
                     ebv.append(northEBV[iNorth])
                     iNorth+=1
