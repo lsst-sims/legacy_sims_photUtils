@@ -72,7 +72,7 @@ class EbvMap(object):
         
         """
 
-        rad2deg= 180./math.pi
+        rad2deg= 180./numpy.pi
         
         # use the SFD approach to define xy pixel positions
         # ROTATION - Equn (4) - degenerate case 
@@ -88,14 +88,14 @@ class EbvMap(object):
             phi = gLon*rad2deg + 180.0 + self.lonpole - self.crval1
 
         # Put phi in the range [0,360) degrees 
-        phi = phi - 360.0 * math.floor(phi/360.0);
+        phi = phi - 360.0 * numpy.floor(phi/360.0);
 
         # FORWARD MAP PROJECTION - Equn (26) 
-        Rtheta = 2.0 * rad2deg * math.sin((0.5 / rad2deg) * (90.0 - theta));
+        Rtheta = 2.0 * rad2deg * numpy.sin((0.5 / rad2deg) * (90.0 - theta));
 
         # Equns (10), (11) 
-        xr = Rtheta * math.sin(phi / rad2deg);
-        yr = - Rtheta * math.cos(phi / rad2deg);
+        xr = Rtheta * numpy.sin(phi / rad2deg);
+        yr = - Rtheta * numpy.cos(phi / rad2deg);
     
         # SCALE FROM PHYSICAL UNITS - Equn (3) after inverting the matrix 
         denom = self.cd11 * self.cd22 - self.cd12 * self.cd21;
@@ -118,11 +118,16 @@ class EbvMap(object):
 
         # calculate pixel values
         x,y = self.skyToXY(glon, glat)
-
-        ix = int(x + 0.5)
-        iy = int(y + 0.5)
-
+        
+        ix=numpy.array([int(xx+0.5) for xx in x])
+        iy=numpy.array([int(yy+0.5) for yy in y])
+   
         if (interpolate):
+            ixLow=numpy.array([ii-1 if ii==self.nc-1 else ii for ii in ix])
+            ixHigh=numpy.array([ii if ii==self.nc-1 else ii+1 for ii in ix])
+            dx=numpy.array([ii-xx if ii==self.nc-1 else xx-ii for (ii,xx) in zip (ix,x)])
+            
+            """
             if (ix == self.nc-1):
                 ixLow = ix-1
                 ixHigh = ix
@@ -131,6 +136,19 @@ class EbvMap(object):
                 ixLow = ix
                 ixHigh = ix+1                   
                 dx = x - ix
+            """
+            
+            iyLow=numpy.array([ii-1 if ii==self.nr-1 else ii for ii in iy])
+            iyHigh=numpy.array([ii if ii==self.nr-1 else ii+1 for ii in iy])
+            dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,y)])
+            
+            
+            print x.size,y.size
+            print ixLow.size,iyLow.size
+            print ixHigh.size,iyHigh.size
+            print ix
+            
+            """    
             if (iy == self.nr-1):
                 iyLow = iy-1
                 iyHigh = iy
@@ -139,13 +157,25 @@ class EbvMap(object):
                 iyLow = iy
                 iyHigh = iy+1
                 dy = y - iy
+            """
          
-            xLow = interp1D(self.data[iyLow][ixLow], self.data[iyLow][ixHigh], dx)
-            xHigh = interp1D(self.data[iyHigh][ixLow], self.data[iyHigh][ixHigh], dx)
+            x1 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyLow,ixLow)])
+            x2 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyLow,ixHigh)])
+            xLow = interp1D(x1,x2,dx)
+            
+            x1 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyHigh,ixLow)])
+            x2 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyHigh,ixHigh)])
+            xHigh = interp1D(x1,x2,dx)
+            
+            #xLow = interp1D(self.data[iyLow][ixLow], self.data[iyLow][ixHigh], dx)
+            #xHigh = interp1D(self.data[iyHigh][ixLow], self.data[iyHigh][ixHigh], dx)
+            
             ebvVal = interp1D(xLow, xHigh, dy)                
          
         else:
-            ebvVal = self.data[iy][ix]
+            ebvVal = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iy,ix)])
+        
+            #ebvVal = self.data[iy][ix]
 
         return ebvVal    
                         
@@ -298,13 +328,50 @@ class EBVbase(object):
             
             southMap = self.ebvMapSouth
         
+        #taken from
+        #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
+        
+        coordinates = numpy.array([[lon,lat] for (lon,lat) in zip(gLon,gLat)])
+        
+        print "\ncoordinates\n"
+        print coordinates
+        print "\n\n"
+        
+        ebv = []
+        
+        if coordinates != []:
+            coordinateIsNorth=[coordinates[:][1]>0.]
+            #northernCoords,southernCoords = reduce(lambda x,y: x[y[1]<0.].append(y) or x, coordinates, ([],[]))
+            inorthLat, isouthLat = reduce(lambda x,y: x[y[1]<0.0].append(y[0]) or x, coordinates, ([],[]))
+            inorthLon, isouthLon = reduce(lambda x,y: x[y[1]<0.0].append(y[1]) or x, coordinates, ([],[]))
+            
+            northLon=numpy.array(inorthLon)
+            northLat=numpy.array(inorthLat)
+            southLon=numpy.array(isouthLon)
+            sourthLat=numpy.array(isouthLat)
+            
+            northEBV = northMap.generateEbv(northLon,northLat,interpolate=interp)
+            southEBV = southMap.generateEbv(southLon,southLat,interpolate=interp)
+            
+            iNorth=0
+            iSouth=0
+            for ans in coordinateIsNorth:
+                if ans:
+                    ebv.append(northEBV[iNorth])
+                    iNorth+=1
+                else:
+                    ebv.append(southEBV[iSouth])
+                    iSouth+=1
+        
+        """
         ebv=[]
         for lon,lat in zip(gLon,gLat):
             if (lat <= 0.):
                 ebv.append(southMap.generateEbv(lon,lat,interpolate=interp))
             else:
                 ebv.append(northMap.generateEbv(lon,lat, interpolate=interp))
-
+        """
+        
         return numpy.asarray(ebv)
 
 
