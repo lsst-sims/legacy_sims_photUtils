@@ -125,10 +125,13 @@ class EbvMap(object):
         ix=(xy[0,:]+0.5).astype(int)
         iy=(xy[1,:]+0.5).astype(int)
       
+        unity=numpy.ones(len(ix),dtype=int)
         
         if (interpolate):
-            ixLow=numpy.array([ii-1 if ii==self.nc-1 else ii for ii in ix])
-            ixHigh=numpy.array([ii if ii==self.nc-1 else ii+1 for ii in ix])
+    
+            ixLow=numpy.minimum(ix,(self.nc-2)*unity)
+            ixHigh=numpy.minimum(ix+1,(self.nc-1)*unity)
+            
             dx=numpy.array([ii-xx if ii==self.nc-1 else xx-ii for (ii,xx) in zip (ix,xy[0,:])])
             
             """
@@ -141,9 +144,9 @@ class EbvMap(object):
                 ixHigh = ix+1                   
                 dx = x - ix
             """
+            iyLow=numpy.minimum(iy,(self.nr-2)*unity)
+            iyHigh=numpy.minimum(iy+1,(self.nr-1)*unity)
             
-            iyLow=numpy.array([ii-1 if ii==self.nr-1 else ii for ii in iy])
-            iyHigh=numpy.array([ii if ii==self.nr-1 else ii+1 for ii in iy])
             dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,xy[1,:])])
       
             """    
@@ -164,9 +167,6 @@ class EbvMap(object):
             x1 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyHigh,ixLow)])
             x2 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyHigh,ixHigh)])
             xHigh = interp1D(x1,x2,dx)
-            
-            #xLow = interp1D(self.data[iyLow][ixLow], self.data[iyLow][ixHigh], dx)
-            #xHigh = interp1D(self.data[iyHigh][ixLow], self.data[iyHigh][ixHigh], dx)
             
             ebvVal = interp1D(xLow, xHigh, dy)                
          
