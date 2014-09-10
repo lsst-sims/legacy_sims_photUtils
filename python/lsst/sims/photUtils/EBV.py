@@ -101,8 +101,8 @@ class EbvMap(object):
         denom = self.cd11 * self.cd22 - self.cd12 * self.cd21;
         x = (self.cd22 * xr - self.cd12 * yr) / denom + (self.crpix1 - 1.0);
         y = (self.cd11 * yr - self.cd21 * xr) / denom + (self.crpix2 - 1.0);
-
-        return x,y
+        
+        return numpy.array([x,y])
 
     def generateEbv(self, glon, glat, interpolate = False):
         """ 
@@ -117,17 +117,19 @@ class EbvMap(object):
         """
 
         # calculate pixel values
-        x,y = self.skyToXY(glon, glat)
+        xy = self.skyToXY(glon, glat)
         
-        ix=numpy.array([int(xx+0.5) for xx in x])
-        iy=numpy.array([int(yy+0.5) for yy in y])
+        #ix=numpy.array([int(xx+0.5) for xx in x])
+        #iy=numpy.array([int(yy+0.5) for yy in y])
         
+        ix=(xy[0,:]+0.5).astype(int)
+        iy=(xy[1,:]+0.5).astype(int)
       
         
         if (interpolate):
             ixLow=numpy.array([ii-1 if ii==self.nc-1 else ii for ii in ix])
             ixHigh=numpy.array([ii if ii==self.nc-1 else ii+1 for ii in ix])
-            dx=numpy.array([ii-xx if ii==self.nc-1 else xx-ii for (ii,xx) in zip (ix,x)])
+            dx=numpy.array([ii-xx if ii==self.nc-1 else xx-ii for (ii,xx) in zip (ix,xy[0,:])])
             
             """
             if (ix == self.nc-1):
@@ -142,7 +144,7 @@ class EbvMap(object):
             
             iyLow=numpy.array([ii-1 if ii==self.nr-1 else ii for ii in iy])
             iyHigh=numpy.array([ii if ii==self.nr-1 else ii+1 for ii in iy])
-            dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,y)])
+            dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,xy[1,:])])
       
             """    
             if (iy == self.nr-1):
