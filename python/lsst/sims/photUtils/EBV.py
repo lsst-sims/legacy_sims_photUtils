@@ -327,49 +327,47 @@ class EBVbase(object):
         #taken from
         #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
         
-        ebv = []
+        ebv = None
         
         if gLat != []:
             
-            northLon=None
-            northLat=None
-            southLon=None
-            southLat=None
+            isNorth=None
+            LLon=None
+            LLat=None
             for (lon,lat) in zip(gLon,gLat):
-                #print lon,lat
-                if lat<=0.0:
-                    if southLat is None:
-                        southLat=numpy.array(lat)
-                        southLon=numpy.array(lon)
-                    else:
-                        southLat=numpy.append(southLat,lat)
-                        southLon=numpy.append(southLon,lon) 
-                else:
-                    if northLat is None:
-                        northLat=numpy.array(lat)
-                        northLon=numpy.array(lon)
-                    else:
-                        northLat=numpy.append(northLat,lat)
-                        northLon=numpy.append(northLon,lon)   
-            
-            
-            if northLat is not None:
-                northEBV = northMap.generateEbv(northLon,northLat,interpolate=interp)
-            
-            if southLat is not None:
-                southEBV = southMap.generateEbv(southLon,southLat,interpolate=interp)
-            
-            iNorth=0
-            iSouth=0
-            
-            for lat in gLat:
                 
-                if lat>0.0:
-                    ebv.append(northEBV[iNorth])
-                    iNorth+=1
+                if isNorth is None or (lat>0.0) == isNorth:
+                    if isNorth is None:
+                        isNorth = (lat>0.0)
+                    
+                    if LLat is None:
+                        LLat = numpy.array([lat])
+                        LLon = numpy.array([lon])
+                    else:
+                        LLat=numpy.append(LLat,lat)
+                        LLon=numpy.append(LLon,lon)
+                    
                 else:
-                    ebv.append(southEBV[iSouth])
-                    iSouth+=1
+                   if isNorth:
+                       ebvTemp=northMap.generateEbv(LLon,LLat,interpolate=interp)
+                   else:
+                       ebvTemp=southMap.generateEbv(LLon,LLat,interpolate=interp)
+                   
+                   if ebv is None:
+                       ebv=numpy.copy(ebvTemp)
+                   else:
+                       ebv=numpy.append(ebv,ebvTemp) 
+                   
+                   LLat = numpy.array([lat])
+                   LLon = numpy.array([lon])
+                   isNorth = (not isNorth)
+
+            if isNorth:
+                ebvTemp=northMap.generateEbv(LLon,LLat,interpolate=interp)
+            else:
+                ebvTemp=southMap.generateEbv(LLon,LLat,interpolate=interp)
+        
+            ebv=numpy.append(ebv,ebvTemp)
         
         """
         ebv=[]
@@ -380,7 +378,8 @@ class EBVbase(object):
                 ebv.append(northMap.generateEbv(lon,lat, interpolate=interp))
         """
         
-        return numpy.asarray(ebv)
+        
+        return ebv
 
 
 class EBVmixin(EBVbase):
