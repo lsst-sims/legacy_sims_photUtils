@@ -337,44 +337,27 @@ class EBVbase(object):
         """
         
         if gLat != []:
+           
+           ebv=numpy.zeros(len(gLon))
             
-            isNorth=None
-            LLon=None
-            LLat=None
-            for (lon,lat) in zip(gLon,gLat):
-                
-                if isNorth is None or (lat>0.0) == isNorth:
-                    if isNorth is None:
-                        isNorth = (lat>0.0)
-                    
-                    if LLat is None:
-                        LLat = numpy.array([lat])
-                        LLon = numpy.array([lon])
-                    else:
-                        LLat=numpy.append(LLat,lat)
-                        LLon=numpy.append(LLon,lon)
-                    
-                else:
-                   if isNorth:
-                       ebvTemp=northMap.generateEbv(LLon,LLat,interpolate=interp)
-                   else:
-                       ebvTemp=southMap.generateEbv(LLon,LLat,interpolate=interp)
-                   
-                   if ebv is None:
-                       ebv=numpy.copy(ebvTemp)
-                   else:
-                       ebv=numpy.append(ebv,ebvTemp) 
-                   
-                   LLat = numpy.array([lat])
-                   LLon = numpy.array([lon])
-                   isNorth = (not isNorth)
-
-            if isNorth:
-                ebvTemp=northMap.generateEbv(LLon,LLat,interpolate=interp)
-            else:
-                ebvTemp=southMap.generateEbv(LLon,LLat,interpolate=interp)
+           nSet=numpy.array([(lon,lat,i) \
+                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) \
+                                   if lat>0.0], \
+                                   dtype=[('lon',float),('lat',float),('dex',int)])
         
-            ebv=numpy.append(ebv,ebvTemp)
+           sSet=numpy.array([(lon,lat,i) \
+                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) \
+                                   if lat<=0.0], \
+                                   dtype=[('lon',float),('lat',float),('dex',int)])
+            
+           ebvNorth=northMap.generateEbv(nSet['lon'],nSet['lat'],interpolate=interp)
+           ebvSouth=southMap.generateEbv(sSet['lon'],sSet['lat'],interpolate=interp)
+            
+           for (i,ee) in zip(nSet['dex'],ebvNorth):
+               ebv[i]=ee
+            
+           for (i,ee) in zip(sSet['dex'],ebvSouth):
+               ebv[i]=ee
         
         """
         ebv=[]
