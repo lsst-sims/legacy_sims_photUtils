@@ -132,7 +132,10 @@ class EbvMap(object):
             ixLow=numpy.minimum(ix,(self.nc-2)*unity)
             ixHigh=numpy.minimum(ix+1,(self.nc-1)*unity)
             
-            dx=numpy.array([ii-xx if ii==self.nc-1 else xx-ii for (ii,xx) in zip (ix,xy[0,:])])
+            dx=xy[0,:]-ixLow
+            
+            #dx=numpy.array([ii-xx if ii==self.nc-1 else xx-ii for (ii,xx) in zip (ix,xy[0,:])])
+            
             
             """
             if (ix == self.nc-1):
@@ -147,7 +150,9 @@ class EbvMap(object):
             iyLow=numpy.minimum(iy,(self.nr-2)*unity)
             iyHigh=numpy.minimum(iy+1,(self.nr-1)*unity)
             
-            dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,xy[1,:])])
+            dy=xy[1,:]-iyLow
+            
+            #dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,xy[1,:])])
       
             """    
             if (iy == self.nr-1):
