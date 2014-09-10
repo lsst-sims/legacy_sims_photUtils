@@ -245,72 +245,41 @@ class EBVbase(object):
         self.ebvMapSouth=EbvMap()
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
-    def calculateEbv(self, gLon=None, gLat=None, ra=None, dec=None, northMap=None, southMap=None, 
+    def calculateEbv(self, galacticCoordinates=None, equatorialCoordinates=None, northMap=None, southMap=None, 
                      interp=False):
         """ 
         For an array of Gal long, lat calculate E(B-V)
         
         
-        @param [in] gLon galactic longitude in radians
+        @param [in] galacticCoordinates is a numpy.array; the first row is galactic longitude,
+        the second row is galactic latitude
         
-        @param [in] gLat galactic latitude in radians
-        
-        @param [in] ra right ascension in radians
-        
-        @param [in] dec declination in radians
+        @param [in] equatorialCoordinates is a numpy.array; the first row is RA, the second row is Dec
         
         @param [in] northMap the northern dust map
         
         @param [in] southMap the southern dust map
         
-        @param [in] whether or not to interpolate the EBV value
+        @param [in] interp is a boolean determining whether or not to interpolate the EBV value
         
         @param [out] ebv is a list of EBV values for all of the gLon, gLat pairs
         
         """
         
-        #raise an error if the coordinates are only partially specified
-        if (gLon is None and gLat is not None) or \
-           (gLat is None and gLon is not None) or \
-           (ra is None and dec is not None) or \
-           (dec is None and ra is not None):
-           
-           if gLon is None:
-               print "gLon is None"
-           else:
-               print "gLon is not None"
-           
-           if gLat is None:
-               print "gLat is None"
-           else:
-               print "gLat is not None"
-           
-           if ra is None:
-               print "ra is None"
-           else:
-               print "ra is not None"
-           
-           if dec is None:
-               print "dec is None"
-           else:
-               print "dec is not None"
-           
-           raise RuntimeError("Inconsistent coordinates given to calculateEbv")  
-         
-        
         #raise an error if the coordinates are specified in both systems 
-        if gLon is not None and gLat is not None:
-            if ra is not None or dec is not None:
+        if galacticCoordinates is not None:
+            if equatorialCoordinates is not None:
                 raise RuntimeError("Specified both (gLon, gLat) and (ra, dec) in calculateEbv")        
         
         #convert (ra,dec) into gLon, gLat
-        if gLon is None and gLat is None:
+        if galacticCoordinates is None:
         
             #raise an error if you already specified ra or dec
-            if ra is None or dec is None:
+            if equatorialCoordinates is None:
                raise RuntimeError("Must specify coordinates in calculateEbv")
 
-            gLon, gLat = AstrometryBase.equatorialToGalactic(ra,dec)
+            galacticCoordinates = \
+            numpy.array([AstrometryBase.equatorialToGalactic(equatorialCoordinates[0,:],equatorialCoordinates[1,:])])
         
         if northMap is None:
             if self.ebvMapNorth is None:
@@ -327,21 +296,19 @@ class EBVbase(object):
 
         ebv = None
         
-        if gLat != []:
-           
-           ebv=numpy.zeros(len(gLon))
-           allPoints = numpy.array([(lon,lat) for (lon,lat) in zip(gLon,gLat)],
-                                   dtype=[('lon',float),('lat',float)])
+        if galacticCoordinates != []:
+
+           ebv=numpy.zeros(len(galacticCoordinates[0,:]))
            
            #taken from
            #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
-           inorth,isouth = reduce(lambda x,y: x[not y[1]>0.0].append(y[0]) or x, enumerate(gLat), ([],[]))
+           inorth,isouth = reduce(lambda x,y: x[not y[1]>0.0].append(y[0]) or x, enumerate(galacticCoordinates[1,:]), ([],[]))
            
-           nSet=allPoints[inorth]
-           sSet=allPoints[isouth]
+           nSet=galacticCoordinates[:,inorth]
+           sSet=galacticCoordinates[:,isouth]
 
-           ebvNorth=northMap.generateEbv(nSet['lon'],nSet['lat'],interpolate=interp)
-           ebvSouth=southMap.generateEbv(sSet['lon'],sSet['lat'],interpolate=interp)
+           ebvNorth=northMap.generateEbv(nSet[0,:],nSet[1,:],interpolate=interp)
+           ebvSouth=southMap.generateEbv(sSet[0,:],sSet[1,:],interpolate=interp)
             
            for (i,ee) in zip(inorth,ebvNorth):
                ebv[i]=ee
@@ -364,11 +331,10 @@ class EBVmixin(EBVbase):
         """
         Getter for the InstanceCatalog framework
         """
-
-        glon=self.column_by_name('glon')
-        glat=self.column_by_name('glat')
         
-        EBV_out=numpy.array(self.calculateEbv(gLon=glon,gLat=glat,interp=True))
+        galacticCoordinates=numpy.array([self.column_by_name('glon'),self.column_by_name('glat')])
+  
+        EBV_out=numpy.array(self.calculateEbv(galacticCoordinates=galacticCoordinates,interp=True))
         return EBV_out
         
     def get_galacticRv(self):
