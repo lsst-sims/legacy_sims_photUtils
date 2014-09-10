@@ -124,7 +124,9 @@ class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,tes
 class variabilityUnitTest(unittest.TestCase):
 
     def setUp(self):
-        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
+                            circ_bounds=dict(ra=200., dec=-30, radius=1.),
+                            m5=dict(u=23.9, g=25.0, r=24.7, i=24.0, z=23.3, y=22.1))
         self.galaxy = myTestGals()
         self.star = myTestStars()
 
@@ -150,7 +152,9 @@ class variabilityUnitTest(unittest.TestCase):
 
 class photometryUnitTest(unittest.TestCase):
     def setUp(self):
-        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
+                            circ_bounds=dict(ra=200., dec=-30, radius=1.),
+                            m5 = 25.0)
         self.galaxy = myTestGals()
         self.star = myTestStars()
 
