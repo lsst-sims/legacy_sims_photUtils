@@ -339,17 +339,14 @@ class EBVbase(object):
         if gLat != []:
            
            ebv=numpy.zeros(len(gLon))
-            
-           nSet=numpy.array([(lon,lat,i) 
-                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) 
-                                   if lat>0.0], 
+           allPoints = numpy.array([(lon,lat,i) for (lon,lat,i) in zip(gLon,gLat,range(len(gLon)))],
                                    dtype=[('lon',float),('lat',float),('dex',int)])
-        
-           sSet=numpy.array([(lon,lat,i) 
-                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) 
-                                   if lat<=0.0], 
-                                   dtype=[('lon',float),('lat',float),('dex',int)])
-            
+           
+           
+           inorth,isouth = reduce(lambda x,y: x[not y['lat']>0.0].append(y['dex']) or x, allPoints, ([],[]))
+           nSet=allPoints[inorth]
+           sSet=allPoints[isouth]
+
            ebvNorth=northMap.generateEbv(nSet['lon'],nSet['lat'],interpolate=interp)
            ebvSouth=southMap.generateEbv(sSet['lon'],sSet['lat'],interpolate=interp)
             
