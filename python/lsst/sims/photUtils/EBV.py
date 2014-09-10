@@ -125,17 +125,18 @@ class EbvMap(object):
         unity=numpy.ones(len(ix),dtype=int)
         
         if (interpolate):
-    
+        
+            #find the indices of the pixels bounding the point of interest
             ixLow=numpy.minimum(ix,(self.nc-2)*unity)
             ixHigh=ixLow+1
-            
             dx=x-ixLow
           
             iyLow=numpy.minimum(iy,(self.nr-2)*unity)
             iyHigh=iyLow+1
-            
             dy=y-iyLow
 
+            #interpolate the EBV value at the point of interest by interpolating
+            #first in x and then in y
             x1 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyLow,ixLow)])
             x2 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyLow,ixHigh)])
             xLow = interp1D(x1,x2,dx)
@@ -250,7 +251,7 @@ class EBVbase(object):
         #convert (ra,dec) into gLon, gLat
         if galacticCoordinates is None:
         
-            #raise an error if you already specified ra or dec
+            #raise an error if you did not specify ra or dec
             if equatorialCoordinates is None:
                raise RuntimeError("Must specify coordinates in calculateEbv")
 
@@ -275,6 +276,8 @@ class EBVbase(object):
 
            ebv=numpy.zeros(len(galacticCoordinates[0,:]))
            
+           #identify (by index) which points are in the galactic northern hemisphere
+           #and which points are int eh galactic southern hemisphere
            #taken from
            #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
            inorth,isouth = reduce(lambda x,y: x[not y[1]>0.0].append(y[0]) or x, enumerate(galacticCoordinates[1,:]), ([],[]))
