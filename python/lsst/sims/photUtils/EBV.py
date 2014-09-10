@@ -327,30 +327,44 @@ class EBVbase(object):
         #taken from
         #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
         
-        coordinates = numpy.array([[lon,lat] for (lon,lat) in zip(gLon,gLat)])
-
         ebv = []
         
-        if coordinates != []:
-            coordinateIsNorth=[coordinates[:,1]>0.]
-            #northernCoords,southernCoords = reduce(lambda x,y: x[y[1]<0.].append(y) or x, coordinates, ([],[]))
-            inorthLat, isouthLat = reduce(lambda x,y: x[y[1]<0.0].append(y[1]) or x, coordinates, ([],[]))
-            inorthLon, isouthLon = reduce(lambda x,y: x[y[1]<0.0].append(y[0]) or x, coordinates, ([],[]))
+        if gLat != []:
             
-            northLon=numpy.array(inorthLon)
-            northLat=numpy.array(inorthLat)
-            southLon=numpy.array(isouthLon)
-            southLat=numpy.array(isouthLat)
+            northLon=None
+            northLat=None
+            southLon=None
+            southLat=None
+            for (lon,lat) in zip(gLon,gLat):
+                #print lon,lat
+                if lat<=0.0:
+                    if southLat is None:
+                        southLat=numpy.array(lat)
+                        southLon=numpy.array(lon)
+                    else:
+                        southLat=numpy.append(southLat,lat)
+                        southLon=numpy.append(southLon,lon) 
+                else:
+                    if northLat is None:
+                        northLat=numpy.array(lat)
+                        northLon=numpy.array(lon)
+                    else:
+                        northLat=numpy.append(northLat,lat)
+                        northLon=numpy.append(northLon,lon)   
             
-            northEBV = northMap.generateEbv(northLon,northLat,interpolate=interp)
-            southEBV = southMap.generateEbv(southLon,southLat,interpolate=interp)
+            
+            if northLat is not None:
+                northEBV = northMap.generateEbv(northLon,northLat,interpolate=interp)
+            
+            if southLat is not None:
+                southEBV = southMap.generateEbv(southLon,southLat,interpolate=interp)
             
             iNorth=0
             iSouth=0
             
-            for ans in coordinateIsNorth[0]:
+            for lat in gLat:
                 
-                if ans:
+                if lat>0.0:
                     ebv.append(northEBV[iNorth])
                     iNorth+=1
                 else:
