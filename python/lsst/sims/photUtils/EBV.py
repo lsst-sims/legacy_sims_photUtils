@@ -3,6 +3,7 @@ import math
 import numpy
 import os
 
+from lsst.sims.catalogs.measures.instance import cached
 from lsst.sims.coordUtils import AstrometryBase
 
 #scott's notes to self
@@ -306,6 +307,7 @@ class EBVmixin(EBVbase):
     
     
     #and finally, here is the getter
+    @cached
     def get_EBV(self):
         """
         Getter for the InstanceCatalog framework
@@ -315,7 +317,8 @@ class EBVmixin(EBVbase):
   
         EBV_out=numpy.array(self.calculateEbv(galacticCoordinates=galacticCoordinates,interp=True))
         return EBV_out
-        
+    
+    @cached    
     def get_galacticRv(self):
         """
         Returns galactic RV by getting galacticAv and EBV and assuming Rv = Av/EBV"
