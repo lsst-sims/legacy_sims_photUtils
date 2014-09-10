@@ -340,14 +340,14 @@ class EBVbase(object):
            
            ebv=numpy.zeros(len(gLon))
             
-           nSet=numpy.array([(lon,lat,i) \
-                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) \
-                                   if lat>0.0], \
+           nSet=numpy.array([(lon,lat,i) 
+                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) 
+                                   if lat>0.0], 
                                    dtype=[('lon',float),('lat',float),('dex',int)])
         
-           sSet=numpy.array([(lon,lat,i) \
-                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) \
-                                   if lat<=0.0], \
+           sSet=numpy.array([(lon,lat,i) 
+                                   for (lon,lat,i) in zip(gLon,gLat,range(len(gLon))) 
+                                   if lat<=0.0], 
                                    dtype=[('lon',float),('lat',float),('dex',int)])
             
            ebvNorth=northMap.generateEbv(nSet['lon'],nSet['lat'],interpolate=interp)
