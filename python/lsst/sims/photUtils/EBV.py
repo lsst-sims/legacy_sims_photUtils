@@ -328,6 +328,13 @@ class EBVbase(object):
         #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
         
         ebv = None
+        """
+        what if we change the api to pass 
+        galacticCoords or
+        equatorialCoords
+        
+        so that we could do a list comprehension holding them together...
+        """
         
         if gLat != []:
             
