@@ -324,47 +324,30 @@ class EBVbase(object):
             
             southMap = self.ebvMapSouth
         
-        #taken from
-        #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
-        
+
         ebv = None
-        """
-        what if we change the api to pass 
-        galacticCoords or
-        equatorialCoords
-        
-        so that we could do a list comprehension holding them together...
-        """
         
         if gLat != []:
            
            ebv=numpy.zeros(len(gLon))
-           allPoints = numpy.array([(lon,lat,i) for (lon,lat,i) in zip(gLon,gLat,range(len(gLon)))],
-                                   dtype=[('lon',float),('lat',float),('dex',int)])
+           allPoints = numpy.array([(lon,lat) for (lon,lat) in zip(gLon,gLat)],
+                                   dtype=[('lon',float),('lat',float)])
            
+           #taken from
+           #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
+           inorth,isouth = reduce(lambda x,y: x[not y[1]>0.0].append(y[0]) or x, enumerate(gLat), ([],[]))
            
-           inorth,isouth = reduce(lambda x,y: x[not y['lat']>0.0].append(y['dex']) or x, allPoints, ([],[]))
            nSet=allPoints[inorth]
            sSet=allPoints[isouth]
 
            ebvNorth=northMap.generateEbv(nSet['lon'],nSet['lat'],interpolate=interp)
            ebvSouth=southMap.generateEbv(sSet['lon'],sSet['lat'],interpolate=interp)
             
-           for (i,ee) in zip(nSet['dex'],ebvNorth):
+           for (i,ee) in zip(inorth,ebvNorth):
                ebv[i]=ee
             
-           for (i,ee) in zip(sSet['dex'],ebvSouth):
+           for (i,ee) in zip(isouth,ebvSouth):
                ebv[i]=ee
-        
-        """
-        ebv=[]
-        for lon,lat in zip(gLon,gLat):
-            if (lat <= 0.):
-                ebv.append(southMap.generateEbv(lon,lat,interpolate=interp))
-            else:
-                ebv.append(northMap.generateEbv(lon,lat, interpolate=interp))
-        """
-        
         
         return ebv
 
