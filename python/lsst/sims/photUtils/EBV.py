@@ -308,13 +308,14 @@ class EBVbase(object):
 
            ebvNorth=northMap.generateEbv(nSet[0,:],nSet[1,:],interpolate=interp)
            ebvSouth=southMap.generateEbv(sSet[0,:],sSet[1,:],interpolate=interp)
-            
+           
            for (i,ee) in zip(inorth,ebvNorth):
                ebv[i]=ee
             
            for (i,ee) in zip(isouth,ebvSouth):
                ebv[i]=ee
-        
+ 
+            
         return ebv
 
 
