@@ -269,7 +269,7 @@ class EBVbase(object):
         #raise an error if the coordinates are specified in both systems 
         if galacticCoordinates is not None:
             if equatorialCoordinates is not None:
-                raise RuntimeError("Specified both (gLon, gLat) and (ra, dec) in calculateEbv")        
+                raise RuntimeError("Specified both galacticCoordinates and equatorialCoordinates in calculateEbv")        
         
         #convert (ra,dec) into gLon, gLat
         if galacticCoordinates is None:
@@ -278,9 +278,8 @@ class EBVbase(object):
             if equatorialCoordinates is None:
                raise RuntimeError("Must specify coordinates in calculateEbv")
 
-            galacticCoordinates = \
-            numpy.array([AstrometryBase.equatorialToGalactic(equatorialCoordinates[0,:],equatorialCoordinates[1,:])])
-        
+            galacticCoordinates = numpy.array(AstrometryBase.equatorialToGalactic(equatorialCoordinates[0,:],equatorialCoordinates[1,:]))
+            
         if northMap is None:
             if self.ebvMapNorth is None:
                 self.load_ebvMapNorth()

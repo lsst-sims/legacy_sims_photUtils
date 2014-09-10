@@ -482,19 +482,19 @@ class photometryUnitTest(unittest.TestCase):
             
             gLat.append(-0.5*numpy.pi+i*numpy.pi/10.0)
             gLon.append(i*2.0*numpy.pi/10.0)
+            
+            equatorialCoordinates=numpy.array([ra,dec])
+            galacticCoordinates=numpy.array([gLon,gLat])
+            
+        ebvOutput = ebvObject.calculateEbv(equatorialCoordinates=equatorialCoordinates)
+        self.assertEqual(len(ebvOutput),len(ra))
         
-        ebvOutput = ebvObject.calculateEbv(ra=ra, dec=dec)
-        ebvOutput = ebvObject.calculateEbv(gLon=gLon, gLat=gLat)
+        ebvOutput = ebvObject.calculateEbv(galacticCoordinates=galacticCoordinates)
+        self.assertEqual(len(ebvOutput),len(gLon))
         
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=None)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=None, dec=dec)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, gLat=gLat, gLon=None)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, gLat=None, gLon=gLon)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=dec, gLon=gLon, gLat=gLat)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=dec, gLon=gLon)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, dec=dec, gLat=gLat)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, ra=ra, gLon=gLon, gLat=gLat)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, dec=dec, gLon=gLon, gLat=gLat)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=equatorialCoordinates, 
+        galacticCoordinates=galacticCoordinates)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=None, galacticCoordinates=None)
         self.assertRaises(RuntimeError, ebvObject.calculateEbv)
      
 def suite():
