@@ -119,9 +119,6 @@ class EbvMap(object):
         # calculate pixel values
         x,y = self.skyToXY(glon, glat)
         
-        #ix=numpy.array([int(xx+0.5) for xx in x])
-        #iy=numpy.array([int(yy+0.5) for yy in y])
-        
         ix=(x+0.5).astype(int)
         iy=(y+0.5).astype(int)
       
@@ -130,41 +127,15 @@ class EbvMap(object):
         if (interpolate):
     
             ixLow=numpy.minimum(ix,(self.nc-2)*unity)
-            ixHigh=numpy.minimum(ix+1,(self.nc-1)*unity)
+            ixHigh=ixLow+1
             
             dx=x-ixLow
-            
-            #dx=numpy.array([ii-xx if ii==self.nc-1 else xx-ii for (ii,xx) in zip (ix,xy[0,:])])
-            
-            
-            """
-            if (ix == self.nc-1):
-                ixLow = ix-1
-                ixHigh = ix
-                dx = ix -x
-            else:
-                ixLow = ix
-                ixHigh = ix+1                   
-                dx = x - ix
-            """
+          
             iyLow=numpy.minimum(iy,(self.nr-2)*unity)
-            iyHigh=numpy.minimum(iy+1,(self.nr-1)*unity)
+            iyHigh=iyLow+1
             
             dy=y-iyLow
-            
-            #dy=numpy.array([ii-yy if ii==self.nr-1 else yy-ii for (ii,yy) in zip (iy,xy[1,:])])
-      
-            """    
-            if (iy == self.nr-1):
-                iyLow = iy-1
-                iyHigh = iy
-                dy = iy - y
-            else:
-                iyLow = iy
-                iyHigh = iy+1
-                dy = y - iy
-            """
-         
+
             x1 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyLow,ixLow)])
             x2 = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iyLow,ixHigh)])
             xLow = interp1D(x1,x2,dx)
@@ -177,8 +148,6 @@ class EbvMap(object):
          
         else:
             ebvVal = numpy.array([self.data[ii][jj] for (ii,jj) in zip(iy,ix)])
-        
-            #ebvVal = self.data[iy][ix]
 
         return ebvVal    
                         
