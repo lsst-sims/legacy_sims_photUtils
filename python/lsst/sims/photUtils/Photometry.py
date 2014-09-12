@@ -270,7 +270,6 @@ class PhotometryBase(object):
                          #see the paragraph between equations 3.1 and 3.2
         
         gamma = {}
-        m5 = {}
         
         gamma['u'] = 0.037
         gamma['g'] = 0.038
@@ -278,13 +277,6 @@ class PhotometryBase(object):
         gamma['i'] = 0.039
         gamma['z'] = 0.040
         gamma['y'] = 0.040
-        
-        m5['u'] = 23.9
-        m5['g'] = 25.0
-        m5['r'] = 24.7
-        m5['i'] = 24.0
-        m5['z'] = 23.3
-        m5['y'] = 22.1
         
         sigOut={}
         
@@ -296,7 +288,8 @@ class PhotometryBase(object):
                 mm = magnitudes[filterName][i]
                
                 if mm != None:
-                    xx=10**(0.4*(mm - m5[filterName]))
+                    
+                    xx=10**(0.4*(mm - self.obs_metadata.m5(filterName)))
                     ss = (0.04 - gamma[filterName])*xx + \
                          gamma[filterName]*xx*xx
                 

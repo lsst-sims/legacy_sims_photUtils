@@ -99,65 +99,65 @@ class readGalfast():
                 raise RuntimeError, '*** Unknown field: %s' % (title)
         return galfastDict
 
-    def findLSSTMags(self, sEDName, absMagR, DM, am, reddening = True, 
-                     lsstExtCoeffs = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]):
+    def findLSSTMags(self, sEDName, sEDDict, absSDSSr, DM, am, lsstExtCoeffs):
+        """
+        Find LSST mags for the matched SED
+
+        @param [in] sEDName is the name of the matched SED
+
+        @param [in] sEDDict is the SED Dictionary from the SED matching routine
+
+        @param [in] absSDSSr is the absolute SDSS r magnitude of the galfast object
+
+        @param [in] DM is the distance modulus
+
+        @param [in] am is the r magnitude extinction from galfast
+
+        @param [in] lsstExtCoeffs are the extinction coefficients that scale extinction
+        from r magnitude to other filters
+
+        @param [out] fluxNorm is the flux normalization calculated for the object
+        to the matched SED to recreate the correct magnitudes
+
+        @param [out] lsstMagDict is the set of lsst magnitudes for the given flux
+        normalization and matched SED
 
         """
-        Takes input SED and object's galfast output properties and generates appropriate LSST mags
 
-        @param [in] sEDname is the matched SED file to the galfast object
-
-        @param [in] absMagR is the galfast output's absolute SDSS R magnitude
-
-        @param [in] DM is the distance modulus from the galfast output
-
-        @param [in] am is the extinction from the galfast output
-
-        @param [in] reddening indicates whether extinction and reddening were included in the
-        galfast output
-
-        @param [in] lsstExtCoeffs are the appropriately scaled reddening coefficients compared to
-        SDSS R from schlafly and finkbeiner 2011, table 2
-
-        @param [out] lsstFinalMagDict is a dictionary with the filter names and lsst magnitudes
-
-        @param [out] sED_fluxnorm is the flux normalization for the object and the given absMagR
-        """
-
-        sEDObj = Sed()
-        setupSEDParams = selectStarSED()
         if sEDName.startswith('k'):
-            #Kurucz SED
-            sEDObj.readSED_flambda(setupSEDParams.kuruczDir + sEDName)
+                #Kurucz SED
+            sedType = 'kurucz'
         elif sEDName.startswith('bergeron'):
-            #WD SED
-            sEDObj.readSED_flambda(setupSEDParams.wdDir + sEDName)
+                #WD SED
+            if sEDName[9:11] == 'He':
+                sedType = 'wdHE'
+            else:
+                sedType = 'wdH'
         else:
-            #mlt SED
-            sEDObj.readSED_flambda(setupSEDParams.mltDir + sEDName)
+                #mlt SED
+            sedType = 'mlt'
 
-        sED_fluxnorm = sEDObj.calcFluxNorm(absMagR, setupSEDParams.sdssBandpassDict['r'])
-        sEDObj.multiplyFluxNorm(sED_fluxnorm)
-        
-        sEDPhot = phot()
-        lsstMagDict = sEDPhot.manyMagCalc_dict(sEDObj, setupSEDParams.lsstPhiArray, 
-                                               setupSEDParams.lsstWavelenstep, 
-                                               setupSEDParams.lsstBandpassDict, 
-                                               setupSEDParams.lsstFilterList)
+        fluxNorm = np.power(10, -0.4*(absSDSSr - sEDDict[sedType]['rMags'][sEDName]))
+            
+        lsstAbsMagDict = {}
+        lsstAbsMagDict['r'] = sEDDict[sedType]['lsstrMags'][sEDName] - (2.5*np.log10(fluxNorm))
+        lsstAbsMagDict['g'] = lsstAbsMagDict['r'] + sEDDict[sedType]['lsstgmr'][sEDName]
+        lsstAbsMagDict['u'] = lsstAbsMagDict['g'] + sEDDict[sedType]['lsstumg'][sEDName]
+        lsstAbsMagDict['i'] = lsstAbsMagDict['r'] - sEDDict[sedType]['lsstrmi'][sEDName]
+        lsstAbsMagDict['z'] = lsstAbsMagDict['i'] - sEDDict[sedType]['lsstimz'][sEDName]
+        lsstAbsMagDict['y'] = lsstAbsMagDict['z'] - sEDDict[sedType]['lsstzmy'][sEDName]
         
         #Add DM and reddening the way mario does
         #Find proportional reddening coeffecients to sdssr reddening 
-        #from schlafly and finkbeiner 2011, table 2
+        #from schlafly and finkbeiner 2011, table 2. Defined above.
 
-        lsstFinalMagDict = {}
-        for filterName, ext in zip(setupSEDParams.lsstFilterList, lsstExtCoeffs):
-            mag = lsstMagDict[filterName]
-            if reddening == True:
-                lsstFinalMagDict[filterName] = mag + DM + (am * ext)
-            else:
-                lsstFinalMagDict[filterName] = mag + DM
+        lsstMagDict = {}
+        for filterName, ext in zip(('u', 'g', 'r', 'i', 'z', 'y'), lsstExtCoeffs):
+            mag = lsstAbsMagDict[filterName]
+            lsstMagDict[filterName] = mag + DM + (am * ext)
 
-        return lsstFinalMagDict, sED_fluxnorm 
+        return fluxNorm, lsstMagDict
+
 
     def convDMtoKpc(self, DM): 
         """
@@ -205,6 +205,9 @@ class readGalfast():
         sEDDict['wdH'] = wdDict['H']
         sEDDict['wdHE'] = wdDict['HE']
 
+        #For adding extinction when calculating lsst colors
+        lsstExtCoeffs = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
+
         for filename, outFile in zip(filenameList, outFileList):
 
             if filename.endswith('.txt'):
@@ -219,14 +222,15 @@ class readGalfast():
                 inFits = True
 
             fOut = open(outFile, 'w')
-            fOut.write('#ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm, ' +\
+            fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm, ' +\
                        'LSSTugrizy, SDSSugriz, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
 
             lineNum = 0
+
             for line in galfastIn:
                 if inFits:
-                    oID = float(lineNum)
+                    oID = int(lineNum)
                     starData = galfastIn[lineNum]
                     gall, galb = starData.field('lb')
                     ra, dec = starData.field('radec')
@@ -247,7 +251,7 @@ class readGalfast():
                         galfastDict = self.parseGalfast(line)
                         lineNum += 1
                     if line[0] == '#': continue
-                    oID = float(lineNum)
+                    oID = int(lineNum)
                     lineData = line.split()
                     gall = float(lineData[galfastDict['l']])
                     galb = float(lineData[galfastDict['b']])
@@ -280,17 +284,21 @@ class readGalfast():
                     
                 #End of input, now onto processing and output
                 sEDName = selectStarSED0.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, pop)
-                lsstMagDict, fluxNorm = self.findLSSTMags(sEDName, absSDSSr, DM, am)
+                ####
+
+                fluxNorm, lsstMagDict = self.findLSSTMags(sEDName, sEDDict, absSDSSr,
+                                                          DM, am, lsstExtCoeffs)
+
                 distKpc = self.convDMtoKpc(DM)
                 ebv = am / 2.285 #From Schlafly and Finkbeiner for sdssr
                 ebvInf = amInf / 2.285
-                outFmt = '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
+                outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
                          '%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f' +\
                          '%3.7f,%i,%3.7f,%3.7f,%3.7f\n'
-                outDat = (ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm,
+                outDat = (oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm,
                           lsstMagDict['u'], lsstMagDict['g'], lsstMagDict['r'], 
                           lsstMagDict['i'], lsstMagDict['z'], lsstMagDict['y'],
                           sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr,
@@ -298,3 +306,5 @@ class readGalfast():
                           FeH, pop, distKpc, ebv, ebvInf)
                 fOut.write(outFmt % outDat)
                 lineNum += 1
+                if lineNum % 10000 == 0:
+                    print str(str(lineNum) + ' done')
