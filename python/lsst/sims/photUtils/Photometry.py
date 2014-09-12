@@ -50,7 +50,8 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandPassList)
 
-    def loadBandPassesFromFiles(self,bandPassNames, bandPassDir = None, bandPassRoot = None):
+    def loadBandPassesFromFiles(self,bandPassNames, bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'), 
+    bandPassRoot = 'total_'):
         """
         This will take the list of band passes named by bandPassNames and use them to set up
         self.bandPassList (which is being cached so that 
@@ -65,17 +66,9 @@ class PhotometryBase(object):
         by altering bandPassRoot (currently no infrastructure exists for altering the directory
         in which bandpass files are stored)
         """
-       
-        if bandPassRoot == None:
-            bandPassRoot = 'total_'
         
         self.bandPassList = []
 
-        #A hack to get around the fact that I can't get SCons to pass through env vars.
-        #path = os.getenv('LSST_THROUGHPUTS_DEFAULT_DIR')
-        if bandPassDir == None:
-            bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
- 
         for w in bandPassNames:   
             bandPassDummy = Bandpass()
             bandPassDummy.readThroughput(os.path.join(bandPassDir,"%s.dat" % (bandPassRoot + w)))
