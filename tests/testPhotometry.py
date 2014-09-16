@@ -16,8 +16,6 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 
-from lsst.sims.catUtils.baseCatalogModels import *
-
 from lsst.sims.photUtils.Variability import Variability
 
 # Create test databases
