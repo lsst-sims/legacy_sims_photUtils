@@ -233,7 +233,7 @@ class Variability(PhotometryBase):
                 zAgnOut.append(zAgn[i])
                 yAgnOut.append(yAgn[i])
                 
-                if self.bandpass() is not None and (not numpy.isnan(magNormAgn[i])):
+                if self.bandpass is not None and (not numpy.isnan(magNormAgn[i])):
                     
                     magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
                         agn = magNormAgn[i]))
@@ -312,8 +312,8 @@ class Variability(PhotometryBase):
         expmjd=self.obs_metadata.mjd
         output = self._methodRegistry[method](self, params,expmjd)
 
-        if self.bandpass() is not None:
-            deltaMagNorm = output[self.bandpass()]
+        if self.bandpass is not None:
+            deltaMagNorm = output[self.bandpass]
         else:
             deltaMagNorm = None
  
