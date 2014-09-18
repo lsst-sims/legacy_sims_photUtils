@@ -91,7 +91,7 @@ class Variability(PhotometryBase):
                 zzout.append(zz[i])
                 yyout.append(yy[i])
                 
-                if self.obs_metadata.metadata != None and self.obs_metadata.bandpass:
+                if self.obs_metadata.bandpass:
                     magNormVarOut.append(magNorm[i])
                 else:
                     magNormVarOut.append(-999.0)
@@ -233,9 +233,7 @@ class Variability(PhotometryBase):
                 zAgnOut.append(zAgn[i])
                 yAgnOut.append(yAgn[i])
                 
-                if self.obs_metadata.metadata is not None and \
-                    self.obs_metadata.bandpass and \
-                    (not numpy.isnan(magNormAgn[i])):
+                if self.bandpass is not None and (not numpy.isnan(magNormAgn[i])):
                     
                     magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
                         agn = magNormAgn[i]))
@@ -313,16 +311,12 @@ class Variability(PhotometryBase):
         params = varCmd['pars']
         expmjd=self.obs_metadata.mjd
         output = self._methodRegistry[method](self, params,expmjd)
-        
-        if self.obs_metadata.metadata != None:
-            if self.obs_metadata.bandpass:
-                deltaMagNorm = output[self.obs_metadata.bandpass]
-            else:
-                deltaMagNorm = None
-        
+
+        if self.bandpass is not None:
+            deltaMagNorm = output[self.bandpass]
         else:
             deltaMagNorm = None
-        
+ 
         return output, deltaMagNorm
     
     def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
