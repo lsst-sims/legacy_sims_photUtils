@@ -6,18 +6,6 @@ import os
 from lsst.sims.catalogs.measures.instance import cached
 from lsst.sims.coordUtils import AstrometryBase
 
-#scott's notes to self
-#mixin could have a method by which user sets data dir and dust map file 
-#(see main() below)
-#otherwise, it defaults to values below
-#only instantiate the map when you call for the ebv values
-
-#however: that might get called before the user has a chance to intervene
-
-#I guess if the user just set it in the base class as an attribute of the base
-#class, the user would be able to intervene before the getter infrastructure 
-#kicked in...
-
 def interp1D(z1 , z2, offset):
     """ 1D interpolation on a grid"""
 
@@ -286,7 +274,7 @@ class EBVbase(object):
            ebv=numpy.zeros(len(galacticCoordinates[0,:]))
            
            #identify (by index) which points are in the galactic northern hemisphere
-           #and which points are int eh galactic southern hemisphere
+           #and which points are in the galactic southern hemisphere
            #taken from
            #http://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
            inorth,isouth = reduce(lambda x,y: x[not y[1]>0.0].append(y[0]) or x, enumerate(galacticCoordinates[1,:]), ([],[]))
