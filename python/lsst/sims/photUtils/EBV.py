@@ -172,11 +172,19 @@ class EBVbase(object):
     e.g.
     
     ebvObject = EBVbase()
-    ebvValue = ebvObject(gLon = myLonValue, gLat = myLatValue)
+    ebvValue = ebvObject.calculateEbv(galacticCoordinates = myGalacticCoordinates)
     
     or 
     
-    ebvValue = ebvObject(ra = myRA, dec = myDec)
+    ebvValue = ebvObject.calculateEbv(equatorialCoordinates = myEquatorialCoordinates)
+    
+    where myGalacticCoordinates is a 2-d numpy array where the first row is galactic longitude
+    and the second row is galactic latitude.
+    
+    myEquatorialCoordinates is a 2-d numpy array where the first row is RA and the second row
+    is dec
+    
+    All coordinates are in radians
     
     You can also specify dust maps in the northern and southern galactic hemispheres, but
     there are default values that the code will automatically load (see the class variables
