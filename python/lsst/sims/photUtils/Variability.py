@@ -304,7 +304,7 @@ class Variability(PhotometryBase):
         
         """
         if self.variabilityInitialized == False:
-            self.initializeVariability()
+            self.initializeVariability(doCache=True)
             
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
