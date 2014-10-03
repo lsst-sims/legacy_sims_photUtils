@@ -432,6 +432,22 @@ class Variability(PhotometryBase):
             dMags[k] = -2.5*numpy.log10(dMags[k])
         return dMags
 
+    @register_method('applyMicrolensing')
+    def applyMicrolensing(self, params, expmjd_in):
+        dMags = {}
+        epochs = numpy.asarray(expmjd_in,dtype=float) - params['t0']
+        u = numpy.sqrt(params['umin']**2 + (2.0 * epochs /\
+            params['that'])**2)
+        magnification = (u + 2.0) / (u * numpy.sqrt(u**2 + 4.0))
+        dmag = -2.5 * numpy.log10(magnification)
+        dMags['u'] = dmag
+        dMags['g'] = dmag
+        dMags['r'] = dmag
+        dMags['i'] = dmag
+        dMags['z'] = dmag
+        dMags['y'] = dmag 
+        return dMags
+
     @register_method('applyMicrolens')
     def applyMicrolens(self, params, expmjd_in):
         expmjd = numpy.asarray(expmjd_in,dtype=float)
@@ -485,22 +501,6 @@ class Variability(PhotometryBase):
             intdx = interp1d(x, dx)
             magoff = intdx(epochs)
             dMags[k] = magoff
-        return dMags
-
-    @register_method('applyMicrolensing')
-    def applyMicrolensing(self, params, expmjd_in):
-        dMags = {}
-        epochs = numpy.asarray(expmjd_in,dtype=float) - params['t0']
-        u = numpy.sqrt(params['umin']**2 + (2.0 * epochs /\
-            params['that'])**2)
-        magnification = (u + 2.0) / (u * numpy.sqrt(u**2 + 4.0))
-        dmag = -2.5 * numpy.log10(magnification)
-        dMags['u'] = dmag
-        dMags['g'] = dmag
-        dMags['r'] = dmag
-        dMags['i'] = dmag
-        dMags['z'] = dmag
-        dMags['y'] = dmag 
         return dMags
 
     @register_method('applyAmcvn')
