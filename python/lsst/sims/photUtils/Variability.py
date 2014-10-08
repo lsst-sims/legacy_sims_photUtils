@@ -304,7 +304,7 @@ class Variability(PhotometryBase):
         
         """
         if self.variabilityInitialized == False:
-            self.initializeVariability()
+            self.initializeVariability(doCache=True)
             
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
@@ -402,7 +402,7 @@ class Variability(PhotometryBase):
     @register_method('applyMflare')
     def applyMflare(self, params, expmjd):
         
-        params['lcfilename'] = "mflare/"+params['lcfilename'][:-5]+"1.dat.gz"
+        params['lcfilename'] = "mflare/"+params['lcfilename']+".gz"
         keymap = {'filename':'lcfilename', 't0':'t0'}
         magoff = self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['length'])
         for k in magoff.keys():
