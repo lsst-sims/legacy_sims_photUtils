@@ -3,7 +3,7 @@ import numpy as np
 import warnings
 from lsst.sims.photUtils.Sed import Sed
 
-class applyIGM(object):
+class ApplyIGM(object):
 
     """
     This class applies IGM to SED objects using lookup tables. If users want to enter their
@@ -12,9 +12,8 @@ class applyIGM(object):
     arrays as the values.
     """
 
-    def __init__(self):
-        self.IGMisInitialized = False
-        self.tablesPresent = False
+    IGMisInitialized = False
+    tablesPresent = False
 
     def initializeIGM(self, zMin = 1.5, zMax = 2.9, zDelta = 0.1, minWavelen = 300):
 

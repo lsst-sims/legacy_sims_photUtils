@@ -3,7 +3,7 @@ import unittest
 import warnings
 import os
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.applyIGM import applyIGM
+from lsst.sims.photUtils.applyIGM import ApplyIGM
 
 class TestApplyIGM(unittest.TestCase):
 
@@ -12,7 +12,7 @@ class TestApplyIGM(unittest.TestCase):
         "Test Initialization Method"
 
         #Make sure that if we initialize IGM with new inputs that it is initializing with them
-        testIGM = applyIGM()
+        testIGM = ApplyIGM()
         testSed = Sed()
         testSed.readSED_flambda(os.environ['SIMS_SED_LIBRARY_DIR'] + '/galaxySED/Inst.80E09.25Z.spec.gz')
         testIGM.applyIGM(1.8, testSed)
@@ -33,7 +33,7 @@ class TestApplyIGM(unittest.TestCase):
         tableDirectory = str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/igm')
         #First make sure that if variance option is turned on but there are no variance files that
         #the correct error is raised
-        testIGM = applyIGM()
+        testIGM = ApplyIGM()
         testIGM.initializeIGM(zMax = 1.5)
         testMeanLookupTable = open('MeanLookupTable_zSource1.5.tbl', 'w')
         testMeanLookupTable.write('300.0        0.9999')
@@ -42,7 +42,7 @@ class TestApplyIGM(unittest.TestCase):
         os.remove('MeanLookupTable_zSource1.5.tbl')
         
         #Then make sure that the mean lookup tables and var lookup tables all get loaded into proper dicts
-        testIGMDicts = applyIGM()
+        testIGMDicts = ApplyIGM()
         testIGMDicts.initializeIGM()
         testIGMDicts.loadTables(tableDirectory)
         redshiftValues = ['1.5', '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5',
@@ -51,7 +51,7 @@ class TestApplyIGM(unittest.TestCase):
         self.assertItemsEqual(testIGMDicts.varLookups.keys(), redshiftValues)
 
         #Finally make sure that if Variance Boolean is false that nothing is passed in to varLookups
-        testIGMVar = applyIGM()
+        testIGMVar = ApplyIGM()
         testIGMVar.initializeIGM()
         testIGMVar.loadTables(tableDirectory, varianceTbl = False)
         self.assertEqual(testIGMVar.varLookups, {})
@@ -67,7 +67,7 @@ class TestApplyIGM(unittest.TestCase):
         testFlambda = []
         for fVal in testSed.flambda:
             testFlambda.append(fVal)
-        testIGM = applyIGM()
+        testIGM = ApplyIGM()
         testIGM.initializeIGM()
         with warnings.catch_warnings(record=True) as wa:
             testIGM.applyIGM(1.1, testSed)
