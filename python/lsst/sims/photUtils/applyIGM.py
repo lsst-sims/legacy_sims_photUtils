@@ -12,7 +12,11 @@ class applyIGM(object):
     arrays as the values.
     """
 
-    def __init__(self, zMin = 1.5, zMax = 2.9, zDelta = 0.1, minWavelen = 300):
+    def __init__(self):
+        self.IGMisInitialized = False
+        self.tablesPresent = False
+
+    def initializeIGM(self, zMin = 1.5, zMax = 2.9, zDelta = 0.1, minWavelen = 300):
 
         """
         Initialize an applyIGM object with the desired redshift grid.
@@ -33,8 +37,11 @@ class applyIGM(object):
         self.minWavelen = minWavelen 
         #Don't have max wavelength since transmission goes to 1.0 at longest wavelengths
         self.zRange = np.arange(zMin, zMax + (zDelta/2.), zDelta)
-        self.meanLookups = {}
-        self.varLookups = {}
+
+        if self.tablesPresent == False:
+            self.loadTables(str(str(os.environ['SIMS_SED_LIBRARY_DIR']) + '/igm/'))
+
+        self.IGMisInitialized = True
 
 
     def loadTables(self, filesDir, varianceTbl = True):
@@ -54,6 +61,9 @@ class applyIGM(object):
         for loading.
         """
 
+        self.meanLookups = {}
+        self.varLookups = {}
+
         for zValue in self.zRange:
             self.meanLookups[str(zValue)] = np.genfromtxt(str(filesDir + '/MeanLookupTable_zSource' + 
                                                               str(zValue) + '.tbl'))
@@ -63,6 +73,8 @@ class applyIGM(object):
                                                                      str(zValue) + '.tbl'))
                 except IOError:
                     print "Cannot find variance tables."
+
+        self.tablesPresent = True
 
     def applyIGM(self, redshift, sedobj):
 
@@ -75,6 +87,9 @@ class applyIGM(object):
         @param [in] sedobj is the SED object to which IGM extinction will be applied. This object
         will be modified as a result of this.
         """
+
+        if self.IGMisInitialized == False:
+            self.initializeIGM()
 
         #First make sure redshift is in range of lookup tables.            
         if (redshift < self.zMin) or (redshift > self.zMax):

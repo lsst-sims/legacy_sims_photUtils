@@ -7,6 +7,25 @@ from lsst.sims.photUtils.applyIGM import applyIGM
 
 class TestApplyIGM(unittest.TestCase):
 
+    def testInitializeIGM(self):
+
+        "Test Initialization Method"
+
+        #Make sure that if we initialize IGM with new inputs that it is initializing with them
+        testIGM = applyIGM()
+        testSed = Sed()
+        testSed.readSED_flambda(os.environ['SIMS_SED_LIBRARY_DIR'] + '/galaxySED/Inst.80E09.25Z.spec.gz')
+        testIGM.applyIGM(1.8, testSed)
+        testZmin = 1.8
+        testZmax = 2.2
+        #Want new values for testing, 
+        #so make sure we are not just putting in the same values as are already there
+        self.assertNotEqual(testZmin, testIGM.zMin)
+        self.assertNotEqual(testZmax, testIGM.zMax)
+        testIGM.initializeIGM(zMin = testZmin, zMax = testZmax)
+        self.assertEqual(testZmin, testIGM.zMin)
+        self.assertEqual(testZmax, testIGM.zMax)
+
     def testLoadTables(self):
         
         "Test Readin of IGM Lookup Tables"
@@ -14,7 +33,8 @@ class TestApplyIGM(unittest.TestCase):
         tableDirectory = str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/igm')
         #First make sure that if variance option is turned on but there are no variance files that
         #the correct error is raised
-        testIGM = applyIGM(zMax = 1.5)
+        testIGM = applyIGM()
+        testIGM.initializeIGM(zMax = 1.5)
         testMeanLookupTable = open('MeanLookupTable_zSource1.5.tbl', 'w')
         testMeanLookupTable.write('300.0        0.9999')
         testMeanLookupTable.close()
@@ -23,6 +43,7 @@ class TestApplyIGM(unittest.TestCase):
         
         #Then make sure that the mean lookup tables and var lookup tables all get loaded into proper dicts
         testIGMDicts = applyIGM()
+        testIGMDicts.initializeIGM()
         testIGMDicts.loadTables(tableDirectory)
         redshiftValues = ['1.5', '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5',
                           '2.6', '2.7', '2.8', '2.9']
@@ -31,6 +52,7 @@ class TestApplyIGM(unittest.TestCase):
 
         #Finally make sure that if Variance Boolean is false that nothing is passed in to varLookups
         testIGMVar = applyIGM()
+        testIGMVar.initializeIGM()
         testIGMVar.loadTables(tableDirectory, varianceTbl = False)
         self.assertEqual(testIGMVar.varLookups, {})
         
@@ -39,14 +61,14 @@ class TestApplyIGM(unittest.TestCase):
 
         """Test application of IGM from Lookup Tables to SED objects"""
 
-        #Test than a warning comes up if input redshift is out of range and that no changes occurs to SED
+        #Test that a warning comes up if input redshift is out of range and that no changes occurs to SED
         testSed = Sed()
         testSed.readSED_flambda(os.environ['SIMS_SED_LIBRARY_DIR'] + '/galaxySED/Inst.80E09.25Z.spec.gz')
         testFlambda = []
         for fVal in testSed.flambda:
             testFlambda.append(fVal)
         testIGM = applyIGM()
-        testIGM.loadTables(os.environ['SIMS_SED_LIBRARY_DIR'] + '/igm')
+        testIGM.initializeIGM()
         with warnings.catch_warnings(record=True) as wa:
             testIGM.applyIGM(1.1, testSed)
             self.assertEqual(len(wa), 1)
