@@ -328,8 +328,8 @@ class variabilityUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
-                            circ_bounds=dict(ra=200., dec=-30, radius=1.),
-                            m5=dict(u=23.9, g=25.0, r=24.7, i=24.0, z=23.3, y=22.1))
+                            boundType = 'circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                            boundLength=1.0,m5=dict(u=23.9, g=25.0, r=24.7, i=24.0, z=23.3, y=22.1))
 
         self.galaxy = myTestGals()
         self.star = myTestStars()
@@ -359,8 +359,8 @@ class variabilityUnitTest(unittest.TestCase):
 class photometryUnitTest(unittest.TestCase):
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
-                            circ_bounds=dict(ra=200., dec=-30, radius=1.),
-                            m5 = 25.0)
+                            boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                            boundLength=1.0, m5 = 25.0)
 
         self.galaxy = myTestGals()
         self.star = myTestStars()
@@ -395,7 +395,9 @@ class photometryUnitTest(unittest.TestCase):
         LSST bandpasses.
         """
         
-        obs_metadata_pointed=ObservationMetaData(mjd=2013.23, circ_bounds=dict(ra=200., dec=-30, radius=1.))
+        obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
+                                                 boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                                 boundLength=1.0)
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
@@ -434,7 +436,9 @@ class photometryUnitTest(unittest.TestCase):
         the same as testAlternateBandpassesStars, but for galaxies
         """
         
-        obs_metadata_pointed=ObservationMetaData(mjd=50000.0, circ_bounds=dict(ra=0., dec=0., radius=10.0))
+        obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
+                               boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                               boundLength=10.0)
         obs_metadata_pointed.metadata = {}
         obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
