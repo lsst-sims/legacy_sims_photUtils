@@ -11,14 +11,14 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.photUtils.Photometry import PhotometryStars
 from lsst.sims.photUtils.Variability import Variability
 
-sedFiles = ['m2.0Full.dat','m5.1Full.dat', 'm4.9Full.dat']
-lcFiles = ['flare_lc_bin3_4.dat', 'flare_lc_bin1_4.dat', 'flare_lc_bin3_3.dat']
 
-
-def makeVariabilityDB(size=10, **kwargs):
+def makeMflareTable(size=10, **kwargs):
     """
     Make a test database to serve information to the mflareTest object
     """
+    sedFiles = ['m2.0Full.dat','m5.1Full.dat', 'm4.9Full.dat']
+    lcFiles = ['flare_lc_bin3_4.dat', 'flare_lc_bin1_4.dat', 'flare_lc_bin3_3.dat']
+
     conn = sqlite3.connect('VariabilityTestDatabase.db')
     c = conn.cursor()
     try:
@@ -39,7 +39,6 @@ def makeVariabilityDB(size=10, **kwargs):
     conn.commit()
     conn.close()
 
-
 class mflareDB(CatalogDBObject):
     objid = 'mflareTest'
     tableid = 'mFlare'
@@ -59,11 +58,8 @@ class VariabilityTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
         if os.path.exists('VariabilityTestDatabase.db'):
             os.unlink('VariabilityTestDatabase.db')
-
-        makeVariabilityDB()
 
     @classmethod
     def tearDownClass(cls):
@@ -77,6 +73,7 @@ class VariabilityTest(unittest.TestCase):
         del self.obs_metadata
 
     def testMflares(self):
+        makeMflareTable()
         myDB = CatalogDBObject.from_objid('mflareTest')
         myCatalog = myDB.getCatalog('mflareCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('mFlareTestCatalog.dat',chunk_size=1)
