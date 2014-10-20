@@ -21,8 +21,9 @@ class variabilityUnitTest(unittest.TestCase):
         if os.path.exists('PhotometryTestDatabase.db'):
             print "deleting database"
             os.unlink('PhotometryTestDatabase.db')
-        makeStarTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
-        makeGalTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
+
+        makeStarTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
+        makeGalTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
 
     @classmethod
     def tearDownClass(cls):
@@ -67,8 +68,9 @@ class photometryUnitTest(unittest.TestCase):
         if os.path.exists('PhotometryTestDatabase.db'):
             print "deleting database"
             os.unlink('PhotometryTestDatabase.db')
-        makeStarTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
-        makeGalTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
+
+        makeStarTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
+        makeGalTestDB(filename='PhotometryTestDatabase.db', size=100000, seedVal=1)
 
     @classmethod
     def tearDownClass(cls):
