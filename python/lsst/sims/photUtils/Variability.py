@@ -505,6 +505,14 @@ class Variability(PhotometryBase):
 
     @register_method('applyAmcvn')
     def applyAmcvn(self, params, expmjd_in):
+        #21 October 2014
+        #This method assumes that the parameters for Amcvn variability
+        #are stored in a varParamStr column in the database.  Actually, the
+        #current Amcvn event tables in the database store each
+        #variability parameter as its own database column.
+        #At some point, either this method or the Amcvn tables in the
+        #database will need to be changed.
+
         maxyears = 10.
         dMag = {}
         epochs = numpy.asarray(expmjd_in,dtype=float)
