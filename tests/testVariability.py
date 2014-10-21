@@ -354,7 +354,7 @@ class StellarVariabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
     catalog_type = 'stellarVariabilityCatalog'
     column_outputs = ['varsimobjid','sedFilename','lsstUdiff']
     default_columns=[('magNorm',14.0,float)]
-    
+
     def get_lsstUdiff(self):
         lsstU = self.column_by_name('lsst_u')
         lsstUvar = self.column_by_name('lsst_u_var')
