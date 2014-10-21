@@ -92,15 +92,44 @@ def makeCepheidTable(size=100, **kwargs):
     mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
     for i in xrange(size):
         sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
-        varParam = {'varMethodName':'applyCepheid', 
+        varParam = {'varMethodName':'applyCepheid',
            'pars':{'period':periods[i], 'lcfile':lcFiles[i%len(lcFiles)], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
-        
+
         qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
         c.execute(qstr)
     conn.commit()
     conn.close()
 
+def makeEbTable(size=100, **kwargs):
+    """
+    Make a test database to serve information to the cepheid test
+    """
+    sedFiles = ['sed_flat_norm.txt']
+    lcFiles = ['eb_lc/EB.2294.inp','eb_lc/EB.1540.inp','eb_lc/EB.2801.inp']
+
+    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    c = conn.cursor()
+    try:
+        c.execute('''CREATE TABLE eb
+                     (varsimobjid int, varParamStr text, sedfilename text)''')
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating database.")
+
+    numpy.random.seed(32)
+    periods = numpy.random.sample(size)*50.0
+    mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
+    for i in xrange(size):
+        sedFile = sedFiles[0]
+        varParam = {'varMethodName':'applyCepheid',
+           'pars':{'period':periods[i], 'lcfile':lcFiles[i%len(lcFiles)], 't0':48000.0+mjDisplacement[i]}}
+        paramStr = json.dumps(varParam)
+
+        qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
+        c.execute(qstr)
+    conn.commit()
+    conn.close()
 
 class variabilityDB(CatalogDBObject):
     dbAddress = 'sqlite:///VariabilityTestDatabase.db'
@@ -119,6 +148,10 @@ class rrlyDB(variabilityDB):
 class cepheidDB(variabilityDB):
     objid = 'cepheidTest'
     tableid = 'cepheid'
+
+class ebDB(variabilityDB):
+    objid = 'ebTest'
+    tableid = 'eb'
 
 class variabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
     catalog_type = 'variabilityCatalog'
@@ -168,8 +201,17 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('cepheidTestCatalog.dat',chunk_size=1000)
 
-        #if os.path.exists('cepheidTestCatalog.dat'):
-        #    os.unlink('cepheidTestCatalog.dat')
+        if os.path.exists('cepheidTestCatalog.dat'):
+            os.unlink('cepheidTestCatalog.dat')
+
+    def testEb(self):
+        makeEbTable()
+        myDB = CatalogDBObject.from_objid('ebTest')
+        myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('ebTestCatalog.dat',chunk_size=1000)
+
+        if os.path.exists('ebTestCatalog.dat'):
+            os.unlink('ebTestCatalog.dat')
 
 def suite():
     utilsTests.init()
