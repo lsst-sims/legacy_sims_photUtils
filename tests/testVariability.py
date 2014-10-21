@@ -171,9 +171,9 @@ def makeAgnTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE agn
-                     (galid int, varsimobjid int, 
+                     (galid int, varsimobjid int,
                       internalAvBulge real, internalAvDisk real, redshift real,
-                      variability text, 
+                      variability text,
                       sedFilenameBulge text, sedFilenameDisk text, sedFilenameAgn text)''')
         conn.commit()
     except:
@@ -197,14 +197,14 @@ def makeAgnTable(size=100, **kwargs):
                     'agn_sfr':agn_sfr[i],'agn_sfi':agn_sfi[i],'agn_sfz':agn_sfz[i],
                     'agn_sfy':agn_sfy[i], 't0_mjd':48000.0+mjDisplacement[i],
                     'seed':numpy.random.randint(0,200000)}}
-         
-          
+
+
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO agn VALUES (%i, %i, %f, %f, %f, '%s', '%s', '%s', '%s')''' % \
                (i, i, avBulge[i], avDisk[i], redshift[i],
                paramStr,
-               sedFiles[numpy.random.randint(0,len(sedFiles))], 
+               sedFiles[numpy.random.randint(0,len(sedFiles))],
                sedFiles[numpy.random.randint(0,len(sedFiles))],
                'agn.spec')
 

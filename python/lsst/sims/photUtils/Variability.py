@@ -68,7 +68,7 @@ class Variability(PhotometryBase):
         zzout = []
         yyout = []
         magNormVarOut = []
-        
+
         i=0
         for vv in varParams:
             if vv != numpy.unicode_("None"):
@@ -79,7 +79,7 @@ class Variability(PhotometryBase):
                 iiout.append(ii[i]+deltaMag['i'])
                 zzout.append(zz[i]+deltaMag['z'])
                 yyout.append(yy[i]+deltaMag['y'])
-                
+
                 if deltaMagNorm != None and (not numpy.isnan(magNorm[i])):
                     magNormVarOut.append(magNorm[i]+deltaMagNorm)
                 else:
@@ -91,15 +91,15 @@ class Variability(PhotometryBase):
                 iiout.append(ii[i])
                 zzout.append(zz[i])
                 yyout.append(yy[i])
-                
+
                 if self.obs_metadata.bandpass:
                     magNormVarOut.append(magNorm[i])
                 else:
                     magNormVarOut.append(-999.0)
             i+=1
-            
-        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])        
-    
+
+        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])
+
     @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
               'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
     def get_variable_uncertainties(self):
@@ -107,7 +107,7 @@ class Variability(PhotometryBase):
         Getter for photometric uncertainties associated with variable
         stellar magnitudes
         """
-        
+
         columnNames={}
         columnNames['u'] = 'lsst_u_var'
         columnNames['g'] = 'lsst_g_var'
@@ -115,77 +115,77 @@ class Variability(PhotometryBase):
         columnNames['i'] = 'lsst_i_var'
         columnNames['z'] = 'lsst_z_var'
         columnNames['y'] = 'lsst_y_var'
-        
+
         outputDict = self.calculatePhotometricUncertaintyFromColumn('id',columnNames)
-        
+
         return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
                             outputDict['i'],outputDict['z'],outputDict['y']])
-        
-    
+
+
     @compound('uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
           'zRecalc_var', 'yRecalc_var',
           'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var',
           'magNorm_Recalc_var')
     def get_galaxy_variability(self):
-        
+
         """
         Getter for variable magnitudes associated with AGN
         """
-        
+
         uTotal = self.column_by_name("uRecalc")
         gTotal = self.column_by_name("gRecalc")
         rTotal = self.column_by_name("rRecalc")
         iTotal = self.column_by_name("iRecalc")
         zTotal = self.column_by_name("zRecalc")
         yTotal = self.column_by_name("yRecalc")
-        
+
         uBulge = self.column_by_name("uBulge")
         gBulge = self.column_by_name("gBulge")
         rBulge = self.column_by_name("rBulge")
         iBulge = self.column_by_name("iBulge")
         zBulge = self.column_by_name("zBulge")
         yBulge = self.column_by_name("yBulge")
-        
+
         uDisk = self.column_by_name("uDisk")
         gDisk = self.column_by_name("gDisk")
         rDisk = self.column_by_name("rDisk")
         iDisk = self.column_by_name("iDisk")
         zDisk = self.column_by_name("zDisk")
         yDisk = self.column_by_name("yDisk")
-        
+
         uAgn = self.column_by_name("uAgn")
         gAgn = self.column_by_name("gAgn")
         rAgn = self.column_by_name("rAgn")
         iAgn = self.column_by_name("iAgn")
         zAgn = self.column_by_name("zAgn")
         yAgn = self.column_by_name("yAgn")
-        
+
         magNormAgn = self.column_by_name('magNormAgn')
         magNormDisk = self.column_by_name('magNormDisk')
         magNormBulge = self.column_by_name('magNormBulge')
-        
-        
+
+
         varParams = self.column_by_name("varParamStr")
-        
+
         uTotalOut = []
         gTotalOut = []
         rTotalOut = []
         iTotalOut = []
         zTotalOut = []
         yTotalOut = []
-        
+
         uAgnOut = []
         gAgnOut = []
         rAgnOut = []
         iAgnOut = []
         zAgnOut = []
         yAgnOut = []
-        
+
         magNormVarOut = []
-        
+
         i=0
         for vv in varParams:
-            if vv != numpy.unicode_("None"):           
+            if vv != numpy.unicode_("None"):
                 deltaMag, deltaMagNorm=self.applyVariability(vv)
                 uAgnOut.append(uAgn[i]+deltaMag['u'])
                 gAgnOut.append(gAgn[i]+deltaMag['g'])
@@ -193,32 +193,32 @@ class Variability(PhotometryBase):
                 iAgnOut.append(iAgn[i]+deltaMag['i'])
                 zAgnOut.append(zAgn[i]+deltaMag['z'])
                 yAgnOut.append(yAgn[i]+deltaMag['y'])
-                
+
                 uTotalOut.append(self.sum_magnitudes(disk = uDisk[i], bulge = uBulge[i],
                         agn = uAgnOut[i]))
-                
+
                 gTotalOut.append(self.sum_magnitudes(disk = gDisk[i], bulge = gBulge[i],
                         agn = gAgnOut[i]))
-                        
+
                 rTotalOut.append(self.sum_magnitudes(disk = rDisk[i], bulge = rBulge[i],
                         agn = rAgnOut[i]))
-                
+
                 iTotalOut.append(self.sum_magnitudes(disk = iDisk[i], bulge = iBulge[i],
                         agn = iAgnOut[i]))
-                        
+
                 zTotalOut.append(self.sum_magnitudes(disk = zDisk[i], bulge = zBulge[i],
                         agn = zAgnOut[i]))
-                
+
                 yTotalOut.append(self.sum_magnitudes(disk = yDisk[i], bulge = yBulge[i],
                         agn = yAgnOut[i]))
-                
+
                 if deltaMagNorm != None and (not numpy.isnan(magNormAgn[i])):
                     magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
                             agn = magNormAgn[i] + deltaMagNorm))
                 else:
                     magNormVarOut.append(-999.0)
-                
-                
+
+
             else:
                 uTotalOut.append(uTotal[i])
                 gTotalOut.append(gTotal[i])
@@ -226,37 +226,37 @@ class Variability(PhotometryBase):
                 iTotalOut.append(iTotal[i])
                 zTotalOut.append(zTotal[i])
                 yTotalOut.append(yTotal[i])
-                
+
                 uAgnOut.append(uAgn[i])
                 gAgnOut.append(gAgn[i])
                 rAgnOut.append(rAgn[i])
                 iAgnOut.append(iAgn[i])
                 zAgnOut.append(zAgn[i])
                 yAgnOut.append(yAgn[i])
-                
+
                 if self.bandpass is not None and (not numpy.isnan(magNormAgn[i])):
-                    
+
                     magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
                         agn = magNormAgn[i]))
                 else:
                     magNormVarOut.append(-999.0)
-            
+
             i+=1
-        
+
         return numpy.array([uTotalOut,gTotalOut,rTotalOut,iTotalOut,zTotalOut,yTotalOut,\
                            uAgnOut,gAgnOut,rAgnOut,iAgnOut,zAgnOut,yAgnOut,magNormVarOut])
-        
-    
+
+
     @compound('sigma_uRecalc_var','sigma_gRecalc_var','sigma_rRecalc_var',
               'sigma_iRecalc_var','sigma_zRecalc_var','sigma_yRecalc_var',
               'sigma_uAgn_var','sigma_gAgn_var','sigma_rAgn_var',
               'sigma_iAgn_var','sigma_zAgn_var','sigma_yAgn_var')
     def get_galaxy_variability_uncertainties(self):
-        
+
         """
         Getter for photometric uncertainties associated with AGN variability
         """
-        
+
         columnNames={}
         columnNames['u'] = 'uRecalc_var'
         columnNames['g'] = 'gRecalc_var'
@@ -264,9 +264,9 @@ class Variability(PhotometryBase):
         columnNames['i'] = 'iRecalc_var'
         columnNames['z'] = 'zRecalc_var'
         columnNames['y'] = 'yRecalc_var'
-        
+
         totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
-        
+
         columnNames = {}
         columnNames['u'] = 'uAgn_var'
         columnNames['g'] = 'gAgn_var'
@@ -274,39 +274,39 @@ class Variability(PhotometryBase):
         columnNames['i'] = 'iAgn_var'
         columnNames['z'] = 'zAgn_var'
         columnNames['y'] = 'yAgn_var'
-        
+
         agnDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
-        
+
         return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
                             totalDict['i'],totalDict['z'],totalDict['y'],
                             agnDict['u'],agnDict['g'],agnDict['r'],
                             agnDict['i'],agnDict['z'],agnDict['y']])
-        
-    
+
+
     def applyVariability(self, varParams):
         """
         varParams will be the varParamStr column from the data base
-        
+
         This method uses json to convert that into a machine-readable object
-        
+
         it uses the varMethodName to select the correct variability method from the
         dict self._methodRegistry
-        
+
         it uses then feeds the pars array to that method, under the assumption
         that the parameters needed by the method can be found therein
-        
+
         @param [in] varParams is a string object (readable by json) that tells
         us which variability model to use
-        
+
         @param [out] output is a dict of magnitude offsets keyed to the filter name
         e.g. output['u'] is the magnitude offset in the u band
-        
+
         @param [out] deltaMagNorm is the magnitude offset for magNorm
-        
+
         """
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
-            
+
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
         params = varCmd['pars']
@@ -317,46 +317,46 @@ class Variability(PhotometryBase):
             deltaMagNorm = output[self.bandpass]
         else:
             deltaMagNorm = None
- 
+
         return output, deltaMagNorm
-    
+
     def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
             inDays=True, interpFactory=None):
-        
+
         """
         Applies an a specified variability method.
-        
+
         The params for the method are provided in the dict params{}
-        
+
         The keys for those parameters are in the dict keymap{}
-        
+
         This is because the syntax used here is not necessarily the syntax
         used in the data bases.
-        
+
         The method will return a dict of magnitude offsets.  The dict will
         be keyed to the filter names.
-        
+
         @param [in] params is a dict of parameters for the variability model
-        
+
         @param [in] keymap is a dict mapping from the parameter naming convention
         used by the database to the parameter naming convention used by the
         variability methods below.
-        
+
         @param [in] expmjd is the mjd of the observation
-        
+
         @param [in] inPeriod is a priori period of the model
-        
+
         @param [in] inDays controls whether or not the time grid
         of the light curve is renormalized by the period
-        
+
         @param [in] interpFactory is the method used for interpolating
         the light curve
-        
+
         @param [out] magoff is a dict of magnitude offsets so that magoff['u'] is the offset in the u band
-        
+
         """
-        
-        expmjd = numpy.asarray(expmjd)        
+
+        expmjd = numpy.asarray(expmjd)
         filename = params[keymap['filename']]
         toff = float(params[keymap['t0']])
         epoch = expmjd - toff
@@ -370,8 +370,8 @@ class Variability(PhotometryBase):
                 period = lc[0][-1] + dt
             else:
                 period = inPeriod
-                
-            if inDays:    
+
+            if inDays:
                 lc[0] /= period
 
             splines  = {}
@@ -402,7 +402,7 @@ class Variability(PhotometryBase):
 
     @register_method('applyMflare')
     def applyMflare(self, params, expmjd):
-        
+
         params['lcfilename'] = "mflare/"+params['lcfilename']+".gz"
         keymap = {'filename':'lcfilename', 't0':'t0'}
         magoff = self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['length'])
@@ -412,14 +412,14 @@ class Variability(PhotometryBase):
 
     @register_method('applyRRly')
     def applyRRly(self, params, expmjd):
-    
+
         keymap = {'filename':'filename', 't0':'tStartMjd'}
         return self.applyStdPeriodic(params, keymap, expmjd,
                 interpFactory=InterpolatedUnivariateSpline)
-    
+
     @register_method('applyCepheid')
     def applyCepheid(self, params, expmjd):
-    
+
         keymap = {'filename':'lcfile', 't0':'t0'}
         return self.applyStdPeriodic(params, keymap, expmjd, inPeriod=params['period'], inDays=False,
                 interpFactory=InterpolatedUnivariateSpline)
@@ -484,7 +484,7 @@ class Variability(PhotometryBase):
             raise("WARNING: Time offset greater than minimum epoch.  Not applying variability")
         endepoch = epochs.max()
 
-        dt = tau/100.        
+        dt = tau/100.
         nbins = int(math.ceil(endepoch/dt))
         dt = (endepoch/nbins)/tau
         sdt = math.sqrt(dt)
@@ -523,7 +523,7 @@ class Variability(PhotometryBase):
                                  params['t0'] + maxyears*365.25, \
                                  numpy.ceil(maxyears*365.25/params['burst_freq'])):
                 tmp = numpy.exp( -1*(epochs - o)/params['burst_scale'])/numpy.exp(-1.)
-                adds -= params['amp_burst']*tmp*(tmp < 1.0)  ## kill the contribution 
+                adds -= params['amp_burst']*tmp*(tmp < 1.0)  ## kill the contribution
             ## add some blue excess during the outburst
             uLc += adds +  2.0*params['color_excess_during_burst']*adds/min(adds)
             gLc += adds + params['color_excess_during_burst']*adds/min(adds)
@@ -531,7 +531,7 @@ class Variability(PhotometryBase):
             iLc += adds
             zLc += adds
             yLc += adds
-                      
+
         dMag['u'] = uLc
         dMag['g'] = gLc
         dMag['r'] = rLc
