@@ -103,7 +103,7 @@ def makeCepheidTable(size=100, **kwargs):
 
 def makeEbTable(size=100, **kwargs):
     """
-    Make a test database to serve information to the cepheid test
+    Make a test database to serve information to the Eb test
     """
     sedFiles = ['sed_flat_norm.txt']
     lcFiles = ['eb_lc/EB.2294.inp','eb_lc/EB.1540.inp','eb_lc/EB.2801.inp']
