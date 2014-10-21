@@ -161,6 +161,48 @@ def makeMicrolensingTable(size=100, **kwargs):
     conn.commit()
     conn.close()
 
+def makeAmcvnTable(size=100, **kwargs):
+    """
+    Make a test database to serve information to the AMCVN test
+    """
+    sedFiles = ['bergeron_He_4750_70.dat_4950','bergeron_50000_85.dat_54000']
+    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    c = conn.cursor()
+    try:
+        c.execute('''CREATE TABLE amcvn
+                     (varsimobjid int, variability text, sedfilename text)''')
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating database.")
+
+    numpy.random.seed(32)
+    doesBurst = numpy.random.randint(0,1,size=size)
+    burst_freq = numpy.random.randint(10,150,size=size)
+    burst_scale = 115
+    amp_burst = numpy.random.sample(size)*8.0
+    color_excess_during_burst = numpy.random.sample(size)*0.2-0.4
+    amplitude = numpy.random.sample(size)*0.2
+    period = numpy.random.sample(size)*200.0
+    mjDisplacement = numpy.random.sample(size)*50.0
+    for i in xrange(size):
+        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        varParam = {'varMethodName':'applyAmcvn',
+           'pars':{'does_burst':int(doesBurst[i]),
+                   'burst_freq':int(burst_freq[i]),
+                   'burst_scale':burst_scale,
+                   'amp_burst':amp_burst[i],
+                   'color_excess_during_burst':color_excess_during_burst[i],
+                   'amplitude':amplitude[i],
+                   'period':period[i],
+                   't0':52000.0+mjDisplacement[i]}}
+
+        paramStr = json.dumps(varParam)
+
+        qstr = '''INSERT INTO amcvn VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
+        c.execute(qstr)
+    conn.commit()
+    conn.close()
+
 def makeAgnTable(size=100, **kwargs):
     """
     Make a test database to serve information to the microlensing test
@@ -238,6 +280,10 @@ class ebDB(variabilityDB):
 class microlensDB(variabilityDB):
     objid = 'microlensTest'
     tableid = 'microlensing'
+
+class amcvnDB(variabilityDB):
+    objid = 'amcvnTest'
+    tableid = 'amcvn'
 
 class agnDB(variabilityDB):
     objid = 'agnTest'
@@ -326,6 +372,15 @@ class VariabilityTest(unittest.TestCase):
 
         if os.path.exists('microlensTestCatalog.dat'):
             os.unlink('microlensTestCatalog.dat')
+
+    def testAmcvn(self):
+        makeAmcvnTable()
+        myDB = CatalogDBObject.from_objid('amcvnTest')
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('amcvnTestCatalog.dat',chunk_size=1000)
+
+        if os.path.exists('amcvnTestCatalog.dat'):
+            os.unlink('amcvnTestCatalog.dat')
 
     def testAgn(self):
 
