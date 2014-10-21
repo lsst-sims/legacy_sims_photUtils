@@ -326,16 +326,35 @@ class agnDB(variabilityDB):
 
 class StellarVariabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
     catalog_type = 'stellarVariabilityCatalog'
-    column_outputs = ['varsimobjid','sedFilename','lsst_u_var','lsst_u']
+    column_outputs = ['varsimobjid','sedFilename','lsstUdiff']
     default_columns=[('magNorm',14.0,float)]
+    
+    def get_lsstUdiff(self):
+        lsstU = self.column_by_name('lsst_u')
+        lsstUvar = self.column_by_name('lsst_u_var')
+        if lsstUvar.shape == lsstU.shape:
+            return lsstUvar - lsstU
+        else:
+            #this is necessary because applyVariability with the applyBHMicrolens method returns
+            #a 2D numpy array instead of a 1D numpy array
+            return numpy.array([vv - uu for (vv, uu) in zip(lsstUvar, lsstU)])
 
 class GalaxyVariabilityCatalog(InstanceCatalog,PhotometryGalaxies,Variability):
     catalog_type = 'galaxyVariabilityCatalog'
-    column_outputs = ['varsimobjid','sedFilenameAgn','uAgn_var','uRecalc_var',
-                      'uAgn','uRecalc']
+    column_outputs = ['varsimobjid','sedFilenameAgn','lsstUdiff','agnUdiff']
     default_columns=[('magNormAgn',14.0,float),
                      ('magNormDisk',14.0,float),
                      ('magNormBulge',14.0,float)]
+
+    def get_lsstUdiff(self):
+        lsstU = self.column_by_name('uRecalc')
+        lsstUvar = self.column_by_name('uRecalc_var')
+        return lsstUvar - lsstU
+
+    def get_agnUdiff(self):
+        lsstU = self.column_by_name('uAgn')
+        lsstUvar = self.column_by_name('uAgn_var')
+        return lsstUvar - lsstU
 
 class VariabilityTest(unittest.TestCase):
 
