@@ -248,6 +248,13 @@ class VariabilityTest(unittest.TestCase):
             os.unlink('ebTestCatalog.dat')
 
     def testMicrolensing(self):
+        #Note: this test assumes that the parameters for the microlensing variability
+        #model occur in a standard varParamStr column in the database.
+        #Actually, the current database of microlensing events simply store the variability
+        #parameters as independent columns in the database.
+        #The varParamStr formalism is how the applyMicrolensing methods are written, however,
+        #so that is what we will test.
+
         makeMicrolensingTable()
         myDB = CatalogDBObject.from_objid('microlensTest')
         myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)

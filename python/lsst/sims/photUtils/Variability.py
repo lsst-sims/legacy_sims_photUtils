@@ -442,6 +442,14 @@ class Variability(PhotometryBase):
         #I believe this is the correct method based on
         #http://www.physics.fsu.edu/Courses/spring98/AST3033/Micro/lensing.htm
         #
+        #21 October 2014
+        #This method assumes that the parameters for microlensing variability
+        #are stored in a varParamStr column in the database.  Actually, the
+        #current microlensing event tables in the database store each
+        #variability parameter as its own database column.
+        #At some point, either this method or the microlensing tables in the
+        #database will need to be changed.
+
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         epochs = expmjd - params['t0']
         dMags = {}
