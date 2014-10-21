@@ -122,7 +122,7 @@ def makeEbTable(size=100, **kwargs):
     mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
     for i in xrange(size):
         sedFile = sedFiles[0]
-        varParam = {'varMethodName':'applyCepheid',
+        varParam = {'varMethodName':'applyEb',
            'pars':{'period':periods[i], 'lcfile':lcFiles[i%len(lcFiles)], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
