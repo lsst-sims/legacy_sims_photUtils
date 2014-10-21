@@ -16,7 +16,11 @@ def makeMflareTable(size=10, **kwargs):
     """
     Make a test database to serve information to the flare test
     """
+
+    #a haphazard sample of mdwarf SEDs
     sedFiles = ['m2.0Full.dat','m5.1Full.dat', 'm4.9Full.dat']
+
+    #a haphazard sample of mflare light curves
     lcFiles = ['flare_lc_bin3_4.dat', 'flare_lc_bin1_4.dat', 'flare_lc_bin3_3.dat']
 
     conn = sqlite3.connect('VariabilityTestDatabase.db')
@@ -43,7 +47,11 @@ def makeRRlyTable(size=100, **kwargs):
     """
     Make a test database to serve information to the rrlyrae test
     """
+
+    #a haphazard sample of stellar SEDs
     sedFiles = ['kp10_8750.fits_g35_8950','kp03_10500.fits_g45_10600','km50_6750.fits_g20_6750']
+
+    #a haphazard sample of RRLyrae light curves
     lcFiles = ['rrly_lc/RRc/959802_per.txt','rrly_lc/RRc/1078860_per.txt','rrly_lc/RRab/98874_per.txt',
                'rrly_lc/RRab/3879827_per.txt']
 
@@ -73,7 +81,11 @@ def makeCepheidTable(size=100, **kwargs):
     """
     Make a test database to serve information to the cepheid test
     """
+
+    #a haphazard sample of stellar SEDs
     sedFiles = ['kp10_8750.fits_g35_8950','kp03_10500.fits_g45_10600','km50_6750.fits_g20_6750']
+
+    #a haphazard sample of cepheid light curves
     lcFiles = ['cepheid_lc/classical_longPer_specfile', 'cepheid_lc/classical_medPer_specfile',
                'cepheid_lc/classical_shortPer_specfile', 'cepheid_lc/classical_shortPer_specfile',
                'cepheid_lc/popII_longPer_specfile', 'cepheid_lc/popII_shortPer_specfile']
@@ -136,7 +148,11 @@ def makeMicrolensingTable(size=100, **kwargs):
     """
     Make a test database to serve information to the microlensing test
     """
+
+    #a haphazard sample of stellar SEDs
     sedFiles = ['kp10_8750.fits_g35_8950','kp03_10500.fits_g45_10600','km50_6750.fits_g20_6750']
+
+    #there are two microlensing methods; they should be equivalent
     method = ['applyMicrolensing','applyMicrolens']
     conn = sqlite3.connect('VariabilityTestDatabase.db')
     c = conn.cursor()
@@ -164,9 +180,14 @@ def makeMicrolensingTable(size=100, **kwargs):
 
 def makeBHMicrolensingTable(size=100, **kwargs):
     """
-    Make a test database to serve information to the microlensing test
+    Make a test database to serve information to the BHmicrolensing test
     """
+
+    #a haphazard sample of stellar SEDs
     sedFiles = ['kp10_8750.fits_g35_8950','kp03_10500.fits_g45_10600','km50_6750.fits_g20_6750']
+
+    #a sample of black hole microlensing light curves that do not repeat time steps
+    #(repeating time steps causes the scipy spline interpolation routine to return Nan)
     lcFiles = ['microlens/bh_binary_source/lc_14_25_75_8000_0_0.05_316',
                'microlens/bh_binary_source/lc_14_25_4000_8000_0_phi1.09_0.005_100',
                'microlens/bh_binary_source/lc_14_25_75_8000_0_tets2.09_0.005_316']
@@ -197,7 +218,10 @@ def makeAmcvnTable(size=100, **kwargs):
     """
     Make a test database to serve information to the AMCVN test
     """
+
+    #a haphazard sample of white dwarf SEDs
     sedFiles = ['bergeron_He_4750_70.dat_4950','bergeron_50000_85.dat_54000']
+
     conn = sqlite3.connect('VariabilityTestDatabase.db')
     c = conn.cursor()
     try:
@@ -219,7 +243,7 @@ def makeAmcvnTable(size=100, **kwargs):
     for i in xrange(size):
         sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyAmcvn',
-           'pars':{'does_burst':int(doesBurst[i]),
+           'pars':{'does_burst':int(doesBurst[i]), #have to cast to int from numpy.int for json
                    'burst_freq':int(burst_freq[i]),
                    'burst_scale':burst_scale,
                    'amp_burst':amp_burst[i],
@@ -239,6 +263,8 @@ def makeAgnTable(size=100, **kwargs):
     """
     Make a test database to serve information to the microlensing test
     """
+
+    #a haphazard sample of galaxy SEDs
     sedFiles = ['Exp.31E06.0005Z.spec','Inst.79E06.1Z.spec','Const.50E07.0005Z.spec']
     method = ['applyAgn']
     conn = sqlite3.connect('VariabilityTestDatabase.db')
@@ -271,7 +297,6 @@ def makeAgnTable(size=100, **kwargs):
                     'agn_sfr':agn_sfr[i],'agn_sfi':agn_sfi[i],'agn_sfz':agn_sfz[i],
                     'agn_sfy':agn_sfy[i], 't0_mjd':48000.0+mjDisplacement[i],
                     'seed':numpy.random.randint(0,200000)}}
-
 
         paramStr = json.dumps(varParam)
 
