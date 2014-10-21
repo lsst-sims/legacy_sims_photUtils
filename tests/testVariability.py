@@ -375,7 +375,6 @@ class VariabilityTest(unittest.TestCase):
     def tearDown(self):
         del self.obs_metadata
 
-    @unittest.skip("until final test; this is still very slow")
     def testMflares(self):
         makeMflareTable()
         myDB = CatalogDBObject.from_objid('mflareTest')
@@ -425,8 +424,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('microlensTestCatalog.dat',chunk_size=1000)
 
-        if os.path.exists('microlensTestCatalog.dat'):
-            os.unlink('microlensTestCatalog.dat')
+        #if os.path.exists('microlensTestCatalog.dat'):
+        #    os.unlink('microlensTestCatalog.dat')
 
     def testBHMicrolensing(self):
         #Note: this test assumes that the parameters for the BHmicrolensing variability
@@ -436,7 +435,7 @@ class VariabilityTest(unittest.TestCase):
         #The varParamStr formalism is how the applyBHMicrolens method is written, however,
         #so that is what we will test.
 
-        makeBHMicrolensingTable(size=100)
+        makeBHMicrolensingTable()
         myDB = CatalogDBObject.from_objid('bhmicrolensTest')
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('bhmicrolensTestCatalog.dat',chunk_size=1000)
