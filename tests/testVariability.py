@@ -27,13 +27,13 @@ def makeMflareTable(size=10, **kwargs):
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
-    
+
     for i in xrange(size):
         sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
-        varParam = {'varMethodName':'applyMflare', 
+        varParam = {'varMethodName':'applyMflare',
            'pars':{'t0':48000.0, 'lcfilename':lcFiles[numpy.random.randint(0,len(lcFiles))], 'dt':0.00069444418, 'length': 1825}}
         paramStr = json.dumps(varParam)
-        
+
         qstr = '''INSERT INTO mFlare VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
         c.execute(qstr)
     conn.commit()
@@ -60,10 +60,10 @@ def makeRRlyTable(size=100, **kwargs):
     mjDisplacement = (numpy.random.sample(size)-50.0)*50.0
     for i in xrange(size):
         sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
-        varParam = {'varMethodName':'applyRRly', 
+        varParam = {'varMethodName':'applyRRly',
            'pars':{'tStartMjd':48000.0+mjDisplacement[i], 'filename':lcFiles[numpy.random.randint(0,len(lcFiles))]}}
         paramStr = json.dumps(varParam)
-        
+
         qstr = '''INSERT INTO RRly VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
         c.execute(qstr)
     conn.commit()
@@ -124,7 +124,7 @@ class variabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
     catalog_type = 'variabilityCatalog'
     column_outputs = ['varsimobjid','sedFilename','lsst_u_var','lsst_u']
     default_columns=[('magNorm',14.0,float)]
-    
+
 class VariabilityTest(unittest.TestCase):
 
     @classmethod
@@ -142,7 +142,7 @@ class VariabilityTest(unittest.TestCase):
 
     def tearDown(self):
         del self.obs_metadata
-    
+
     @unittest.skip("until final test; this is still very slow")
     def testMflares(self):
         makeMflareTable()
