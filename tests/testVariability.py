@@ -93,7 +93,7 @@ def makeCepheidTable(size=100, **kwargs):
     for i in xrange(size):
         sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyCepheid',
-           'pars':{'period':periods[i], 'lcfile':lcFiles[i%len(lcFiles)], 't0':48000.0+mjDisplacement[i]}}
+           'pars':{'period':periods[i], 'lcfile':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO cepheid VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
@@ -121,9 +121,9 @@ def makeEbTable(size=100, **kwargs):
     periods = numpy.random.sample(size)*50.0
     mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[0]
+        sedFile = 'sed_flat_norm.txt'
         varParam = {'varMethodName':'applyEb',
-           'pars':{'period':periods[i], 'lcfile':lcFiles[i%len(lcFiles)], 't0':48000.0+mjDisplacement[i]}}
+           'pars':{'period':periods[i], 'lcfile':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
 
         qstr = '''INSERT INTO eb VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
