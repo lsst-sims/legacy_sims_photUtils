@@ -102,7 +102,7 @@ class Variability(PhotometryBase):
     
     @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
               'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
-    def get_variable_undertainties(self):
+    def get_variable_uncertainties(self):
         """
         Getter for photometric uncertainties associated with variable
         stellar magnitudes
