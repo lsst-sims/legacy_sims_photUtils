@@ -131,6 +131,36 @@ def makeEbTable(size=100, **kwargs):
     conn.commit()
     conn.close()
 
+def makeMicrolensingTable(size=100, **kwargs):
+    """
+    Make a test database to serve information to the microlensing test
+    """
+    sedFiles = ['kp10_8750.fits_g35_8950','kp03_10500.fits_g45_10600','km50_6750.fits_g20_6750']
+    method = ['applyMicrolensing','applyMicrolens']
+    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    c = conn.cursor()
+    try:
+        c.execute('''CREATE TABLE microlensing
+                     (varsimobjid int, varParamStr text, sedfilename text)''')
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating database.")
+
+    numpy.random.seed(32)
+    that = numpy.random.sample(size)*40.0+40.0
+    umin = numpy.random.sample(size)
+    mjDisplacement = numpy.random.sample(size)*50.0
+    for i in xrange(size):
+        sedFile = sedFiles[0]
+        varParam = {'varMethodName':method[i%len(method)],
+           'pars':{'that':that[i], 'umin':umin[i], 't0':52000.0+mjDisplacement[i]}}
+        paramStr = json.dumps(varParam)
+
+        qstr = '''INSERT INTO microlensing VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
+        c.execute(qstr)
+    conn.commit()
+    conn.close()
+
 class variabilityDB(CatalogDBObject):
     dbAddress = 'sqlite:///VariabilityTestDatabase.db'
     idColKey = 'varsimobjid'
@@ -152,6 +182,10 @@ class cepheidDB(variabilityDB):
 class ebDB(variabilityDB):
     objid = 'ebTest'
     tableid = 'eb'
+
+class microlensDB(variabilityDB):
+    objid = 'microlensTest'
+    tableid = 'microlensing'
 
 class variabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
     catalog_type = 'variabilityCatalog'
@@ -212,6 +246,15 @@ class VariabilityTest(unittest.TestCase):
 
         if os.path.exists('ebTestCatalog.dat'):
             os.unlink('ebTestCatalog.dat')
+
+    def testMicrolensing(self):
+        makeMicrolensingTable()
+        myDB = CatalogDBObject.from_objid('microlensTest')
+        myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('microlensTestCatalog.dat',chunk_size=1000)
+
+        if os.path.exists('microlensTestCatalog.dat'):
+            os.unlink('microlensTestCatalog.dat')
 
 def suite():
     utilsTests.init()
