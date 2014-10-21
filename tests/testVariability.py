@@ -448,8 +448,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog', obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('microlensTestCatalog.dat', chunk_size=1000)
 
-        #if os.path.exists('microlensTestCatalog.dat'):
-        #    os.unlink('microlensTestCatalog.dat')
+        if os.path.exists('microlensTestCatalog.dat'):
+            os.unlink('microlensTestCatalog.dat')
 
     def testBHMicrolensing(self):
         #Note: this test assumes that the parameters for the BHmicrolensing variability
