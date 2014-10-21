@@ -161,6 +161,37 @@ def makeMicrolensingTable(size=100, **kwargs):
     conn.commit()
     conn.close()
 
+def makeBHMicrolensingTable(size=100, **kwargs):
+    """
+    Make a test database to serve information to the microlensing test
+    """
+    sedFiles = ['kp10_8750.fits_g35_8950','kp03_10500.fits_g45_10600','km50_6750.fits_g20_6750']
+    lcFiles = ['microlens/bh_binary_source/lc_14_25_75_8000_0_0.05_316',
+               'microlens/bh_binary_source/lc_14_25_4000_8000_0_phi1.09_0.005_100',
+               'microlens/bh_binary_source/lc_14_25_75_8000_0_tets2.09_0.005_316']
+
+    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    c = conn.cursor()
+    try:
+        c.execute('''CREATE TABLE bhmicrolensing
+                     (varsimobjid int, variability text, sedfilename text)''')
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating database.")
+
+    numpy.random.seed(32)
+    mjDisplacement = numpy.random.sample(size)*5.0*365.25
+    for i in xrange(size):
+        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
+        varParam = {'varMethodName':'applyBHMicrolens',
+           'pars':{'filename':lcFiles[numpy.random.randint(0,len(lcFiles))], 't0':52000.0-mjDisplacement[i]}}
+        paramStr = json.dumps(varParam)
+
+        qstr = '''INSERT INTO bhmicrolensing VALUES (%i, '%s', '%s')''' % (i, paramStr,sedFile)
+        c.execute(qstr)
+    conn.commit()
+    conn.close()
+
 def makeAmcvnTable(size=100, **kwargs):
     """
     Make a test database to serve information to the AMCVN test
@@ -281,6 +312,10 @@ class microlensDB(variabilityDB):
     objid = 'microlensTest'
     tableid = 'microlensing'
 
+class BHmicrolensDB(variabilityDB):
+    objid = 'bhmicrolensTest'
+    tableid = 'bhmicrolensing'
+
 class amcvnDB(variabilityDB):
     objid = 'amcvnTest'
     tableid = 'amcvn'
@@ -372,6 +407,15 @@ class VariabilityTest(unittest.TestCase):
 
         if os.path.exists('microlensTestCatalog.dat'):
             os.unlink('microlensTestCatalog.dat')
+
+    def testBHMicrolensing(self):
+        makeBHMicrolensingTable(size=100)
+        myDB = CatalogDBObject.from_objid('bhmicrolensTest')
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('bhmicrolensTestCatalog.dat',chunk_size=1000)
+
+        if os.path.exists('bhmicrolensTestCatalog.dat'):
+            os.unlink('bhmicrolensTestCatalog.dat')
 
     def testAmcvn(self):
         makeAmcvnTable()
