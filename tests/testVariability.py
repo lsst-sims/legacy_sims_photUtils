@@ -29,7 +29,7 @@ def makeMflareTable(size=10, **kwargs):
         raise RuntimeError("Error creating database.")
     
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,3)]
+        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyMflare', 
            'pars':{'t0':48000.0, 'lcfilename':lcFiles[numpy.random.randint(0,len(lcFiles))], 'dt':0.00069444418, 'length': 1825}}
         paramStr = json.dumps(varParam)
@@ -59,7 +59,7 @@ def makeRRlyTable(size=100, **kwargs):
     numpy.random.seed(32)
     mjDisplacement = (numpy.random.sample(size)-50.0)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,3)]
+        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyRRly', 
            'pars':{'tStartMjd':48000.0+mjDisplacement[i], 'filename':lcFiles[numpy.random.randint(0,len(lcFiles))]}}
         paramStr = json.dumps(varParam)
@@ -91,7 +91,7 @@ def makeCepheidTable(size=100, **kwargs):
     periods = numpy.random.sample(size)*50.0
     mjDisplacement = (numpy.random.sample(size)-0.5)*50.0
     for i in xrange(size):
-        sedFile = sedFiles[numpy.random.randint(0,3)]
+        sedFile = sedFiles[numpy.random.randint(0,len(sedFiles))]
         varParam = {'varMethodName':'applyCepheid', 
            'pars':{'period':periods[i], 'lcfile':lcFiles[i%len(lcFiles)], 't0':48000.0+mjDisplacement[i]}}
         paramStr = json.dumps(varParam)
