@@ -105,7 +105,8 @@ def makeEbTable(size=100, **kwargs):
     """
     Make a test database to serve information to the Eb test
     """
-    sedFiles = ['sed_flat_norm.txt']
+
+    #a haphazard sample of eclipsing binary light curves
     lcFiles = ['eb_lc/EB.2294.inp','eb_lc/EB.1540.inp','eb_lc/EB.2801.inp']
 
     conn = sqlite3.connect('VariabilityTestDatabase.db')
