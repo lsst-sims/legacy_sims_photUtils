@@ -7,7 +7,7 @@ import sqlalchemy
 import sqlite3
 import json
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.Variability import Variability
 
