@@ -23,7 +23,7 @@ def makeMflareTable(size=10, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE mFlare
-                     (varsimobjid int, varParamStr text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -51,7 +51,7 @@ def makeRRlyTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE RRly
-                     (varsimobjid int, varParamStr text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -82,7 +82,7 @@ def makeCepheidTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE cepheid
-                     (varsimobjid int, varParamStr text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -112,7 +112,7 @@ def makeEbTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE eb
-                     (varsimobjid int, varParamStr text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -141,7 +141,7 @@ def makeMicrolensingTable(size=100, **kwargs):
     c = conn.cursor()
     try:
         c.execute('''CREATE TABLE microlensing
-                     (varsimobjid int, varParamStr text, sedfilename text)''')
+                     (varsimobjid int, variability text, sedfilename text)''')
         conn.commit()
     except:
         raise RuntimeError("Error creating database.")
@@ -216,7 +216,8 @@ class variabilityDB(CatalogDBObject):
     dbAddress = 'sqlite:///VariabilityTestDatabase.db'
     idColKey = 'varsimobjid'
     columns = [('id','varsimobjid',int),
-               ('sedFilename','sedfilename',str,40)]
+               ('sedFilename','sedfilename',str,40),
+               ('varParamStr','variability',str,600)]
 
 class mflareDB(variabilityDB):
     objid = 'mflareTest'
@@ -241,7 +242,6 @@ class microlensDB(variabilityDB):
 class agnDB(variabilityDB):
     objid = 'agnTest'
     tableid = 'agn'
-    columns = [('varParamStr','variability', str, 600)]
 
 class StellarVariabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
     catalog_type = 'stellarVariabilityCatalog'
