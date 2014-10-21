@@ -550,6 +550,14 @@ class Variability(PhotometryBase):
 
     @register_method('applyBHMicrolens')
     def applyBHMicrolens(self, params, expmjd_in):
+        #21 October 2014
+        #This method assumes that the parameters for BHMicrolensing variability
+        #are stored in a varParamStr column in the database.  Actually, the
+        #current BHMicrolensing event tables in the database store each
+        #variability parameter as its own database column.
+        #At some point, either this method or the BHMicrolensing tables in the
+        #database will need to be changed.
+
         expmjd = numpy.asarray(expmjd_in,dtype=float)
         filename = params['filename']
         toff = float(params['t0'])
