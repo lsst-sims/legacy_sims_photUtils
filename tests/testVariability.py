@@ -187,8 +187,8 @@ class microlensDB(variabilityDB):
     objid = 'microlensTest'
     tableid = 'microlensing'
 
-class variabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
-    catalog_type = 'variabilityCatalog'
+class StellarVariabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
+    catalog_type = 'stellarVariabilityCatalog'
     column_outputs = ['varsimobjid','sedFilename','lsst_u_var','lsst_u']
     default_columns=[('magNorm',14.0,float)]
 
@@ -214,7 +214,7 @@ class VariabilityTest(unittest.TestCase):
     def testMflares(self):
         makeMflareTable()
         myDB = CatalogDBObject.from_objid('mflareTest')
-        myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('mFlareTestCatalog.dat',chunk_size=1000)
 
         if os.path.exists('mFlareTestCatalog.dat'):
@@ -223,7 +223,7 @@ class VariabilityTest(unittest.TestCase):
     def testRRlyrae(self):
         makeRRlyTable()
         myDB = CatalogDBObject.from_objid('rrlyTest')
-        myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('rrlyTestCatalog.dat',chunk_size=1000)
 
         if os.path.exists('rrlyTestCatalog.dat'):
@@ -232,7 +232,7 @@ class VariabilityTest(unittest.TestCase):
     def testCepheids(self):
         makeCepheidTable()
         myDB = CatalogDBObject.from_objid('cepheidTest')
-        myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('cepheidTestCatalog.dat',chunk_size=1000)
 
         if os.path.exists('cepheidTestCatalog.dat'):
@@ -241,7 +241,7 @@ class VariabilityTest(unittest.TestCase):
     def testEb(self):
         makeEbTable()
         myDB = CatalogDBObject.from_objid('ebTest')
-        myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('ebTestCatalog.dat',chunk_size=1000)
 
         if os.path.exists('ebTestCatalog.dat'):
@@ -257,7 +257,7 @@ class VariabilityTest(unittest.TestCase):
 
         makeMicrolensingTable()
         myDB = CatalogDBObject.from_objid('microlensTest')
-        myCatalog = myDB.getCatalog('variabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('microlensTestCatalog.dat',chunk_size=1000)
 
         if os.path.exists('microlensTestCatalog.dat'):
