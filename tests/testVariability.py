@@ -334,8 +334,8 @@ class VariabilityTest(unittest.TestCase):
         myCatalog = myDB.getCatalog('galaxyVariabilityCatalog',obs_metadata=self.obs_metadata)
         myCatalog.write_catalog('agnTestCatalog.dat',chunk_size=1000)
 
-        #if os.path.exists('agnTestCatalog.dat'):
-        #    os.unlink('agnTestCatalog.dat')
+        if os.path.exists('agnTestCatalog.dat'):
+            os.unlink('agnTestCatalog.dat')
 
 def suite():
     utilsTests.init()
