@@ -409,6 +409,13 @@ class VariabilityTest(unittest.TestCase):
             os.unlink('microlensTestCatalog.dat')
 
     def testBHMicrolensing(self):
+        #Note: this test assumes that the parameters for the BHmicrolensing variability
+        #model occur in a standard varParamStr column in the database.
+        #Actually, the current database of BHmicrolensing events simply store the variability
+        #parameters as independent columns in the database.
+        #The varParamStr formalism is how the applyBHMicrolens method is written, however,
+        #so that is what we will test.
+
         makeBHMicrolensingTable(size=100)
         myDB = CatalogDBObject.from_objid('bhmicrolensTest')
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
@@ -418,6 +425,13 @@ class VariabilityTest(unittest.TestCase):
             os.unlink('bhmicrolensTestCatalog.dat')
 
     def testAmcvn(self):
+        #Note: this test assumes that the parameters for the Amcvn variability
+        #model occur in a standard varParamStr column in the database.
+        #Actually, the current database of Amcvn events simply store the variability
+        #parameters as independent columns in the database.
+        #The varParamStr formalism is how the applyAmcvn method is written, however,
+        #so that is what we will test.
+
         makeAmcvnTable()
         myDB = CatalogDBObject.from_objid('amcvnTest')
         myCatalog = myDB.getCatalog('stellarVariabilityCatalog',obs_metadata=self.obs_metadata)
