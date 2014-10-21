@@ -8,7 +8,7 @@ import sqlite3
 import json
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
-from lsst.sims.photUtils.Photometry import PhotometryStars
+from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.Variability import Variability
 
 
@@ -161,6 +161,57 @@ def makeMicrolensingTable(size=100, **kwargs):
     conn.commit()
     conn.close()
 
+def makeAgnTable(size=100, **kwargs):
+    """
+    Make a test database to serve information to the microlensing test
+    """
+    sedFiles = ['Exp.31E06.0005Z.spec','Inst.79E06.1Z.spec','Const.50E07.0005Z.spec']
+    method = ['applyAgn']
+    conn = sqlite3.connect('VariabilityTestDatabase.db')
+    c = conn.cursor()
+    try:
+        c.execute('''CREATE TABLE agn
+                     (galid int, varsimobjid int, 
+                      internalAvBulge real, internalAvDisk real, redshift real,
+                      variability text, 
+                      sedFilenameBulge text, sedFilenameDisk text, sedFilenameAgn text)''')
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating database.")
+
+    numpy.random.seed(32)
+    agn_tau = numpy.random.sample(size)*100.0+100.0
+    agn_sfu = numpy.random.sample(size)*2.0
+    agn_sfg = numpy.random.sample(size)*2.0
+    agn_sfr = numpy.random.sample(size)*2.0
+    agn_sfi = numpy.random.sample(size)*2.0
+    agn_sfz = numpy.random.sample(size)*2.0
+    agn_sfy = numpy.random.sample(size)*2.0
+    mjDisplacement = numpy.random.sample(size)*5.0
+    avBulge = numpy.random.sample(size)*0.5+2.6
+    avDisk = numpy.random.sample(size)*0.5+2.6
+    redshift = numpy.random.sample(size)*0.5
+    for i in xrange(size):
+        varParam = {'varMethodName':'applyAgn',
+           'pars':{'agn_tau':agn_tau[i],'agn_sfu':agn_sfu[i],'agn_sfg':agn_sfg[i],
+                    'agn_sfr':agn_sfr[i],'agn_sfi':agn_sfi[i],'agn_sfz':agn_sfz[i],
+                    'agn_sfy':agn_sfy[i], 't0_mjd':48000.0+mjDisplacement[i],
+                    'seed':numpy.random.randint(0,200000)}}
+         
+          
+        paramStr = json.dumps(varParam)
+
+        qstr = '''INSERT INTO agn VALUES (%i, %i, %f, %f, %f, '%s', '%s', '%s', '%s')''' % \
+               (i, i, avBulge[i], avDisk[i], redshift[i],
+               paramStr,
+               sedFiles[numpy.random.randint(0,len(sedFiles))], 
+               sedFiles[numpy.random.randint(0,len(sedFiles))],
+               'agn.spec')
+
+        c.execute(qstr)
+    conn.commit()
+    conn.close()
+
 class variabilityDB(CatalogDBObject):
     dbAddress = 'sqlite:///VariabilityTestDatabase.db'
     idColKey = 'varsimobjid'
@@ -187,10 +238,23 @@ class microlensDB(variabilityDB):
     objid = 'microlensTest'
     tableid = 'microlensing'
 
+class agnDB(variabilityDB):
+    objid = 'agnTest'
+    tableid = 'agn'
+    columns = [('varParamStr','variability', str, 600)]
+
 class StellarVariabilityCatalog(InstanceCatalog,PhotometryStars,Variability):
     catalog_type = 'stellarVariabilityCatalog'
     column_outputs = ['varsimobjid','sedFilename','lsst_u_var','lsst_u']
     default_columns=[('magNorm',14.0,float)]
+
+class GalaxyVariabilityCatalog(InstanceCatalog,PhotometryGalaxies,Variability):
+    catalog_type = 'galaxyVariabilityCatalog'
+    column_outputs = ['varsimobjid','sedFilenameAgn','uAgn_var','uRecalc_var',
+                      'uAgn','uRecalc']
+    default_columns=[('magNormAgn',14.0,float),
+                     ('magNormDisk',14.0,float),
+                     ('magNormBulge',14.0,float)]
 
 class VariabilityTest(unittest.TestCase):
 
@@ -262,6 +326,16 @@ class VariabilityTest(unittest.TestCase):
 
         if os.path.exists('microlensTestCatalog.dat'):
             os.unlink('microlensTestCatalog.dat')
+
+    def testAgn(self):
+
+        makeAgnTable()
+        myDB = CatalogDBObject.from_objid('agnTest')
+        myCatalog = myDB.getCatalog('galaxyVariabilityCatalog',obs_metadata=self.obs_metadata)
+        myCatalog.write_catalog('agnTestCatalog.dat',chunk_size=1000)
+
+        #if os.path.exists('agnTestCatalog.dat'):
+        #    os.unlink('agnTestCatalog.dat')
 
 def suite():
     utilsTests.init()
