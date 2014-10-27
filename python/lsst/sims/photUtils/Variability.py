@@ -3,11 +3,10 @@ import linecache
 import math
 import os
 import json as json
-from lsst.sims.catalogs.measures.instance import register_class, register_method
+from lsst.sims.catalogs.measures.instance import register_class, register_method, compound
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
-from lsst.sims.coordUtils import compound
 from .Photometry import PhotometryBase
 
 @register_class
