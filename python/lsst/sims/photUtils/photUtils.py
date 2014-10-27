@@ -12,7 +12,9 @@ import os
 import numpy
 from .Bandpass import Bandpass
 from .Sed import Sed
-from lsst.sims.coordUtils import compound
+from lsst.sims.catalogs.measures.instance import compound
+
+__all__ = ["Photometry"]
 
 class Photometry(object):
         
