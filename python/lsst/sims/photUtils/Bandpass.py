@@ -63,6 +63,8 @@ import numpy
 import gzip
 from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation. 
 
+__all__ = ["Bandpass"]
+
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
 MINWAVELEN = 300
 MAXWAVELEN = 1150

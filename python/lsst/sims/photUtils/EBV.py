@@ -6,6 +6,8 @@ import os
 from lsst.sims.catalogs.measures.instance import cached
 from lsst.sims.coordUtils import AstrometryBase
 
+__all__ = ["EBVmap", "EBVbase", "EBVmixin"]
+
 def interp1D(z1 , z2, offset):
     """ 1D interpolation on a grid"""
 

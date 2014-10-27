@@ -9,6 +9,8 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.photUtils import Photometry as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
+__all__ = ["selectStarSED"]
+
 class selectStarSED():
 
     """

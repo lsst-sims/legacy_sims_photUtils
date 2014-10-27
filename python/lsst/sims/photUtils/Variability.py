@@ -9,6 +9,8 @@ from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 from .Photometry import PhotometryBase
 
+__all__ = ["Variability"]
+
 @register_class
 class Variability(PhotometryBase):
     """

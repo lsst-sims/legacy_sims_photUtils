@@ -8,6 +8,8 @@ from lsst.sims.photUtils import Bandpass
 from lsst.sims.photUtils.photUtils import Photometry as phot
 from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
 
+__all__ = ["readGalfast"]
+
 class readGalfast():
 
     def parseGalfast(self, headerLine):
