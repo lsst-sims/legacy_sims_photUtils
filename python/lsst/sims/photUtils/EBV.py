@@ -15,7 +15,7 @@ def interp1D(z1 , z2, offset):
 
 
             
-class EbvMap(object):
+class EBVmap(object):
     '''Class  for describing a map of EBV
 
     Images are read in from a fits file and assume a ZEA projection
@@ -209,14 +209,14 @@ class EBVbase(object):
         """
         This will load the northern SFD map
         """
-        self.ebvMapNorth=EbvMap()
+        self.ebvMapNorth=EBVmap()
         self.ebvMapNorth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapNorthName))
     
     def load_ebvMapSouth(self):
         """
         This will load the southern SFD map
         """
-        self.ebvMapSouth=EbvMap()
+        self.ebvMapSouth=EBVmap()
         self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
     
     def calculateEbv(self, galacticCoordinates=None, equatorialCoordinates=None, northMap=None, southMap=None, 
