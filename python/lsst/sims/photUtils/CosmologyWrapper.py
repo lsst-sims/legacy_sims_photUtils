@@ -5,13 +5,12 @@ __all__ = ["CosmologyWrapper"]
 class CosmologyWrapper(object):
 
     cosmologyInitialized = False
-    version = None
 
     def _determine_API(self):
         if 'set_current' in dir(cosmology):
-            return '0.2.5'
+            self.cosmologyVersion='0.2.5'
         elif 'default_cosmology' in dir(cosmology):
-            return '1.0'
+            self.cosmologyVersion='1.0'
         else:
             raise RuntimeError("CosmologyWrapper does not know how to handle this version of astropy")
 
@@ -20,34 +19,35 @@ class CosmologyWrapper(object):
         Take the cosmology indicated by 'universe' and set it as the current/default
         cosmology (depending on the API of the version of astropy being run)
         """
+        
+        if not hasattr(self, 'cosmologyVersion'):
+            self._determineAPI()
 
-        if self.version == '0.2.5':
+        if self.cosmologyVersion == '0.2.5':
             cosmology.set_current(universe)
-        elif self.version == '1.0':
+        elif self.cosmologyVersion == '1.0':
             cosmology.default_cosmology.set(universe)
 
         self.cosmologyInitialized = True
+        self.activeCosmology = universe
 
     def get_current(self):
         """
         Return the cosmology currently stored as the current cosmology
         """
-
         if not self.cosmologyInitialized:
             raise RuntimeError("Should not call CosmologyWrapper.get_current(); you have not set_current()")
 
-        if self.version == '0.2.5':
-            universe = cosmology.get_current()
-        elif self.version == '1.0':
-            universe = cosmology.default_cosmology.get()
-
-        return universe
+        if self.cosmologyVersion == '0.2.5':
+            return cosmology.get_current()
+        elif self.cosmologyVersion == '1.0':
+            return cosmology.default_cosmology.get()
 
     def Initialize(self, H0=72.0, Om0=0.25, Ode0=0.75, w0=-1.0, wa=0.0):
+        self.activeCosmology = None
+        self._determine_API()
 
-        self.version = self._determine_API()
-
-        print 'version ',self.version
+        print 'version ',self.cosmologyVersion
 
         self.H0 = H0
         self.Om0 = Om0
@@ -69,9 +69,10 @@ class CosmologyWrapper(object):
 
     def H(self, redshift=0.0):
 
-        universe = self.get_current()
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call H; cosmology has not been initialized")
 
-        H = universe.H(redshift)
+        H = self.activeCosmology.H(redshift)
 
         if 'value' in dir(H):
             return H.value
@@ -80,37 +81,38 @@ class CosmologyWrapper(object):
 
 
     def OmegaMatter(self, redshift=0.0):
+    
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call OmegaMatter; cosmology has not been initialized")
 
-        universe = self.get_current()
-
-        return universe.Om(redshift)
+        return self.activeCosmology.Om(redshift)
 
     def OmegaDarkEnergy(self, redshift=0.0):
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call OmegaDarkEnergy; cosmology has not been initialized")
 
-        universe = self.get_current()
-
-        return universe.Ode(redshift)
+        return self.activeCosmology.Ode(redshift)
 
     def OmegaPhotons(self, redshift=0.0):
-
-        universe = self.get_current()
-
-        return universe.Ogamma(redshift)
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call OmegaPhotons; cosmology has not been initialized")
+ 
+        return self.activeCosmology.Ogamma(redshift)
 
     def OmegaNeutrinos(self, redshift=0.0):
-
-        universe = self.get_current()
-
-        return universe.Onu(redshift)
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call OmegaNeutrinos; cosmology has not been initialized")
+ 
+        return self.activeCosmology.Onu(redshift)
 
     def OmegaCurvature(self, redshift=0.0):
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call OmegaCurvature; cosmology has not been initialized")
 
-        universe = self.get_current()
-
-        return universe.Ok(redshift)
+        return self.activeCosmology.Ok(redshift)
 
     def w(self, redshift=0.0):
-
-        universe = self.get_current()
-
-        return universe.w(redshift)
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call w; cosmology has not been initialized")
+ 
+        return self.activeCosmology.w(redshift)
