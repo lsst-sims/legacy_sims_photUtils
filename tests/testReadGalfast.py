@@ -27,8 +27,12 @@ class TestSelectStarSED(unittest.TestCase):
                 if re.match(key, specStart):
                     cls._specMapDict[specKey] = str(val)
 
-
-
+    @classmethod
+    def tearDownClass(cls):
+        del cls._kurucz
+        del cls._mlt
+        del cls._wd
+        del cls._specMapDict
 
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
