@@ -18,13 +18,6 @@ from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 
 from lsst.sims.photUtils.Variability import Variability
 
-# Create test databases
-if os.path.exists('testPhotometryDatabase.db'):
-    print "deleting database"
-    os.unlink('testPhotometryDatabase.db')
-makeStarTestDB(size=100000, seedVal=1, filename='testPhotometryDatabase.db')
-makeGalTestDB(size=100000, seedVal=1, filename='testPhotometryDatabase.db')
-
 @register_class
 class MyVariability(Variability):
     @register_method('testVar')
@@ -325,14 +318,28 @@ class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,tes
         return self.column_by_name('id')
 
 class variabilityUnitTest(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        # Create test databases
+        if os.path.exists('PhotometryTestDatabase.db'):
+            print "deleting database"
+            os.unlink('PhotometryTestDatabase.db')
+        makeStarTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
+        makeGalTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
 
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('PhotometryTestDatabase.db'):
+            os.unlink('PhotometryTestDatabase.db')
+    
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
                             boundType = 'circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                             boundLength=1.0,m5=dict(u=23.9, g=25.0, r=24.7, i=24.0, z=23.3, y=22.1))
 
-        self.galaxy = myTestGals(address='sqlite:///testPhotometryDatabase.db')
-        self.star = myTestStars(address='sqlite:///testPhotometryDatabase.db')
+        self.galaxy = myTestGals(address='sqlite:///PhotometryTestDatabase.db')
+        self.star = myTestStars(address='sqlite:///PhotometryTestDatabase.db')
 
     def tearDown(self):
         del self.galaxy
@@ -357,13 +364,28 @@ class variabilityUnitTest(unittest.TestCase):
             mags=starcat.applyVariability(row['varParamStr'])
 
 class photometryUnitTest(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        # Create test databases
+        if os.path.exists('PhotometryTestDatabase.db'):
+            print "deleting database"
+            os.unlink('PhotometryTestDatabase.db')
+        makeStarTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
+        makeGalTestDB(size=100000, seedVal=1, filename='PhotometryTestDatabase.db')
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('PhotometryTestDatabase.db'):
+            os.unlink('PhotometryTestDatabase.db')
+
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i', 
                             boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                             boundLength=1.0, m5 = 25.0)
 
-        self.galaxy = myTestGals(address='sqlite:///testPhotometryDatabase.db')
-        self.star = myTestStars(address='sqlite:///testPhotometryDatabase.db')
+        self.galaxy = myTestGals(address='sqlite:///PhotometryTestDatabase.db')
+        self.star = myTestStars(address='sqlite:///PhotometryTestDatabase.db')
 
     def tearDown(self):
         del self.galaxy
