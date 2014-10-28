@@ -18,7 +18,7 @@ class TestApplyIGM(unittest.TestCase):
         testIGM.applyIGM(1.8, testSed)
         testZmin = 1.8
         testZmax = 2.2
-        #Want new values for testing, 
+        #Want new values for testing,
         #so make sure we are not just putting in the same values as are already there
         self.assertNotEqual(testZmin, testIGM.zMin)
         self.assertNotEqual(testZmax, testIGM.zMax)
@@ -27,7 +27,7 @@ class TestApplyIGM(unittest.TestCase):
         self.assertEqual(testZmax, testIGM.zMax)
 
     def testLoadTables(self):
-        
+
         "Test Readin of IGM Lookup Tables"
 
         tableDirectory = str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/igm')
@@ -40,7 +40,7 @@ class TestApplyIGM(unittest.TestCase):
         testMeanLookupTable.close()
         self.assertRaisesRegexp(IOError, "Cannot find variance tables.", testIGM.loadTables(os.getcwd()))
         os.remove('MeanLookupTable_zSource1.5.tbl')
-        
+
         #Then make sure that the mean lookup tables and var lookup tables all get loaded into proper dicts
         testIGMDicts = ApplyIGM()
         testIGMDicts.initializeIGM()
@@ -55,7 +55,7 @@ class TestApplyIGM(unittest.TestCase):
         testIGMVar.initializeIGM()
         testIGMVar.loadTables(tableDirectory, varianceTbl = False)
         self.assertEqual(testIGMVar.varLookups, {})
-        
+
 
     def testApplyIGM(self):
 
@@ -76,7 +76,7 @@ class TestApplyIGM(unittest.TestCase):
         np.testing.assert_equal(testFlambda, testSed.flambda)
 
         #Test that lookup table is read in correctly
-        testTable15 = np.genfromtxt(str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/igm/' + 
+        testTable15 = np.genfromtxt(str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/igm/' +
                                         'MeanLookupTable_zSource1.5.tbl'))
         np.testing.assert_equal(testTable15, testIGM.meanLookups['1.5'])
 
@@ -92,4 +92,4 @@ if __name__ == "__main__":
 
     suite = unittest.TestLoader().loadTestsFromTestCase(TestApplyIGM)
     unittest.TextTestRunner(verbosity=2).run(suite)
-        
+
