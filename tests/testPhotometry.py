@@ -397,6 +397,7 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog("testStarsOutput.txt")
         results = self.star.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
+        os.unlink("testStarsOutput.txt")
 
 
     def testGalaxies(self):
@@ -404,6 +405,7 @@ class photometryUnitTest(unittest.TestCase):
         test_cat.write_catalog("testGalaxiesOutput.txt")
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
+        os.unlink("testGalaxiesOutput.txt")
 
     def testAlternateBandpassesStars(self):
         """
@@ -452,6 +454,8 @@ class photometryUnitTest(unittest.TestCase):
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
         i += 1
+        
+        os.unlink("testStarsCartoon.txt")
     
     def testAlternateBandpassesGalaxies(self):
         """
@@ -494,6 +498,7 @@ class photometryUnitTest(unittest.TestCase):
                         self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
                 i += 1
  
+        os.unlink("testGalaxiesCartoon.txt")
     
     def testEBV(self):
         
