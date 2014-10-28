@@ -75,6 +75,8 @@ class TestSelectStarSED(unittest.TestCase):
         self.assertAlmostEqual(testColors['gmr'][0], 0.0)
         self.assertAlmostEqual(testColors['rmi'][0], 0.0)
         self.assertAlmostEqual(testColors['imz'][0], 0.0)
+        
+        os.unlink(testName)
 
     def testLoadMLT(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for"""
@@ -116,6 +118,8 @@ class TestSelectStarSED(unittest.TestCase):
         self.assertAlmostEqual(testColors['gmr'][0], 0.0)
         self.assertAlmostEqual(testColors['rmi'][0], 0.0)
         self.assertAlmostEqual(testColors['imz'][0], 0.0)
+        
+        os.unlink(testName)
 
     def testLoadWD(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for and
@@ -182,6 +186,9 @@ class TestSelectStarSED(unittest.TestCase):
         self.assertAlmostEqual(testColors['HE']['gmr'][0], 0.0)
         self.assertAlmostEqual(testColors['HE']['rmi'][0], 0.0)
         self.assertAlmostEqual(testColors['HE']['imz'][0], 0.0)
+        
+        os.unlink(testName)
+        os.unlink(testNameHe)
 
     def testDeReddenGalfast(self):
         
@@ -437,7 +444,14 @@ class TestReadGalfast(unittest.TestCase):
                            ['exampleOutput.txt', 'exampleOutputGzip.txt', 'exampleOutputFits.txt'])
         self.assertTrue(os.path.isfile('exampleOutput.txt'))
         self.assertTrue(os.path.isfile('exampleOutputGzip.txt'))
-        self.assertTrue(os.path.isfile('exampleOutputFits.txt'))        
+        self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
+        
+        os.unlink('exampleOutput.txt')
+        os.unlink('exampleOutputGzip.txt')
+        os.unlink('exampleOutputFits.txt')
+        os.unlink('example.txt')
+        os.unlink('gzipExample.txt.gz')
+        os.unlink('exampleFits.fits')        
 
 if __name__ == "__main__":
 
