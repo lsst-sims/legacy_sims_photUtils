@@ -4,6 +4,24 @@ import numpy
 
 from lsst.sims.photUtils import CosmologyWrapper
 
+def controlOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=0.0):
+    if Ode0 is None:
+        Ode0 = 1.0 - Om0 - Og0 - Onu0
+
+    Ok0 = 1.0 - Om0 - Ode0 - Og0 - Onu0
+
+    aa = 1.0/(1.0+redshift)
+    Omz = Om0 * numpy.power(1.0+redshift, 3)
+    Ogz = Og0 * numpy.power(1.0+redshift, 4)
+    Onuz = Onu0 * numpy.power(1.0+redshift, 4)
+    Okz = Ok0 * numpy.power(1.0+redshift, 2)
+    Odez = Ode0 * numpy.exp(-3.0*(numpy.log(aa)*(w0 + wa +1.0) - wa*(aa - 1.0)))
+
+    Ototal = Omz + Ogz + Onuz + Odez + Okz
+
+
+    return Omz/Ototal, Ogz/Ototal, Onuz/Ototal, Odez/Ototal, Okz/Ototal, H0*numpy.sqrt(Ototal)
+
 class CosmologyUnitTest(unittest.TestCase):
 
     def testFlatLCDM(self):
@@ -37,20 +55,13 @@ class CosmologyUnitTest(unittest.TestCase):
                 for zz in ztest:
                    aa = (1.0+zz)
 
-                   Ototal = Om0*numpy.power(aa,3) + (Og0 +Onu0)*numpy.power(aa,4) + Ode0
-                   OmControl = Om0*numpy.power(aa,3)/Ototal
+                   OmControl, OgControl, OnuControl, \
+                       OdeControl, OkControl, Hcontrol = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0)
+
                    self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
-
-                   OdeControl = Ode0/Ototal
                    self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
-
-                   OgControl = Og0*numpy.power(aa,4)/Ototal
                    self.assertAlmostEqual(OgControl, universe.OmegaPhotons(redshift=zz), 6)
-
-                   OnuControl = Onu0*numpy.power(aa,4)/Ototal
                    self.assertAlmostEqual(OnuControl, universe.OmegaNeutrinos(redshift=zz), 6)
-
-                   Hcontrol = H0*numpy.sqrt(Ototal)
                    self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
 
                 del universe
@@ -86,27 +97,18 @@ class CosmologyUnitTest(unittest.TestCase):
 
                         ztest = numpy.arange(start=0.0, stop=4.0, step=0.5)
                         for zz in ztest:
-                           aa = (1.0+zz)
-                           scaleFactor = 1.0/aa
-                           OdeZ = Ode0*numpy.exp(-3.0*(numpy.log(scaleFactor)*(w0 + wa + 1.0) - wa*(scaleFactor - 1.0)))
 
-                           wControl = w0 + wa*(1.0 - scaleFactor)
+                           wControl = w0 + wa*(1.0 - 1.0/(1.0+zz))
                            self.assertAlmostEqual(wControl, universe.w(redshift=zz), 6)
 
-                           Ototal = Om0*numpy.power(aa,3) + (Og0 +Onu0)*numpy.power(aa,4) + OdeZ
-                           OmControl = Om0*numpy.power(aa,3)/Ototal
+                           OmControl, OgControl, OnuControl, \
+                           OdeControl, OkControl, Hcontrol = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                                          w0=w0, wa=wa)
+
                            self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
-
-                           OdeControl = OdeZ/Ototal
                            self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
-
-                           OgControl = Og0*numpy.power(aa,4)/Ototal
                            self.assertAlmostEqual(OgControl, universe.OmegaPhotons(redshift=zz), 6)
-
-                           OnuControl = Onu0*numpy.power(aa,4)/Ototal
                            self.assertAlmostEqual(OnuControl, universe.OmegaNeutrinos(redshift=zz), 6)
-
-                           Hcontrol = H0*numpy.sqrt(Ototal)
                            self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
 
                         del universe
@@ -142,22 +144,16 @@ class CosmologyUnitTest(unittest.TestCase):
 
                     ztest = numpy.arange(start=0.0, stop=4.0, step=0.5)
                     for zz in ztest:
-                       aa = (1.0+zz)
-                       Ototal = Om0*numpy.power(aa,3) + (Og0 +Onu0)*numpy.power(aa,4) + Ode0 + Ok0*numpy.power(aa,2)
-                       OmControl = Om0*numpy.power(aa,3)/Ototal
-                       self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
+                        OmControl, OgControl, OnuControl, \
+                        OdeControl, OkControl, Hcontrol = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                                          Ode0=Ode0)
 
-                       OdeControl = Ode0/Ototal
-                       self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
-
-                       OgControl = Og0*numpy.power(aa,4)/Ototal
-                       self.assertAlmostEqual(OgControl, universe.OmegaPhotons(redshift=zz), 6)
-
-                       OnuControl = Onu0*numpy.power(aa,4)/Ototal
-                       self.assertAlmostEqual(OnuControl, universe.OmegaNeutrinos(redshift=zz), 6)
-
-                       Hcontrol = H0*numpy.sqrt(Ototal)
-                       self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
+                        self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
+                        self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
+                        self.assertAlmostEqual(OgControl, universe.OmegaPhotons(redshift=zz), 6)
+                        self.assertAlmostEqual(OnuControl, universe.OmegaNeutrinos(redshift=zz), 6)
+                        self.assertAlmostEqual(OkControl, universe.OmegaCurvature(redshift=zz), 6)
+                        self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
 
                     del universe
 
