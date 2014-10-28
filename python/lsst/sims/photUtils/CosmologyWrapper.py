@@ -108,3 +108,9 @@ class CosmologyWrapper(object):
         universe = self.get_current()
 
         return universe.Ok(redshift)
+
+    def w(self, redshift=0.0):
+
+        universe = self.get_current()
+
+        return universe.w(redshift)
