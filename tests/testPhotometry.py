@@ -19,11 +19,11 @@ from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 from lsst.sims.photUtils.Variability import Variability
 
 # Create test databases
-if os.path.exists('testDatabase.db'):
+if os.path.exists('testPhotometryDatabase.db'):
     print "deleting database"
-    os.unlink('testDatabase.db')
-makeStarTestDB(size=100000, seedVal=1)
-makeGalTestDB(size=100000, seedVal=1)
+    os.unlink('testPhotometryDatabase.db')
+makeStarTestDB(size=100000, seedVal=1, filename='testPhotometryDatabase.db')
+makeGalTestDB(size=100000, seedVal=1, filename='testPhotometryDatabase.db')
 
 @register_class
 class MyVariability(Variability):
@@ -331,8 +331,8 @@ class variabilityUnitTest(unittest.TestCase):
                             boundType = 'circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                             boundLength=1.0,m5=dict(u=23.9, g=25.0, r=24.7, i=24.0, z=23.3, y=22.1))
 
-        self.galaxy = myTestGals()
-        self.star = myTestStars()
+        self.galaxy = myTestGals(address='sqlite:///testPhotometryDatabase.db')
+        self.star = myTestStars(address='sqlite:///testPhotometryDatabase.db')
 
     def tearDown(self):
         del self.galaxy
@@ -362,8 +362,8 @@ class photometryUnitTest(unittest.TestCase):
                             boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                             boundLength=1.0, m5 = 25.0)
 
-        self.galaxy = myTestGals()
-        self.star = myTestStars()
+        self.galaxy = myTestGals(address='sqlite:///testPhotometryDatabase.db')
+        self.star = myTestStars(address='sqlite:///testPhotometryDatabase.db')
 
     def tearDown(self):
         del self.galaxy
