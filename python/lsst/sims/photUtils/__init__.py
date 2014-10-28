@@ -4,3 +4,4 @@ from .Photometry import *
 from .Variability import *
 from .applyIGM import *
 from .EBV import *
+from .CosmologyWrapper import *
