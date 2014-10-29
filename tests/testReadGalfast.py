@@ -39,11 +39,11 @@ class TestSelectStarSED(unittest.TestCase):
         self.mTestName = 'm99.99Full.dat'
 
     def tearDown(self):
-        if os.path.exists(kmTestName):
-            os.unlink(kmTestName)
+        if os.path.exists(self.kmTestName):
+            os.unlink(self.kmTestName)
 
-        if os.path.exists(mTestName):
-            os.unlink(mTestName)
+        if os.path.exists(self.mTestName):
+            os.unlink(self.mTestName)
 
         del self.kmTestName
         del self.mTestName
