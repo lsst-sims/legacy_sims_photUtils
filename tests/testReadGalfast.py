@@ -20,15 +20,33 @@ class TestSelectStarSED(unittest.TestCase):
 
         specMap= SpecMap()
         cls._specMapDict = {}
-        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types      
+        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
         specFileTypes = ['kurucz', 'mlt','wd']
         for specStart, specKey in zip(specFileStart, specFileTypes):
             for key, val in sorted(specMap.subdir_map.iteritems()):
                 if re.match(key, specStart):
                     cls._specMapDict[specKey] = str(val)
 
-        
+    @classmethod
+    def tearDownClass(cls):
+        del cls._kurucz
+        del cls._mlt
+        del cls._wd
+        del cls._specMapDict
 
+    def setUp(self):
+        self.kmTestName = 'km99_9999.fits_g99_9999'
+        self.mTestName = 'm99.99Full.dat'
+
+    def tearDown(self):
+        if os.path.exists(self.kmTestName):
+            os.unlink(self.kmTestName)
+
+        if os.path.exists(self.mTestName):
+            os.unlink(self.mTestName)
+
+        del self.kmTestName
+        del self.mTestName
 
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
@@ -36,7 +54,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDs = self._kurucz
 
         #Read in a list of the SEDs in the kurucz sims sed directory
-        testKuruczList = os.listdir(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + 
+        testKuruczList = os.listdir(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' +
                                     self._specMapDict['kurucz'] + '/')
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
@@ -66,11 +84,10 @@ class TestSelectStarSED(unittest.TestCase):
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
         testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
         #Give kurucz like filename just so it works
-        testName = 'km99_9999.fits_g99_9999'
-        testSED.writeSED(testName)
+        testSED.writeSED(self.kmTestName)
 
         testSEDsColors.kuruczDir = str(os.getcwd() + '/')
-        testColors = testSEDsColors.loadKuruczSEDs(subset = [testName])
+        testColors = testSEDsColors.loadKuruczSEDs(subset = [self.kmTestName])
         self.assertAlmostEqual(testColors['umg'][0], 0.0)
         self.assertAlmostEqual(testColors['gmr'][0], 0.0)
         self.assertAlmostEqual(testColors['rmi'][0], 0.0)
@@ -107,11 +124,10 @@ class TestSelectStarSED(unittest.TestCase):
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
         testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
         #Give mlt like filename just so it works
-        testName = 'm99.99Full.dat'
-        testSED.writeSED(testName)
+        testSED.writeSED(self.mTestName)
 
         testSEDsColors.mltDir = str(os.getcwd() + '/')
-        testColors = testSEDsColors.loadmltSEDs(subset = [testName])
+        testColors = testSEDsColors.loadmltSEDs(subset = [self.mTestName])
         self.assertAlmostEqual(testColors['umg'][0], 0.0)
         self.assertAlmostEqual(testColors['gmr'][0], 0.0)
         self.assertAlmostEqual(testColors['rmi'][0], 0.0)
@@ -183,23 +199,26 @@ class TestSelectStarSED(unittest.TestCase):
         self.assertAlmostEqual(testColors['HE']['rmi'][0], 0.0)
         self.assertAlmostEqual(testColors['HE']['imz'][0], 0.0)
 
+        os.unlink(testName)
+        os.unlink(testNameHe)
+
     def testDeReddenGalfast(self):
-        
+
         """Test that consistent numbers come out of deReddening procedure"""
 
         am = 0.5
         coeffs = np.ones(5)
         mags = np.arange(2,-3,-1)
 
-        testDeRedColors = selectStarSED().deReddenGalfast(am, mags[0], mags[1], mags[2], mags[3], 
+        testDeRedColors = selectStarSED().deReddenGalfast(am, mags[0], mags[1], mags[2], mags[3],
                                                           mags[4], coeffs)
-        
+
         #Test Output
         expectedDeRed = np.ones(4)
         np.testing.assert_equal(testDeRedColors, expectedDeRed)
 
     def testFindSED(self):
-        
+
         """Pull SEDs from each type and make sure that each SED gets matched to itself."""
 
         testMatching = selectStarSED()
@@ -228,7 +247,7 @@ class TestSelectStarSED(unittest.TestCase):
                 testSubsetComp.append(15)
             else:
                 testSubsetComp.append(10)
-        
+
         testMatchingDict = {}
         testMatchingDict['kurucz'] = self._kurucz
         testMatchingDict['mlt'] = self._mlt
@@ -245,18 +264,18 @@ class TestSelectStarSED(unittest.TestCase):
 
             getSEDColors = Sed()
             testSEDName = testSubsetList[testSEDNum].strip('.gz')
-            getSEDColors.readSED_flambda(str(testMatching.sEDDir + '/' + 
+            getSEDColors.readSED_flambda(str(testMatching.sEDDir + '/' +
                                              str(specMap.__getitem__(testSEDName))))
             getSEDColors.multiplyFluxNorm(getSEDColors.calcFluxNorm(10, testMatching.bandpassDict['r']))
             testSEDPhotometry = phot()
-            testMagDict = testSEDPhotometry.manyMagCalc_dict(getSEDColors, testMatching.phiArray, 
-                                                             testMatching.wavelenstep, 
-                                                             testMatching.bandpassDict, 
+            testMagDict = testSEDPhotometry.manyMagCalc_dict(getSEDColors, testMatching.phiArray,
+                                                             testMatching.wavelenstep,
+                                                             testMatching.bandpassDict,
                                                              testMatching.filterList)
 
             #First test without reddening
-            testOutputName.append(testMatching.findSED(testMatchingDict, testMagDict['u'], testMagDict['g'], 
-                                                       testMagDict['r'], testMagDict['i'], testMagDict['z'], 
+            testOutputName.append(testMatching.findSED(testMatchingDict, testMagDict['u'], testMagDict['g'],
+                                                       testMagDict['r'], testMagDict['i'], testMagDict['z'],
                                                        0, testSubsetComp[testSEDNum], reddening = False))
             #Next test with reddening and custom coeffs
             am = 0.5
@@ -265,22 +284,41 @@ class TestSelectStarSED(unittest.TestCase):
             testReddenedMagDict = {}
             for filter, coeffNum in zip(testMatching.filterList, range(0, len(testReddening))):
                 testReddenedMagDict[filter] = testMagDict[filter] + testReddening[coeffNum]
-            testOutputNameReddened.append(testMatching.findSED(testMatchingDict, testReddenedMagDict['u'], 
-                                                               testReddenedMagDict['g'], 
-                                                               testReddenedMagDict['r'], 
-                                                               testReddenedMagDict['i'], 
-                                                               testReddenedMagDict['z'], am, 
-                                                               testSubsetComp[testSEDNum], True, 
+            testOutputNameReddened.append(testMatching.findSED(testMatchingDict, testReddenedMagDict['u'],
+                                                               testReddenedMagDict['g'],
+                                                               testReddenedMagDict['r'],
+                                                               testReddenedMagDict['i'],
+                                                               testReddenedMagDict['z'], am,
+                                                               testSubsetComp[testSEDNum], True,
                                                                reddenCoeffs))
         self.assertEqual(testOutputName, testSubsetList)
         self.assertEqual(testOutputNameReddened, testSubsetList)
 
 class TestReadGalfast(unittest.TestCase):
 
+    def tearDown(self):
+        if os.path.exists('exampleOutput.txt'):
+            os.unlink('exampleOutput.txt')
+
+        if os.path.exists('exampleOutputGzip.txt'):
+            os.unlink('exampleOutputGzip.txt')
+
+        if os.path.exists('exampleOutputFits.txt'):
+            os.unlink('exampleOutputFits.txt')
+
+        if os.path.exists('example.txt'):
+             os.unlink('example.txt')
+
+        if os.path.exists('gzipExample.txt.gz'):
+            os.unlink('gzipExample.txt.gz')
+
+        if os.path.exists('exampleFits.fits'):
+             os.unlink('exampleFits.fits')
+
     def testParseGalfast(self):
 
         """Test Read-in of Galfast Header"""
-        
+
         testRG = readGalfast()
         #First test that exception is raised when an invalid header label is used
         testInvalidHeader = 'lb[2] header'
@@ -306,18 +344,18 @@ class TestReadGalfast(unittest.TestCase):
                          'DM comp FeH vcyl[3] pmlb[3] pmradec[3] Am AmInf SDSSugriz[5]{class=magnitude;' +\
                          'fieldNames=0:SDSSu,1:SDSSg,2:SDSSr,3:SDSSi,4:SDSSz;} ' +\
                          'SDSSugrizPhotoFlags{class=flags;}'
-        actualFullHeaderDict = {'l':0, 'b':1, 'X':2, 'Y':3, 'Z':4, 'ra':5, 'dec':6, 'absSDSSr':7, 'DM':8, 
-                                'comp':9, 'FeH':10, 'Vr':11, 'Vphi':12, 'Vz':13, 'pml':14, 'pmb':15, 
-                                'vRadlb':16, 'pmra':17, 'pmdec':18, 'vRad':19, 'Am':20, 'AmInf':21, 
-                                'SDSSu':22, 'SDSSg':23, 'SDSSr':24, 'SDSSi':25, 'SDSSz':26, 
+        actualFullHeaderDict = {'l':0, 'b':1, 'X':2, 'Y':3, 'Z':4, 'ra':5, 'dec':6, 'absSDSSr':7, 'DM':8,
+                                'comp':9, 'FeH':10, 'Vr':11, 'Vphi':12, 'Vz':13, 'pml':14, 'pmb':15,
+                                'vRadlb':16, 'pmra':17, 'pmdec':18, 'vRad':19, 'Am':20, 'AmInf':21,
+                                'SDSSu':22, 'SDSSg':23, 'SDSSr':24, 'SDSSi':25, 'SDSSz':26,
                                 'SDSSPhotoFlags':27}
         testFullHeaderDict = testRG.parseGalfast(testFullHeader)
         self.assertEqual(testFullHeaderDict, actualFullHeaderDict)
 
     def testFindLSSTMags(self):
-        
+
         """Make sure that the Magnitudes you get from spectra are correct"""
-        
+
         testRG = readGalfast()
         sEDParams = selectStarSED()
         testPhot = phot()
@@ -367,12 +405,12 @@ class TestReadGalfast(unittest.TestCase):
             lsstFluxNorm = sEDObj.calcFluxNorm(absLSSTr, sEDParams.lsstBandpassDict['r'])
             sEDObj.multiplyFluxNorm(lsstFluxNorm)
             absSDSSr = sEDObj.calcMag(sEDParams.bandpassDict['r'])
-            testFluxNorm, testMagDict = testRG.findLSSTMags(testSpectrum, sEDDict, absSDSSr, 
+            testFluxNorm, testMagDict = testRG.findLSSTMags(testSpectrum, sEDDict, absSDSSr,
                                                             DM, am, lsstExtCoords)
             self.assertAlmostEqual(testFluxNorm, lsstFluxNorm)
             self.assertAlmostEqual(testMagDict['r'] - DM - (am * lsstExtCoords[2]), absLSSTr)
 
-            
+
 
     def testConvDMtoKpc(self):
 
@@ -383,18 +421,18 @@ class TestReadGalfast(unittest.TestCase):
         actualKpcDistance = 1.
         testKpcDistance = testRG.convDMtoKpc(dm)
         self.assertEqual(testKpcDistance, actualKpcDistance)
-        
+
     def testLoadGalfast(self):
 
         """Make sure all desired input file types are correctly processed and return correct output files"""
-        
+
         testRG = readGalfast()
         #First test that it makes sure file exists
         self.assertRaises(RuntimeError, testRG.loadGalfast, ['notarealfile.txt'], ['noOutput.txt'])
 
         #Next test that if an unknown file format is entered it exits
         self.assertRaises(RuntimeError, testRG.loadGalfast, ['notarealfile.dat'], ['noOutput.txt'])
-        
+
         #Write example files and then load in and make sure example output files are created
         #First .txt
         exampleIn = open('example.txt', 'w')
@@ -420,24 +458,24 @@ class TestReadGalfast(unittest.TestCase):
         #Finally a fits file, but first make sure to remove pre-existing file
         if os.path.isfile('exampleFits.fits'):
             os.remove('exampleFits.fits')
-        columnNames = ['lb', 'XYZ', 'radec', 'absSDSSr', 'DM', 'comp', 'FeH', 'vcyl', 'pmlb', 'pmradec', 
+        columnNames = ['lb', 'XYZ', 'radec', 'absSDSSr', 'DM', 'comp', 'FeH', 'vcyl', 'pmlb', 'pmradec',
                        'Am', 'AmInf', 'SDSSugriz', 'SDSSugrizPhotoFlags']
-        columnArrays = [[[1.79371816, -89.02816704]],  [[7.15, 0.22, -421.87]], 
-                        [[11.92064832, -27.62775082]], [[8.126]], [[4.366]], [[0]], [[-0.095]], 
+        columnArrays = [[[1.79371816, -89.02816704]],  [[7.15, 0.22, -421.87]],
+                        [[11.92064832, -27.62775082]], [[8.126]], [[4.366]], [[0]], [[-0.095]],
                         [[13.7,  -183.4, -6.2]], [[-20.58, -12.60, 13.02]], [[21.34, -11.26, 13.02]],
                         [[0.037]], [[0.037]],  [[14.350, 12.949, 12.529, 12.381, 12.358]], [[0]]]
         columnFormats = ['2E', '3E', '2E', 'E', 'E', 'E', 'E', '3E', '3E', '3E', 'E', 'E', '5E', 'E']
-        cols = pyfits.ColDefs([pyfits.Column(name = columnNames[0], format = columnFormats[0], 
+        cols = pyfits.ColDefs([pyfits.Column(name = columnNames[0], format = columnFormats[0],
                                              array = columnArrays[0])])
         for colName, colArray, colFormat in zip(columnNames[1:], columnArrays[1:], columnFormats[1:]):
             cols.add_col(pyfits.Column(name = colName, format = colFormat, array = colArray))
         exampleTable = pyfits.new_table(cols)
         exampleTable.writeto('exampleFits.fits')
-        testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'], 
+        testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
                            ['exampleOutput.txt', 'exampleOutputGzip.txt', 'exampleOutputFits.txt'])
         self.assertTrue(os.path.isfile('exampleOutput.txt'))
         self.assertTrue(os.path.isfile('exampleOutputGzip.txt'))
-        self.assertTrue(os.path.isfile('exampleOutputFits.txt'))        
+        self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
 
 if __name__ == "__main__":
 

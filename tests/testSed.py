@@ -16,6 +16,8 @@ class TestSedWavelenLimits(unittest.TestCase):
         del self.bandpasswavelen
         del self.bandpasssb
         del self.testbandpass
+        del self.wmin
+        del self.wmax
 
     def testSedWavelenRange(self):
         """Test setting sed with wavelength range different from standard values works properly."""
@@ -94,6 +96,8 @@ class TestSedName(unittest.TestCase):
 
     def tearDown(self):
         del self.wmin, self.wmax, self.wavelen, self.flambda
+        del self.name
+        del self.testsed
 
 
     def testSetName(self):
