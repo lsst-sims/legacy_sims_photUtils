@@ -33,6 +33,20 @@ class TestSelectStarSED(unittest.TestCase):
         del cls._mlt
         del cls._wd
         del cls._specMapDict
+    
+    def setUp(self):
+        self.kmTestName = 'km99_9999.fits_g99_9999'
+        self.mTestName = 'm99.99Full.dat'
+    
+    def tearDown(self):
+        if os.path.exists(kmTestName):
+            os.unlink(kmTestName)
+
+        if os.path.exists(mTestName):
+            os.unlink(mTestName)
+        
+        del self.kmTestName
+        del self.mTestName
 
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
@@ -70,17 +84,14 @@ class TestSelectStarSED(unittest.TestCase):
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
         testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
         #Give kurucz like filename just so it works
-        testName = 'km99_9999.fits_g99_9999'
-        testSED.writeSED(testName)
+        testSED.writeSED(self.kmTestName)
 
         testSEDsColors.kuruczDir = str(os.getcwd() + '/')
-        testColors = testSEDsColors.loadKuruczSEDs(subset = [testName])
+        testColors = testSEDsColors.loadKuruczSEDs(subset = [self.kmTestName])
         self.assertAlmostEqual(testColors['umg'][0], 0.0)
         self.assertAlmostEqual(testColors['gmr'][0], 0.0)
         self.assertAlmostEqual(testColors['rmi'][0], 0.0)
         self.assertAlmostEqual(testColors['imz'][0], 0.0)
-
-        os.unlink(testName)
 
     def testLoadMLT(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for"""
@@ -113,17 +124,14 @@ class TestSelectStarSED(unittest.TestCase):
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
         testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
         #Give mlt like filename just so it works
-        testName = 'm99.99Full.dat'
-        testSED.writeSED(testName)
+        testSED.writeSED(self.mTestName)
 
         testSEDsColors.mltDir = str(os.getcwd() + '/')
-        testColors = testSEDsColors.loadmltSEDs(subset = [testName])
+        testColors = testSEDsColors.loadmltSEDs(subset = [self.mTestName])
         self.assertAlmostEqual(testColors['umg'][0], 0.0)
         self.assertAlmostEqual(testColors['gmr'][0], 0.0)
         self.assertAlmostEqual(testColors['rmi'][0], 0.0)
         self.assertAlmostEqual(testColors['imz'][0], 0.0)
-
-        os.unlink(testName)
 
     def testLoadWD(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for and
