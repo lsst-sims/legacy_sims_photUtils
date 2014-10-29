@@ -287,7 +287,26 @@ class TestSelectStarSED(unittest.TestCase):
         self.assertEqual(testOutputNameReddened, testSubsetList)
 
 class TestReadGalfast(unittest.TestCase):
-
+    
+    def tearDown(self):
+        if os.path.exists('exampleOutput.txt'):
+            os.unlink('exampleOutput.txt')
+        
+        if os.path.exists('exampleOutputGzip.txt'):
+            os.unlink('exampleOutputGzip.txt')
+        
+        if os.path.exists('exampleOutputFits.txt'):
+            os.unlink('exampleOutputFits.txt')
+        
+        if os.path.exists('example.txt'):
+             os.unlink('example.txt')
+        
+        if os.path.exists('gzipExample.txt.gz'):
+            os.unlink('gzipExample.txt.gz')
+        
+        if os.path.exists('exampleFits.fits'):
+             os.unlink('exampleFits.fits')
+    
     def testParseGalfast(self):
 
         """Test Read-in of Galfast Header"""
@@ -449,13 +468,6 @@ class TestReadGalfast(unittest.TestCase):
         self.assertTrue(os.path.isfile('exampleOutput.txt'))
         self.assertTrue(os.path.isfile('exampleOutputGzip.txt'))
         self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
-
-        os.unlink('exampleOutput.txt')
-        os.unlink('exampleOutputGzip.txt')
-        os.unlink('exampleOutputFits.txt')
-        os.unlink('example.txt')
-        os.unlink('gzipExample.txt.gz')
-        os.unlink('exampleFits.fits')
 
 if __name__ == "__main__":
 
