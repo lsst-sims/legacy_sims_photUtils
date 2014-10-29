@@ -33,18 +33,18 @@ class TestSelectStarSED(unittest.TestCase):
         del cls._mlt
         del cls._wd
         del cls._specMapDict
-    
+
     def setUp(self):
         self.kmTestName = 'km99_9999.fits_g99_9999'
         self.mTestName = 'm99.99Full.dat'
-    
+
     def tearDown(self):
         if os.path.exists(kmTestName):
             os.unlink(kmTestName)
 
         if os.path.exists(mTestName):
             os.unlink(mTestName)
-        
+
         del self.kmTestName
         del self.mTestName
 
@@ -295,26 +295,26 @@ class TestSelectStarSED(unittest.TestCase):
         self.assertEqual(testOutputNameReddened, testSubsetList)
 
 class TestReadGalfast(unittest.TestCase):
-    
+
     def tearDown(self):
         if os.path.exists('exampleOutput.txt'):
             os.unlink('exampleOutput.txt')
-        
+
         if os.path.exists('exampleOutputGzip.txt'):
             os.unlink('exampleOutputGzip.txt')
-        
+
         if os.path.exists('exampleOutputFits.txt'):
             os.unlink('exampleOutputFits.txt')
-        
+
         if os.path.exists('example.txt'):
              os.unlink('example.txt')
-        
+
         if os.path.exists('gzipExample.txt.gz'):
             os.unlink('gzipExample.txt.gz')
-        
+
         if os.path.exists('exampleFits.fits'):
              os.unlink('exampleFits.fits')
-    
+
     def testParseGalfast(self):
 
         """Test Read-in of Galfast Header"""
