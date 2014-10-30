@@ -3,6 +3,8 @@ import numpy as np
 import warnings
 from lsst.sims.photUtils.Sed import Sed
 
+__all__ = ["ApplyIGM"]
+
 class ApplyIGM(object):
 
     """

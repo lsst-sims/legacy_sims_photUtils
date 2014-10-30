@@ -89,6 +89,8 @@ import warnings
 import numpy
 import gzip
 
+__all__ = ["Sed"]
+
 # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
 MINWAVELEN = 300
 MAXWAVELEN = 1150
