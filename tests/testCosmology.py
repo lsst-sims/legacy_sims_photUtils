@@ -223,17 +223,17 @@ class CosmologyUnitTest(unittest.TestCase):
             for Ode0 in numpy.arange(start=1.0-Om0-0.05, stop=1.0-Om0+0.06, step=0.05):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
-                        
+
                         universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
-     
+
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
                         for zz in ztest:
                             comovingControl = universe.comovingDistance(redshift=zz)
                             comovingTest = speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
                             self.assertAlmostEqual(comovingControl/comovingTest,1.0,4)
-                
+
     def testLuminosityDistance(self):
-   
+
         H0 = 73.0
         speedOfLight = 2.9979e5
 
@@ -242,16 +242,16 @@ class CosmologyUnitTest(unittest.TestCase):
             for Ode0 in numpy.arange(start=1.0-Om0-0.05, stop=1.0-Om0+0.06, step=0.05):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
-                        
+
                         universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
-            
+
                         kCurvature = numpy.abs(universe.OmegaCurvature())*\
                                      universe.H()*universe.H()/(speedOfLight*speedOfLight)
-            
+
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/speedOfLight
-                         
+
                         for zz in ztest:
                             luminosityControl = universe.luminosityDistance(redshift=zz)
                             comovingDistance = speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
@@ -267,7 +267,7 @@ class CosmologyUnitTest(unittest.TestCase):
                             else:
                                 luminosityTest = (1.0+zz)*comovingDistance
                             self.assertAlmostEqual(luminosityControl/luminosityTest,1.0,4)
-        
+
 def suite():
     utilsTests.init()
     suites = []
