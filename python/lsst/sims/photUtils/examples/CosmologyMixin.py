@@ -5,10 +5,18 @@ from lsst.sims.catalogs.measures.instance import compound
 __all__ = ["ExampleCosmologyMixin"]
 
 class ExampleCosmologyMixin(CosmologyWrapper):
+
+    def loadDefaultCosmology(self):
+        H0 = 72.0
+        Om0 = 0.23
+        self.initializeCosmology(H0=H0, Om0=Om0)
     
     def get_distanceModulus(self):
-        zz = self.column_by_name(redshift);
-        return numpy.array([self.distanceModulus(redshift=zz)])
+        if not self.cosmologyInitialized:
+            self.loadDefaultCosmology()
+    
+        zz = self.column_by_name('redshift');
+        return self.distanceModulus(redshift=zz)
     
     @compound(
     'uAbs', 'gAbs', 'rAbs', 'iAbs', 'zAbs', 'yAbs',
@@ -16,7 +24,7 @@ class ExampleCosmologyMixin(CosmologyWrapper):
     'uDiskAbs', 'gDiskAbs', 'rDiskAbs', 'iDiskAbs', 'zDiskAbs', 'yDiskAbs',
     'uAgnAbs', 'gAgnAbs', 'rAgnAbs', 'iAgnAbs', 'zAgnAbs', 'yAgnAbs'
     )
-    def absolute_magnitude_getter(self):
+    def get_cosmological_absolute_magnitudes(self):
         uu = self.column_by_name('uRecalc')
         gg = self.column_by_name('gRecalc')
         rr = self.column_by_name('rRecalc')
@@ -54,7 +62,7 @@ class ExampleCosmologyMixin(CosmologyWrapper):
         #(which is used to calculate the cosmological distance modulus)
         
         brightening = -2.5*numpy.log10(1.0+redshift)
-       
+
         brightening += modulus
         
         uu += brightening
@@ -71,10 +79,10 @@ class ExampleCosmologyMixin(CosmologyWrapper):
         zbulge += brightening
         ybulge += brightening
         
-        udisk += brighteting
-        gdisk += brighteting
+        udisk += brightening
+        gdisk += brightening
         rdisk += brightening
-        idisk += brighteting
+        idisk += brightening
         zdisk += brightening
         ydisk += brightening
         

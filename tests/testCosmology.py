@@ -1,9 +1,22 @@
+import os
 import unittest
 import lsst.utils.tests as utilsTests
 import numpy
 import scipy
 
-from lsst.sims.photUtils import CosmologyWrapper
+from lsst.sims.photUtils import CosmologyWrapper, PhotometryGalaxies
+from lsst.sims.photUtils.examples import ExampleCosmologyMixin
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
+
+from lsst.sims.catalogs.generation.utils import myTestGals, makeGalTestDB
+from lsst.sims.photUtils.utils import testGalaxies
+
+class cosmologicalGalaxyCatalog(testGalaxies, ExampleCosmologyMixin):
+    column_outputs = ['uAbs', 'gAbs', 'rAbs', 'iAbs', 'zAbs', 'yAbs',
+                      'uBulgeAbs', 'gBulgeAbs', 'rBulgeAbs', 'iBulgeAbs', 'zBulgeAbs', 'yBulgeAbs',
+                      'uDiskAbs', 'gDiskAbs', 'rDiskAbs', 'iDiskAbs', 'zDiskAbs', 'yDiskAbs',
+                      'uAgnAbs', 'gAgnAbs', 'rAgnAbs', 'iAgnAbs', 'zAgnAbs', 'yAgnAbs',
+                      'redshift', 'distanceModulus']
 
 def controlOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=0.0):
     if Ode0 is None:
@@ -319,10 +332,43 @@ class CosmologyUnitTest(unittest.TestCase):
                             modulusTest = 5.0*numpy.log10(luminosityDistance) + 25.0
                             self.assertAlmostEqual(modulusControl/modulusTest,1.0,4)
 
+class CosmologyMixinUnitTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dbName = 'cosmologyTestDB.db'
+        if os.path.exists(cls.dbName):
+            os.unlink(cls.dbName)
+        makeGalTestDB(size=100, seedVal=1, filename=cls.dbName)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(cls.dbName):
+            os.unlink(cls.dbName)
+
+        del cls.dbName
+
+    def setUp(self):
+        self.catName = 'cosmologyCatalog.txt'
+        if os.path.exists(self.catName):
+            os.unlink(self.catName)
+    
+    def tearDown(self):
+        if os.path.exists(self.catName):
+            os.unlink(self.catName)
+        del self.catName
+
+    def testCosmologyCatalog(self):
+        address = 'sqlite:///' + self.dbName
+        dbObj = myTestGals(address=address)
+        cat = cosmologicalGalaxyCatalog(dbObj)
+        cat.write_catalog(self.catName)
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(CosmologyUnitTest)
+    suites += unittest.makeSuite(CosmologyMixinUnitTest)
     return unittest.TestSuite(suites)
 
 def run(shouldExit = False):
