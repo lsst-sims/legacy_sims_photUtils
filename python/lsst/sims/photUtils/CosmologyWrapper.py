@@ -19,7 +19,7 @@ class CosmologyWrapper(object):
         Take the cosmology indicated by 'universe' and set it as the current/default
         cosmology (depending on the API of the version of astropy being run)
         """
-        
+
         if not hasattr(self, 'cosmologyVersion'):
             self._determineAPI()
 
@@ -81,7 +81,7 @@ class CosmologyWrapper(object):
 
 
     def OmegaMatter(self, redshift=0.0):
-    
+
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaMatter; cosmology has not been initialized")
 
@@ -96,13 +96,13 @@ class CosmologyWrapper(object):
     def OmegaPhotons(self, redshift=0.0):
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaPhotons; cosmology has not been initialized")
- 
+
         return self.activeCosmology.Ogamma(redshift)
 
     def OmegaNeutrinos(self, redshift=0.0):
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaNeutrinos; cosmology has not been initialized")
- 
+
         return self.activeCosmology.Onu(redshift)
 
     def OmegaCurvature(self, redshift=0.0):
@@ -114,7 +114,7 @@ class CosmologyWrapper(object):
     def w(self, redshift=0.0):
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call w; cosmology has not been initialized")
- 
+
         return self.activeCosmology.w(redshift)
 
     def comovingDistance(self, redshift=0.0):
