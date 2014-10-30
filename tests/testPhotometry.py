@@ -3,16 +3,12 @@ import numpy
 import os
 import unittest
 import lsst.utils.tests as utilsTests
-
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
-
-from lsst.sims.photUtils.Variability import Variability
-
+from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies
