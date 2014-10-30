@@ -225,9 +225,6 @@ class CosmologyUnitTest(unittest.TestCase):
 
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
 
-                        kCurvature = numpy.abs(universe.OmegaCurvature())*\
-                                     universe.H()*universe.H()/(speedOfLight*speedOfLight)
-
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/speedOfLight
 
                         for zz in ztest:
