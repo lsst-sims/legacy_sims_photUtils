@@ -8,6 +8,12 @@ class CosmologyWrapper(object):
     cosmologyInitialized = False
 
     def set_units(self):
+        """
+        This method specifies the units in which various outputs from the wrapper are expected
+        (this is because the latest version of astropy.cosmology outputs quantities such as
+        the Hubble parameter and luminosity distance with units attached; the version of
+        astropy.cosmology that comes within anaconda does not do this as of 30 October 2014)
+        """
         if not self.cosmologyInitialized:
             raise RuntimeError("Cannot call set_units; cosmology is not initialized")
 
@@ -33,6 +39,9 @@ class CosmologyWrapper(object):
         """
         Take the cosmology indicated by 'universe' and set it as the current/default
         cosmology (depending on the API of the version of astropy being run)
+
+        universe is also assigned to self.activeCosmology, which is the cosmology that
+        this wrapper's methods use for calculations.
         """
 
         if 'set_current' in dir(cosmology):
@@ -49,6 +58,15 @@ class CosmologyWrapper(object):
     def get_current(self):
         """
         Return the cosmology currently stored as the current cosmology
+
+        This is for users who want direct access to all of astropy.cosmology's methods,
+        not just those wrapped by this class.
+
+        documentation for astropy.cosmology can be found at the URL below (be sure to check which version of
+        astropy you are running; as of 30 October 2014, the anaconda distributed with the stack
+        comes with version 0.2.5)
+
+        https://astropy.readthedocs.org/en/v0.2.5/cosmology/index.html
         """
         if not self.cosmologyInitialized:
             raise RuntimeError("Should not call CosmologyWrapper.get_current(); you have not set_current()")
@@ -61,6 +79,26 @@ class CosmologyWrapper(object):
             raise RuntimeError("CosmologyWrapper.get_current does not know how to handle this version of astropy")
 
     def initializeCosmology(self, H0=72.0, Om0=0.25, Ode0=0.75, w0=-1.0, wa=0.0):
+        """
+        Initialize the cosmology wrapper with the parameters specified
+        (e.g. does not account for massive neutrinos)
+
+        param [in] H0 is the Hubble parameter at the present epoch in km/s/Mpc
+
+        param [in] Om0 is the current matter density paramter (fraction of critical density)
+
+        param [in] Ode0 is the current dark energy density parameter
+
+        param [in] w0 is the current dark energy equation of state w0 paramter
+
+        param[in] wa is the current dark energy equation of state wa paramter
+
+        The total dark energy equation of state as a function of z is
+        w = w0 + wa z/(1+z)
+
+        Currently, this wrapper class expects you to specify either a LambdaCDM (flat or non-flat) cosmology
+        or a w0, wa (flat or non-flat) cosmology.
+        """
         self.activeCosmology = None
 
         self.H0 = H0
@@ -82,7 +120,7 @@ class CosmologyWrapper(object):
         self.set_current(universe)
 
     def H(self, redshift=0.0):
-
+        """return the Hubble paramter in km/s/Mpc at the specified redshift"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call H; cosmology has not been initialized")
 
@@ -98,44 +136,71 @@ class CosmologyWrapper(object):
 
 
     def OmegaMatter(self, redshift=0.0):
-
+        """return the matter density paramter (fraction of critical density) at the specified redshift"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaMatter; cosmology has not been initialized")
 
         return self.activeCosmology.Om(redshift)
 
     def OmegaDarkEnergy(self, redshift=0.0):
+        """return the dark energy density paramter (fraction of critical density) at the specified redshift"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaDarkEnergy; cosmology has not been initialized")
 
         return self.activeCosmology.Ode(redshift)
 
     def OmegaPhotons(self, redshift=0.0):
+        """return the photon density paramter (fraction of critical density) at the specified redshift"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaPhotons; cosmology has not been initialized")
 
         return self.activeCosmology.Ogamma(redshift)
 
     def OmegaNeutrinos(self, redshift=0.0):
+        """
+        return the neutrino density paramter (fraction of critical density) at the specified redshift
+
+        assumes neutrinos are massless
+        """
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaNeutrinos; cosmology has not been initialized")
 
         return self.activeCosmology.Onu(redshift)
 
     def OmegaCurvature(self, redshift=0.0):
+        """
+        return the effective curvature density paramter (fraction of critical density) at the
+        specified redshift.
+
+        Positive means the universe is open.
+
+        Negative means teh universe is closed.
+
+        Zero means the universe is flat.
+        """
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call OmegaCurvature; cosmology has not been initialized")
 
         return self.activeCosmology.Ok(redshift)
 
     def w(self, redshift=0.0):
+        """return the dark energy equation of state at the specified redshift"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call w; cosmology has not been initialized")
 
         return self.activeCosmology.w(redshift)
 
     def comovingDistance(self, redshift=0.0):
-        """in Mpc"""
+        """
+        return the comoving distance to the specified redshift in Mpc
+
+        note, this comoving distance is X in the FRW metric
+
+        ds^2 = -c^2 dt^2 + a^2 dX^2 + a^2 sin^2(X) dOmega^2
+
+        i.e. the curvature of the universe is folded into the sin()/sinh() function.
+        This distande just integrates dX = c dt/a
+        """
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call comovingDistance; cosmology has not been initialized")
 
@@ -150,7 +215,11 @@ class CosmologyWrapper(object):
             return dd
 
     def luminosityDistance(self, redshift=0.0):
-        """in Mpc"""
+        """
+        the luminosity distance to the specified redshift in Mpc
+
+        accounts for spatial curvature
+        """
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call luminosityDistance; cosmology has not been initialized")
 
@@ -165,7 +234,7 @@ class CosmologyWrapper(object):
             return dd
 
     def angularDiameterDistance(self, redshift=0.0):
-        """in Mpc"""
+        """angular diameter distance to the specified redshift in Mpc"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call angularDiameterDistance; cosmology has not been initialized")
 
@@ -180,6 +249,7 @@ class CosmologyWrapper(object):
             return dd
 
     def distanceModulus(self, redshift=0.0):
+        """distance modulus to the specified redshift"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call distanceModulus; cosmology has not been initialized")
 
