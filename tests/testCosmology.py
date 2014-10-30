@@ -328,7 +328,7 @@ class CosmologyUnitTest(unittest.TestCase):
                                 luminosityDistance = (1.0+zz)*nn/sqrtkCurvature
                             else:
                                 luminosityDistance = (1.0+zz)*comovingDistance
-                            
+
                             modulusTest = 5.0*numpy.log10(luminosityDistance) + 25.0
                             self.assertAlmostEqual(modulusControl/modulusTest,1.0,4)
 
@@ -352,7 +352,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         self.catName = 'cosmologyCatalog.txt'
         if os.path.exists(self.catName):
             os.unlink(self.catName)
-    
+
     def tearDown(self):
         if os.path.exists(self.catName):
             os.unlink(self.catName)
