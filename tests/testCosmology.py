@@ -40,7 +40,7 @@ class CosmologyUnitTest(unittest.TestCase):
             Ode0 = 1.0 - Om0
 
             universe = CosmologyWrapper()
-            universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+            universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
             Og0 = universe.OmegaPhotons(redshift=0.0)
             Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -80,7 +80,7 @@ class CosmologyUnitTest(unittest.TestCase):
                     Ode0 = 1.0 - Om0
 
                     universe = CosmologyWrapper()
-                    universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                    universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                     Og0 = universe.OmegaPhotons(redshift=0.0)
                     Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -123,7 +123,7 @@ class CosmologyUnitTest(unittest.TestCase):
             for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
 
                 universe = CosmologyWrapper()
-                universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                 Og0 = universe.OmegaPhotons(redshift=0.0)
                 Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -165,7 +165,7 @@ class CosmologyUnitTest(unittest.TestCase):
                     for wa in numpy.arange(start=-0.1, stop=0.15, step=0.1):
 
                         universe = CosmologyWrapper()
-                        universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         Og0 = universe.OmegaPhotons(redshift=0.0)
                         Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -210,7 +210,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
 
-                        universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
                         for zz in ztest:
@@ -229,7 +229,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
 
-                        universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
 
@@ -261,7 +261,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
 
-                        universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
 
@@ -295,7 +295,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
 
-                        universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
 

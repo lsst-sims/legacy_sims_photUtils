@@ -60,7 +60,7 @@ class CosmologyWrapper(object):
         else:
             raise RuntimeError("CosmologyWrapper.get_current does not know how to handle this version of astropy")
 
-    def Initialize(self, H0=72.0, Om0=0.25, Ode0=0.75, w0=-1.0, wa=0.0):
+    def initializeCosmology(self, H0=72.0, Om0=0.25, Ode0=0.75, w0=-1.0, wa=0.0):
         self.activeCosmology = None
 
         self.H0 = H0
