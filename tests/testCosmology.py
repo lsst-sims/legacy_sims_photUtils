@@ -160,7 +160,7 @@ class CosmologyUnitTest(unittest.TestCase):
                         self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
 
                     del universe
-    
+
     @unittest.skip("fornow")
     def testNonFlatW0Wa(self):
 
@@ -219,9 +219,9 @@ class CosmologyUnitTest(unittest.TestCase):
         Ode0 = 0.7
         w0 = -0.9
         wa = 0.1
-        
+
         speedOfLight = 2.9979e5
-        
+
         universe=CosmologyWrapper()
         for imodel in range(4):
             if imodel==0:
@@ -232,7 +232,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Om0)
             elif imodel==4:
                 universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Ode0, w0=w0, wa=wa)
-                
+
             ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
             for zz in ztest:
                 comovingControl = universe.comovingDistance(redshift=zz)

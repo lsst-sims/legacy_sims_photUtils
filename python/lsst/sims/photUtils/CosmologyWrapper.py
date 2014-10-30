@@ -121,9 +121,9 @@ class CosmologyWrapper(object):
         """in Mpc"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call comovingDistance; cosmology has not been initialized")
-        
+
         dd = self.activeCosmology.comoving_distance(redshift)
-        
+
         if 'value' in dir(dd):
             return dd.value
         else:
@@ -135,7 +135,7 @@ class CosmologyWrapper(object):
             raise RuntimeError("cannot call luminosityDistance; cosmology has not been initialized")
 
         dd = self.activeCosmology.luminosity_distance(redshift)
-        
+
         if 'value' in dir(dd):
             return dd.value
         else:
