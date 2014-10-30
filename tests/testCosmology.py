@@ -24,7 +24,13 @@ def controlOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=
     return Omz/Ototal, Ogz/Ototal, Onuz/Ototal, Odez/Ototal, Okz/Ototal, H0*numpy.sqrt(Ototal)
 
 class CosmologyUnitTest(unittest.TestCase):
+    
+    def setUp(self):
+        self.speedOfLight = 2.9979e5
 
+    def tearDown(self):
+        del self.speedOfLight
+    
     def testFlatLCDM(self):
         w0 = -1.0
         wa = 0.0
@@ -193,8 +199,6 @@ class CosmologyUnitTest(unittest.TestCase):
 
     def testComovingDistance(self):
 
-        speedOfLight = 2.9979e5
-
         universe = CosmologyWrapper()
         H0 = 73.0
         for Om0 in numpy.arange(start=0.1, stop=0.55, step=0.2):
@@ -207,13 +211,12 @@ class CosmologyUnitTest(unittest.TestCase):
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
                         for zz in ztest:
                             comovingControl = universe.comovingDistance(redshift=zz)
-                            comovingTest = speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+                            comovingTest = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
                             self.assertAlmostEqual(comovingControl/comovingTest,1.0,4)
 
     def testLuminosityDistance(self):
 
         H0 = 73.0
-        speedOfLight = 2.9979e5
 
         universe=CosmologyWrapper()
         for Om0 in numpy.arange(start=0.1, stop=0.55, step=0.2):
@@ -225,11 +228,11 @@ class CosmologyUnitTest(unittest.TestCase):
 
                         ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
 
-                        sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/speedOfLight
+                        sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
 
                         for zz in ztest:
                             luminosityControl = universe.luminosityDistance(redshift=zz)
-                            comovingDistance = speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
 
                             if universe.OmegaCurvature()<0.0:
                                 nn =sqrtkCurvature*comovingDistance
@@ -242,6 +245,39 @@ class CosmologyUnitTest(unittest.TestCase):
                             else:
                                 luminosityTest = (1.0+zz)*comovingDistance
                             self.assertAlmostEqual(luminosityControl/luminosityTest,1.0,4)
+
+    def testAngularDiameterDistance(self):
+
+        H0 = 56.0
+        universe=CosmologyWrapper()
+        for Om0 in numpy.arange(start=0.1, stop=0.55, step=0.2):
+            for Ode0 in numpy.arange(start=1.0-Om0-0.05, stop=1.0-Om0+0.06, step=0.05):
+                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
+                    for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
+
+                        universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+
+                        ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
+
+                        sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
+
+                        for zz in ztest:
+                            angularControl = universe.angularDiameterDistance(redshift=zz)
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+
+                            if universe.OmegaCurvature()<0.0:
+                                nn =sqrtkCurvature*comovingDistance
+                                nn = numpy.sin(nn)
+                                angularTest = nn/sqrtkCurvature
+                            elif universe.OmegaCurvature()>0.0:
+                                nn = sqrtkCurvature*comovingDistance
+                                nn = numpy.sinh(nn)
+                                angularTest = nn/sqrtkCurvature
+                            else:
+                                angularTest = comovingDistance
+                            angularTest /= (1.0+zz)
+                            self.assertAlmostEqual(angularControl/angularTest,1.0,4)
+
 
 def suite():
     utilsTests.init()

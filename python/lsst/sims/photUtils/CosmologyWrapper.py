@@ -7,13 +7,22 @@ class CosmologyWrapper(object):
 
     cosmologyInitialized = False
 
-    def _determine_API(self):
-        if 'set_current' in dir(cosmology):
-            self.cosmologyVersion='0.2.5'
-        elif 'default_cosmology' in dir(cosmology):
-            self.cosmologyVersion='1.0'
+
+    def set_units(self):
+        if not self.cosmologyInitialized:
+            raise RuntimeError("Cannot call set_units; cosmology is not initialized")
+            
+        H = self.activeCosmology.H(0.0)
+        if 'unit' in dir(H):
+            self.hUnits = units.Unit("km / (Mpc s)")
         else:
-            raise RuntimeError("CosmologyWrapper does not know how to handle this version of astropy")
+            self.hunits = None
+        
+        dd = self.activeCosmology.comoving_distance(0.0)
+        if 'unit' in dir(dd):
+            self.distanceUnits = units.Mpc
+        else:
+            self.distanceUnits = None
 
     def set_current(self, universe):
         """
@@ -21,16 +30,16 @@ class CosmologyWrapper(object):
         cosmology (depending on the API of the version of astropy being run)
         """
 
-        if not hasattr(self, 'cosmologyVersion'):
-            self._determineAPI()
-
-        if self.cosmologyVersion == '0.2.5':
+        if 'set_current' in dir(cosmology):
             cosmology.set_current(universe)
-        elif self.cosmologyVersion == '1.0':
+        elif 'default_cosmology' in dir(cosmology):
             cosmology.default_cosmology.set(universe)
+        else:
+            raise RuntimeError("CosmologyWrapper.set_current does not know how to handle this version of astropy")
 
         self.cosmologyInitialized = True
         self.activeCosmology = universe
+        self.set_units()
 
     def get_current(self):
         """
@@ -39,16 +48,15 @@ class CosmologyWrapper(object):
         if not self.cosmologyInitialized:
             raise RuntimeError("Should not call CosmologyWrapper.get_current(); you have not set_current()")
 
-        if self.cosmologyVersion == '0.2.5':
+        if 'get_current' in dir(cosmology):
             return cosmology.get_current()
-        elif self.cosmologyVersion == '1.0':
+        elif 'default_cosmology' in dir(cosmology):
             return cosmology.default_cosmology.get()
+        else:
+            raise RuntimeError("CosmologyWrapper.get_current does not know how to handle this version of astropy")
 
     def Initialize(self, H0=72.0, Om0=0.25, Ode0=0.75, w0=-1.0, wa=0.0):
         self.activeCosmology = None
-        self._determine_API()
-
-        print 'version ',self.cosmologyVersion
 
         self.H0 = H0
         self.Om0 = Om0
@@ -76,7 +84,10 @@ class CosmologyWrapper(object):
         H = self.activeCosmology.H(redshift)
 
         if 'value' in dir(H):
-            return H.value
+            if H.unit == self.hUnits:
+                return H.value
+            else:
+                return H.to(self.hUnits).value
         else:
             return H
 
@@ -126,7 +137,10 @@ class CosmologyWrapper(object):
         dd = self.activeCosmology.comoving_distance(redshift)
 
         if 'value' in dir(dd):
-            return dd.to(units.Mpc).value
+            if dd.unit == self.distanceUnits:
+                return dd.value
+            else:
+                return dd.to(self.distanceUnits).value
         else:
             return dd
 
@@ -138,6 +152,24 @@ class CosmologyWrapper(object):
         dd = self.activeCosmology.luminosity_distance(redshift)
 
         if 'value' in dir(dd):
-            return dd.to(units.Mpc).value
+            if dd.unit == self.distanceUnits:
+                return dd.value
+            else:
+                return dd.to(self.distanceUnits).value
+        else:
+            return dd
+
+    def angularDiameterDistance(self, redshift=0.0):
+        """in Mpc"""
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call angularDiameterDistance; cosmology has not been initialized")
+        
+        dd = self.activeCosmology.angular_diameter_distance(redshift)
+        
+        if 'value' in dir(dd):
+            if dd.unit == self.distanceUnits:
+                return dd.value
+            else:
+                return dd.to(self.distanceUnits).value
         else:
             return dd
