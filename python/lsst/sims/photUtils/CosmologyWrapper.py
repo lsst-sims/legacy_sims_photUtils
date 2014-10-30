@@ -23,6 +23,12 @@ class CosmologyWrapper(object):
         else:
             self.distanceUnits = None
 
+        mm = self.activeCosmology.distmod(1.0)
+        if 'unit' in dir(mm):
+            self.modulusUnits = units.mag
+        else:
+            self.modulusUnits = None
+       
     def set_current(self, universe):
         """
         Take the cosmology indicated by 'universe' and set it as the current/default
@@ -172,3 +178,16 @@ class CosmologyWrapper(object):
                 return dd.to(self.distanceUnits).value
         else:
             return dd
+
+    def distanceModulus(self, redshift=0.0):
+        if not self.cosmologyInitialized:
+            raise RuntimeError("cannot call distanceModulus; cosmology has not been initialized")
+        
+        mm = self.activeCosmology.distmod(redshift)
+        if 'unit' in dir(mm):
+            if mm.unit == self.modulusUnits:
+                return mm.value
+            else:
+                return mm.to(self.modulusUnits).value
+        else:
+            return mm
