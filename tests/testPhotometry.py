@@ -4,7 +4,7 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
