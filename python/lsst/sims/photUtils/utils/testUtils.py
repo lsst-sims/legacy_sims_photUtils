@@ -1,3 +1,9 @@
+"""
+This file defines some test catalog and DBObject classes for use with unit tests.
+
+To date (30 October 2014) testPhotometry.py and testCosmology.py import from this module
+"""
+
 import numpy
 import os
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
