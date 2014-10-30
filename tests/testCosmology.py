@@ -24,13 +24,13 @@ def controlOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=
     return Omz/Ototal, Ogz/Ototal, Onuz/Ototal, Odez/Ototal, Okz/Ototal, H0*numpy.sqrt(Ototal)
 
 class CosmologyUnitTest(unittest.TestCase):
-    
+
     def setUp(self):
         self.speedOfLight = 2.9979e5
 
     def tearDown(self):
         del self.speedOfLight
-    
+
     def testFlatLCDM(self):
         w0 = -1.0
         wa = 0.0

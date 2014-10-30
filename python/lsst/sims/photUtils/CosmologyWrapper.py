@@ -7,17 +7,16 @@ class CosmologyWrapper(object):
 
     cosmologyInitialized = False
 
-
     def set_units(self):
         if not self.cosmologyInitialized:
             raise RuntimeError("Cannot call set_units; cosmology is not initialized")
-            
+
         H = self.activeCosmology.H(0.0)
         if 'unit' in dir(H):
             self.hUnits = units.Unit("km / (Mpc s)")
         else:
             self.hunits = None
-        
+
         dd = self.activeCosmology.comoving_distance(0.0)
         if 'unit' in dir(dd):
             self.distanceUnits = units.Mpc
@@ -163,9 +162,9 @@ class CosmologyWrapper(object):
         """in Mpc"""
         if not self.cosmologyInitialized:
             raise RuntimeError("cannot call angularDiameterDistance; cosmology has not been initialized")
-        
+
         dd = self.activeCosmology.angular_diameter_distance(redshift)
-        
+
         if 'value' in dir(dd):
             if dd.unit == self.distanceUnits:
                 return dd.value
