@@ -4,14 +4,9 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import ObservationMetaData
-from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
-
-from lsst.sims.photUtils.Photometry import PhotometryGalaxies, PhotometryStars
-
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
