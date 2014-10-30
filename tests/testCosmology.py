@@ -109,7 +109,7 @@ class CosmologyUnitTest(unittest.TestCase):
         w0 = -1.0
         wa = 0.0
         H0 = 77.0
-        
+
         for Om0 in numpy.arange(start=0.15, stop=0.96, step=0.4):
             for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
 
@@ -148,7 +148,7 @@ class CosmologyUnitTest(unittest.TestCase):
     def testNonFlatW0Wa(self):
 
         H0 = 60.0
-        
+
         for Om0 in numpy.arange(start=0.15, stop=0.76, step=0.3):
             for Ode0 in numpy.arange(1.0-Om0-0.1, stop = 1.0-Om0+0.11, step=0.2):
                 for w0 in numpy.arange(start=-1.1, stop = -0.89, step=0.1):
