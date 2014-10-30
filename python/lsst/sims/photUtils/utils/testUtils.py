@@ -26,6 +26,9 @@ __all__ = ["MyVariability", "testDefaults", "cartoonPhotometryStars",
 
 @register_class
 class MyVariability(Variability):
+    """
+    This is a mixin which provides a dummy variability method for use in unit tests
+    """
     @register_method('testVar')
     def applySineVar(self, varParams, expmjd):
         period = varParams['period']
@@ -77,6 +80,13 @@ class cartoonPhotometryStars(PhotometryStars):
     """
     This is a class to support loading cartoon bandpasses into photometry so that we can be sure
     that the photometry mixin is loading the right files and calculating the right magnitudes.
+
+    In addition to creating a catalog, when the get_magnitude method below is called, it will
+    add sedMasterList and magnitudeMasterList to the catalog instantiation.  These are lists
+    containing the magnitudes output to the catalog and the SEDs used to calculate them.
+
+    Having these variables allows the unittest to verify the output of the catalog
+    (see testAlternateBandpassesStars in testPhotometry.py to see how this works)
     """
 
     @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
@@ -128,6 +138,13 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
     """
     This is a class to support loading cartoon bandpasses into photometry so that we can be sure
     that the photometry mixin is loading the right files and calculating the right magnitudes.
+
+    In addition to writing the catalog, when the get_magnitudes method below is called, the
+    variables sedMasterDict and mangitudeMasterDict are added to the catalog instantiation.
+    These store the magnitudes calculated for the catalog and the SEDs used to find them.
+
+    This allows the unittest to verify the contents of the catalog
+    (see testAlternateBandpassesGalaxies in testPhotometry.py to see how this works)
     """
 
     @compound('ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z',
@@ -205,9 +222,6 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
 
         return output
 
-
-
-
 class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
     catalog_type = 'MISC'
     default_columns=[('expmjd',5000.0,float)]
@@ -217,6 +231,10 @@ class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
 
 
 class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonPhotometryStars,testDefaults):
+    """
+    A catalog of stars relying on the cartoon photometry methods (which use non-LSST bandpasses
+    and output extra data for use by unit tests)
+    """
     catalog_type = 'cartoonStars'
     column_outputs=['id','raObserved','decObserved','magNorm',\
     'cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z']
@@ -235,6 +253,10 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
 
 
 class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
+    """
+    A catalog of galaxies relying on the cartoon photometry methods (which use non-LSST bandpasses
+    and output extra data for use by unit tests)
+    """
     catalog_type = 'cartoonGalaxies'
     column_outputs=['galid','raObserved','decObserved',\
     'ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z']
@@ -268,6 +290,9 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
 
 
 class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefaults):
+    """
+    A generic catalog of stars
+    """
     catalog_type = 'test_stars'
     column_outputs=['id','raJ2000','decJ2000','magNorm',\
     'stellar_magNorm_var', \
@@ -283,6 +308,9 @@ class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefa
                        ('glat', 30., float)]
 
 class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
+    """
+    A generic catalog of galaxies
+    """
     catalog_type = 'test_galaxies'
     column_outputs=['galid','raJ2000','decJ2000',\
         'redshift',
