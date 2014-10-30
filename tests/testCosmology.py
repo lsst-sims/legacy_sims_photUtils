@@ -1,6 +1,7 @@
 import unittest
 import lsst.utils.tests as utilsTests
 import numpy
+import scipy
 
 from lsst.sims.photUtils import CosmologyWrapper
 
@@ -206,6 +207,33 @@ class CosmologyUnitTest(unittest.TestCase):
                                self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
 
                             del universe
+
+
+    def testComovingDistance(self):
+        H0 = 73.0
+        Om0 = 0.16
+        Ode0 = 0.7
+        w0 = -0.9
+        wa = 0.1
+        
+        speedOfLight = 2.9979e5
+        
+        universe=CosmologyWrapper()
+        for imodel in range(4):
+            if imodel==0:
+                 universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+            elif imodel==1:
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0)
+            elif imodel==2:
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Om0)
+            elif imodel==4:
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Ode0, w0=w0, wa=wa)
+                
+            ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
+            for zz in ztest:
+                comovingControl = universe.comovingDistance(redshift=zz)
+                comovingTest = speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+                self.assertAlmostEqual(comovingControl/comovingTest,1.0,4)
 
 
 def suite():
