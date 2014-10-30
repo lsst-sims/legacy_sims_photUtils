@@ -1,4 +1,5 @@
 import astropy.cosmology as cosmology
+import astropy.units as units
 
 __all__ = ["CosmologyWrapper"]
 
@@ -125,7 +126,7 @@ class CosmologyWrapper(object):
         dd = self.activeCosmology.comoving_distance(redshift)
 
         if 'value' in dir(dd):
-            return dd.value
+            return dd.to(units.Mpc).value
         else:
             return dd
 
@@ -137,6 +138,6 @@ class CosmologyWrapper(object):
         dd = self.activeCosmology.luminosity_distance(redshift)
 
         if 'value' in dir(dd):
-            return dd.value
+            return dd.to(units.Mpc).value
         else:
             return dd
