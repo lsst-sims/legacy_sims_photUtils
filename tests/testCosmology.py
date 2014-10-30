@@ -227,19 +227,64 @@ class CosmologyUnitTest(unittest.TestCase):
             if imodel==0:
                  universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
             elif imodel==1:
-                universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0)
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0+0.3)
             elif imodel==2:
                 universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Om0)
-            elif imodel==4:
-                universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Ode0, w0=w0, wa=wa)
+            elif imodel==3:
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Om0, w0=w0, wa=wa)
+
+            kCurvature = numpy.abs(universe.OmegaCurvature())*\
+                         universe.H()*universe.H()/(speedOfLight*speedOfLight)
 
             ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
             for zz in ztest:
                 comovingControl = universe.comovingDistance(redshift=zz)
                 comovingTest = speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
                 self.assertAlmostEqual(comovingControl/comovingTest,1.0,4)
+                
+    def testLuminosityDistance(self):
+        H0 = 80.0
+        Om0 = 0.2
+        Ode0 = 0.6
+        w0 = -0.9
+        wa = 0.1
 
+        speedOfLight = 2.9979e5
 
+        universe=CosmologyWrapper()
+        for imodel in range(4):
+            if imodel==0:
+                 universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+            elif imodel==1:
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=Ode0+0.3)
+            elif imodel==2:
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Om0)
+            elif imodel==3:
+                universe.Initialize(H0=H0, Om0=Om0, Ode0=1.0-Om0, w0=w0, wa=wa)
+
+            ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
+            
+            kCurvature = numpy.abs(universe.OmegaCurvature())*\
+                         universe.H()*universe.H()/(speedOfLight*speedOfLight)
+            
+            sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/speedOfLight
+                         
+            for zz in ztest:
+                luminosityControl = universe.luminosityDistance(redshift=zz)
+                comovingDistance = speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+
+                if universe.OmegaCurvature()<0.0:
+                    nn =sqrtkCurvature*comovingDistance
+                    nn = numpy.sin(nn)
+                    luminosityTest = (1.0+zz)*nn/sqrtkCurvature
+                elif universe.OmegaCurvature()>0.0:
+                    nn = sqrtkCurvature*comovingDistance
+                    nn = numpy.sinh(nn)
+                    luminosityTest = (1.0+zz)*nn/sqrtkCurvature
+                else:
+                    luminosityTest = (1.0+zz)*comovingDistance
+                self.assertAlmostEqual(luminosityControl/luminosityTest,1.0,4)
+                
 def suite():
     utilsTests.init()
     suites = []
