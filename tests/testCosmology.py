@@ -23,12 +23,16 @@ class cosmologicalGalaxyCatalog(testGalaxies, ExampleCosmologyMixin):
 class CosmologyUnitTest(unittest.TestCase):
 
     def setUp(self):
-        self.speedOfLight = 2.9979e5
+        self.speedOfLight = 2.9979e5 #in km/sec
 
     def tearDown(self):
         del self.speedOfLight
 
     def testExceptions(self):
+        """
+        Make sure exceptions are raised when you call CosmologyWrapper
+        methods before initializing the cosmology.
+        """
         universe = CosmologyWrapper()
         self.assertRaises(RuntimeError, universe.H, redshift=1.0)
         self.assertRaises(RuntimeError, universe.OmegaMatter, redshift=1.0)
@@ -43,8 +47,11 @@ class CosmologyUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, universe.distanceModulus, redshift=1.0)
         self.assertRaises(RuntimeError, universe.getCurrent)
 
-    #@unittest.skip("fornow")
     def testFlatLCDM(self):
+        """
+        Test the evolution of H and Omega_i as a function of redshift for
+        flat Lambda CDM models
+        """
         H0 = 50.0
         for Om0 in numpy.arange(start=0.1, stop=0.91, step=0.4):
             universe = CosmologyWrapper()
@@ -77,8 +84,11 @@ class CosmologyUnitTest(unittest.TestCase):
 
             del universe
 
-    #@unittest.skip("fornow")
     def testFlatW0Wa(self):
+        """
+        Test the evolution of H and Omega_i as a function of redshift for
+        flat models with w = w0 + wa * z / (1 + z)
+        """
 
         H0 = 96.0
         for Om0 in numpy.arange(start=0.1, stop=0.95, step=0.4):
@@ -118,8 +128,11 @@ class CosmologyUnitTest(unittest.TestCase):
 
                     del universe
 
-    #@unittest.skip("fornow")
     def testFlatW0(self):
+        """
+        Test the evolution of H and Omega_i as a function of redshift for flat
+        models with constant w
+        """
 
         H0 = 96.0
         for Om0 in numpy.arange(start=0.1, stop=0.95, step=0.4):
@@ -157,9 +170,11 @@ class CosmologyUnitTest(unittest.TestCase):
 
                 del universe
 
-
-    #@unittest.skip("fornow")
     def testNonFlatLCDM(self):
+        """
+        Test the evolution of H and Omega_i as a function of redshift for non-flat
+        Lambda CDM models
+        """
         w0 = -1.0
         wa = 0.0
         H0 = 77.0
@@ -198,8 +213,11 @@ class CosmologyUnitTest(unittest.TestCase):
 
                 del universe
 
-    #@unittest.skip("fornow")
     def testNonFlatW0Wa(self):
+        """
+        Test the evolution of H and Omega_i as a function of redshift for non-flat
+        models with w = w0 + wa * z / (1+z)
+        """
 
         H0 = 60.0
 
@@ -243,8 +261,11 @@ class CosmologyUnitTest(unittest.TestCase):
 
                         del universe
 
-    #@unittest.skip("fornow")
     def testNonFlatW0(self):
+        """
+        Test the evolution of H and Omega_i as a function of redshift for non-flat
+        models with constant w
+        """
 
         H0 = 60.0
 
@@ -286,9 +307,16 @@ class CosmologyUnitTest(unittest.TestCase):
 
                     del universe
 
-
-    #@unittest.skip("fornow")
     def testComovingDistance(self):
+        """
+        Test comoving distance calculation
+
+        Note: this is comoving distance defined as X in the FRW metric
+
+        ds^2 = -c^2 dt^2 + a^2 dX^2 + sin^2(X) dOmega^2
+
+        where spatial curvature is accounted for in the sin function
+        """
 
         universe = CosmologyWrapper()
         H0 = 73.0
@@ -308,8 +336,11 @@ class CosmologyUnitTest(unittest.TestCase):
                                                                    args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
                             self.assertAlmostEqual(comovingControl/comovingTest,1.0,4)
 
-    #@unittest.skip("fornow")
     def testLuminosityDistance(self):
+        """
+        Test the calculation of the luminosity distance
+        """
+
 
         H0 = 73.0
 
@@ -342,8 +373,10 @@ class CosmologyUnitTest(unittest.TestCase):
                                 luminosityTest = (1.0+zz)*comovingDistance
                             self.assertAlmostEqual(luminosityControl/luminosityTest,1.0,4)
 
-    #@unittest.skip("fornow")
     def testAngularDiameterDistance(self):
+        """
+        Test the calculation of the angular diameter distance
+        """
 
         H0 = 56.0
         universe=CosmologyWrapper()
@@ -378,7 +411,9 @@ class CosmologyUnitTest(unittest.TestCase):
 
 
     def testDistanceModulus(self):
-
+        """
+        Test the calculation of the distance modulus out to a certain redshift
+        """
         H0 = 73.0
 
         universe=CosmologyWrapper()
@@ -413,6 +448,10 @@ class CosmologyUnitTest(unittest.TestCase):
                             self.assertAlmostEqual(modulusControl/modulusTest,1.0,4)
 
     def testDistanceModulusAtZero(self):
+        """
+        Test to make sure that the distance modulus is set to zero if the distance modulus method
+        returns a negative number
+        """
         universe = CosmologyWrapper()
         universe.loadDefaultCosmology()
         ztest = [0.0, 1.0, 2.0, 0.0, 3.0]
@@ -424,6 +463,11 @@ class CosmologyUnitTest(unittest.TestCase):
         self.assertEqual(mm[4], 5.0*numpy.log10(universe.luminosityDistance(ztest[4])) + 25.0)
 
 class CosmologyMixinUnitTest(unittest.TestCase):
+    """
+    This class will test to make sure that our example CosmologyMixin
+    (defined in lsst/sims/photUtils/examples/CosmologyMixin.py)
+    can produce a catalog
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -450,6 +494,9 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         del self.catName
 
     def testCosmologyCatalog(self):
+        """
+        Does a catalog get written?
+        """
         address = 'sqlite:///' + self.dbName
         dbObj = myTestGals(address=address)
         cat = cosmologicalGalaxyCatalog(dbObj)
