@@ -1,3 +1,4 @@
+import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
 
@@ -283,8 +284,20 @@ class CosmologyWrapper(object):
         mm = self.activeCosmology.distmod(redshift)
         if 'unit' in dir(mm):
             if mm.unit == self.modulusUnits:
-                return mm.value
+                mod = mm.value
             else:
-                return mm.to(self.modulusUnits).value
+                mod = mm.to(self.modulusUnits).value
         else:
-            return mm
+            mod = mm
+
+        #The astropy.cosmology.distmod() method has no problem returning a negative
+        #distance modulus (or -inf if redshift==0.0)
+        #Given that this makes no sense, the code below forces all distance moduli
+        #to be greater than zero.
+        if isinstance(mod, float):
+            if mod < 0.0:
+                 return  0.0
+            else:
+                return mod
+        else:
+            return numpy.where(mv if mv > 0.0 else 0.0 for mv in mod)[0]
