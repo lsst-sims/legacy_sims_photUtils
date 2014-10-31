@@ -1,3 +1,50 @@
+"""
+31 October 2014
+
+The class CosmologyWrapper provides an interface for the methods in astropy.cosmology that
+we anticipate using the most.
+
+The methods in astropy.cosmology are accessed by instantiating a cosmology object and calling
+methods that belong to that object.  CosmologyWrapper interfaces with this by declaring a member
+variable self.activeCosmology.  Methods provided by CosmologyWrapper call the equivalent
+astropy.cosmology methods on self.activeCosmology.  activeCosmology is set by calling
+CosmologyWrapper.initializeCosmology(args...) with the appropriate cosmological paramters.
+One can also call CosmologyWrapper.loadDefaultCosmology() to load the Millennium Simulation
+cosmology.
+
+The difficulty with all of this that, between the version of astropy shipped with anaconda (v0.2.5) and
+the most modern version (v0.4), the API for astropy.cosmology has changed in two ways.
+
+One difference is that methods like comoving_distance have gone from returning floats to returning
+astropy.Quantity's which come with both a value and units.  To deal with this, CosmologyWrapper
+checks dir(cosmology.comoving_distance()) etc.  If 'units' is defined, CosmologyWrapper sets
+member variables such as self.distanceUnits, self.hUnits, and self.modulusUnits defining the units
+in which we want to return those quantities.  When you call the wrapper for comoving_distance,
+CosmologyWrapper will make sure that the output is returned in the units we expect (Mpc).
+The expected units are set in CosmologyWrapper.setUnits()
+
+The other API difference is in how 'default_cosmology' is stored.  astropy.cosmology allows
+the user to set a default cosmology that the system stores so that the user does not have to
+constantly redeclare the same cosmology object at different points in the code.  Unfortunately,
+the naming conventions for the methods to set and retrieve this default cosmology have changed
+between recent versions of astropy.  CosmologyWrapper deals with this change in API using
+CosmologyWrapper.setCurrent() (called automatically by CosmologyWrapper.initializeCosmology())
+and CosmologyWrapper.getCurrent(), which returns a cosmology object containing the default 
+cosmology set by CosmologyWrapper.setCurrent().  A user who wants to interact with the naked 
+astropy.cosmology methods can run something like
+
+uu = CosmologyWrapper()
+uu.loadDefaultCosmology() #which sets activeCosmology to the Millennium Simulation cosmology
+myUniverse = uu.getCurrent()
+
+myUniverse now contains a cosmology object which is equivalent to the activeCosmology.  Direct
+calls to the astropy.cosmology methods of the form
+
+dd = myUniverse.comoving_distance(1.0) #comoving distance to redshift z=1
+
+will now work.
+"""
+
 import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
@@ -8,7 +55,7 @@ class CosmologyWrapper(object):
 
     cosmologyInitialized = False
 
-    def set_units(self):
+    def setUnits(self):
         """
         This method specifies the units in which various outputs from the wrapper are expected
         (this is because the latest version of astropy.cosmology outputs quantities such as
@@ -16,7 +63,7 @@ class CosmologyWrapper(object):
         astropy.cosmology that comes within anaconda does not do this as of 30 October 2014)
         """
         if not self.cosmologyInitialized:
-            raise RuntimeError("Cannot call set_units; cosmology is not initialized")
+            raise RuntimeError("Cannot call setUnits; cosmology is not initialized")
 
         H = self.activeCosmology.H(0.0)
         if 'unit' in dir(H):
@@ -36,7 +83,7 @@ class CosmologyWrapper(object):
         else:
             self.modulusUnits = None
 
-    def set_current(self, universe):
+    def setCurrent(self, universe):
         """
         Take the cosmology indicated by 'universe' and set it as the current/default
         cosmology (depending on the API of the version of astropy being run)
@@ -50,13 +97,13 @@ class CosmologyWrapper(object):
         elif 'default_cosmology' in dir(cosmology):
             cosmology.default_cosmology.set(universe)
         else:
-            raise RuntimeError("CosmologyWrapper.set_current does not know how to handle this version of astropy")
+            raise RuntimeError("CosmologyWrapper.setCurrent does not know how to handle this version of astropy")
 
         self.cosmologyInitialized = True
         self.activeCosmology = universe
-        self.set_units()
+        self.setUnits()
 
-    def get_current(self):
+    def getCurrent(self):
         """
         Return the cosmology currently stored as the current cosmology
 
@@ -70,14 +117,14 @@ class CosmologyWrapper(object):
         https://astropy.readthedocs.org/en/v0.2.5/cosmology/index.html
         """
         if not self.cosmologyInitialized:
-            raise RuntimeError("Should not call CosmologyWrapper.get_current(); you have not set_current()")
+            raise RuntimeError("Should not call CosmologyWrapper.getCurrent(); you have not setCurrent()")
 
         if 'get_current' in dir(cosmology):
             return cosmology.get_current()
         elif 'default_cosmology' in dir(cosmology):
             return cosmology.default_cosmology.get()
         else:
-            raise RuntimeError("CosmologyWrapper.get_current does not know how to handle this version of astropy")
+            raise RuntimeError("CosmologyWrapper.getCurrent does not know how to handle this version of astropy")
 
     def initializeCosmology(self, H0=72.0, Om0=0.25, Ode0=None, w0=None, wa=None):
         """
@@ -123,7 +170,7 @@ class CosmologyWrapper(object):
             universe = cosmology.w0waCDM(H0=H0, Om0=Om0, Ode0=Ode0,
                                          w0=w0, wa=wa)
 
-        self.set_current(universe)
+        self.setCurrent(universe)
 
     def loadDefaultCosmology(self):
         """

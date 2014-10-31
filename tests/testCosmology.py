@@ -61,7 +61,7 @@ class CosmologyUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, universe.angularDiameterDistance, redshift=1.0)
         self.assertRaises(RuntimeError, universe.luminosityDistance, redshift=1.0)
         self.assertRaises(RuntimeError, universe.distanceModulus, redshift=1.0)
-        self.assertRaises(RuntimeError, universe.get_current)
+        self.assertRaises(RuntimeError, universe.getCurrent)
 
     #@unittest.skip("fornow")
     def testFlatLCDM(self):
