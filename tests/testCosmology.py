@@ -48,6 +48,21 @@ class CosmologyUnitTest(unittest.TestCase):
     def tearDown(self):
         del self.speedOfLight
 
+    def testExceptions(self):
+        universe = CosmologyWrapper()
+        self.assertRaises(RuntimeError, universe.H, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.OmegaMatter, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.OmegaDarkEnergy, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.OmegaPhotons, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.OmegaNeutrinos, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.OmegaCurvature, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.w, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.comovingDistance, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.angularDiameterDistance, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.luminosityDistance, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.distanceModulus, redshift=1.0)
+        self.assertRaises(RuntimeError, universe.get_current)
+
     #@unittest.skip("fornow")
     def testFlatLCDM(self):
         H0 = 50.0
