@@ -91,11 +91,11 @@ class CosmologyWrapper(object):
         universe is also assigned to self.activeCosmology, which is the cosmology that
         this wrapper's methods use for calculations.
         """
-
-        if 'set_current' in dir(cosmology):
-            cosmology.set_current(universe)
-        elif 'default_cosmology' in dir(cosmology):
+        
+        if 'default_cosmology' in dir(cosmology):
             cosmology.default_cosmology.set(universe)
+        elif 'set_current' in dir(cosmology):
+            cosmology.set_current(universe)
         else:
             raise RuntimeError("CosmologyWrapper.setCurrent does not know how to handle this version of astropy")
 
@@ -119,10 +119,10 @@ class CosmologyWrapper(object):
         if not self.cosmologyInitialized:
             raise RuntimeError("Should not call CosmologyWrapper.getCurrent(); you have not setCurrent()")
 
-        if 'get_current' in dir(cosmology):
-            return cosmology.get_current()
-        elif 'default_cosmology' in dir(cosmology):
+        if 'default_cosmology' in dir(cosmology):
             return cosmology.default_cosmology.get()
+        elif 'get_current' in dir(cosmology):
+            return cosmology.get_current()
         else:
             raise RuntimeError("CosmologyWrapper.getCurrent does not know how to handle this version of astropy")
 
