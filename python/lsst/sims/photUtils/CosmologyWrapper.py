@@ -117,7 +117,26 @@ class CosmologyWrapper(object):
         self.set_current(universe)
 
     def loadDefaultCosmology(self):
-        self.initializeCosmology(H0=72.0, Om0=0.23)
+        """
+        This method initializes the wrapper to the default cosmology, taken as teh cosmology used
+        in the Millennium Simulation (Springel et al 2005, Nature 435, 629 or
+        arXiv:astro-ph/0504097)
+
+        Om0 = 0.25
+        Ob0  = 0.045 (baryons; not currently used in this code)
+        H0 =73.0
+        Ode0 = 0.75
+        w0 = -1.0
+        wa = 0.0
+
+        sigma_8 = 0.9 (rms mass flucutation in an 8 h^-1 Mpc sphere;
+                       not currently used in this code)
+
+        ns = 1 (index of the initial spectrum of linear mas perturbations;
+                not currently used in this code)
+
+        """
+        self.initializeCosmology(H0=73.0, Om0=0.25)
 
     def H(self, redshift=0.0):
         """return the Hubble paramter in km/s/Mpc at the specified redshift"""
