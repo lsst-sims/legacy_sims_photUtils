@@ -104,11 +104,19 @@ class CosmologyWrapper(object):
         if w0 is not None and wa is None:
             wa = 0.0
 
-        if w0 is None and wa is None and (Ode0 is None or Om0+Ode0==1.0):
+        isCosmologicalConstant = False
+        if (w0 is None and wa is None) or (w0==-1.0 and wa==0.0):
+            isCosmologicalConstant = True
+
+        isFlat = False
+        if Ode0 is None or Om0+Ode0==1.0:
+            isFlat = True
+
+        if isCosmologicalConstant and isFlat:
             universe = cosmology.FlatLambdaCDM(H0=H0, Om0=Om0)
-        elif w0 is None and wa is None:
+        elif isCosmologicalConstant:
             universe = cosmology.LambdaCDM(H0=H0, Om0=Om0, Ode0=Ode0)
-        elif Ode0 is None or Om0+Ode0==1.0:
+        elif isFlat:
             universe = cosmology.Flatw0waCDM(H0=H0, Om0=Om0, w0=w0, wa=wa)
         else:
             universe = cosmology.w0waCDM(H0=H0, Om0=Om0, Ode0=Ode0,
