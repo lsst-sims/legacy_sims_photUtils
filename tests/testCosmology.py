@@ -46,14 +46,10 @@ class CosmologyUnitTest(unittest.TestCase):
 
     #@unittest.skip("fornow")
     def testFlatLCDM(self):
-        w0 = -1.0
-        wa = 0.0
         H0 = 50.0
         for Om0 in numpy.arange(start=0.1, stop=0.91, step=0.4):
-            Ode0 = 1.0 - Om0
-
             universe = CosmologyWrapper()
-            universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+            universe.initializeCosmology(H0=H0, Om0=Om0)
 
             Og0 = universe.OmegaPhotons(redshift=0.0)
             Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -61,7 +57,7 @@ class CosmologyUnitTest(unittest.TestCase):
             self.assertTrue(Og0 < 1.0e-4)
             self.assertTrue(Onu0 < 1.0e-4)
             self.assertAlmostEqual(universe.OmegaMatter(redshift=0.0), Om0, 10)
-            self.assertAlmostEqual(Ode0 - universe.OmegaDarkEnergy(redshift=0.0), Og0+Onu0, 6)
+            self.assertAlmostEqual(1.0 - Om0 - universe.OmegaDarkEnergy(redshift=0.0), Og0+Onu0, 6)
             self.assertAlmostEqual(universe.H(redshift=0.0),H0,10)
             self.assertEqual(universe.OmegaCurvature(),0.0)
 
@@ -90,10 +86,9 @@ class CosmologyUnitTest(unittest.TestCase):
         for Om0 in numpy.arange(start=0.1, stop=0.95, step=0.4):
             for w0 in numpy.arange(start=-1.1, stop=-0.89, step=0.2):
                 for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
-                    Ode0 = 1.0 - Om0
 
                     universe = CosmologyWrapper()
-                    universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                    universe.initializeCosmology(H0=H0, Om0=Om0, w0=w0, wa=wa)
 
                     Og0 = universe.OmegaPhotons(redshift=0.0)
                     Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -101,7 +96,7 @@ class CosmologyUnitTest(unittest.TestCase):
                     self.assertTrue(Og0 < 1.0e-4)
                     self.assertTrue(Onu0 < 1.0e-4)
                     self.assertAlmostEqual(universe.OmegaMatter(redshift=0.0), Om0, 10)
-                    self.assertAlmostEqual(Ode0 - universe.OmegaDarkEnergy(redshift=0.0), Og0+Onu0, 6)
+                    self.assertAlmostEqual(1.0 - Om0 - universe.OmegaDarkEnergy(redshift=0.0), Og0+Onu0, 6)
                     self.assertAlmostEqual(universe.H(redshift=0.0),H0,10)
                     self.assertEqual(universe.OmegaCurvature(),0.0)
 

@@ -78,7 +78,7 @@ class CosmologyWrapper(object):
         else:
             raise RuntimeError("CosmologyWrapper.get_current does not know how to handle this version of astropy")
 
-    def initializeCosmology(self, H0=72.0, Om0=0.25, Ode0=0.75, w0=-1.0, wa=0.0):
+    def initializeCosmology(self, H0=72.0, Om0=0.25, Ode0=None, w0=None, wa=None):
         """
         Initialize the cosmology wrapper with the parameters specified
         (e.g. does not account for massive neutrinos)
@@ -100,27 +100,24 @@ class CosmologyWrapper(object):
         or a w0, wa (flat or non-flat) cosmology.
         """
         self.activeCosmology = None
+        
+        if w0 is not None and wa is None:
+            wa = 0.0
 
-        self.H0 = H0
-        self.Om0 = Om0
-        self.Ode0 = Ode0
-        self.w0 = w0
-        self.wa = wa
-
-        if self.w0==-1.0 and self.wa==0.0 and self.Om0+self.Ode0==1.0:
-            universe = cosmology.FlatLambdaCDM(H0=self.H0, Om0=self.Om0)
-        elif self.w0==-1.0 and self.wa==0.0:
-            universe = cosmology.LambdaCDM(H0=self.H0, Om0=self.Om0, Ode0=self.Ode0)
-        elif self.Om0+self.Ode0==1.0:
-            universe = cosmology.Flatw0waCDM(H0=self.H0, Om0=self.Om0, w0=self.w0, wa=self.wa)
+        if w0 is None and wa is None and (Ode0 is None or Om0+Ode0==1.0):
+            universe = cosmology.FlatLambdaCDM(H0=H0, Om0=Om0)
+        elif w0 is None and wa is None:
+            universe = cosmology.LambdaCDM(H0=H0, Om0=Om0, Ode0=Ode0)
+        elif Ode0 is None or Om0+Ode0==1.0:
+            universe = cosmology.Flatw0waCDM(H0=H0, Om0=Om0, w0=w0, wa=wa)
         else:
-            universe = cosmology.w0waCDM(H0=self.H0, Om0=self.Om0, Ode0=self.Ode0,
-                                         w0=self.w0, wa=self.wa)
+            universe = cosmology.w0waCDM(H0=H0, Om0=Om0, Ode0=Ode0,
+                                         w0=w0, wa=wa)
 
         self.set_current(universe)
 
     def loadDefaultCosmology(self):
-        self.initializeCosmology(H0=72.0, Om0=0.23, Ode0=0.77)
+        self.initializeCosmology(H0=72.0, Om0=0.23)
 
     def H(self, redshift=0.0):
         """return the Hubble paramter in km/s/Mpc at the specified redshift"""
