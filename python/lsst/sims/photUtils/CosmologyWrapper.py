@@ -119,6 +119,9 @@ class CosmologyWrapper(object):
 
         self.set_current(universe)
 
+    def loadDefaultCosmology(self):
+        self.initializeCosmology(H0=72.0, Om0=0.23, Ode0=0.77)
+
     def H(self, redshift=0.0):
         """return the Hubble paramter in km/s/Mpc at the specified redshift"""
         if not self.cosmologyInitialized:

@@ -6,11 +6,6 @@ __all__ = ["ExampleCosmologyMixin"]
 
 class ExampleCosmologyMixin(CosmologyWrapper):
 
-    def loadDefaultCosmology(self):
-        H0 = 72.0
-        Om0 = 0.23
-        self.initializeCosmology(H0=H0, Om0=Om0)
-
     def get_distanceModulus(self):
         if not self.cosmologyInitialized:
             self.loadDefaultCosmology()
