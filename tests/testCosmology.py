@@ -33,10 +33,10 @@ def controlOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=
 
     Ototal = Omz + Ogz + Onuz + Odez + Okz
 
-    return H0*numpy.sqrt(Ototal), Omz/Ototal, Ogz/Ototal, Onuz/Ototal, Odez/Ototal, Okz/Ototal
+    return H0*numpy.sqrt(Ototal), Omz/Ototal, Odez/Ototal, Ogz/Ototal, Onuz/Ototal, Okz/Ototal
 
 def controlDistanceIntegrand(redshift, H0, Om0, Ode0, Og0, Onu0, w0, wa):
-    hh, mm, gg, nn, de, kk = controlOmega(redshift, H0, Om0, Ode0=Ode0,
+    hh, mm, de, gg, nn, kk = controlOmega(redshift, H0, Om0, Ode0=Ode0,
                                           Og0=Og0, Onu0=Onu0, w0=w0, wa=wa)
     return 1.0/hh
 
@@ -71,8 +71,8 @@ class CosmologyUnitTest(unittest.TestCase):
             for zz in numpy.arange(start=0.0, stop=4.1, step=2.0):
                aa = (1.0+zz)
 
-               Hcontrol, OmControl, OgControl, OnuControl, \
-                   OdeControl, OkControl, = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0)
+               Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
+                   OkControl, = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0)
 
                self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
                self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
@@ -111,9 +111,9 @@ class CosmologyUnitTest(unittest.TestCase):
                        wControl = w0 + wa*(1.0 - 1.0/(1.0+zz))
                        self.assertAlmostEqual(wControl, universe.w(redshift=zz), 6)
 
-                       Hcontrol, OmControl, OgControl, OnuControl, \
-                       OdeControl, OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
-                                                                          w0=w0, wa=wa)
+                       Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
+                           OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                    w0=w0, wa=wa)
 
                        self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
                        self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
@@ -150,9 +150,9 @@ class CosmologyUnitTest(unittest.TestCase):
 
                    self.assertAlmostEqual(w0, universe.w(redshift=zz), 6)
 
-                   Hcontrol, OmControl, OgControl, OnuControl, \
-                   OdeControl, OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
-                                                                      w0=w0, wa=0.0)
+                   Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
+                       OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                w0=w0, wa=0.0)
 
                    self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
                    self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
@@ -190,9 +190,9 @@ class CosmologyUnitTest(unittest.TestCase):
                 Ok0 = universe.OmegaCurvature(redshift=0.0)
 
                 for zz in numpy.arange(start=0.0, stop=4.0, step=2.0):
-                    Hcontrol, OmControl, OgControl, OnuControl, \
-                    OdeControl, OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
-                                                                          Ode0=Ode0)
+                    Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
+                        OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                 Ode0=Ode0)
 
                     self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
                     self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
@@ -235,9 +235,9 @@ class CosmologyUnitTest(unittest.TestCase):
                            wControl = w0 + wa*(1.0 - 1.0/(1.0+zz))
                            self.assertAlmostEqual(wControl, universe.w(redshift=zz), 6)
 
-                           Hcontrol, OmControl, OgControl, OnuControl, \
-                           OdeControl, OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
-                                                                          w0=w0, wa=wa, Ode0=Ode0)
+                           Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
+                               OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                        w0=w0, wa=wa, Ode0=Ode0)
 
                            self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
                            self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
@@ -278,9 +278,9 @@ class CosmologyUnitTest(unittest.TestCase):
 
                        self.assertAlmostEqual(w0, universe.w(redshift=zz), 6)
 
-                       Hcontrol, OmControl, OgControl, OnuControl, \
-                       OdeControl, OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
-                                                                      w0=w0, wa=0.0, Ode0=Ode0)
+                       Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
+                           OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                    w0=w0, wa=0.0, Ode0=Ode0)
 
                        self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
                        self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
