@@ -122,6 +122,47 @@ class CosmologyUnitTest(unittest.TestCase):
                     del universe
 
     #@unittest.skip("fornow")
+    def testFlatW0(self):
+
+        H0 = 96.0
+        for Om0 in numpy.arange(start=0.1, stop=0.95, step=0.4):
+            for w0 in numpy.arange(start=-1.5, stop=-0.49, step=1.0):
+
+                universe = CosmologyWrapper()
+                universe.initializeCosmology(H0=H0, Om0=Om0, w0=w0)
+
+                Og0 = universe.OmegaPhotons(redshift=0.0)
+                Onu0 = universe.OmegaNeutrinos(redshift=0.0)
+
+                self.assertTrue(Og0 < 1.0e-4)
+                self.assertTrue(Onu0 < 1.0e-4)
+                self.assertAlmostEqual(universe.OmegaMatter(redshift=0.0), Om0, 10)
+                self.assertAlmostEqual(1.0 - Om0 - universe.OmegaDarkEnergy(redshift=0.0), Og0+Onu0, 6)
+                self.assertAlmostEqual(universe.H(redshift=0.0),H0,10)
+                self.assertEqual(universe.OmegaCurvature(),0.0)
+
+                Om0 = universe.OmegaMatter(redshift=0.0)
+                Ode0 = universe.OmegaDarkEnergy(redshift=0.0)
+
+                ztest = numpy.arange(start=0.0, stop=4.1, step=2.0)
+                for zz in ztest:
+
+                   self.assertAlmostEqual(w0, universe.w(redshift=zz), 6)
+
+                   OmControl, OgControl, OnuControl, \
+                   OdeControl, OkControl, Hcontrol = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                                      w0=w0, wa=0.0)
+
+                   self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
+                   self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
+                   self.assertAlmostEqual(OgControl, universe.OmegaPhotons(redshift=zz), 6)
+                   self.assertAlmostEqual(OnuControl, universe.OmegaNeutrinos(redshift=zz), 6)
+                   self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
+
+                del universe
+
+
+    #@unittest.skip("fornow")
     def testNonFlatLCDM(self):
         w0 = -1.0
         wa = 0.0
@@ -207,6 +248,51 @@ class CosmologyUnitTest(unittest.TestCase):
                            self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
 
                         del universe
+
+    #@unittest.skip("fornow")
+    def testNonFlatW0(self):
+
+        H0 = 60.0
+
+        for Om0 in numpy.arange(start=0.15, stop=0.76, step=0.3):
+            for Ode0 in numpy.arange(1.0-Om0-0.1, stop = 1.0-Om0+0.11, step=0.2):
+                for w0 in numpy.arange(start=-1.1, stop = -0.89, step=0.2):
+
+                    universe = CosmologyWrapper()
+                    universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0)
+
+                    Og0 = universe.OmegaPhotons(redshift=0.0)
+                    Onu0 = universe.OmegaNeutrinos(redshift=0.0)
+
+                    self.assertTrue(Og0 < 1.0e-4)
+                    self.assertTrue(Onu0 < 1.0e-4)
+                    self.assertAlmostEqual(universe.OmegaMatter(redshift=0.0), Om0, 10)
+                    self.assertAlmostEqual(Ode0, universe.OmegaDarkEnergy(redshift=0.0), 10)
+                    self.assertAlmostEqual(1.0 - Om0 -Ode0 - universe.OmegaCurvature(redshift=0.0),
+                                               Og0+Onu0, 10)
+                    self.assertAlmostEqual(universe.H(redshift=0.0),H0,10)
+
+                    Om0 = universe.OmegaMatter(redshift=0.0)
+                    Ode0 = universe.OmegaDarkEnergy(redshift=0.0)
+
+                    ztest = numpy.arange(start=0.0, stop=4.0, step=2.0)
+                    for zz in ztest:
+
+                       self.assertAlmostEqual(w0, universe.w(redshift=zz), 6)
+
+                       OmControl, OgControl, OnuControl, \
+                       OdeControl, OkControl, Hcontrol = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                                                                      w0=w0, wa=0.0, Ode0=Ode0)
+
+                       self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
+                       self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
+                       self.assertAlmostEqual(OgControl, universe.OmegaPhotons(redshift=zz), 6)
+                       self.assertAlmostEqual(OnuControl, universe.OmegaNeutrinos(redshift=zz), 6)
+                       self.assertAlmostEqual(OkControl, universe.OmegaCurvature(redshift=zz), 6)
+                       self.assertAlmostEqual(Hcontrol, universe.H(redshift=zz), 6)
+
+                    del universe
+
 
     #@unittest.skip("fornow")
     def testComovingDistance(self):
