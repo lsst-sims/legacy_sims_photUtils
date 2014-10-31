@@ -9,7 +9,8 @@ from lsst.sims.photUtils.examples import ExampleCosmologyMixin
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 
 from lsst.sims.catalogs.generation.utils import myTestGals, makeGalTestDB
-from lsst.sims.photUtils.utils import testGalaxies
+from lsst.sims.photUtils.utils import testGalaxies, comovingDistanceIntegrand, \
+                                      cosmologicalOmega
 
 class cosmologicalGalaxyCatalog(testGalaxies, ExampleCosmologyMixin):
     column_outputs = ['uAbs', 'gAbs', 'rAbs', 'iAbs', 'zAbs', 'yAbs',
@@ -18,27 +19,6 @@ class cosmologicalGalaxyCatalog(testGalaxies, ExampleCosmologyMixin):
                       'uAgnAbs', 'gAgnAbs', 'rAgnAbs', 'iAgnAbs', 'zAgnAbs', 'yAgnAbs',
                       'redshift', 'distanceModulus']
 
-def controlOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=0.0):
-    if Ode0 is None:
-        Ode0 = 1.0 - Om0 - Og0 - Onu0
-
-    Ok0 = 1.0 - Om0 - Ode0 - Og0 - Onu0
-
-    aa = 1.0/(1.0+redshift)
-    Omz = Om0 * numpy.power(1.0+redshift, 3)
-    Ogz = Og0 * numpy.power(1.0+redshift, 4)
-    Onuz = Onu0 * numpy.power(1.0+redshift, 4)
-    Okz = Ok0 * numpy.power(1.0+redshift, 2)
-    Odez = Ode0 * numpy.exp(-3.0*(numpy.log(aa)*(w0 + wa +1.0) - wa*(aa - 1.0)))
-
-    Ototal = Omz + Ogz + Onuz + Odez + Okz
-
-    return H0*numpy.sqrt(Ototal), Omz/Ototal, Odez/Ototal, Ogz/Ototal, Onuz/Ototal, Okz/Ototal
-
-def controlDistanceIntegrand(redshift, H0, Om0, Ode0, Og0, Onu0, w0, wa):
-    hh, mm, de, gg, nn, kk = controlOmega(redshift, H0, Om0, Ode0=Ode0,
-                                          Og0=Og0, Onu0=Onu0, w0=w0, wa=wa)
-    return 1.0/hh
 
 class CosmologyUnitTest(unittest.TestCase):
 
@@ -87,7 +67,7 @@ class CosmologyUnitTest(unittest.TestCase):
                aa = (1.0+zz)
 
                Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
-                   OkControl, = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0)
+                   OkControl, = cosmologicalOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0)
 
                self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
                self.assertAlmostEqual(OdeControl, universe.OmegaDarkEnergy(redshift=zz), 6)
@@ -127,7 +107,7 @@ class CosmologyUnitTest(unittest.TestCase):
                        self.assertAlmostEqual(wControl, universe.w(redshift=zz), 6)
 
                        Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
-                           OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                           OkControl = cosmologicalOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
                                                     w0=w0, wa=wa)
 
                        self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
@@ -166,7 +146,7 @@ class CosmologyUnitTest(unittest.TestCase):
                    self.assertAlmostEqual(w0, universe.w(redshift=zz), 6)
 
                    Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
-                       OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                       OkControl = cosmologicalOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
                                                 w0=w0, wa=0.0)
 
                    self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
@@ -206,7 +186,7 @@ class CosmologyUnitTest(unittest.TestCase):
 
                 for zz in numpy.arange(start=0.0, stop=4.0, step=2.0):
                     Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
-                        OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                        OkControl = cosmologicalOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
                                                  Ode0=Ode0)
 
                     self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
@@ -251,7 +231,7 @@ class CosmologyUnitTest(unittest.TestCase):
                            self.assertAlmostEqual(wControl, universe.w(redshift=zz), 6)
 
                            Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
-                               OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                               OkControl = cosmologicalOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
                                                         w0=w0, wa=wa, Ode0=Ode0)
 
                            self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
@@ -294,7 +274,7 @@ class CosmologyUnitTest(unittest.TestCase):
                        self.assertAlmostEqual(w0, universe.w(redshift=zz), 6)
 
                        Hcontrol, OmControl, OdeControl, OgControl, OnuControl, \
-                           OkControl = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
+                           OkControl = cosmologicalOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
                                                     w0=w0, wa=0.0, Ode0=Ode0)
 
                        self.assertAlmostEqual(OmControl, universe.OmegaMatter(redshift=zz), 6)
@@ -324,7 +304,7 @@ class CosmologyUnitTest(unittest.TestCase):
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             comovingControl = universe.comovingDistance(redshift=zz)
                             comovingTest = \
-                                self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                                self.speedOfLight*scipy.integrate.quad(comovingDistanceIntegrand, 0.0, zz,
                                                                    args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
                             self.assertAlmostEqual(comovingControl/comovingTest,1.0,4)
 
@@ -347,7 +327,7 @@ class CosmologyUnitTest(unittest.TestCase):
 
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             luminosityControl = universe.luminosityDistance(redshift=zz)
-                            comovingDistance = self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(comovingDistanceIntegrand, 0.0, zz,
                                                                                  args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
 
                             if universe.OmegaCurvature()<0.0:
@@ -380,7 +360,7 @@ class CosmologyUnitTest(unittest.TestCase):
 
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             angularControl = universe.angularDiameterDistance(redshift=zz)
-                            comovingDistance = self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(comovingDistanceIntegrand, 0.0, zz,
                                                                                  args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
 
                             if universe.OmegaCurvature()<0.0:
@@ -415,7 +395,7 @@ class CosmologyUnitTest(unittest.TestCase):
 
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             modulusControl = universe.distanceModulus(redshift=zz)
-                            comovingDistance = self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(comovingDistanceIntegrand, 0.0, zz,
                                                                                  args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
 
                             if universe.OmegaCurvature()<0.0:

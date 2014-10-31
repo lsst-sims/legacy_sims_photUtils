@@ -22,7 +22,8 @@ from lsst.sims.photUtils.Variability import Variability
 
 __all__ = ["MyVariability", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
-           "cartoonGalaxies", "testStars", "testGalaxies"]
+           "cartoonGalaxies", "testStars", "testGalaxies",
+           "comovingDistanceIntegrand", "cosmologicalOmega"]
 
 @register_class
 class MyVariability(Variability):
@@ -350,3 +351,33 @@ class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,tes
 
     def get_galid(self):
         return self.column_by_name('id')
+
+def cosmologicalOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=0.0):
+    """
+    A method to compute the evolution of the Hubble and density parameters
+    with redshift (as a baseline against which to test the cosmology unittest)
+    """
+
+    if Ode0 is None:
+        Ode0 = 1.0 - Om0 - Og0 - Onu0
+
+    Ok0 = 1.0 - Om0 - Ode0 - Og0 - Onu0
+
+    aa = 1.0/(1.0+redshift)
+    Omz = Om0 * numpy.power(1.0+redshift, 3)
+    Ogz = Og0 * numpy.power(1.0+redshift, 4)
+    Onuz = Onu0 * numpy.power(1.0+redshift, 4)
+    Okz = Ok0 * numpy.power(1.0+redshift, 2)
+    Odez = Ode0 * numpy.exp(-3.0*(numpy.log(aa)*(w0 + wa +1.0) - wa*(aa - 1.0)))
+
+    Ototal = Omz + Ogz + Onuz + Odez + Okz
+
+    return H0*numpy.sqrt(Ototal), Omz/Ototal, Odez/Ototal, Ogz/Ototal, Onuz/Ototal, Okz/Ototal
+
+def comovingDistanceIntegrand(redshift, H0, Om0, Ode0, Og0, Onu0, w0, wa):
+    """
+    The integrand of comoving distance (as a baseline for cosmology unittest)
+    """
+    hh, mm, de, gg, nn, kk = cosmologicalOmega(redshift, H0, Om0, Ode0=Ode0,
+                                          Og0=Og0, Onu0=Onu0, w0=w0, wa=wa)
+    return 1.0/hh
