@@ -100,7 +100,7 @@ class CosmologyWrapper(object):
         or a w0, wa (flat or non-flat) cosmology.
         """
         self.activeCosmology = None
-        
+
         if w0 is not None and wa is None:
             wa = 0.0
 
