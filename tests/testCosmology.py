@@ -33,8 +33,12 @@ def controlOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0, wa=
 
     Ototal = Omz + Ogz + Onuz + Odez + Okz
 
-
     return H0*numpy.sqrt(Ototal), Omz/Ototal, Ogz/Ototal, Onuz/Ototal, Odez/Ototal, Okz/Ototal
+
+def controlDistanceIntegrand(redshift, H0, Om0, Ode0, Og0, Onu0, w0, wa):
+    hh, mm, gg, nn, de, kk = controlOmega(redshift, H0, Om0, Ode0=Ode0,
+                                          Og0=Og0, Onu0=Onu0, w0=w0, wa=wa)
+    return 1.0/hh
 
 class CosmologyUnitTest(unittest.TestCase):
 
@@ -299,10 +303,14 @@ class CosmologyUnitTest(unittest.TestCase):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.02):
 
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        Og0 = universe.OmegaPhotons()
+                        Onu0 = universe.OmegaNeutrinos()
 
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             comovingControl = universe.comovingDistance(redshift=zz)
-                            comovingTest = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+                            comovingTest = \
+                                self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                                                                   args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
                             self.assertAlmostEqual(comovingControl/comovingTest,1.0,4)
 
     #@unittest.skip("fornow")
@@ -319,10 +327,13 @@ class CosmologyUnitTest(unittest.TestCase):
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
+                        Og0 = universe.OmegaPhotons()
+                        Onu0 = universe.OmegaNeutrinos()
 
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             luminosityControl = universe.luminosityDistance(redshift=zz)
-                            comovingDistance = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                                                                                 args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
 
                             if universe.OmegaCurvature()<0.0:
                                 nn =sqrtkCurvature*comovingDistance
@@ -349,10 +360,13 @@ class CosmologyUnitTest(unittest.TestCase):
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
+                        Og0 = universe.OmegaPhotons()
+                        Onu0 = universe.OmegaNeutrinos()
 
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             angularControl = universe.angularDiameterDistance(redshift=zz)
-                            comovingDistance = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                                                                                 args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
 
                             if universe.OmegaCurvature()<0.0:
                                 nn =sqrtkCurvature*comovingDistance
@@ -381,10 +395,13 @@ class CosmologyUnitTest(unittest.TestCase):
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
+                        Og0 = universe.OmegaPhotons()
+                        Onu0 = universe.OmegaNeutrinos()
 
                         for zz in numpy.arange(start=0.1, stop=4.2, step=2.0):
                             modulusControl = universe.distanceModulus(redshift=zz)
-                            comovingDistance = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
+                            comovingDistance = self.speedOfLight*scipy.integrate.quad(controlDistanceIntegrand, 0.0, zz,
+                                                                                 args=(H0, Om0, Ode0, Og0, Onu0, w0, wa))[0]
 
                             if universe.OmegaCurvature()<0.0:
                                 nn =sqrtkCurvature*comovingDistance
