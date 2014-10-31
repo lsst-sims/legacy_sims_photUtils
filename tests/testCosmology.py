@@ -64,7 +64,7 @@ class CosmologyUnitTest(unittest.TestCase):
             Om0 = universe.OmegaMatter(redshift=0.0)
             Ode0 = universe.OmegaDarkEnergy(redshift=0.0)
 
-            ztest = numpy.arange(start=0.0, stop=4.0, step=0.5)
+            ztest = numpy.arange(start=0.0, stop=4.1, step=2.0)
             for zz in ztest:
                aa = (1.0+zz)
 
@@ -103,7 +103,7 @@ class CosmologyUnitTest(unittest.TestCase):
                     Om0 = universe.OmegaMatter(redshift=0.0)
                     Ode0 = universe.OmegaDarkEnergy(redshift=0.0)
 
-                    ztest = numpy.arange(start=0.0, stop=4.0, step=0.5)
+                    ztest = numpy.arange(start=0.0, stop=4.1, step=2.0)
                     for zz in ztest:
 
                        wControl = w0 + wa*(1.0 - 1.0/(1.0+zz))
@@ -147,7 +147,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 Ode0 = universe.OmegaDarkEnergy(redshift=0.0)
                 Ok0 = universe.OmegaCurvature(redshift=0.0)
 
-                ztest = numpy.arange(start=0.0, stop=4.0, step=0.5)
+                ztest = numpy.arange(start=0.0, stop=4.0, step=2.0)
                 for zz in ztest:
                     OmControl, OgControl, OnuControl, \
                     OdeControl, OkControl, Hcontrol = controlOmega(zz, H0, Om0, Og0=Og0, Onu0=Onu0,
@@ -169,8 +169,8 @@ class CosmologyUnitTest(unittest.TestCase):
 
         for Om0 in numpy.arange(start=0.15, stop=0.76, step=0.3):
             for Ode0 in numpy.arange(1.0-Om0-0.1, stop = 1.0-Om0+0.11, step=0.2):
-                for w0 in numpy.arange(start=-1.1, stop = -0.89, step=0.1):
-                    for wa in numpy.arange(start=-0.1, stop=0.15, step=0.1):
+                for w0 in numpy.arange(start=-1.1, stop = -0.89, step=0.2):
+                    for wa in numpy.arange(start=-0.1, stop=0.15, step=0.2):
 
                         universe = CosmologyWrapper()
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
@@ -189,7 +189,7 @@ class CosmologyUnitTest(unittest.TestCase):
                         Om0 = universe.OmegaMatter(redshift=0.0)
                         Ode0 = universe.OmegaDarkEnergy(redshift=0.0)
 
-                        ztest = numpy.arange(start=0.0, stop=4.0, step=1.0)
+                        ztest = numpy.arange(start=0.0, stop=4.0, step=2.0)
                         for zz in ztest:
 
                            wControl = w0 + wa*(1.0 - 1.0/(1.0+zz))
@@ -213,14 +213,14 @@ class CosmologyUnitTest(unittest.TestCase):
 
         universe = CosmologyWrapper()
         H0 = 73.0
-        for Om0 in numpy.arange(start=0.1, stop=0.55, step=0.2):
-            for Ode0 in numpy.arange(start=1.0-Om0-0.05, stop=1.0-Om0+0.06, step=0.05):
-                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
-                    for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
+        for Om0 in numpy.arange(start=0.15, stop=0.56, step=0.2):
+            for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
+                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
+                    for wa in numpy.arange(start=-0.1, stop=0.115, step=0.02):
 
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
-                        ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
+                        ztest = numpy.arange(start=0.1, stop=4.2, step=2.0)
                         for zz in ztest:
                             comovingControl = universe.comovingDistance(redshift=zz)
                             comovingTest = self.speedOfLight*scipy.integrate.quad(lambda z: 1.0/universe.H(z), 0.0, zz)[0]
@@ -232,14 +232,14 @@ class CosmologyUnitTest(unittest.TestCase):
         H0 = 73.0
 
         universe=CosmologyWrapper()
-        for Om0 in numpy.arange(start=0.1, stop=0.55, step=0.2):
-            for Ode0 in numpy.arange(start=1.0-Om0-0.05, stop=1.0-Om0+0.06, step=0.05):
-                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
-                    for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
+        for Om0 in numpy.arange(start=0.15, stop=0.56, step=0.2):
+            for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
+                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
+                    for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
 
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
-                        ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
+                        ztest = numpy.arange(start=0.1, stop=4.2, step=2.0)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
 
@@ -264,14 +264,14 @@ class CosmologyUnitTest(unittest.TestCase):
 
         H0 = 56.0
         universe=CosmologyWrapper()
-        for Om0 in numpy.arange(start=0.1, stop=0.55, step=0.2):
-            for Ode0 in numpy.arange(start=1.0-Om0-0.05, stop=1.0-Om0+0.06, step=0.05):
-                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
-                    for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
+        for Om0 in numpy.arange(start=0.15, stop=0.56, step=0.2):
+            for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
+                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
+                    for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
 
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
-                        ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
+                        ztest = numpy.arange(start=0.1, stop=4.2, step=2.0)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
 
@@ -298,14 +298,14 @@ class CosmologyUnitTest(unittest.TestCase):
         H0 = 73.0
 
         universe=CosmologyWrapper()
-        for Om0 in numpy.arange(start=0.1, stop=0.55, step=0.2):
-            for Ode0 in numpy.arange(start=1.0-Om0-0.05, stop=1.0-Om0+0.06, step=0.05):
-                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.1):
-                    for wa in numpy.arange(start=-0.1, stop=0.115, step=0.05):
+        for Om0 in numpy.arange(start=0.15, stop=0.56, step=0.2):
+            for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
+                for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
+                    for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
 
                         universe.initializeCosmology(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
-                        ztest = numpy.arange(start=0.1, stop=2.0, step=0.3)
+                        ztest = numpy.arange(start=0.1, stop=4.2, step=2.0)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
 
