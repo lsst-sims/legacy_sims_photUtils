@@ -29,8 +29,8 @@ constantly redeclare the same cosmology object at different points in the code. 
 the naming conventions for the methods to set and retrieve this default cosmology have changed
 between recent versions of astropy.  CosmologyWrapper deals with this change in API using
 CosmologyWrapper.setCurrent() (called automatically by CosmologyWrapper.initializeCosmology())
-and CosmologyWrapper.getCurrent(), which returns a cosmology object containing the default 
-cosmology set by CosmologyWrapper.setCurrent().  A user who wants to interact with the naked 
+and CosmologyWrapper.getCurrent(), which returns a cosmology object containing the default
+cosmology set by CosmologyWrapper.setCurrent().  A user who wants to interact with the naked
 astropy.cosmology methods can run something like
 
 uu = CosmologyWrapper()
@@ -94,7 +94,7 @@ class CosmologyWrapper(object):
         universe is also assigned to self.activeCosmology, which is the cosmology that
         this wrapper's methods use for calculations.
         """
-        
+
         if 'default_cosmology' in dir(cosmology):
             cosmology.default_cosmology.set(universe)
         elif 'set_current' in dir(cosmology):
