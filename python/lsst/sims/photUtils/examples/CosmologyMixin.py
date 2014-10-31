@@ -5,6 +5,10 @@ from lsst.sims.catalogs.measures.instance import compound
 __all__ = ["ExampleCosmologyMixin"]
 
 class ExampleCosmologyMixin(CosmologyWrapper):
+    """
+    This is an example mixin which applies cosmological distance modulus
+    to galaxy magnitudes
+    """
 
     def get_distanceModulus(self):
         if not self.cosmologyInitialized:
