@@ -43,6 +43,9 @@ calls to the astropy.cosmology methods of the form
 dd = myUniverse.comoving_distance(1.0) #comoving distance to redshift z=1
 
 will now work.
+
+
+The methods in CosmologyWrapper have been tested on astropy v0.2.5 and v0.4.2
 """
 
 import numpy
@@ -341,6 +344,9 @@ class CosmologyWrapper(object):
         #distance modulus (or -inf if redshift==0.0)
         #Given that this makes no sense, the code below forces all distance moduli
         #to be greater than zero.
+        #
+        #a Runtime Warning will be raised (because distmod will try to take the
+        #logarithm of luminosityDistance = 0, but the code will still run
         if isinstance(mod, float):
             if mod < 0.0:
                  return  0.0
