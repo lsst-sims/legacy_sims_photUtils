@@ -432,6 +432,17 @@ class CosmologyUnitTest(unittest.TestCase):
                             modulusTest = 5.0*numpy.log10(luminosityDistance) + 25.0
                             self.assertAlmostEqual(modulusControl/modulusTest,1.0,4)
 
+    def testDistanceModulusAtZero(self):
+        universe = CosmologyWrapper()
+        universe.loadDefaultCosmology()
+        ztest = [0.0, 1.0, 2.0, 0.0, 3.0]
+        mm = universe.distanceModulus(redshift=ztest)
+        self.assertEqual(mm[0], 0.0)
+        self.assertEqual(mm[3], 0.0)
+        self.assertEqual(mm[1], 5.0*numpy.log10(universe.luminosityDistance(ztest[1])) + 25.0)
+        self.assertEqual(mm[2], 5.0*numpy.log10(universe.luminosityDistance(ztest[2])) + 25.0)
+        self.assertEqual(mm[4], 5.0*numpy.log10(universe.luminosityDistance(ztest[4])) + 25.0)
+
 class CosmologyMixinUnitTest(unittest.TestCase):
 
     @classmethod

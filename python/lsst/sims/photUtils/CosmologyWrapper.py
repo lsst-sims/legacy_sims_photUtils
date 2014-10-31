@@ -300,4 +300,4 @@ class CosmologyWrapper(object):
             else:
                 return mod
         else:
-            return numpy.where(mv if mv > 0.0 else 0.0 for mv in mod)[0]
+            return numpy.where(mod>0.0, mod, 0.0)
