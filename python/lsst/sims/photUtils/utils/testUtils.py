@@ -378,17 +378,17 @@ def cosmologicalOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0
     @param [in] wa is the other parameter for calculating the equation of state for Dark
     Energy
 
-    @param [out] Hubble parameter at desired redshift (in km/s/Mpc)
+    @returns Hubble parameter at desired redshift (in km/s/Mpc)
 
-    @param [out] matter density paramter at desired redshift
+    @returns matter density paramter at desired redshift
 
-    @param [out] Dark Energy density parameter at desired redshift
+    @returns Dark Energy density parameter at desired redshift
 
-    @param [out] photon density parameter at desired redshift
+    @returns photon density parameter at desired redshift
 
-    @param [out] neutrino density parameter at desired redshift
+    @returns neutrino density parameter at desired redshift
 
-    @param [out] curvature density parameter at desired redshift
+    @returns curvature density parameter at desired redshift
     """
 
     if Ode0 is None:
@@ -431,7 +431,7 @@ def comovingDistanceIntegrand(redshift, H0, Om0, Ode0, Og0, Onu0, w0, wa):
     @param [in] wa is the other parameter for calculating the equation of state for Dark
     Energy
 
-    @param [out] returns 1/(Hubble parameter at desired redshift in km/s/Mpc)
+    @returns 1/(Hubble parameter at desired redshift in km/s/Mpc)
 
     """
     hh, mm, de, gg, nn, kk = cosmologicalOmega(redshift, H0, Om0, Ode0=Ode0,
