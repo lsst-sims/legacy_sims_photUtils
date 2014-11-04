@@ -435,6 +435,30 @@ class CosmologyUnitTest(unittest.TestCase):
         self.assertEqual(mm[2], 5.0*numpy.log10(universe.luminosityDistance(ztest[2])) + 25.0)
         self.assertEqual(mm[4], 5.0*numpy.log10(universe.luminosityDistance(ztest[4])) + 25.0)
 
+    def testGetCurrent(self):
+        """
+        Test to make sure that getCurrent returns the activeCosmology
+        """
+        
+        for Om0 in numpy.arange(start=0.2, stop=0.5, step=0.29):
+            for Ode0 in numpy.arange(start=1.0-Om0-0.2, stop=1.0-Om0+0.2, step=0.39):
+                for w0 in numpy.arange(start=-1.2, stop=-0.7, step=0.49):
+                    for wa in numpy.arange(start=-0.2, stop=0.2, step=0.39):
+                        universe = CosmologyWrapper(Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        testUniverse = universe.getCurrent()
+                        
+                        for zz in numpy.arange(start=1.0, stop=2.1, step=1.0):
+                            self.assertEqual(universe.OmegaMatter(redshift=zz),
+                                             testUniverse.Om(zz))
+                            self.assertEqual(universe.OmegaDarkEnergy(redshift=zz),
+                                             testUniverse.Ode(zz))
+                            self.assertEqual(universe.OmegaPhotons(redshift=zz),
+                                             testUniverse.Ogamma(zz))              
+                            self.assertEqual(universe.OmegaNeutrinos(redshift=zz),
+                                             testUniverse.Onu(zz))     
+                            self.assertEqual(universe.OmegaCurvature(redshift=zz),
+                                             testUniverse.Ok(zz))
+
 class CosmologyMixinUnitTest(unittest.TestCase):
     """
     This class will test to make sure that our example CosmologyMixin
