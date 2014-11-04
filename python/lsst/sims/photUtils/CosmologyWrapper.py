@@ -9,7 +9,7 @@ methods that belong to that object.  CosmologyWrapper interfaces with this by de
 variable self.activeCosmology.  Methods provided by CosmologyWrapper call the equivalent
 astropy.cosmology methods on self.activeCosmology.  activeCosmology is set by calling
 CosmologyWrapper.initializeCosmology(args...) with the appropriate cosmological paramters.
-Passing in no parametrs loads the Millennium Simulation cosmology (Springel et al 2005, Nature 435, 629 
+Passing in no parametrs loads the Millennium Simulation cosmology (Springel et al 2005, Nature 435, 629
 or arXiv:astro-ph/0504097).
 
 The difficulty with all of this that, between the version of astropy shipped with anaconda (v0.2.5) and
@@ -30,7 +30,7 @@ the naming conventions for the methods to set and retrieve this default cosmolog
 between recent versions of astropy.  CosmologyWrapper deals with this change in API using
 CosmologyWrapper.setCurrent() (called automatically by CosmologyWrapper's __init__)
 and CosmologyWrapper.getCurrent(), which returns a cosmology object containing the activeCosmology
-contained in CosmologyWrapper.  
+contained in CosmologyWrapper.
 
 A user who wants to interact with the naked
 astropy.cosmology methods can run something like
@@ -78,7 +78,7 @@ class CosmologyWrapper(object):
 
         Currently, this wrapper class expects you to specify either a LambdaCDM (flat or non-flat) cosmology
         or a w0, wa (flat or non-flat) cosmology.
-        
+
         The default cosmology is taken as the cosmology used
         in the Millennium Simulation (Springel et al 2005, Nature 435, 629 or
         arXiv:astro-ph/0504097)
@@ -95,9 +95,9 @@ class CosmologyWrapper(object):
 
         ns = 1 (index of the initial spectrum of linear mas perturbations;
                 not currently used in this code)
-        
+
         """
-        
+
         self.activeCosmology = None
 
         if w0 is not None and wa is None:
@@ -181,12 +181,12 @@ class CosmologyWrapper(object):
 
         https://astropy.readthedocs.org/en/v0.2.5/cosmology/index.html
         """
-        
+
         return self.activeCosmology
 
     def H(self, redshift=0.0):
         """return the Hubble paramter in km/s/Mpc at the specified redshift"""
-        
+
         H = self.activeCosmology.H(redshift)
 
         if 'value' in dir(H):

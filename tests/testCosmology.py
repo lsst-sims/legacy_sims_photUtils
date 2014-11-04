@@ -293,7 +293,7 @@ class CosmologyUnitTest(unittest.TestCase):
         where spatial curvature is accounted for in the sin function
         """
 
-        
+
         H0 = 73.0
         for Om0 in numpy.arange(start=0.15, stop=0.56, step=0.2):
             for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
@@ -439,23 +439,23 @@ class CosmologyUnitTest(unittest.TestCase):
         """
         Test to make sure that getCurrent returns the activeCosmology
         """
-        
+
         for Om0 in numpy.arange(start=0.2, stop=0.5, step=0.29):
             for Ode0 in numpy.arange(start=1.0-Om0-0.2, stop=1.0-Om0+0.2, step=0.39):
                 for w0 in numpy.arange(start=-1.2, stop=-0.7, step=0.49):
                     for wa in numpy.arange(start=-0.2, stop=0.2, step=0.39):
                         universe = CosmologyWrapper(Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
                         testUniverse = universe.getCurrent()
-                        
+
                         for zz in numpy.arange(start=1.0, stop=2.1, step=1.0):
                             self.assertEqual(universe.OmegaMatter(redshift=zz),
                                              testUniverse.Om(zz))
                             self.assertEqual(universe.OmegaDarkEnergy(redshift=zz),
                                              testUniverse.Ode(zz))
                             self.assertEqual(universe.OmegaPhotons(redshift=zz),
-                                             testUniverse.Ogamma(zz))              
+                                             testUniverse.Ogamma(zz))
                             self.assertEqual(universe.OmegaNeutrinos(redshift=zz),
-                                             testUniverse.Onu(zz))     
+                                             testUniverse.Onu(zz))
                             self.assertEqual(universe.OmegaCurvature(redshift=zz),
                                              testUniverse.Ok(zz))
 

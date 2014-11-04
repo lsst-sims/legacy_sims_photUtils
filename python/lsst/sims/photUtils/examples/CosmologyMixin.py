@@ -9,9 +9,9 @@ class ExampleCosmologyMixin():
     This is an example mixin which applies cosmological distance modulus
     to galaxy magnitudes
     """
-    
+
     cosmology = None
-    
+
     def get_distanceModulus(self):
         if self.cosmology is None:
             self.cosmology = CosmologyWrapper()
