@@ -9,8 +9,8 @@ methods that belong to that object.  CosmologyWrapper interfaces with this by de
 variable self.activeCosmology.  Methods provided by CosmologyWrapper call the equivalent
 astropy.cosmology methods on self.activeCosmology.  activeCosmology is set by calling
 CosmologyWrapper.initializeCosmology(args...) with the appropriate cosmological paramters.
-One can also call CosmologyWrapper.loadDefaultCosmology() to load the Millennium Simulation
-cosmology.
+Passing in no parametrs loads the Millennium Simulation cosmology (Springel et al 2005, Nature 435, 629 
+or arXiv:astro-ph/0504097).
 
 The difficulty with all of this that, between the version of astropy shipped with anaconda (v0.2.5) and
 the most modern version (v0.4), the API for astropy.cosmology has changed in two ways.
@@ -30,7 +30,9 @@ the naming conventions for the methods to set and retrieve this default cosmolog
 between recent versions of astropy.  CosmologyWrapper deals with this change in API using
 CosmologyWrapper.setCurrent() (called automatically by CosmologyWrapper.initializeCosmology())
 and CosmologyWrapper.getCurrent(), which returns a cosmology object containing the default
-cosmology set by CosmologyWrapper.setCurrent().  A user who wants to interact with the naked
+cosmology set by CosmologyWrapper.setCurrent().  
+
+A user who wants to interact with the naked
 astropy.cosmology methods can run something like
 
 uu = CosmologyWrapper()
