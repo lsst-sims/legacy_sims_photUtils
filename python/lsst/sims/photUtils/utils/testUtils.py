@@ -356,6 +356,39 @@ def cosmologicalOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0
     """
     A method to compute the evolution of the Hubble and density parameters
     with redshift (as a baseline against which to test the cosmology unittest)
+
+    @param [in] redshift is the redshift at which the output is desired
+
+    @param [in] H0 is the Hubble parameter at the present epoch in km/s/Mpc
+
+    @param [in] Om0 is the density parameter (fraction of critical) for matter at the
+    present epoch
+
+    @param [in] Ode0 is the density parameter for Dark Energy at the present epoch.
+    If left as None, will be set to 1.0-Om0-Og0-Onu0 (i.e. a flat universe)
+
+    @param [in] Og0 is the density parameter for photons at the present epoch
+
+    @param [in] Onu0 is the density parameter for neutrinos at the present epoch
+    (assume massless neutrinos)
+
+    @param [in] w0 is a parameter for calculating the equation of state for Dark Energy
+    w = w0 + wa * z/(1 + z)
+
+    @param [in] wa is the other parameter for calculating the equation of state for Dark
+    Energy
+
+    @param [out] Hubble parameter at desired redshift (in km/s/Mpc)
+
+    @param [out] matter density paramter at desired redshift
+
+    @param [out] Dark Energy density parameter at desired redshift
+
+    @param [out] photon density parameter at desired redshift
+
+    @param [out] neutrino density parameter at desired redshift
+
+    @param [out] curvature density parameter at desired redshift
     """
 
     if Ode0 is None:
@@ -377,6 +410,29 @@ def cosmologicalOmega(redshift, H0, Om0, Ode0 = None, Og0=0.0, Onu0=0.0, w0=-1.0
 def comovingDistanceIntegrand(redshift, H0, Om0, Ode0, Og0, Onu0, w0, wa):
     """
     The integrand of comoving distance (as a baseline for cosmology unittest)
+
+    @param [in] redshift is the redshift at which to evaluate the integrand
+
+    @param [in] H0 is the Hubble parameter at the present epoch in km/s/Mpc
+
+    @param [in] Om0 is the density parameter (fraction of critical) for matter at the
+    present epoch
+
+    @param [in] Ode0 is the density parameter for Dark Energy at the present epoch.
+
+    @param [in] Og0 is the density parameter for photons at the present epoch
+
+    @param [in] Onu0 is the density parameter for neutrinos at the present epoch
+    (assume massless neutrinos)
+
+    @param [in] w0 is a parameter for calculating the equation of state for Dark Energy
+    w = w0 + wa * z/(1 + z)
+
+    @param [in] wa is the other parameter for calculating the equation of state for Dark
+    Energy
+
+    @param [out] returns 1/(Hubble parameter at desired redshift in km/s/Mpc)
+
     """
     hh, mm, de, gg, nn, kk = cosmologicalOmega(redshift, H0, Om0, Ode0=Ode0,
                                           Og0=Og0, Onu0=Onu0, w0=w0, wa=wa)
