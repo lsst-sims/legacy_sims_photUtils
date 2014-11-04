@@ -35,8 +35,7 @@ contained in CosmologyWrapper.
 A user who wants to interact with the naked
 astropy.cosmology methods can run something like
 
-uu = CosmologyWrapper()
-uu.loadDefaultCosmology() #which sets activeCosmology to the Millennium Simulation cosmology
+uu = CosmologyWrapper() #which sets activeCosmology to the Millennium Simulation cosmology
 myUniverse = uu.getCurrent()
 
 myUniverse now contains a cosmology object which is equivalent to the activeCosmology.  Direct
