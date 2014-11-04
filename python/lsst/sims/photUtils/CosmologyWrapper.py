@@ -72,7 +72,7 @@ class CosmologyWrapper(object):
         if 'unit' in dir(H):
             self.hUnits = units.Unit("km / (Mpc s)")
         else:
-            self.hunits = None
+            self.hUnits = None
 
         dd = self.activeCosmology.comoving_distance(0.0)
         if 'unit' in dir(dd):
