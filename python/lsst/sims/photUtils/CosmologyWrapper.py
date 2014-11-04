@@ -182,13 +182,7 @@ class CosmologyWrapper(object):
         https://astropy.readthedocs.org/en/v0.2.5/cosmology/index.html
         """
         
-        if 'default_cosmology' in dir(cosmology):
-            return cosmology.default_cosmology.get()
-        elif 'get_current' in dir(cosmology):
-            return cosmology.get_current()
-        else:
-            raise RuntimeError("CosmologyWrapper.getCurrent does not know how to handle this version of astropy")
-
+        return self.activeCosmology
 
     def H(self, redshift=0.0):
         """return the Hubble paramter in km/s/Mpc at the specified redshift"""
