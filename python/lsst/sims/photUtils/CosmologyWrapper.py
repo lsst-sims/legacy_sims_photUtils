@@ -49,6 +49,7 @@ will now work.
 The methods in CosmologyWrapper have been tested on astropy v0.2.5 and v0.4.2
 """
 
+from functools import wraps
 import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
@@ -183,6 +184,7 @@ class CosmologyWrapper(object):
 
         return self.activeCosmology
 
+    @wraps(cosmology.FLRW.H)
     def H(self, redshift=0.0):
         """return the Hubble paramter in km/s/Mpc at the specified redshift"""
 
@@ -196,21 +198,25 @@ class CosmologyWrapper(object):
         else:
             return H
 
+    @wraps(cosmology.FLRW.Om)
     def OmegaMatter(self, redshift=0.0):
         """return the matter density paramter (fraction of critical density) at the specified redshift"""
 
         return self.activeCosmology.Om(redshift)
 
+    @wraps(cosmology.FLRW.Ode)
     def OmegaDarkEnergy(self, redshift=0.0):
         """return the dark energy density paramter (fraction of critical density) at the specified redshift"""
 
         return self.activeCosmology.Ode(redshift)
 
+    @wraps(cosmology.FLRW.Ogamma)
     def OmegaPhotons(self, redshift=0.0):
         """return the photon density paramter (fraction of critical density) at the specified redshift"""
 
         return self.activeCosmology.Ogamma(redshift)
 
+    @wraps(cosmology.FLRW.Onu)
     def OmegaNeutrinos(self, redshift=0.0):
         """
         return the neutrino density paramter (fraction of critical density) at the specified redshift
@@ -220,6 +226,7 @@ class CosmologyWrapper(object):
 
         return self.activeCosmology.Onu(redshift)
 
+    @wraps(cosmology.FLRW.Ok)
     def OmegaCurvature(self, redshift=0.0):
         """
         return the effective curvature density paramter (fraction of critical density) at the
@@ -234,11 +241,13 @@ class CosmologyWrapper(object):
 
         return self.activeCosmology.Ok(redshift)
 
+    @wraps(cosmology.FLRW.w)
     def w(self, redshift=0.0):
         """return the dark energy equation of state at the specified redshift"""
 
         return self.activeCosmology.w(redshift)
 
+    @wraps(cosmology.FLRW.comoving_distance)
     def comovingDistance(self, redshift=0.0):
         """
         return the comoving distance to the specified redshift in Mpc
@@ -260,6 +269,7 @@ class CosmologyWrapper(object):
         else:
             return dd
 
+    @wraps(cosmology.FLRW.luminosity_distance)
     def luminosityDistance(self, redshift=0.0):
         """
         the luminosity distance to the specified redshift in Mpc
@@ -277,6 +287,7 @@ class CosmologyWrapper(object):
         else:
             return dd
 
+    @wraps(cosmology.FLRW.angular_diameter_distance)
     def angularDiameterDistance(self, redshift=0.0):
         """angular diameter distance to the specified redshift in Mpc"""
 
@@ -290,6 +301,7 @@ class CosmologyWrapper(object):
         else:
             return dd
 
+    @wraps(cosmology.FLRW.distmod)
     def distanceModulus(self, redshift=0.0):
         """distance modulus to the specified redshift"""
 
