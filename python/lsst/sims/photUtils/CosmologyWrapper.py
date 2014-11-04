@@ -196,7 +196,6 @@ class CosmologyWrapper(object):
         else:
             return H
 
-
     def OmegaMatter(self, redshift=0.0):
         """return the matter density paramter (fraction of critical density) at the specified redshift"""
 
