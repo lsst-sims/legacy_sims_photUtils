@@ -56,80 +56,7 @@ __all__ = ["CosmologyWrapper"]
 
 class CosmologyWrapper(object):
 
-    cosmologyInitialized = False
-
-    def setUnits(self):
-        """
-        This method specifies the units in which various outputs from the wrapper are expected
-        (this is because the latest version of astropy.cosmology outputs quantities such as
-        the Hubble parameter and luminosity distance with units attached; the version of
-        astropy.cosmology that comes within anaconda does not do this as of 30 October 2014)
-        """
-        if not self.cosmologyInitialized:
-            raise RuntimeError("Cannot call setUnits; cosmology is not initialized")
-
-        H = self.activeCosmology.H(0.0)
-        if 'unit' in dir(H):
-            self.hUnits = units.Unit("km / (Mpc s)")
-        else:
-            self.hUnits = None
-
-        dd = self.activeCosmology.comoving_distance(0.0)
-        if 'unit' in dir(dd):
-            self.distanceUnits = units.Mpc
-        else:
-            self.distanceUnits = None
-
-        mm = self.activeCosmology.distmod(1.0)
-        if 'unit' in dir(mm):
-            self.modulusUnits = units.mag
-        else:
-            self.modulusUnits = None
-
-    def setCurrent(self, universe):
-        """
-        Take the cosmology indicated by 'universe' and set it as the current/default
-        cosmology (depending on the API of the version of astropy being run)
-
-        universe is also assigned to self.activeCosmology, which is the cosmology that
-        this wrapper's methods use for calculations.
-        """
-
-        if 'default_cosmology' in dir(cosmology):
-            cosmology.default_cosmology.set(universe)
-        elif 'set_current' in dir(cosmology):
-            cosmology.set_current(universe)
-        else:
-            raise RuntimeError("CosmologyWrapper.setCurrent does not know how to handle this version of astropy")
-
-        self.cosmologyInitialized = True
-        self.activeCosmology = universe
-        self.setUnits()
-
-    def getCurrent(self):
-        """
-        Return the cosmology currently stored as the current cosmology
-
-        This is for users who want direct access to all of astropy.cosmology's methods,
-        not just those wrapped by this class.
-
-        documentation for astropy.cosmology can be found at the URL below (be sure to check which version of
-        astropy you are running; as of 30 October 2014, the anaconda distributed with the stack
-        comes with version 0.2.5)
-
-        https://astropy.readthedocs.org/en/v0.2.5/cosmology/index.html
-        """
-        if not self.cosmologyInitialized:
-            raise RuntimeError("Should not call CosmologyWrapper.getCurrent(); you have not setCurrent()")
-
-        if 'default_cosmology' in dir(cosmology):
-            return cosmology.default_cosmology.get()
-        elif 'get_current' in dir(cosmology):
-            return cosmology.get_current()
-        else:
-            raise RuntimeError("CosmologyWrapper.getCurrent does not know how to handle this version of astropy")
-
-    def initializeCosmology(self, H0=72.0, Om0=0.25, Ode0=None, w0=None, wa=None):
+    def __init__(self, H0=73.0, Om0=0.25, Ode0=None, w0=None, wa=None):
         """
         Initialize the cosmology wrapper with the parameters specified
         (e.g. does not account for massive neutrinos)
@@ -149,7 +76,26 @@ class CosmologyWrapper(object):
 
         Currently, this wrapper class expects you to specify either a LambdaCDM (flat or non-flat) cosmology
         or a w0, wa (flat or non-flat) cosmology.
+        
+        The default cosmology is taken as the cosmology used
+        in the Millennium Simulation (Springel et al 2005, Nature 435, 629 or
+        arXiv:astro-ph/0504097)
+
+        Om0 = 0.25
+        Ob0  = 0.045 (baryons; not currently used in this code)
+        H0 =73.0
+        Ode0 = 0.75
+        w0 = -1.0
+        wa = 0.0
+
+        sigma_8 = 0.9 (rms mass flucutation in an 8 h^-1 Mpc sphere;
+                       not currently used in this code)
+
+        ns = 1 (index of the initial spectrum of linear mas perturbations;
+                not currently used in this code)
+        
         """
+        
         self.activeCosmology = None
 
         if w0 is not None and wa is None:
@@ -175,33 +121,76 @@ class CosmologyWrapper(object):
 
         self.setCurrent(universe)
 
-    def loadDefaultCosmology(self):
+    def setCurrent(self, universe):
         """
-        This method initializes the wrapper to the default cosmology, taken as teh cosmology used
-        in the Millennium Simulation (Springel et al 2005, Nature 435, 629 or
-        arXiv:astro-ph/0504097)
+        Take the cosmology indicated by 'universe' and set it as the current/default
+        cosmology (depending on the API of the version of astropy being run)
 
-        Om0 = 0.25
-        Ob0  = 0.045 (baryons; not currently used in this code)
-        H0 =73.0
-        Ode0 = 0.75
-        w0 = -1.0
-        wa = 0.0
-
-        sigma_8 = 0.9 (rms mass flucutation in an 8 h^-1 Mpc sphere;
-                       not currently used in this code)
-
-        ns = 1 (index of the initial spectrum of linear mas perturbations;
-                not currently used in this code)
-
+        universe is also assigned to self.activeCosmology, which is the cosmology that
+        this wrapper's methods use for calculations.
         """
-        self.initializeCosmology(H0=73.0, Om0=0.25)
+
+        if 'default_cosmology' in dir(cosmology):
+            cosmology.default_cosmology.set(universe)
+        elif 'set_current' in dir(cosmology):
+            cosmology.set_current(universe)
+        else:
+            raise RuntimeError("CosmologyWrapper.setCurrent does not know how to handle this version of astropy")
+
+        self.activeCosmology = universe
+        self.setUnits()
+
+    def setUnits(self):
+        """
+        This method specifies the units in which various outputs from the wrapper are expected
+        (this is because the latest version of astropy.cosmology outputs quantities such as
+        the Hubble parameter and luminosity distance with units attached; the version of
+        astropy.cosmology that comes within anaconda does not do this as of 30 October 2014)
+        """
+
+        H = self.activeCosmology.H(0.0)
+        if 'unit' in dir(H):
+            self.hUnits = units.Unit("km / (Mpc s)")
+        else:
+            self.hUnits = None
+
+        dd = self.activeCosmology.comoving_distance(0.0)
+        if 'unit' in dir(dd):
+            self.distanceUnits = units.Mpc
+        else:
+            self.distanceUnits = None
+
+        mm = self.activeCosmology.distmod(1.0)
+        if 'unit' in dir(mm):
+            self.modulusUnits = units.mag
+        else:
+            self.modulusUnits = None
+
+    def getCurrent(self):
+        """
+        Return the cosmology currently stored as the current cosmology
+
+        This is for users who want direct access to all of astropy.cosmology's methods,
+        not just those wrapped by this class.
+
+        documentation for astropy.cosmology can be found at the URL below (be sure to check which version of
+        astropy you are running; as of 30 October 2014, the anaconda distributed with the stack
+        comes with version 0.2.5)
+
+        https://astropy.readthedocs.org/en/v0.2.5/cosmology/index.html
+        """
+        
+        if 'default_cosmology' in dir(cosmology):
+            return cosmology.default_cosmology.get()
+        elif 'get_current' in dir(cosmology):
+            return cosmology.get_current()
+        else:
+            raise RuntimeError("CosmologyWrapper.getCurrent does not know how to handle this version of astropy")
+
 
     def H(self, redshift=0.0):
         """return the Hubble paramter in km/s/Mpc at the specified redshift"""
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call H; cosmology has not been initialized")
-
+        
         H = self.activeCosmology.H(redshift)
 
         if 'value' in dir(H):
@@ -215,22 +204,16 @@ class CosmologyWrapper(object):
 
     def OmegaMatter(self, redshift=0.0):
         """return the matter density paramter (fraction of critical density) at the specified redshift"""
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call OmegaMatter; cosmology has not been initialized")
 
         return self.activeCosmology.Om(redshift)
 
     def OmegaDarkEnergy(self, redshift=0.0):
         """return the dark energy density paramter (fraction of critical density) at the specified redshift"""
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call OmegaDarkEnergy; cosmology has not been initialized")
 
         return self.activeCosmology.Ode(redshift)
 
     def OmegaPhotons(self, redshift=0.0):
         """return the photon density paramter (fraction of critical density) at the specified redshift"""
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call OmegaPhotons; cosmology has not been initialized")
 
         return self.activeCosmology.Ogamma(redshift)
 
@@ -240,8 +223,6 @@ class CosmologyWrapper(object):
 
         assumes neutrinos are massless
         """
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call OmegaNeutrinos; cosmology has not been initialized")
 
         return self.activeCosmology.Onu(redshift)
 
@@ -256,15 +237,11 @@ class CosmologyWrapper(object):
 
         Zero means the universe is flat.
         """
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call OmegaCurvature; cosmology has not been initialized")
 
         return self.activeCosmology.Ok(redshift)
 
     def w(self, redshift=0.0):
         """return the dark energy equation of state at the specified redshift"""
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call w; cosmology has not been initialized")
 
         return self.activeCosmology.w(redshift)
 
@@ -279,9 +256,6 @@ class CosmologyWrapper(object):
         i.e. the curvature of the universe is folded into the sin()/sinh() function.
         This distande just integrates dX = c dt/a
         """
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call comovingDistance; cosmology has not been initialized")
-
         dd = self.activeCosmology.comoving_distance(redshift)
 
         if 'value' in dir(dd):
@@ -298,8 +272,6 @@ class CosmologyWrapper(object):
 
         accounts for spatial curvature
         """
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call luminosityDistance; cosmology has not been initialized")
 
         dd = self.activeCosmology.luminosity_distance(redshift)
 
@@ -313,8 +285,6 @@ class CosmologyWrapper(object):
 
     def angularDiameterDistance(self, redshift=0.0):
         """angular diameter distance to the specified redshift in Mpc"""
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call angularDiameterDistance; cosmology has not been initialized")
 
         dd = self.activeCosmology.angular_diameter_distance(redshift)
 
@@ -328,8 +298,6 @@ class CosmologyWrapper(object):
 
     def distanceModulus(self, redshift=0.0):
         """distance modulus to the specified redshift"""
-        if not self.cosmologyInitialized:
-            raise RuntimeError("cannot call distanceModulus; cosmology has not been initialized")
 
         mm = self.activeCosmology.distmod(redshift)
         if 'unit' in dir(mm):

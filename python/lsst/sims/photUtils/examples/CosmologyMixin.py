@@ -4,18 +4,20 @@ from lsst.sims.catalogs.measures.instance import compound
 
 __all__ = ["ExampleCosmologyMixin"]
 
-class ExampleCosmologyMixin(CosmologyWrapper):
+class ExampleCosmologyMixin():
     """
     This is an example mixin which applies cosmological distance modulus
     to galaxy magnitudes
     """
-
+    
+    cosmology = None
+    
     def get_distanceModulus(self):
-        if not self.cosmologyInitialized:
-            self.loadDefaultCosmology()
+        if self.cosmology is None:
+            self.cosmology = CosmologyWrapper()
 
         zz = self.column_by_name('redshift');
-        return self.distanceModulus(redshift=zz)
+        return self.cosmology.distanceModulus(redshift=zz)
 
     @compound(
     'uAbs', 'gAbs', 'rAbs', 'iAbs', 'zAbs', 'yAbs',
