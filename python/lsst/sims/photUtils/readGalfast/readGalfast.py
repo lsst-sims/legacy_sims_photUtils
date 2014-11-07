@@ -175,7 +175,7 @@ class readGalfast():
         distanceKpc = distancePc / 1000.
         return distanceKpc
 
-    def loadGalfast(self, filenameList, outFileList):
+    def loadGalfast(self, filenameList, outFileList, kuruczPath = None, mltPath = None, wdPath = None):
         """
         This is customized for the outputs we currently need for the purposes of consistent output
         It will read in a galfast output file and output desired values for database input into a file
@@ -183,6 +183,17 @@ class readGalfast():
         @param [in] filenameList is a list of the galfast output files that will be loaded and processed
 
         @param [in] outFileList is a list of the names of the output files that will be created
+
+        @param [in] kuruczPath is a place to specify a different path to kurucz SED files than the
+        files in the LSST sims_sed_library. If set to None it will default to the LSST library. 
+        Will probably be most useful for those who want to use loadGalfast without downloading the
+        entire LSST sims_sed_library which contains much more than just the star SEDs.
+
+        @param [in] mltPath is the same as kuruczPath except that it specifies a directory for the 
+        mlt SEDs
+
+        @param [in] wdPath is the same as the previous two except that it specifies a path to an
+        alternate white dwarf SED directory.
         """
 
         for filename in filenameList:
@@ -200,6 +211,13 @@ class readGalfast():
         sEDDict = {}
         
         selectStarSED0 = selectStarSED()
+
+        if kuruczPath is not None:
+            selectStarSED0.kuruczDir = kuruczPath
+        if mltPath is not None:
+            selectStarSED0.mltDir = mltPath
+        if wdPath is not None:
+            selectStarSED0.wdDir = wdPath
 
         sEDDict['kurucz'] = selectStarSED0.loadKuruczSEDs()
         sEDDict['mlt'] = selectStarSED0.loadmltSEDs()
