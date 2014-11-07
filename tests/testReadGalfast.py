@@ -331,6 +331,38 @@ class TestReadGalfast(unittest.TestCase):
         os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
         os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
 
+        #Left this in after removing loading SEDs so that we can make sure that if the structure of
+        #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
+        specMap= SpecMap()
+        cls._specMapDict = {}
+        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
+        specFileTypes = ['kurucz', 'mlt','wd']
+        for specStart, specKey in zip(specFileStart, specFileTypes):
+            for key, val in sorted(specMap.subdir_map.iteritems()):
+                if re.match(key, specStart):
+                    cls._specMapDict[specKey] = str(val)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._specMapDict
+
+    def setUp(self):
+
+        #Set up Test Spectra Directory
+        os.makedirs('testReadGalfastSpectra/starSED/kurucz')
+        os.mkdir('testReadGalfastSpectra/starSED/mlt')
+        os.mkdir('testReadGalfastSpectra/starSED/wDs')
+        kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['kurucz'] + '/'
+        mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['mlt'] + '/'
+        wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['wd'] + '/'
+        #Use particular indices to get different types of seds within mlt and wds
+        for kFile, mltFile, wdFile in zip(os.listdir(kDir)[0:20], 
+                                          np.array(os.listdir(mltDir))[np.arange(-10,11)], 
+                                          np.array(os.listdir(wdDir))[np.arange(-10,11)]):
+            shutil.copyfile(str(kDir + kFile), str('testReadGalfastSpectra/starSED/kurucz/' + kFile))
+            shutil.copyfile(str(mltDir + mltFile), str('testReadGalfastSpectra/starSED/mlt/' + mltFile))
+            shutil.copyfile(str(wdDir + wdFile), str('testReadGalfastSpectra/starSED/wDs/' + wdFile))
+
     def tearDown(self):
         if os.path.exists('exampleOutput.txt'):
             os.unlink('exampleOutput.txt')
@@ -349,6 +381,8 @@ class TestReadGalfast(unittest.TestCase):
 
         if os.path.exists('exampleFits.fits'):
              os.unlink('exampleFits.fits')
+
+        shutil.rmtree('testReadGalfastSpectra')
 
     def testParseGalfast(self):
 
@@ -445,8 +479,6 @@ class TestReadGalfast(unittest.TestCase):
             self.assertAlmostEqual(testFluxNorm, lsstFluxNorm)
             self.assertAlmostEqual(testMagDict['r'] - DM - (am * lsstExtCoords[2]), absLSSTr)
 
-
-
     def testConvDMtoKpc(self):
 
         """Make sure Distance Modulus get correctly converted to distance in kpc"""
@@ -507,7 +539,10 @@ class TestReadGalfast(unittest.TestCase):
         exampleTable = pyfits.new_table(cols)
         exampleTable.writeto('exampleFits.fits')
         testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
-                           ['exampleOutput.txt', 'exampleOutputGzip.txt', 'exampleOutputFits.txt'])
+                           ['exampleOutput.txt', 'exampleOutputGzip.txt', 'exampleOutputFits.txt'],
+                           kuruczPath = 'testReadGalfastSpectra/starSED/kurucz/',
+                           mltPath = 'testReadGalfastSpectra/starSED/mlt/',
+                           wdPath = 'testReadGalfastSpectra/starSED/wDs/')
         self.assertTrue(os.path.isfile('exampleOutput.txt'))
         self.assertTrue(os.path.isfile('exampleOutputGzip.txt'))
         self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
@@ -524,4 +559,3 @@ def run(shouldExit = False):
 
 if __name__ == "__main__":
     run(True)
-
