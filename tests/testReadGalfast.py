@@ -1,6 +1,7 @@
 import unittest
 import lsst.utils.tests as utilsTests
 import os
+import shutil
 import numpy as np
 import gzip
 import pyfits
@@ -20,10 +21,8 @@ class TestSelectStarSED(unittest.TestCase):
         os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
         os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
 
-        cls._kurucz  = selectStarSED().loadKuruczSEDs()
-        cls._mlt = selectStarSED().loadmltSEDs()
-        cls._wd = selectStarSED().loadwdSEDs()
-
+        #Left this in after removing loading SEDs so that we can make sure that if the structure of
+        #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
         specMap= SpecMap()
         cls._specMapDict = {}
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
@@ -35,14 +34,29 @@ class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls._kurucz
-        del cls._mlt
-        del cls._wd
         del cls._specMapDict
 
     def setUp(self):
         self.kmTestName = 'km99_9999.fits_g99_9999'
         self.mTestName = 'm99.99Full.dat'
+
+        #Set up Test Spectra Directory
+        os.makedirs('testReadGalfastSpectra/starSED/kurucz')
+        os.mkdir('testReadGalfastSpectra/starSED/mlt')
+        os.mkdir('testReadGalfastSpectra/starSED/wDs')
+        kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['kurucz'] + '/'
+        mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['mlt'] + '/'
+        wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['wd'] + '/'
+        #Use particular indices to get different types of seds within mlt and wds
+        for kFile, mltFile, wdFile in zip(os.listdir(kDir)[0:20], 
+                                          np.array(os.listdir(mltDir))[np.arange(-10,11)], 
+                                          np.array(os.listdir(wdDir))[np.arange(-10,11)]):
+            shutil.copyfile(str(kDir + kFile), str('testReadGalfastSpectra/starSED/kurucz/' + kFile))
+            shutil.copyfile(str(mltDir + mltFile), str('testReadGalfastSpectra/starSED/mlt/' + mltFile))
+            shutil.copyfile(str(wdDir + wdFile), str('testReadGalfastSpectra/starSED/wDs/' + wdFile))
+        #Load in extra kurucz to test negative Logz Readout
+        shutil.copyfile(str(kDir + 'kp01_7000.fits_g40_7240.gz'), 
+                        str('testReadGalfastSpectra/starSED/kurucz/kp01_7000.fits_g40_7240.gz'))        
 
     def tearDown(self):
         if os.path.exists(self.kmTestName):
@@ -54,14 +68,17 @@ class TestSelectStarSED(unittest.TestCase):
         del self.kmTestName
         del self.mTestName
 
+        shutil.rmtree('testReadGalfastSpectra')
+
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
         #Test Matching to Kurucz SEDs
-        testSEDs = self._kurucz
+        loadTestKurucz = selectStarSED()
+        loadTestKurucz.kuruczDir = ('testReadGalfastSpectra/starSED/kurucz/')
+        testSEDs = loadTestKurucz.loadKuruczSEDs()
 
         #Read in a list of the SEDs in the kurucz sims sed directory
-        testKuruczList = os.listdir(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' +
-                                    self._specMapDict['kurucz'] + '/')
+        testKuruczList = os.listdir('testReadGalfastSpectra/starSED/kurucz/')
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
         self.assertEqual(testSEDs['sEDName'], testKuruczList)
@@ -73,7 +90,7 @@ class TestSelectStarSED(unittest.TestCase):
 
         #Test same condition if subset is provided
         testSubsetList = ['km01_7000.fits_g40_7140.gz', 'kp01_7000.fits_g40_7240.gz']
-        testSEDsSubset = selectStarSED().loadKuruczSEDs(subset = testSubsetList)
+        testSEDsSubset = loadTestKurucz.loadKuruczSEDs(subset = testSubsetList)
 
         #Next make sure that correct subset loads if subset is provided
         self.assertEqual(testSEDsSubset['sEDName'], testSubsetList)
@@ -102,11 +119,12 @@ class TestSelectStarSED(unittest.TestCase):
     def testLoadMLT(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for"""
         #Test Matching to mlt SEDs
-        testSEDs = self._mlt
+        loadTestMLT = selectStarSED()
+        loadTestMLT.mltDir = ('testReadGalfastSpectra/starSED/mlt/')
+        testSEDs = loadTestMLT.loadmltSEDs()
 
         #Read in a list of the SEDs in the kurucz sims sed directory
-        testMLTList = os.listdir(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' +
-                                 self._specMapDict['mlt'] + '/')
+        testMLTList = os.listdir('testReadGalfastSpectra/starSED/mlt/')
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
         self.assertItemsEqual(testSEDs['sEDName'], testMLTList)
@@ -143,7 +161,9 @@ class TestSelectStarSED(unittest.TestCase):
         """Test SED loading algorithm by making sure SEDs are all accounted for and
         values for each property have been calculated."""
         #Test Matching to WD SEDs
-        testSEDs = self._wd
+        loadTestWD = selectStarSED()
+        loadTestWD.wdDir = ('testReadGalfastSpectra/starSED/wDs/')
+        testSEDs = loadTestWD.loadwdSEDs()
 
         #Add extra step because WD SEDs are separated into helium and hydrogen
         testSEDNamesLists = []
@@ -152,8 +172,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDNames = [name for nameList in testSEDNamesLists for name in nameList]
 
         #Read in a list of the SEDs in the kurucz sims sed directory
-        testWDList = os.listdir(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' +
-                                self._specMapDict['wd'] + '/')
+        testWDList = os.listdir('testReadGalfastSpectra/starSED/wDs/')
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
         self.assertItemsEqual(testSEDNames, testWDList)
@@ -228,6 +247,10 @@ class TestSelectStarSED(unittest.TestCase):
         """Pull SEDs from each type and make sure that each SED gets matched to itself."""
 
         testMatching = selectStarSED()
+        testMatching.sEDDir = 'testReadGalfastSpectra/'
+        testMatching.kuruczDir = 'testReadGalfastSpectra/starSED/kurucz/'
+        testMatching.mltDir = 'testReadGalfastSpectra/starSED/mlt/'
+        testMatching.wdDir = 'testReadGalfastSpectra/starSED/wDs/'
 
         testSubsetList = []
         testSubsetType = []
@@ -255,9 +278,9 @@ class TestSelectStarSED(unittest.TestCase):
                 testSubsetComp.append(10)
 
         testMatchingDict = {}
-        testMatchingDict['kurucz'] = self._kurucz
-        testMatchingDict['mlt'] = self._mlt
-        testMatchingWDs = self._wd
+        testMatchingDict['kurucz'] = testMatching.loadKuruczSEDs()
+        testMatchingDict['mlt'] = testMatching.loadmltSEDs()
+        testMatchingWDs = testMatching.loadwdSEDs()
         testMatchingDict['wdH'] = testMatchingWDs['H']
         testMatchingDict['wdHE'] = testMatchingWDs['HE']
 
