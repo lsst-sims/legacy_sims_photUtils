@@ -19,7 +19,7 @@ class selectStarSED():
     In addition, provides ways to load in SED colors.
 
     Can easily be used for bandpasses other than sdss by redefining self.filterList, 
-    self.bandpassDict, self.phiArray self.wavelenstep before using other methods after initalizing.
+    self.bandpassDict, self.phiArray, self.wavelenstep before using other methods after initalizing.
     """
 
     def __init__(self):
