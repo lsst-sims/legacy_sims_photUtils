@@ -271,7 +271,7 @@ class EBVbase(object):
 
         ebv = None
         
-        if galacticCoordinates != []:
+        if galacticCoordinates.shape[1] >0:
 
            ebv=numpy.zeros(len(galacticCoordinates[0,:]))
            
