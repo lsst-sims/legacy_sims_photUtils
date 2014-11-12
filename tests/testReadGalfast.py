@@ -16,7 +16,6 @@ class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
         #because SCons only knows about a limited subset of the LSST environment variables
         os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
         os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
@@ -556,6 +555,5 @@ def suite():
 
 def run(shouldExit = False):
     utilsTests.run(suite(),shouldExit)
-
 if __name__ == "__main__":
     run(True)
