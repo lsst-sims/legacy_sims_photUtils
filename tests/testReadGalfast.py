@@ -1,11 +1,11 @@
 import unittest
-import lsst.utils.tests as utilsTests
 import os
 import shutil
 import numpy as np
 import gzip
 import pyfits
 import re
+import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
 from lsst.sims.photUtils.Sed import Sed
