@@ -1,4 +1,5 @@
 import unittest
+import lsst.utils.tests as utilsTests
 import os
 import numpy as np
 import gzip
@@ -14,6 +15,11 @@ class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        #because SCons only knows about a limited subset of the LSST environment variables
+        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
+        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
+
         cls._kurucz  = selectStarSED().loadKuruczSEDs()
         cls._mlt = selectStarSED().loadmltSEDs()
         cls._wd = selectStarSED().loadwdSEDs()
@@ -296,6 +302,12 @@ class TestSelectStarSED(unittest.TestCase):
 
 class TestReadGalfast(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        #because SCons only knows about a limited subset of the LSST environment variables
+        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
+        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
+
     def tearDown(self):
         if os.path.exists('exampleOutput.txt'):
             os.unlink('exampleOutput.txt')
@@ -477,11 +489,16 @@ class TestReadGalfast(unittest.TestCase):
         self.assertTrue(os.path.isfile('exampleOutputGzip.txt'))
         self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
 
+def suite():
+    utilsTests.init()
+    suites = []
+    suites += unittest.makeSuite(TestSelectStarSED)
+    suites += unittest.makeSuite(TestReadGalfast)
+    return unittest.TestSuite(suites)
+
+def run(shouldExit = False):
+    utilsTests.run(suite(),shouldExit)
+
 if __name__ == "__main__":
-
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestSelectStarSED)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestReadGalfast)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
+    run(True)
 
