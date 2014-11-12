@@ -46,16 +46,21 @@ class TestSelectStarSED(unittest.TestCase):
         kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['kurucz'] + '/'
         mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['mlt'] + '/'
         wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['wd'] + '/'
+        kList = os.listdir(kDir)[0:20]
         #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(os.listdir(kDir)[0:20], 
+        for kFile, mltFile, wdFile in zip(kList, 
                                           np.array(os.listdir(mltDir))[np.arange(-10,11)], 
                                           np.array(os.listdir(wdDir))[np.arange(-10,11)]):
             shutil.copyfile(str(kDir + kFile), str('testReadGalfastSpectra/starSED/kurucz/' + kFile))
             shutil.copyfile(str(mltDir + mltFile), str('testReadGalfastSpectra/starSED/mlt/' + mltFile))
             shutil.copyfile(str(wdDir + wdFile), str('testReadGalfastSpectra/starSED/wDs/' + wdFile))
-        #Load in extra kurucz to test negative Logz Readout
-        shutil.copyfile(str(kDir + 'kp01_7000.fits_g40_7240.gz'), 
-                        str('testReadGalfastSpectra/starSED/kurucz/kp01_7000.fits_g40_7240.gz'))        
+        #Load in extra kurucz to test Logz Readout
+        if 'km01_7000.fits_g40_7140.gz' not in kList:
+            shutil.copyfile(str(kDir + 'km01_7000.fits_g40_7140.gz'), 
+                            str('testReadGalfastSpectra/starSED/kurucz/km01_7000.fits_g40_7140.gz'))
+        if 'kp01_7000.fits_g40_7240.gz' not in kList:
+            shutil.copyfile(str(kDir + 'kp01_7000.fits_g40_7240.gz'), 
+                            str('testReadGalfastSpectra/starSED/kurucz/kp01_7000.fits_g40_7240.gz'))        
 
     def tearDown(self):
         if os.path.exists(self.kmTestName):
