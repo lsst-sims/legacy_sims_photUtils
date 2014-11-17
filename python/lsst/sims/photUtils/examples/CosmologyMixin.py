@@ -57,42 +57,33 @@ class ExampleCosmologyMixin():
         redshift = self.column_by_name('redshift')
         modulus = self.column_by_name('distanceModulus')
 
-        #now we need to undo cosmological dimming, since applyAvAndRedshift in
-        #the PhotometryGalaxies mixin applies cosmological dimming, and that will
-        #be redundant with the (1+z) factor in the luminosity distance
-        #(which is used to calculate the cosmological distance modulus)
+        uu += modulus
+        gg += modulus
+        rr += modulus
+        ii += modulus
+        zz += modulus
+        yy += modulus
 
-        brightening = -2.5*numpy.log10(1.0+redshift)
+        ubulge += modulus
+        gbulge += modulus
+        rbulge += modulus
+        ibulge += modulus
+        zbulge += modulus
+        ybulge += modulus
 
-        brightening += modulus
+        udisk += modulus
+        gdisk += modulus
+        rdisk += modulus
+        idisk += modulus
+        zdisk += modulus
+        ydisk += modulus
 
-        uu += brightening
-        gg += brightening
-        rr += brightening
-        ii += brightening
-        zz += brightening
-        yy += brightening
-
-        ubulge += brightening
-        gbulge += brightening
-        rbulge += brightening
-        ibulge += brightening
-        zbulge += brightening
-        ybulge += brightening
-
-        udisk += brightening
-        gdisk += brightening
-        rdisk += brightening
-        idisk += brightening
-        zdisk += brightening
-        ydisk += brightening
-
-        uagn += brightening
-        gagn += brightening
-        ragn += brightening
-        iagn += brightening
-        zagn += brightening
-        yagn += brightening
+        uagn += modulus
+        gagn += modulus
+        ragn += modulus
+        iagn += modulus
+        zagn += modulus
+        yagn += modulus
 
         return numpy.array([
                           uu, gg, rr, ii, zz, yy,

@@ -176,7 +176,14 @@ class PhotometryBase(object):
 
                     sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
                 if redshift != None:
-                    sedList[i].redshiftSED(redshift[i], dimming=True)
+                    #17 November 2014
+                    #We do not apply cosmological dimming here because that is
+                    #a wavelength-independent process and the galaxy's
+                    #magNorm presumably accounts for that (i.e., we are assuming
+                    #that the magNorm is calibrated to the galaxy's apparent
+                    #magnitude in the imsimband, rather than some absolute
+                    #magnitude).
+                    sedList[i].redshiftSED(redshift[i], dimming=False)
                     sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
                     sedList[i].resampleSED(wavelen_match=self.bandPassList[0].wavelen)
 
