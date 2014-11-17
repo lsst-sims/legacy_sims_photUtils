@@ -336,6 +336,11 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
+        if hasattr(self,'cosmology'):
+            distanceModulus = self.column_by_name("distanceModulus")
+        else:
+            distanceModulus = None
+
         componentMags = {}
 
         if componentNames != []:
@@ -344,6 +349,11 @@ class PhotometryGalaxies(PhotometryBase):
 
             for i in range(len(objectNames)):
                 subList = self.manyMagCalc_list(componentSed[i])
+
+                if isinstance(distanceModulus, numpy.ndarray):
+                    for j in range(len(subList)):
+                        subList[j] += distanceModulus[i]
+
                 componentMags[objectNames[i]] = subList
 
         else:

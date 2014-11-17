@@ -53,7 +53,9 @@ import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
 
-__all__ = ["CosmologyObject"]
+from lsst.sims.catalogs.measures.instance import cached
+
+__all__ = ["CosmologyObject", "CosmologyWrapper"]
 
 class CosmologyObject(object):
 
@@ -352,3 +354,38 @@ class CosmologyObject(object):
                 return mod
         else:
             return numpy.where(mod>0.0, mod, 0.0)
+
+class CosmologyWrapper(object):
+    """
+    This class is designed to operate as a mixin for InstanceCatalog classes.
+    It provides a member variable self.cosmology which is an instantiation
+    of the CosmologyObject class.  self.cosmology defaults to the
+    Milliennium Simulation cosmology.  This mixin also provides a method
+    self.setCosmology() which will allow the user to customize self.cosmology.
+    """
+
+    cosmology = CosmologyObject()
+
+    def setCosmology(self, H0=73.0, Om0=0.25, Ode0=None, w0=None, wa=None):
+        """
+        This method customizes the member variable self.cosmology by re-instantiating
+        the CosmologyObject class
+
+        param [in] H0 is the Hubble parameter today in km/s/Mpc
+
+        param [in] Om0 is the density paramter (fraction of critical) associated with matter today
+
+        param [in] Ode0 is the density paratmer associated with dark energy today
+
+        param [in] w0 is the w0 parameter associated with the equation of state of dark energy
+        w = w0 + wa z/(1+z)
+
+        param [in] wa is the wa parameter usesd to set the equation of state of dark energy
+        w = w0 + wa z/(1+z)
+        """
+        self.cosmology = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+
+    @cached
+    def get_distanceModulus(self):
+        redshift = self.column_by_name("redshift")
+        return self.cosmology.distanceModulus(redshift)

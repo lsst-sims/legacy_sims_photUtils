@@ -4,19 +4,18 @@ import lsst.utils.tests as utilsTests
 import numpy
 import scipy
 
-from lsst.sims.photUtils import CosmologyObject, PhotometryGalaxies
-from lsst.sims.photUtils.examples import ExampleCosmologyMixin
+from lsst.sims.photUtils import CosmologyObject, CosmologyWrapper, PhotometryGalaxies
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 
 from lsst.sims.catalogs.generation.utils import myTestGals, makeGalTestDB
 from lsst.sims.photUtils.utils import testGalaxies, comovingDistanceIntegrand, \
                                       cosmologicalOmega
 
-class cosmologicalGalaxyCatalog(testGalaxies, ExampleCosmologyMixin):
-    column_outputs = ['uAbs', 'gAbs', 'rAbs', 'iAbs', 'zAbs', 'yAbs',
-                      'uBulgeAbs', 'gBulgeAbs', 'rBulgeAbs', 'iBulgeAbs', 'zBulgeAbs', 'yBulgeAbs',
-                      'uDiskAbs', 'gDiskAbs', 'rDiskAbs', 'iDiskAbs', 'zDiskAbs', 'yDiskAbs',
-                      'uAgnAbs', 'gAgnAbs', 'rAgnAbs', 'iAgnAbs', 'zAgnAbs', 'yAgnAbs',
+class cosmologicalGalaxyCatalog(testGalaxies, CosmologyWrapper):
+    column_outputs = ['uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+                      'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+                      'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
                       'redshift', 'distanceModulus']
 
 
@@ -486,9 +485,10 @@ class CosmologyMixinUnitTest(unittest.TestCase):
             os.unlink(self.catName)
 
     def tearDown(self):
-        if os.path.exists(self.catName):
-            os.unlink(self.catName)
-        del self.catName
+        pass
+        #if os.path.exists(self.catName):
+        #    os.unlink(self.catName)
+        #del self.catName
 
     def testCosmologyCatalog(self):
         """
