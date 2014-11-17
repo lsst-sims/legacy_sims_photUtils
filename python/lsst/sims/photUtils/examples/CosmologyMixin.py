@@ -1,5 +1,5 @@
 import numpy
-from lsst.sims.photUtils import CosmologyWrapper
+from lsst.sims.photUtils import CosmologyObject
 from lsst.sims.catalogs.measures.instance import compound
 
 __all__ = ["ExampleCosmologyMixin"]
@@ -14,7 +14,7 @@ class ExampleCosmologyMixin():
 
     def get_distanceModulus(self):
         if self.cosmology is None:
-            self.cosmology = CosmologyWrapper()
+            self.cosmology = CosmologyObject()
 
         zz = self.column_by_name('redshift');
         return self.cosmology.distanceModulus(redshift=zz)
