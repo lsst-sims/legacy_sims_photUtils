@@ -336,7 +336,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
-        if hasattr(self,'cosmology'):
+        if 'cosmologicalDistanceModulus' in self.iter_column_names():
             cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
         else:
             cosmologicalDistanceModulus = None
