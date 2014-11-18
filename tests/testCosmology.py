@@ -12,7 +12,7 @@ from lsst.sims.photUtils.utils import testGalaxies, comovingDistanceIntegrand, \
                                       cosmologicalOmega
 
 class cosmologicalGalaxyCatalog(testGalaxies, CosmologyWrapper):
-    column_outputs = ['uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+    column_outputs = ['galid','uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
