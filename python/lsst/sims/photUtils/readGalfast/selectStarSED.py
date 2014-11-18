@@ -20,10 +20,32 @@ class selectStarSED():
 
     Can easily be used for bandpasses other than sdss by redefining self.filterList, 
     self.bandpassDict, self.phiArray, self.wavelenstep before using other methods after initalizing.
+
     """
 
-    def __init__(self):
-        self.sEDDir = os.environ['SIMS_SED_LIBRARY_DIR']
+    def __init__(self, sEDDir = None, kuruczDir = None, mltDir = None, wdDir = None):
+
+        """
+        @param [in] sEDDir is a place to specify a different path to a directory that follows the same
+        directory structure as SIMS_SED_LIBRARY. For instance, a different version of the LSST
+        SIMS_SED_LIBRARY.
+
+        @param [in] kuruczDir is a place to specify a different path to kurucz SED files than the
+        files in the LSST sims_sed_library. If set to None it will default to the LSST library.
+        Will probably be most useful for those who want to use loadGalfast without downloading the
+        entire LSST sims_sed_library which contains much more than just the star SEDs.
+
+        @param [in] mltDir is the same as kuruczPath except that it specifies a directory for the
+        mlt SEDs
+        
+        @param [in] wdDir is the same as the previous two except that it specifies a path to an
+        alternate white dwarf SED directory.                                 
+        """
+
+        if sEDDir == None:
+            self.sEDDir = os.environ['SIMS_SED_LIBRARY_DIR']
+        else:
+            self.sEDDir = sEDDir
         #Use SpecMap to pull the directory locations
         specMap = SpecMap()
         specMapDict = {}
@@ -34,9 +56,20 @@ class selectStarSED():
                 if re.match(key, specStart):
                     specMapDict[specKey] = str(val)
         
-        self.kuruczDir = str(self.sEDDir + '/' + specMapDict['kurucz'] + '/')
-        self.mltDir = str(self.sEDDir + '/' + specMapDict['mlt'] + '/')
-        self.wdDir = str(self.sEDDir + '/' + specMapDict['wd'] + '/')
+        if kuruczDir == None:
+            self.kuruczDir = str(self.sEDDir + '/' + specMapDict['kurucz'] + '/')
+        else:
+            self.kuruczDir = kuruczDir
+
+        if mltDir == None:
+            self.mltDir = str(self.sEDDir + '/' + specMapDict['mlt'] + '/')
+        else:
+            self.mltDir = mltDir
+
+        if wdDir == None:
+            self.wdDir = str(self.sEDDir + '/' + specMapDict['wd'] + '/')
+        else:
+            self.wdDir = wdDir
 
         #Load Bandpasses for SDSS colors to match to galfast output.
         #If somebody wants to use this with bandpasses other than sdss all they have to do is redefine

@@ -175,7 +175,8 @@ class readGalfast():
         distanceKpc = distancePc / 1000.
         return distanceKpc
 
-    def loadGalfast(self, filenameList, outFileList, kuruczPath = None, mltPath = None, wdPath = None):
+    def loadGalfast(self, filenameList, outFileList, sEDPath = None, kuruczPath = None, 
+                    mltPath = None, wdPath = None):
         """
         This is customized for the outputs we currently need for the purposes of consistent output
         It will read in a galfast output file and output desired values for database input into a file
@@ -194,6 +195,7 @@ class readGalfast():
 
         @param [in] wdPath is the same as the previous two except that it specifies a path to an
         alternate white dwarf SED directory.
+
         """
 
         for filename in filenameList:
@@ -210,14 +212,8 @@ class readGalfast():
         #If all files exist and are in proper formats then load seds
         sEDDict = {}
         
-        selectStarSED0 = selectStarSED()
-
-        if kuruczPath is not None:
-            selectStarSED0.kuruczDir = kuruczPath
-        if mltPath is not None:
-            selectStarSED0.mltDir = mltPath
-        if wdPath is not None:
-            selectStarSED0.wdDir = wdPath
+        selectStarSED0 = selectStarSED(sEDDir = sEDPath, kuruczDir = kuruczPath, 
+                                       mltDir = mltPath, wdDir = wdPath)
 
         sEDDict['kurucz'] = selectStarSED0.loadKuruczSEDs()
         sEDDict['mlt'] = selectStarSED0.loadmltSEDs()

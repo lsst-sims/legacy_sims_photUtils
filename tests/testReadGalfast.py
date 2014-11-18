@@ -16,6 +16,7 @@ class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+
         #because SCons only knows about a limited subset of the LSST environment variables
         os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
         os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
@@ -31,58 +32,73 @@ class TestSelectStarSED(unittest.TestCase):
                 if re.match(key, specStart):
                     cls._specMapDict[specKey] = str(val)
 
+        cls.kmTestName = 'km99_9999.fits_g99_9999'
+        cls.mTestName = 'm99.99Full.dat'
+
+        #Set up Test Spectra Directory
+        cls.testSpecDir = 'testReadGalfastSpectra'
+        cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
+        cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
+        cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
+
+        if os.path.exists(cls.testSpecDir):
+            shutil.rmtree(cls.testSpecDir)
+
+        os.makedirs(cls.testKDir)
+        os.mkdir(cls.testMLTDir)
+        os.mkdir(cls.testWDDir)
+        cls.kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['wd'] + '/'
+        kList = os.listdir(cls.kDir)[0:20]
+        #Use particular indices to get different types of seds within mlt and wds
+        for kFile, mltFile, wdFile in zip(kList, 
+                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 
+                                          np.array(os.listdir(cls.wdDir))[np.arange(-10,11)]):
+            shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
+            shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))
+            shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
+        #Load in extra kurucz to test Logz Readout
+        if 'km01_7000.fits_g40_7140.gz' not in kList:
+            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'), 
+                            str(cls.testKDir + 'km01_7000.fits_g40_7140.gz'))
+        if 'kp01_7000.fits_g40_7240.gz' not in kList:
+            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
+                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
+
     @classmethod
     def tearDownClass(cls):
         del cls._specMapDict
+        del cls.kDir
+        del cls.mltDir
+        del cls.wdDir
 
-    def setUp(self):
-        self.kmTestName = 'km99_9999.fits_g99_9999'
-        self.mTestName = 'm99.99Full.dat'
+        if os.path.exists(cls.kmTestName):
+            os.unlink(cls.kmTestName)
 
-        #Set up Test Spectra Directory
-        os.makedirs('testReadGalfastSpectra/starSED/kurucz')
-        os.mkdir('testReadGalfastSpectra/starSED/mlt')
-        os.mkdir('testReadGalfastSpectra/starSED/wDs')
-        kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['kurucz'] + '/'
-        mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['mlt'] + '/'
-        wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['wd'] + '/'
-        kList = os.listdir(kDir)[0:20]
-        #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(kList, 
-                                          np.array(os.listdir(mltDir))[np.arange(-10,11)], 
-                                          np.array(os.listdir(wdDir))[np.arange(-10,11)]):
-            shutil.copyfile(str(kDir + kFile), str('testReadGalfastSpectra/starSED/kurucz/' + kFile))
-            shutil.copyfile(str(mltDir + mltFile), str('testReadGalfastSpectra/starSED/mlt/' + mltFile))
-            shutil.copyfile(str(wdDir + wdFile), str('testReadGalfastSpectra/starSED/wDs/' + wdFile))
-        #Load in extra kurucz to test Logz Readout
-        if 'km01_7000.fits_g40_7140.gz' not in kList:
-            shutil.copyfile(str(kDir + 'km01_7000.fits_g40_7140.gz'), 
-                            str('testReadGalfastSpectra/starSED/kurucz/km01_7000.fits_g40_7140.gz'))
-        if 'kp01_7000.fits_g40_7240.gz' not in kList:
-            shutil.copyfile(str(kDir + 'kp01_7000.fits_g40_7240.gz'), 
-                            str('testReadGalfastSpectra/starSED/kurucz/kp01_7000.fits_g40_7240.gz'))        
+        if os.path.exists(cls.mTestName):
+            os.unlink(cls.mTestName)
 
-    def tearDown(self):
-        if os.path.exists(self.kmTestName):
-            os.unlink(self.kmTestName)
+        del cls.kmTestName
+        del cls.mTestName
 
-        if os.path.exists(self.mTestName):
-            os.unlink(self.mTestName)
+        shutil.rmtree(cls.testSpecDir)
 
-        del self.kmTestName
-        del self.mTestName
-
-        shutil.rmtree('testReadGalfastSpectra')
+    def testDefaults(self):
+        """Make sure that if there are Nones for the init that they load the correct dirs"""
+        loadTest = selectStarSED()
+        self.assertEqual(loadTest.kuruczDir, self.kDir)
+        self.assertEqual(loadTest.mltDir, self.mltDir)
+        self.assertEqual(loadTest.wdDir, self.wdDir)
 
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
         #Test Matching to Kurucz SEDs
-        loadTestKurucz = selectStarSED()
-        loadTestKurucz.kuruczDir = ('testReadGalfastSpectra/starSED/kurucz/')
+        loadTestKurucz = selectStarSED(kuruczDir = self.testKDir)
         testSEDs = loadTestKurucz.loadKuruczSEDs()
 
         #Read in a list of the SEDs in the kurucz sims sed directory
-        testKuruczList = os.listdir('testReadGalfastSpectra/starSED/kurucz/')
+        testKuruczList = os.listdir(self.testKDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
         self.assertEqual(testSEDs['sEDName'], testKuruczList)
@@ -123,12 +139,11 @@ class TestSelectStarSED(unittest.TestCase):
     def testLoadMLT(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for"""
         #Test Matching to mlt SEDs
-        loadTestMLT = selectStarSED()
-        loadTestMLT.mltDir = ('testReadGalfastSpectra/starSED/mlt/')
+        loadTestMLT = selectStarSED(mltDir = self.testMLTDir)
         testSEDs = loadTestMLT.loadmltSEDs()
 
         #Read in a list of the SEDs in the kurucz sims sed directory
-        testMLTList = os.listdir('testReadGalfastSpectra/starSED/mlt/')
+        testMLTList = os.listdir(self.testMLTDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
         self.assertItemsEqual(testSEDs['sEDName'], testMLTList)
@@ -165,8 +180,7 @@ class TestSelectStarSED(unittest.TestCase):
         """Test SED loading algorithm by making sure SEDs are all accounted for and
         values for each property have been calculated."""
         #Test Matching to WD SEDs
-        loadTestWD = selectStarSED()
-        loadTestWD.wdDir = ('testReadGalfastSpectra/starSED/wDs/')
+        loadTestWD = selectStarSED(wdDir = self.testWDDir)
         testSEDs = loadTestWD.loadwdSEDs()
 
         #Add extra step because WD SEDs are separated into helium and hydrogen
@@ -176,7 +190,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDNames = [name for nameList in testSEDNamesLists for name in nameList]
 
         #Read in a list of the SEDs in the kurucz sims sed directory
-        testWDList = os.listdir('testReadGalfastSpectra/starSED/wDs/')
+        testWDList = os.listdir(self.testWDDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
         self.assertItemsEqual(testSEDNames, testWDList)
@@ -250,11 +264,8 @@ class TestSelectStarSED(unittest.TestCase):
 
         """Pull SEDs from each type and make sure that each SED gets matched to itself."""
 
-        testMatching = selectStarSED()
-        testMatching.sEDDir = 'testReadGalfastSpectra/'
-        testMatching.kuruczDir = 'testReadGalfastSpectra/starSED/kurucz/'
-        testMatching.mltDir = 'testReadGalfastSpectra/starSED/mlt/'
-        testMatching.wdDir = 'testReadGalfastSpectra/starSED/wDs/'
+        testMatching = selectStarSED(sEDDir = self.testSpecDir, kuruczDir = self.testKDir,
+                                     mltDir = self.testMLTDir, wdDir = self.testWDDir)
 
         testSubsetList = []
         testSubsetType = []
@@ -331,6 +342,7 @@ class TestReadGalfast(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+
         #because SCons only knows about a limited subset of the LSST environment variables
         os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
         os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
@@ -346,28 +358,33 @@ class TestReadGalfast(unittest.TestCase):
                 if re.match(key, specStart):
                     cls._specMapDict[specKey] = str(val)
 
+        #Set up Test Spectra Directory
+        cls.testSpecDir = 'testReadGalfastSpectra'
+        cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
+        cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
+        cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
+
+        if os.path.exists(cls.testSpecDir):
+            shutil.rmtree(cls.testSpecDir)
+
+        os.makedirs(cls.testKDir)
+        os.mkdir(cls.testMLTDir)
+        os.mkdir(cls.testWDDir)
+        cls.kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['wd'] + '/'
+        #Use particular indices to get different types of seds within mlt and wds
+        for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20], 
+                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 
+                                          np.array(os.listdir(cls.wdDir))[np.arange(-10,11)]):
+            shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
+            shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))
+            shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
+
     @classmethod
     def tearDownClass(cls):
         del cls._specMapDict
 
-    def setUp(self):
-
-        #Set up Test Spectra Directory
-        os.makedirs('testReadGalfastSpectra/starSED/kurucz')
-        os.mkdir('testReadGalfastSpectra/starSED/mlt')
-        os.mkdir('testReadGalfastSpectra/starSED/wDs')
-        kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['kurucz'] + '/'
-        mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['mlt'] + '/'
-        wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + self._specMapDict['wd'] + '/'
-        #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(os.listdir(kDir)[0:20], 
-                                          np.array(os.listdir(mltDir))[np.arange(-10,11)], 
-                                          np.array(os.listdir(wdDir))[np.arange(-10,11)]):
-            shutil.copyfile(str(kDir + kFile), str('testReadGalfastSpectra/starSED/kurucz/' + kFile))
-            shutil.copyfile(str(mltDir + mltFile), str('testReadGalfastSpectra/starSED/mlt/' + mltFile))
-            shutil.copyfile(str(wdDir + wdFile), str('testReadGalfastSpectra/starSED/wDs/' + wdFile))
-
-    def tearDown(self):
         if os.path.exists('exampleOutput.txt'):
             os.unlink('exampleOutput.txt')
 
@@ -386,7 +403,7 @@ class TestReadGalfast(unittest.TestCase):
         if os.path.exists('exampleFits.fits'):
              os.unlink('exampleFits.fits')
 
-        shutil.rmtree('testReadGalfastSpectra')
+        shutil.rmtree(cls.testSpecDir)
 
     def testParseGalfast(self):
 
@@ -544,9 +561,9 @@ class TestReadGalfast(unittest.TestCase):
         exampleTable.writeto('exampleFits.fits')
         testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
                            ['exampleOutput.txt', 'exampleOutputGzip.txt', 'exampleOutputFits.txt'],
-                           kuruczPath = 'testReadGalfastSpectra/starSED/kurucz/',
-                           mltPath = 'testReadGalfastSpectra/starSED/mlt/',
-                           wdPath = 'testReadGalfastSpectra/starSED/wDs/')
+                           kuruczPath = self.testKDir,
+                           mltPath = self.testMLTDir,
+                           wdPath = self.testWDDir)
         self.assertTrue(os.path.isfile('exampleOutput.txt'))
         self.assertTrue(os.path.isfile('exampleOutputGzip.txt'))
         self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
