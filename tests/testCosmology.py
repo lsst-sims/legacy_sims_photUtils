@@ -18,6 +18,14 @@ class cosmologicalGalaxyCatalog(testGalaxies, CosmologyWrapper):
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
                       'redshift', 'cosmologicalDistanceModulus']
 
+class absoluteGalaxyCatalog(testGalaxies):
+    column_outputs = ['galid','uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+                      'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+                      'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
+                      'redshift']
+
+
 
 class CosmologyUnitTest(unittest.TestCase):
 
@@ -468,9 +476,10 @@ class CosmologyMixinUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dbName = 'cosmologyTestDB.db'
+        cls.dbSize=100
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
-        makeGalTestDB(size=100, seedVal=1, filename=cls.dbName)
+        makeGalTestDB(size=cls.dbSize, seedVal=1, filename=cls.dbName)
 
     @classmethod
     def tearDownClass(cls):
@@ -478,6 +487,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
             os.unlink(cls.dbName)
 
         del cls.dbName
+        del cls.dbSize
 
     def setUp(self):
         self.catName = 'cosmologyCatalog.txt'
@@ -497,6 +507,27 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         dbObj = myTestGals(address=address)
         cat = cosmologicalGalaxyCatalog(dbObj)
         cat.write_catalog(self.catName)
+
+    def testCatalogDistanceModulus(self):
+        """
+        Does cosmologicalDistanceModulus get properly applied
+        """
+        address = 'sqlite:///' + self.dbName
+        dbObj = myTestGals(address=address)
+        cosmoCat = cosmologicalGalaxyCatalog(dbObj)
+        controlCat = absoluteGalaxyCatalog(dbObj)
+        cosmoIter = cosmoCat.iter_catalog(chunk_size=self.dbSize)
+        controlIter = controlCat.iter_catalog(chunk_size=self.dbSize)
+
+        cosmology = CosmologyObject()
+
+        for (cosmoRow, controlRow) in zip(cosmoIter, controlIter):
+            modulus = cosmology.distanceModulus(controlRow[25])
+            self.assertEqual(cosmoRow[0], controlRow[0])
+            self.assertEqual(cosmoRow[25], controlRow[25])
+            self.assertEqual(cosmoRow[26], modulus)
+            for i in range(1,25):
+                self.assertAlmostEqual(cosmoRow[i], controlRow[i] + modulus, 6)
 
 def suite():
     utilsTests.init()
