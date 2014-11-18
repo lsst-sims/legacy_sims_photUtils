@@ -337,9 +337,9 @@ class PhotometryGalaxies(PhotometryBase):
         """
 
         if hasattr(self,'cosmology'):
-            distanceModulus = self.column_by_name("distanceModulus")
+            cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
         else:
-            distanceModulus = None
+            cosmologicalDistanceModulus = None
 
         componentMags = {}
 
@@ -350,9 +350,9 @@ class PhotometryGalaxies(PhotometryBase):
             for i in range(len(objectNames)):
                 subList = self.manyMagCalc_list(componentSed[i])
 
-                if isinstance(distanceModulus, numpy.ndarray):
+                if isinstance(cosmologicalDistanceModulus, numpy.ndarray):
                     for j in range(len(subList)):
-                        subList[j] += distanceModulus[i]
+                        subList[j] += cosmologicalDistanceModulus[i]
 
                 componentMags[objectNames[i]] = subList
 

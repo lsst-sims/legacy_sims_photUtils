@@ -386,6 +386,6 @@ class CosmologyWrapper(object):
         self.cosmology = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
     @cached
-    def get_distanceModulus(self):
+    def get_cosmologicalDistanceModulus(self):
         redshift = self.column_by_name("redshift")
         return self.cosmology.distanceModulus(redshift)

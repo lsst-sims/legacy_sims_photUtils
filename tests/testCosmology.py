@@ -16,7 +16,7 @@ class cosmologicalGalaxyCatalog(testGalaxies, CosmologyWrapper):
                       'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
                       'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
                       'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
-                      'redshift', 'distanceModulus']
+                      'redshift', 'cosmologicalDistanceModulus']
 
 
 class CosmologyUnitTest(unittest.TestCase):
