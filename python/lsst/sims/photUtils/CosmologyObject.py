@@ -361,7 +361,13 @@ class CosmologyWrapper(object):
     It provides a member variable self.cosmology which is an instantiation
     of the CosmologyObject class.  self.cosmology defaults to the
     Milliennium Simulation cosmology.  This mixin also provides a method
-    self.setCosmology() which will allow the user to customize self.cosmology.
+    self.setCosmology() which will allow the user to customize self.cosmology
+    and a getter for the column cosmologicalDistanceModulus that reflects the
+    effect of the luminosity distance on a galaxy's component magnitudes.
+
+    NOTE: one should only include this mixin in catalogs whose magNorm is
+    normalized to an absolute magnitude of some sort (i.e. the magnitude if
+    the galaxy was at redshift=0)
     """
 
     cosmology = CosmologyObject()
@@ -387,5 +393,9 @@ class CosmologyWrapper(object):
 
     @cached
     def get_cosmologicalDistanceModulus(self):
+        """
+        getter for cosmologicalDistanceModulus (the effect of the luminosity
+        distance on a galaxy's component magnitudes)
+        """
         redshift = self.column_by_name("redshift")
         return self.cosmology.distanceModulus(redshift)
