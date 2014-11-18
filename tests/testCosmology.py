@@ -485,10 +485,9 @@ class CosmologyMixinUnitTest(unittest.TestCase):
             os.unlink(self.catName)
 
     def tearDown(self):
-        pass
-        #if os.path.exists(self.catName):
-        #    os.unlink(self.catName)
-        #del self.catName
+        if os.path.exists(self.catName):
+            os.unlink(self.catName)
+        del self.catName
 
     def testCosmologyCatalog(self):
         """
