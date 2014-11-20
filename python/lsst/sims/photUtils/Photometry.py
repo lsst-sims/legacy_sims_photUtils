@@ -642,11 +642,9 @@ class PhotometryStars(PhotometryBase):
         return magList
 
 
-    def meta_magnitudes_getter(self, idNames):
+    def meta_magnitudes_getter(self):
         """
         This method does most of the work for stellar magnitude getters
-
-        @param [in] idNames is a list of object names
 
         @param [out] output is a 2d numpy array in which the rows are the bandpasses
         from bandPassList and the columns are the objects from idNames
@@ -662,7 +660,7 @@ class PhotometryStars(PhotometryBase):
 
         for i in range(len(self.bandPassList)):
             row = []
-            for iObject in range(len(idNames)):
+            for iObject in range(len(sedNames)):
                 row.append(magList[iObject][i])
 
             if output is None:
@@ -701,7 +699,6 @@ class PhotometryStars(PhotometryBase):
         getter for LSST stellar magnitudes
 
         """
-        idNames = self.column_by_name('id')
         bandPassNames = ['u','g','r','i','z','y']
 
         """
@@ -714,5 +711,5 @@ class PhotometryStars(PhotometryBase):
             self.loadBandPassesFromFiles(bandPassNames)
             self.setupPhiArray_dict()
 
-        return self.meta_magnitudes_getter(idNames)
+        return self.meta_magnitudes_getter()
 

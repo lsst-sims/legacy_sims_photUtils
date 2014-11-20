@@ -106,7 +106,7 @@ class cartoonPhotometryStars(PhotometryStars):
 
             self.setupPhiArray_dict()
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter()
 
         #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
