@@ -44,6 +44,28 @@ class Variability(PhotometryBase):
     def calculate_stellar_variability(self, u0=None, g0=None, r0=None, i0=None, z0=None, y0=None,
                                       varParams=None, magNorm=None):
 
+        """
+        @param [in] u0 is a numpy array of base u magnitudes
+
+        @param [in] g0 is a numpy array of base g magnitudes
+
+        @param [in] r0 is a numpy array of base r magnitudes
+
+        @param [in] i0 is a numpy array of base i magnitudes
+
+        @param [in] z0 is a numpy array of base z magnitudes
+
+        @param [in] y0 is a numpy array of base y magnitudes
+
+        @param [in] varParams is a numpy array of var param strings
+        (a unicode string defining the variabilty model; read in from the database)
+
+        @param [in] magNorm a numpy array of normalizing magnitudes
+
+        @param [out] a numpy array of ugrizy magnitudes with variability added
+        as well as a variable magNorm
+        """
+
         uuout = []
         ggout = []
         rrout = []
