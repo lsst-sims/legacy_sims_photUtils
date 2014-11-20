@@ -614,7 +614,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
 
-    def calculate_magnitudes(self, idNames):
+    def calculate_magnitudes(self, sedList):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of lists of magnitudes
@@ -627,22 +627,19 @@ class PhotometryStars(PhotometryBase):
         identifier, rather than their sedFilename, because different stars
         can have identical SEDs but different magnitudes.
 
-        @param [in] idNames is a list of names uniquely identifying the objects being considered
-
-        magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
-
+        @param [in] sedList is a list of Sed objects corresponding to the objects
+        for which you want to do photometry
+        
+        @param [out] magList will be a list of lists corresponding to the magnitudes
+        of the objects you want output
         """
 
-        sedNames = self.column_by_name('sedFilename')
-        magNorm = self.column_by_name('magNorm')
-        sedList = self.loadSeds(sedNames,magNorm = magNorm)
-
-        magDict = {}
-        for (name,sed) in zip(idNames,sedList):
+        magList = []
+        for sed in sedList:
             subList = self.manyMagCalc_list(sed)
-            magDict[name] = subList
+            magList.append(subList)
 
-        return magDict
+        return magList
 
 
     def meta_magnitudes_getter(self, idNames):
@@ -655,14 +652,18 @@ class PhotometryStars(PhotometryBase):
         from bandPassList and the columns are the objects from idNames
 
         """
+        
+        sedNames = self.column_by_name('sedFilename')
+        magNorm = self.column_by_name('magNorm')
+        sedList = self.loadSeds(sedNames, magNorm=magNorm)
 
-        magDict = self.calculate_magnitudes(idNames)
+        magList = self.calculate_magnitudes(sedList)
         output = None
 
         for i in range(len(self.bandPassList)):
             row = []
-            for name in idNames:
-                row.append(magDict[name][i])
+            for iObject in range(len(idNames)):
+                row.append(magList[iObject][i])
 
             if output is None:
                 output = numpy.array(row)
