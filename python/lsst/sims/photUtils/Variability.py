@@ -41,6 +41,47 @@ class Variability(PhotometryBase):
             raise RuntimeError("sims_sed_library must be setup to compute variability because it contains"+
                                " the lightcurves")
 
+    def calculate_stellar_variability(self, u0=None, g0=None, r0=None, i0=None, z0=None, y0=None,
+                                      varParams=None, magNorm=None):
+
+        uuout = []
+        ggout = []
+        rrout = []
+        iiout = []
+        zzout = []
+        yyout = []
+        magNormVarOut = []
+
+        i=0
+        for vv in varParams:
+            if vv != numpy.unicode_("None"):
+                deltaMag, deltaMagNorm = self.applyVariability(vv)
+                uuout.append(u0[i]+deltaMag['u'])
+                ggout.append(g0[i]+deltaMag['g'])
+                rrout.append(r0[i]+deltaMag['r'])
+                iiout.append(i0[i]+deltaMag['i'])
+                zzout.append(z0[i]+deltaMag['z'])
+                yyout.append(y0[i]+deltaMag['y'])
+
+                if deltaMagNorm != None and (not numpy.isnan(magNorm[i])):
+                    magNormVarOut.append(magNorm[i]+deltaMagNorm)
+                else:
+                    magNormVarOut.append(-999.0)
+            else:
+                uuout.append(u0[i])
+                ggout.append(g0[i])
+                rrout.append(r0[i])
+                iiout.append(i0[i])
+                zzout.append(z0[i])
+                yyout.append(y0[i])
+
+                if self.obs_metadata.bandpass:
+                    magNormVarOut.append(magNorm[i])
+                else:
+                    magNormVarOut.append(-999.0)
+            i+=1
+
+        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])
 
     @compound('lsst_u_var','lsst_g_var','lsst_r_var','lsst_i_var',
     'lsst_z_var','lsst_y_var','stellar_magNorm_var')
@@ -58,47 +99,9 @@ class Variability(PhotometryBase):
 
         magNorm = self.column_by_name('magNorm')
 
-
         varParams = self.column_by_name('varParamStr')
-
-        uuout = []
-        ggout = []
-        rrout = []
-        iiout = []
-        zzout = []
-        yyout = []
-        magNormVarOut = []
-
-        i=0
-        for vv in varParams:
-            if vv != numpy.unicode_("None"):
-                deltaMag, deltaMagNorm = self.applyVariability(vv)
-                uuout.append(uu[i]+deltaMag['u'])
-                ggout.append(gg[i]+deltaMag['g'])
-                rrout.append(rr[i]+deltaMag['r'])
-                iiout.append(ii[i]+deltaMag['i'])
-                zzout.append(zz[i]+deltaMag['z'])
-                yyout.append(yy[i]+deltaMag['y'])
-
-                if deltaMagNorm != None and (not numpy.isnan(magNorm[i])):
-                    magNormVarOut.append(magNorm[i]+deltaMagNorm)
-                else:
-                    magNormVarOut.append(-999.0)
-            else:
-                uuout.append(uu[i])
-                ggout.append(gg[i])
-                rrout.append(rr[i])
-                iiout.append(ii[i])
-                zzout.append(zz[i])
-                yyout.append(yy[i])
-
-                if self.obs_metadata.bandpass:
-                    magNormVarOut.append(magNorm[i])
-                else:
-                    magNormVarOut.append(-999.0)
-            i+=1
-
-        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])
+        return self.calculate_stellar_variability(u0=uu, g0=gg, r0=gg, i0=ii, z0=zz, y0=yy,
+                                                  magNorm=magNorm, varParams=varParams)
 
     @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
               'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
