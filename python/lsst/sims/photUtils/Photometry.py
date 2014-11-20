@@ -629,7 +629,7 @@ class PhotometryStars(PhotometryBase):
 
         @param [in] sedList is a list of Sed objects corresponding to the objects
         for which you want to do photometry
-        
+
         @param [out] magList will be a list of lists corresponding to the magnitudes
         of the objects you want output
         """
@@ -652,7 +652,7 @@ class PhotometryStars(PhotometryBase):
         from bandPassList and the columns are the objects from idNames
 
         """
-        
+
         sedNames = self.column_by_name('sedFilename')
         magNorm = self.column_by_name('magNorm')
         sedList = self.loadSeds(sedNames, magNorm=magNorm)
