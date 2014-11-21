@@ -80,6 +80,7 @@ class Variability(PhotometryBase):
         for vv in varParams:
             if vv != numpy.unicode_("None"):
                 deltaMag, deltaMagNorm = self.applyVariability(vv, expmjd=expmjd)
+
                 uuout.append(u0[i]+deltaMag['u'])
                 ggout.append(g0[i]+deltaMag['g'])
                 rrout.append(r0[i]+deltaMag['r'])
@@ -215,6 +216,7 @@ class Variability(PhotometryBase):
         for vv in varParams:
             if vv != numpy.unicode_("None"):
                 deltaMag, deltaMagNorm=self.applyVariability(vv, expmjd=self.obs_metadata.mjd)
+
                 uAgnOut.append(uAgn[i]+deltaMag['u'])
                 gAgnOut.append(gAgn[i]+deltaMag['g'])
                 rAgnOut.append(rAgn[i]+deltaMag['r'])
