@@ -347,7 +347,7 @@ class Variability(PhotometryBase):
         params = varCmd['pars']
         output = self._methodRegistry[method](self, params,expmjd)
 
-        if self.bandpass is not None:
+        if hasattr(self,'bandpass') and self.bandpass is not None:
             deltaMagNorm = output[self.bandpass]
         else:
             deltaMagNorm = None
