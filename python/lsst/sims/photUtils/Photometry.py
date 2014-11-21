@@ -80,7 +80,7 @@ class PhotometryBase(object):
         self.waveLenStep = None
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self, sedList, magNorm=15.0, resample_same=False):
+    def loadSeds(self, sedList, magNorm=15.0, resample_same=False, specFileMap=None):
         """
         Takes the list of filename sedList and returns an array of SED objects.
 
@@ -97,6 +97,12 @@ class PhotometryBase(object):
         @param [out] sedOut is a list of Sed objects
 
         """
+        
+        if specFileMap is None:
+            try:
+                specFileMap = self.specFileMap
+            except:
+                raise RuntimeError("WARNING cannot call loadSeds; no specFileMap")
 
         dataDir=os.getenv('SIMS_SED_LIBRARY_DIR')
 
@@ -118,7 +124,7 @@ class PhotometryBase(object):
 
             if sedName not in uniqueSedDict:
                 sed = Sed()
-                sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
+                sed.readSED_flambda(os.path.join(dataDir, specFileMap[sedName]))
 
                 if resample_same:
                     if firstsed:
