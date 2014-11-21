@@ -167,7 +167,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
 
             self.setupPhiArray_dict()
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter()
 
         ##########################################################################
         #Everything below this comment exists only for the purposes of the unittest.

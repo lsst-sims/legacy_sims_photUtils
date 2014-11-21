@@ -305,15 +305,13 @@ class PhotometryGalaxies(PhotometryBase):
     galaxies.  It assumes that we want LSST filters.
     """
 
-    def calculate_component_magnitudes(self,objectNames, componentNames, \
+    def calculate_component_magnitudes(self,componentNames, \
                                        magNorm = 15.0, internalAv = None, redshift = None):
 
         """
         Calculate the magnitudes for different components (disk, bulge, agn, etc) of galaxies.
         This method is designed to be used such that you feed it all of the disk Seds from your data
         base and it returns the associated magnitudes.  Then you feed it all of the bulge Seds, etc.
-
-        @param [in] objectNames is the name of the galaxies (the whole galaxies)
 
         @param [in] componentNames gives the name of the SED filenames
 
@@ -323,28 +321,29 @@ class PhotometryGalaxies(PhotometryBase):
 
         @param [in] redshift is pretty self-explanatory
 
-        @param [out] componentMags is a dict of lists such that
-        magnitude["objectname"][i] will return the magnitude in the ith
+        @param [out] componentMags is a list of lists such that
+        magnitude[j][i] will return the magnitude in the ith
         for the associated component Sed
 
         """
 
-        componentMags = {}
+        componentMags = []
 
         if componentNames != []:
             componentSed = self.loadSeds(componentNames, magNorm = magNorm)
             self.applyAvAndRedshift(componentSed, internalAv = internalAv, redshift = redshift)
 
-            for i in range(len(objectNames)):
-                subList = self.manyMagCalc_list(componentSed[i])
-                componentMags[objectNames[i]] = subList
+            for ss in componentSed:
+                subList = self.manyMagCalc_list(ss)
+                componentMags.append(subList)
 
         else:
+            objects = self.column_by_name(self.db_obj.idColKey)
             subList=[]
             for b in self.bandPassList:
                 subList.append(None)
-            for i in range(len(objectNames)):
-                componentMags[objectNames[i]]=subList
+            for i in range(len(objects)):
+                componentMags.append(subList)
 
         return componentMags
 
@@ -380,7 +379,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         return outMag
 
-    def calculate_magnitudes(self, idNames):
+    def calculate_magnitudes(self):
         """
         Take the array of bandpasses in self.bandPassList and the array of galaxy
         names idNames ane return a dict of dicts of lists of magnitudes
@@ -395,15 +394,13 @@ class PhotometryGalaxies(PhotometryBase):
         because it is possible for galaxies to have the same sed filenames but
         different normalizations
 
-        @param [in] idNames is a list of names uniquely identifying the objects whose magnitudes
-        are being calculated
-
-
-        @param [out] masterDict is a dict of magnitudes such that
-        masterDict['AAA']['BBB'][i] is the magnitude in the ith bandPass of component BBB of galaxy AAA
+        @param [out] masterList is a list of dicts of magnitudes such that
+        masterDict[j]['BBB'][i] is the magnitude in the ith bandPass of component BBB of the jth galaxy
 
 
         """
+
+        idNames = self.column_by_name(self.db_obj.idColKey)
 
         diskNames=self.column_by_name('sedFilenameDisk')
         bulgeNames=self.column_by_name('sedFilenameBulge')
@@ -418,40 +415,40 @@ class PhotometryGalaxies(PhotometryBase):
 
         redshift = self.column_by_name('redshift')
 
-        diskMags = self.calculate_component_magnitudes(idNames,diskNames,magNorm = diskmn, \
+        diskMags = self.calculate_component_magnitudes(diskNames,magNorm = diskmn, \
                         internalAv = diskAv, redshift = redshift)
 
-        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,magNorm = bulgemn, \
+        bulgeMags = self.calculate_component_magnitudes(bulgeNames,magNorm = bulgemn, \
                         internalAv = bulgeAv, redshift = redshift)
 
-        agnMags = self.calculate_component_magnitudes(idNames,agnNames,magNorm = agnmn, \
+        agnMags = self.calculate_component_magnitudes(agnNames,magNorm = agnmn, \
                         redshift = redshift)
 
         total_mags = []
-        masterDict = {}
+        masterList = []
 
         for i in range(len(idNames)):
             total_mags=[]
             j=0
             for ff in self.bandPassList:
-                total_mags.append(self.sum_magnitudes(disk = diskMags[idNames[i]][j],
-                                bulge = bulgeMags[idNames[i]][j], agn = agnMags[idNames[i]][j]))
+                total_mags.append(self.sum_magnitudes(disk = diskMags[i][j],
+                                bulge = bulgeMags[i][j], agn = agnMags[i][j]))
 
                 j += 1
 
             subDict={}
             subDict["total"] = total_mags
-            subDict["bulge"] = bulgeMags[idNames[i]]
-            subDict["disk"] = diskMags[idNames[i]]
-            subDict["agn"] = agnMags[idNames[i]]
+            subDict["bulge"] = bulgeMags[i]
+            subDict["disk"] = diskMags[i]
+            subDict["agn"] = agnMags[i]
 
-            masterDict[idNames[i]] = subDict
-
-
-        return masterDict
+            masterList.append(subDict)
 
 
-    def meta_magnitudes_getter(self, idNames):
+        return masterList
+
+
+    def meta_magnitudes_getter(self):
         """
         This method will return the magnitudes for galaxies in the bandpasses stored in self.bandPassList
 
@@ -459,7 +456,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
-        magDict=self.calculate_magnitudes(idNames)
+        magList=self.calculate_magnitudes()
 
         firstRowTotal = []
         firstRowDisk = []
@@ -479,21 +476,21 @@ class PhotometryGalaxies(PhotometryBase):
             rowBulge = []
             rowAgn = []
 
-            for name in idNames:
-                rowTotal.append(magDict[name]["total"][i])
+            for galdict in magList:
+                rowTotal.append(galdict["total"][i])
 
-                if magDict[name]["bulge"]:
-                    rowBulge.append(magDict[name]["bulge"][i])
+                if galdict["bulge"]:
+                    rowBulge.append(galdict["bulge"][i])
                 else:
                     rowBulge.append(failure)
 
-                if magDict[name]["disk"]:
-                    rowDisk.append(magDict[name]["disk"][i])
+                if galdict["disk"]:
+                    rowDisk.append(galdict["disk"][i])
                 else:
                     rowDisk.append(failure)
 
-                if magDict[name]["agn"]:
-                    rowAgn.append(magDict[name]["agn"][i])
+                if galdict["agn"]:
+                    rowAgn.append(galdict["agn"][i])
                 else:
                     rowAgn.append(failure)
 
@@ -590,7 +587,6 @@ class PhotometryGalaxies(PhotometryBase):
         Getter for LSST galaxy magnitudes
 
         """
-        idNames = self.column_by_name('galid')
         bandPassNames = ['u','g','r','i','z','y']
 
         """
@@ -603,7 +599,7 @@ class PhotometryGalaxies(PhotometryBase):
             self.loadBandPassesFromFiles(bandPassNames)
             self.setupPhiArray_dict()
 
-        return self.meta_magnitudes_getter(idNames)
+        return self.meta_magnitudes_getter()
 
 
 
