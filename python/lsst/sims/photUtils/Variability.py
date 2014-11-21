@@ -42,7 +42,7 @@ class Variability(PhotometryBase):
                                " the lightcurves")
 
     def calculate_stellar_variability(self, u0=None, g0=None, r0=None, i0=None, z0=None, y0=None,
-                                      varParams=None, magNorm=None):
+                                      varParams=None, magNorm=None, expmjd=None):
 
         """
         @param [in] u0 is a numpy array of base u magnitudes
@@ -62,6 +62,8 @@ class Variability(PhotometryBase):
 
         @param [in] magNorm a numpy array of normalizing magnitudes
 
+        @param [in] expmjd is the MJD of the observation
+
         @param [out] a numpy array of ugrizy magnitudes with variability added
         as well as a variable magNorm
         """
@@ -77,7 +79,7 @@ class Variability(PhotometryBase):
         i=0
         for vv in varParams:
             if vv != numpy.unicode_("None"):
-                deltaMag, deltaMagNorm = self.applyVariability(vv)
+                deltaMag, deltaMagNorm = self.applyVariability(vv, expmjd=expmjd)
                 uuout.append(u0[i]+deltaMag['u'])
                 ggout.append(g0[i]+deltaMag['g'])
                 rrout.append(r0[i]+deltaMag['r'])
@@ -123,7 +125,8 @@ class Variability(PhotometryBase):
 
         varParams = self.column_by_name('varParamStr')
         return self.calculate_stellar_variability(u0=uu, g0=gg, r0=gg, i0=ii, z0=zz, y0=yy,
-                                                  magNorm=magNorm, varParams=varParams)
+                                                  magNorm=magNorm, varParams=varParams,
+                                                  expmjd=self.obs_metadata.mjd)
 
     @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
               'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
@@ -211,7 +214,7 @@ class Variability(PhotometryBase):
         i=0
         for vv in varParams:
             if vv != numpy.unicode_("None"):
-                deltaMag, deltaMagNorm=self.applyVariability(vv)
+                deltaMag, deltaMagNorm=self.applyVariability(vv, expmjd=self.obs_metadata.mjd)
                 uAgnOut.append(uAgn[i]+deltaMag['u'])
                 gAgnOut.append(gAgn[i]+deltaMag['g'])
                 rAgnOut.append(rAgn[i]+deltaMag['r'])
@@ -308,7 +311,7 @@ class Variability(PhotometryBase):
                             agnDict['i'],agnDict['z'],agnDict['y']])
 
 
-    def applyVariability(self, varParams):
+    def applyVariability(self, varParams, expmjd=None):
         """
         varParams will be the varParamStr column from the data base
 
@@ -323,6 +326,8 @@ class Variability(PhotometryBase):
         @param [in] varParams is a string object (readable by json) that tells
         us which variability model to use
 
+        @param [in] expmjd is the MJD of the observation
+
         @param [out] output is a dict of magnitude offsets keyed to the filter name
         e.g. output['u'] is the magnitude offset in the u band
 
@@ -332,10 +337,12 @@ class Variability(PhotometryBase):
         if self.variabilityInitialized == False:
             self.initializeVariability(doCache=True)
 
+        if expmjd is None:
+            expmjd = self.obs_metadata.mjd
+
         varCmd = json.loads(varParams)
         method = varCmd['varMethodName']
         params = varCmd['pars']
-        expmjd=self.obs_metadata.mjd
         output = self._methodRegistry[method](self, params,expmjd)
 
         if self.bandpass is not None:
