@@ -62,6 +62,8 @@ class Variability(PhotometryBase):
 
         @param [in] magNorm a numpy array of normalizing magnitudes
 
+        @param [in] expmjd is the MJD of the observation
+
         @param [out] a numpy array of ugrizy magnitudes with variability added
         as well as a variable magNorm
         """
@@ -323,6 +325,8 @@ class Variability(PhotometryBase):
 
         @param [in] varParams is a string object (readable by json) that tells
         us which variability model to use
+
+        @param [in] expmjd is the MJD of the observation
 
         @param [out] output is a dict of magnitude offsets keyed to the filter name
         e.g. output['u'] is the magnitude offset in the u band
