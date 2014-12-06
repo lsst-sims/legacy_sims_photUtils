@@ -115,7 +115,7 @@ class Bandpass:
         self.sb=None
         self.phi=None
         self.bandpassname = None
-        if (wavelen!=None) & (sb!=None):
+        if (wavelen is not None) and (sb is not None):
             self.setBandpass(wavelen, sb, wavelen_min, wavelen_max, wavelen_step)
 
         return
@@ -138,11 +138,11 @@ class Bandpass:
         """
         Return appropriate wavelen limits (_min, _max, _step) if passed None values.
         """
-        if wavelen_min == None:
+        if wavelen_min is None:
             wavelen_min = self.wavelen_min
-        if wavelen_max == None:
+        if wavelen_max is None:
             wavelen_max = self.wavelen_max
-        if wavelen_step == None:
+        if wavelen_step is None:
             wavelen_step = self.wavelen_step
         return wavelen_min, wavelen_max, wavelen_step
 
@@ -155,7 +155,7 @@ class Bandpass:
         """
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
         # Check data type.
-        if (isinstance(wavelen, numpy.ndarray)==False) | (isinstance(sb, numpy.ndarray)==False):
+        if (isinstance(wavelen, numpy.ndarray)==False) or (isinstance(sb, numpy.ndarray)==False):
             raise ValueError("Wavelen and sb arrays must be numpy arrays.")
         # Check data matches in length.
         if (len(wavelen)!=len(sb)):
@@ -223,12 +223,12 @@ class Bandpass:
         wavelen = []
         sb = []
         for line in f:
-            if line.startswith("#") | line.startswith('$') | line.startswith('!'):
+            if line.startswith("#") or line.startswith('$') or line.startswith('!'):
                 continue
             values = line.split()
             if len(values)<2:
                 continue
-            if (values[0] == '$') | (values[0] =='#') | (values[0] =='!'):
+            if (values[0] == '$') or (values[0] =='#') or (values[0] =='!'):
                 continue
             wavelen.append(float(values[0]))
             sb.append(float(values[1]))
@@ -301,16 +301,16 @@ class Bandpass:
         Also does data integrity check on wavelen/sb if not self.
         """
         update_self = False
-        if (wavelen is None) | (sb is None):
+        if (wavelen is None) or (sb is None):
             # Then one of the arrays was not passed - check if true for both.
-            if (wavelen is not None) | (sb is not None):
+            if (wavelen is not None) or (sb is not None):
                 # Then only one of the arrays was passed - raise exception.
                 raise ValueError("Must either pass *both* wavelen/sb pair, or use self defaults")
             # Okay, neither wavelen or sb was passed in - using self only.
             update_self = True
         else:
             # Both of the arrays were passed in - check their validity.
-            if (isinstance(wavelen, numpy.ndarray)==False) | (isinstance(sb, numpy.ndarray)==False):
+            if (isinstance(wavelen, numpy.ndarray)==False) or (isinstance(sb, numpy.ndarray)==False):
                 raise ValueError("Must pass wavelen/sb as numpy arrays")
             if len(wavelen)!=len(sb):
                 raise ValueError("Must pass equal length wavelen/sb arrays")
@@ -339,10 +339,10 @@ class Bandpass:
         # Start check if data is already gridded.
         need_regrid=True
         # First check minimum/maximum and first step in array.
-        if ((wavelen_min_in == wavelen_min) & (wavelen_max_in == wavelen_max)):
+        if ((wavelen_min_in == wavelen_min) and (wavelen_max_in == wavelen_max)):
             # Then check on step size.
             stepsize = numpy.unique(numpy.diff(wavelen))
-            if (len(stepsize) == 1) & (stepsize[0] == wavelen_step):
+            if (len(stepsize) == 1) and (stepsize[0] == wavelen_step):
                 need_regrid = False
         # At this point, need_grid=True unless it's proven to be False, so return value.
         return need_regrid
@@ -363,7 +363,7 @@ class Bandpass:
             wavelen = self.wavelen
             sb = self.sb
         # Now, on with the resampling.
-        if (wavelen.min() > wavelen_max) | (wavelen.max() < wavelen_min):
+        if (wavelen.min() > wavelen_max) or (wavelen.max() < wavelen_min):
             raise Exception("No overlap between known wavelength range and desired wavelength range.")
         # Set up gridded wavelength.
         wavelen_grid = numpy.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
@@ -492,10 +492,10 @@ class Bandpass:
         # Useful if you build a throughput up from components and need to record the combined value.
         f = open(filename, 'w')
         # Print header.
-        if print_header != None:
+        if print_header is not None:
             print >>f, "#", print_header
         if write_phi:
-            if self.phi==None:
+            if self.phi is None:
                 self.sbTophi()
             print >>f, "# Wavelength(nm)  Throughput(0-1)   Phi"
         else:
