@@ -11,7 +11,7 @@ class TestSedWavelenLimits(unittest.TestCase):
         self.bandpasswavelen = np.arange(self.wmin, self.wmax+.5, 1)
         self.bandpasssb = np.ones(len(self.bandpasswavelen))
         self.testbandpass = Bandpass(wavelen=self.bandpasswavelen, sb=self.bandpasssb)
-        
+
     def tearDown(self):
         del self.bandpasswavelen
         del self.bandpasssb
@@ -47,7 +47,7 @@ class TestSedWavelenLimits(unittest.TestCase):
         testsed = Sed(wavelen=sedwavelen, flambda=sedflambda)
         with warnings.catch_warnings(record=True) as wa:
             testsed.resampleSED(wavelen_match=self.testbandpass.wavelen)
-            self.assertEqual(len(wa), 1)            
+            self.assertEqual(len(wa), 1)
             self.assertTrue('non-overlap' in str(wa[-1].message))
         self.assertTrue(np.isnan(testsed.flambda[-1:]))
         sedwavelen = np.arange(self.wmin+50, self.wmax, 1)
@@ -59,7 +59,7 @@ class TestSedWavelenLimits(unittest.TestCase):
             self.assertTrue('non-overlap' in str(wa[-1].message))
         self.assertTrue(np.isnan(testsed.flambda[0]))
         self.assertTrue(np.isnan(testsed.flambda[49]))
-                            
+
     def testSedMagErrors(self):
         """Test error handling at mag and adu calculation levels of sed."""
         sedwavelen = np.arange(self.wmin+50, self.wmax, 1)
@@ -110,13 +110,12 @@ class TestSedName(unittest.TestCase):
         newname = testsed.name + '_Z' + '%.2f' %(redshift)
         testsed.name = newname
         self.assertEqual(testsed.name, newname)
-        
 
-        
-        
 if __name__ == "__main__":
     suitelist = []
     suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedWavelenLimits))
     suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedName))
     suite = unittest.TestSuite(suitelist)
-    unittest.TextTestRunner(verbosity=2).run(suite)                            
+    #unittest.TextTestRunner(verbosity=2).run(suite)
+
+    unittest.main()
