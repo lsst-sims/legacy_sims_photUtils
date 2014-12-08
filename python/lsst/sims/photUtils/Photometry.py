@@ -164,8 +164,8 @@ class PhotometryBase(object):
         wavelen_sampled=[]
 
         for i in range(len(sedList)):
-            if sedList[i].wavelen != None:
-                if internalAv != None:
+            if sedList[i].wavelen is not None:
+                if internalAv is not None:
                     #setupCCMab only depends on the wavelen array
                     #because this is supposed to be the same for every
                     #SED object in sedList, it is only called once for
@@ -175,7 +175,7 @@ class PhotometryBase(object):
                         wavelen_sampled=sedList[i].wavelen
 
                     sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
-                if redshift != None:
+                if redshift is not None:
                     #17 November 2014
                     #We do not apply cosmological dimming here because that is
                     #a wavelength-independent process and the galaxy's
@@ -202,7 +202,7 @@ class PhotometryBase(object):
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
 
         magList = []
-        if sedobj.wavelen != None:
+        if sedobj.wavelen is not None:
             sedobj.resampleSED(wavelen_match=self.bandPassList[0].wavelen)
 
             #for some reason, moving this call to flambdaTofnu()
@@ -289,7 +289,7 @@ class PhotometryBase(object):
             for i in range(len(magnitudes[filterName])):
                 mm = magnitudes[filterName][i]
 
-                if mm != None:
+                if mm is not None:
 
                     xx=10**(0.4*(mm - self.obs_metadata.m5(filterName)))
                     ss = (0.04 - gamma[filterName])*xx + \
