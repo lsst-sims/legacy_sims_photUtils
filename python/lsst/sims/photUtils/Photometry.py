@@ -164,8 +164,8 @@ class PhotometryBase(object):
         wavelen_sampled=[]
 
         for i in range(len(sedList)):
-            if sedList[i].wavelen != None:
-                if internalAv != None:
+            if sedList[i].wavelen is not None:
+                if internalAv is not None:
                     #setupCCMab only depends on the wavelen array
                     #because this is supposed to be the same for every
                     #SED object in sedList, it is only called once for
@@ -175,8 +175,15 @@ class PhotometryBase(object):
                         wavelen_sampled=sedList[i].wavelen
 
                     sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
-                if redshift != None:
-                    sedList[i].redshiftSED(redshift[i], dimming=True)
+                if redshift is not None:
+                    #17 November 2014
+                    #We do not apply cosmological dimming here because that is
+                    #a wavelength-independent process and the galaxy's
+                    #magNorm presumably accounts for that (i.e., we are assuming
+                    #that the magNorm is calibrated to the galaxy's apparent
+                    #magnitude in the imsimband, rather than some absolute
+                    #magnitude).
+                    sedList[i].redshiftSED(redshift[i], dimming=False)
                     sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
                     sedList[i].resampleSED(wavelen_match=self.bandPassList[0].wavelen)
 
@@ -195,7 +202,7 @@ class PhotometryBase(object):
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
 
         magList = []
-        if sedobj.wavelen != None:
+        if sedobj.wavelen is not None:
             sedobj.resampleSED(wavelen_match=self.bandPassList[0].wavelen)
 
             #for some reason, moving this call to flambdaTofnu()
@@ -282,7 +289,7 @@ class PhotometryBase(object):
             for i in range(len(magnitudes[filterName])):
                 mm = magnitudes[filterName][i]
 
-                if mm != None:
+                if mm is not None:
 
                     xx=10**(0.4*(mm - self.obs_metadata.m5(filterName)))
                     ss = (0.04 - gamma[filterName])*xx + \
@@ -329,6 +336,11 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
+        if 'cosmologicalDistanceModulus' in self.iter_column_names():
+            cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
+        else:
+            cosmologicalDistanceModulus = None
+
         componentMags = {}
 
         if componentNames != []:
@@ -337,6 +349,11 @@ class PhotometryGalaxies(PhotometryBase):
 
             for i in range(len(objectNames)):
                 subList = self.manyMagCalc_list(componentSed[i])
+
+                if isinstance(cosmologicalDistanceModulus, numpy.ndarray):
+                    for j in range(len(subList)):
+                        subList[j] += cosmologicalDistanceModulus[i]
+
                 componentMags[objectNames[i]] = subList
 
         else:

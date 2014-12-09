@@ -1,14 +1,14 @@
 """
 31 October 2014
 
-The class CosmologyWrapper provides an interface for the methods in astropy.cosmology that
+The class CosmologyObject provides an interface for the methods in astropy.cosmology that
 we anticipate using the most.
 
 The methods in astropy.cosmology are accessed by instantiating a cosmology object and calling
-methods that belong to that object.  CosmologyWrapper interfaces with this by declaring a member
-variable self.activeCosmology.  Methods provided by CosmologyWrapper call the equivalent
+methods that belong to that object.  CosmologyObject interfaces with this by declaring a member
+variable self.activeCosmology.  Methods provided by CosmologyObject call the equivalent
 astropy.cosmology methods on self.activeCosmology.  activeCosmology is set by calling
-CosmologyWrapper.initializeCosmology(args...) with the appropriate cosmological paramters.
+CosmologyObject.initializeCosmology(args...) with the appropriate cosmological paramters.
 Passing in no parametrs loads the Millennium Simulation cosmology (Springel et al 2005, Nature 435, 629
 or arXiv:astro-ph/0504097).
 
@@ -16,26 +16,26 @@ The difficulty with all of this that, between the version of astropy shipped wit
 the most modern version (v0.4), the API for astropy.cosmology has changed in two ways.
 
 One difference is that methods like comoving_distance have gone from returning floats to returning
-astropy.Quantity's which come with both a value and units.  To deal with this, CosmologyWrapper
-checks dir(cosmology.comoving_distance()) etc.  If 'units' is defined, CosmologyWrapper sets
+astropy.Quantity's which come with both a value and units.  To deal with this, CosmologyObject
+checks dir(cosmology.comoving_distance()) etc.  If 'units' is defined, CosmologyObject sets
 member variables such as self.distanceUnits, self.hUnits, and self.modulusUnits defining the units
 in which we want to return those quantities.  When you call the wrapper for comoving_distance,
-CosmologyWrapper will make sure that the output is returned in the units we expect (Mpc).
-The expected units are set in CosmologyWrapper.setUnits()
+CosmologyObject will make sure that the output is returned in the units we expect (Mpc).
+The expected units are set in CosmologyObject.setUnits()
 
 The other API difference is in how 'default_cosmology' is stored.  astropy.cosmology allows
 the user to set a default cosmology that the system stores so that the user does not have to
 constantly redeclare the same cosmology object at different points in the code.  Unfortunately,
 the naming conventions for the methods to set and retrieve this default cosmology have changed
-between recent versions of astropy.  CosmologyWrapper deals with this change in API using
-CosmologyWrapper.setCurrent() (called automatically by CosmologyWrapper's __init__)
-and CosmologyWrapper.getCurrent(), which returns a cosmology object containing the activeCosmology
-contained in CosmologyWrapper.
+between recent versions of astropy.  CosmologyObject deals with this change in API using
+CosmologyObject.setCurrent() (called automatically by CosmologyObject's __init__)
+and CosmologyObject.getCurrent(), which returns a cosmology object containing the activeCosmology
+contained in CosmologyObject.
 
 A user who wants to interact with the naked
 astropy.cosmology methods can run something like
 
-uu = CosmologyWrapper() #which sets activeCosmology to the Millennium Simulation cosmology
+uu = CosmologyObject() #which sets activeCosmology to the Millennium Simulation cosmology
 myUniverse = uu.getCurrent()
 
 myUniverse now contains a cosmology object which is equivalent to the activeCosmology.  Direct
@@ -46,16 +46,18 @@ dd = myUniverse.comoving_distance(1.0) #comoving distance to redshift z=1
 will now work.
 
 
-The methods in CosmologyWrapper have been tested on astropy v0.2.5 and v0.4.2
+The methods in CosmologyObject have been tested on astropy v0.2.5 and v0.4.2
 """
 
 import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
 
-__all__ = ["CosmologyWrapper"]
+from lsst.sims.catalogs.measures.instance import cached
 
-class CosmologyWrapper(object):
+__all__ = ["CosmologyObject", "CosmologyWrapper"]
+
+class CosmologyObject(object):
 
     def __init__(self, H0=73.0, Om0=0.25, Ode0=None, w0=None, wa=None):
         """
@@ -136,7 +138,7 @@ class CosmologyWrapper(object):
         elif 'set_current' in dir(cosmology):
             cosmology.set_current(universe)
         else:
-            raise RuntimeError("CosmologyWrapper.setCurrent does not know how to handle this version of astropy")
+            raise RuntimeError("CosmologyObject.setCurrent does not know how to handle this version of astropy")
 
         self.activeCosmology = universe
         self.setUnits()
@@ -352,3 +354,48 @@ class CosmologyWrapper(object):
                 return mod
         else:
             return numpy.where(mod>0.0, mod, 0.0)
+
+class CosmologyWrapper(object):
+    """
+    This class is designed to operate as a mixin for InstanceCatalog classes.
+    It provides a member variable self.cosmology which is an instantiation
+    of the CosmologyObject class.  self.cosmology defaults to the
+    Milliennium Simulation cosmology.  This mixin also provides a method
+    self.setCosmology() which will allow the user to customize self.cosmology
+    and a getter for the column cosmologicalDistanceModulus that reflects the
+    effect of the luminosity distance on a galaxy's component magnitudes.
+
+    NOTE: one should only include this mixin in catalogs whose magNorm is
+    normalized to an absolute magnitude of some sort (i.e. the magnitude if
+    the galaxy was at redshift=0)
+    """
+
+    cosmology = CosmologyObject()
+
+    def setCosmology(self, H0=73.0, Om0=0.25, Ode0=None, w0=None, wa=None):
+        """
+        This method customizes the member variable self.cosmology by re-instantiating
+        the CosmologyObject class
+
+        param [in] H0 is the Hubble parameter today in km/s/Mpc
+
+        param [in] Om0 is the density paramter (fraction of critical) associated with matter today
+
+        param [in] Ode0 is the density paratmer associated with dark energy today
+
+        param [in] w0 is the w0 parameter associated with the equation of state of dark energy
+        w = w0 + wa z/(1+z)
+
+        param [in] wa is the wa parameter usesd to set the equation of state of dark energy
+        w = w0 + wa z/(1+z)
+        """
+        self.cosmology = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+
+    @cached
+    def get_cosmologicalDistanceModulus(self):
+        """
+        getter for cosmologicalDistanceModulus (the effect of the luminosity
+        distance on a galaxy's component magnitudes)
+        """
+        redshift = self.column_by_name("redshift")
+        return self.cosmology.distanceModulus(redshift)

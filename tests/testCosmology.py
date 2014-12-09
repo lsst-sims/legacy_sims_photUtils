@@ -4,20 +4,27 @@ import lsst.utils.tests as utilsTests
 import numpy
 import scipy
 
-from lsst.sims.photUtils import CosmologyWrapper, PhotometryGalaxies
-from lsst.sims.photUtils.examples import ExampleCosmologyMixin
+from lsst.sims.photUtils import CosmologyObject, CosmologyWrapper, PhotometryGalaxies
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 
 from lsst.sims.catalogs.generation.utils import myTestGals, makeGalTestDB
 from lsst.sims.photUtils.utils import testGalaxies, comovingDistanceIntegrand, \
                                       cosmologicalOmega
 
-class cosmologicalGalaxyCatalog(testGalaxies, ExampleCosmologyMixin):
-    column_outputs = ['uAbs', 'gAbs', 'rAbs', 'iAbs', 'zAbs', 'yAbs',
-                      'uBulgeAbs', 'gBulgeAbs', 'rBulgeAbs', 'iBulgeAbs', 'zBulgeAbs', 'yBulgeAbs',
-                      'uDiskAbs', 'gDiskAbs', 'rDiskAbs', 'iDiskAbs', 'zDiskAbs', 'yDiskAbs',
-                      'uAgnAbs', 'gAgnAbs', 'rAgnAbs', 'iAgnAbs', 'zAgnAbs', 'yAgnAbs',
-                      'redshift', 'distanceModulus']
+class cosmologicalGalaxyCatalog(testGalaxies, CosmologyWrapper):
+    column_outputs = ['galid','uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+                      'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+                      'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
+                      'redshift', 'cosmologicalDistanceModulus']
+
+class absoluteGalaxyCatalog(testGalaxies):
+    column_outputs = ['galid','uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+                      'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+                      'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+                      'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn',
+                      'redshift']
+
 
 
 class CosmologyUnitTest(unittest.TestCase):
@@ -35,7 +42,7 @@ class CosmologyUnitTest(unittest.TestCase):
         """
         H0 = 50.0
         for Om0 in numpy.arange(start=0.1, stop=0.91, step=0.4):
-            universe = CosmologyWrapper(H0=H0, Om0=Om0)
+            universe = CosmologyObject(H0=H0, Om0=Om0)
 
             Og0 = universe.OmegaPhotons(redshift=0.0)
             Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -75,7 +82,7 @@ class CosmologyUnitTest(unittest.TestCase):
             for w0 in numpy.arange(start=-1.1, stop=-0.89, step=0.2):
                 for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
 
-                    universe = CosmologyWrapper(H0=H0, Om0=Om0, w0=w0, wa=wa)
+                    universe = CosmologyObject(H0=H0, Om0=Om0, w0=w0, wa=wa)
 
                     Og0 = universe.OmegaPhotons(redshift=0.0)
                     Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -117,7 +124,7 @@ class CosmologyUnitTest(unittest.TestCase):
         for Om0 in numpy.arange(start=0.1, stop=0.95, step=0.4):
             for w0 in numpy.arange(start=-1.5, stop=-0.49, step=1.0):
 
-                universe = CosmologyWrapper(H0=H0, Om0=Om0, w0=w0)
+                universe = CosmologyObject(H0=H0, Om0=Om0, w0=w0)
 
                 Og0 = universe.OmegaPhotons(redshift=0.0)
                 Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -160,7 +167,7 @@ class CosmologyUnitTest(unittest.TestCase):
         for Om0 in numpy.arange(start=0.15, stop=0.96, step=0.4):
             for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
 
-                universe = CosmologyWrapper(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                universe = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                 Og0 = universe.OmegaPhotons(redshift=0.0)
                 Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -203,7 +210,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 for w0 in numpy.arange(start=-1.1, stop = -0.89, step=0.2):
                     for wa in numpy.arange(start=-0.1, stop=0.15, step=0.2):
 
-                        universe = CosmologyWrapper(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         Og0 = universe.OmegaPhotons(redshift=0.0)
                         Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -249,7 +256,7 @@ class CosmologyUnitTest(unittest.TestCase):
             for Ode0 in numpy.arange(1.0-Om0-0.1, stop = 1.0-Om0+0.11, step=0.2):
                 for w0 in numpy.arange(start=-1.1, stop = -0.89, step=0.2):
 
-                    universe = CosmologyWrapper(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0)
+                    universe = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0)
 
                     Og0 = universe.OmegaPhotons(redshift=0.0)
                     Onu0 = universe.OmegaNeutrinos(redshift=0.0)
@@ -300,7 +307,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
                     for wa in numpy.arange(start=-0.1, stop=0.115, step=0.02):
 
-                        universe = CosmologyWrapper(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
                         Og0 = universe.OmegaPhotons()
                         Onu0 = universe.OmegaNeutrinos()
 
@@ -324,7 +331,7 @@ class CosmologyUnitTest(unittest.TestCase):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
                     for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
 
-                        universe = CosmologyWrapper(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
                         Og0 = universe.OmegaPhotons()
@@ -353,13 +360,13 @@ class CosmologyUnitTest(unittest.TestCase):
         """
 
         H0 = 56.0
-        universe=CosmologyWrapper()
+        universe=CosmologyObject()
         for Om0 in numpy.arange(start=0.15, stop=0.56, step=0.2):
             for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
                     for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
 
-                        universe = CosmologyWrapper(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
                         Og0 = universe.OmegaPhotons()
@@ -390,13 +397,13 @@ class CosmologyUnitTest(unittest.TestCase):
         """
         H0 = 73.0
 
-        universe=CosmologyWrapper()
+        universe=CosmologyObject()
         for Om0 in numpy.arange(start=0.15, stop=0.56, step=0.2):
             for Ode0 in numpy.arange(start=1.0-Om0-0.1, stop=1.0-Om0+0.11, step=0.2):
                 for w0 in numpy.arange(start=-1.1, stop=-0.85, step=0.2):
                     for wa in numpy.arange(start=-0.1, stop=0.11, step=0.2):
 
-                        universe = CosmologyWrapper(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
 
                         sqrtkCurvature = numpy.sqrt(numpy.abs(universe.OmegaCurvature()))*universe.H()/self.speedOfLight
                         Og0 = universe.OmegaPhotons()
@@ -426,7 +433,7 @@ class CosmologyUnitTest(unittest.TestCase):
         Test to make sure that the distance modulus is set to zero if the distance modulus method
         returns a negative number
         """
-        universe = CosmologyWrapper()
+        universe = CosmologyObject()
         ztest = [0.0, 1.0, 2.0, 0.0, 3.0]
         mm = universe.distanceModulus(redshift=ztest)
         self.assertEqual(mm[0], 0.0)
@@ -444,7 +451,7 @@ class CosmologyUnitTest(unittest.TestCase):
             for Ode0 in numpy.arange(start=1.0-Om0-0.2, stop=1.0-Om0+0.2, step=0.39):
                 for w0 in numpy.arange(start=-1.2, stop=-0.7, step=0.49):
                     for wa in numpy.arange(start=-0.2, stop=0.2, step=0.39):
-                        universe = CosmologyWrapper(Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+                        universe = CosmologyObject(Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
                         testUniverse = universe.getCurrent()
 
                         for zz in numpy.arange(start=1.0, stop=2.1, step=1.0):
@@ -469,9 +476,10 @@ class CosmologyMixinUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dbName = 'cosmologyTestDB.db'
+        cls.dbSize=100
         if os.path.exists(cls.dbName):
             os.unlink(cls.dbName)
-        makeGalTestDB(size=100, seedVal=1, filename=cls.dbName)
+        makeGalTestDB(size=cls.dbSize, seedVal=1, filename=cls.dbName)
 
     @classmethod
     def tearDownClass(cls):
@@ -479,6 +487,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
             os.unlink(cls.dbName)
 
         del cls.dbName
+        del cls.dbSize
 
     def setUp(self):
         self.catName = 'cosmologyCatalog.txt'
@@ -498,6 +507,27 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         dbObj = myTestGals(address=address)
         cat = cosmologicalGalaxyCatalog(dbObj)
         cat.write_catalog(self.catName)
+
+    def testCatalogDistanceModulus(self):
+        """
+        Does cosmologicalDistanceModulus get properly applied
+        """
+        address = 'sqlite:///' + self.dbName
+        dbObj = myTestGals(address=address)
+        cosmoCat = cosmologicalGalaxyCatalog(dbObj)
+        controlCat = absoluteGalaxyCatalog(dbObj)
+        cosmoIter = cosmoCat.iter_catalog(chunk_size=self.dbSize)
+        controlIter = controlCat.iter_catalog(chunk_size=self.dbSize)
+
+        cosmology = CosmologyObject()
+
+        for (cosmoRow, controlRow) in zip(cosmoIter, controlIter):
+            modulus = cosmology.distanceModulus(controlRow[25])
+            self.assertEqual(cosmoRow[0], controlRow[0])
+            self.assertEqual(cosmoRow[25], controlRow[25])
+            self.assertEqual(cosmoRow[26], modulus)
+            for i in range(1,25):
+                self.assertAlmostEqual(cosmoRow[i], controlRow[i] + modulus, 6)
 
 def suite():
     utilsTests.init()
