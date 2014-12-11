@@ -51,7 +51,7 @@ class selectGalaxySED():
 
         sedList = []
 
-        for fileName in files[0:10]:
+        for fileName in files:
             if numOn % 100 == 0:
                 print 'Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles)
  
@@ -73,17 +73,10 @@ class selectGalaxySED():
 
         return sedList
 
-#    def loadCatalog(self, catFile, redshiftCol = None, filters = ('u', 'g', 'r', 'i', 'z'), filterCols = (1,2,3,4,5)):
-        
-#        if os.path.isfile(catFile) == False:
-#            raise RuntimeError, '***File does not exist'
+    def matchToRestFrame(self, sedList, catMags, filterList = ('u', 'g', 'r', 'i', 'z'),
+                         throughputDir = os.getenv('SDSS_THROUGHPUTS'), filterRoot = 'sdss_'):
 
-#        if filename.endswith(('.txt', '.gz', '.fits')):
-
-    def matchRestFrameSEDs(self, sedList, catMags, filterList = ('u', 'g', 'r', 'i', 'z'),
-                           throughputDir = os.getenv('SDSS_THROUGHPUTS'), filterRoot = 'sdss_'):
-
-        #Set up photometry pieces for SDSS Mags
+        #Set up photometry to calculate model Mags
         galPhot = phot()
         bandpassDict = galPhot.loadBandpasses(filterlist = filterList,
                                                    dataDir = throughputDir,
@@ -91,9 +84,9 @@ class selectGalaxySED():
         phiArray, wavelenstep = galPhot.setupPhiArray_dict(bandpassDict, filterList)
 
         colorName = []
-        specNum = 0
         sedMatches = []
 
+        #Find the colors for all model SEDs
         for galSpec in sedList:
             fileSED = Sed()
             fileSED.setSED(galSpec.wave, flambda = galSpec.flux)
@@ -103,8 +96,8 @@ class selectGalaxySED():
                 colorInfo.append(sEDMagDict[filterList[filtNum]] - sEDMagDict[filterList[filtNum+1]])
             colorInfo.append(galSpec.name)
             colorName.append(colorInfo)
-            specNum += 1
 
+        #Match the catalog colors to models
         for matchMags in catMags:
             matchColors = []
             for filtNum in range(0, len(matchMags)-1):
@@ -117,4 +110,46 @@ class selectGalaxySED():
                 distanceArray.append(distance)
             sedMatch = sedList[np.argmin(distanceArray)].name
             sedMatches.append(sedMatch)
+        return sedMatches
+
+    def matchToObserved(self, sedList, catRedshifts, catMags, filterList = ('u','g','r','i','z'),
+                        throughputDir = os.getenv('SDSS_THROUGHPUTS'), filterRoot = 'sdss_'):
+
+        #Set up photometry to calculate model Mags
+        galPhot = phot()
+        bandpassDict = galPhot.loadBandpasses(filterlist = filterList,
+                                              dataDir = throughputDir,
+                                              filterroot = filterRoot)
+        phiArray, wavelenstep = galPhot.setupPhiArray_dict(bandpassDict, filterList)
+        
+        sedMatches = []
+
+        for matchMags, matchRedshift in zip(catMags, catRedshifts):
+            matchColors = []
+            for filtNum in range(0, len(matchMags)-1):
+                matchColors.append(matchMags[filtNum]-matchMags[filtNum+1])
+                
+            colorName = []
+
+            for galSpec in sedList:
+                fileSED = Sed()
+                fileSED.setSED(galSpec.wave, flambda = galSpec.flux)
+                fileSED.redshiftSED(matchRedshift)
+                sEDMagDict = galPhot.manyMagCalc_dict(fileSED, phiArray, wavelenstep, 
+                                                      bandpassDict, filterList)
+                colorInfo = []
+                for filtNum in range(0, len(filterList)-1):
+                    colorInfo.append(sEDMagDict[filterList[filtNum]] - sEDMagDict[filterList[filtNum+1]])
+                colorInfo.append(galSpec.name)
+                colorName.append(colorInfo)
+            
+            distanceArray = []
+            for modelColor in colorName:
+                distance = 0.
+                for filtNum in range(0, len(filterList)-1):
+                    distance += np.power((modelColor[filtNum] - matchColors[filtNum]),2)
+                distanceArray.append(distance)
+            sedMatch = sedList[np.argmin(distanceArray)].name
+            sedMatches.append(sedMatch)
+
         return sedMatches
