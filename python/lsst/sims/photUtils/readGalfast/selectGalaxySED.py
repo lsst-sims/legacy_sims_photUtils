@@ -83,7 +83,7 @@ class selectGalaxySED():
                                                    filterroot = filterRoot)
         phiArray, wavelenstep = galPhot.setupPhiArray_dict(bandpassDict, filterList)
 
-        colorName = []
+        modelColors = []
         sedMatches = []
 
         #Find the colors for all model SEDs
@@ -94,22 +94,29 @@ class selectGalaxySED():
             colorInfo = []
             for filtNum in range(0, len(filterList)-1):
                 colorInfo.append(sEDMagDict[filterList[filtNum]] - sEDMagDict[filterList[filtNum+1]])
-            colorInfo.append(galSpec.name)
-            colorName.append(colorInfo)
+            modelColors.append(colorInfo)
+        print modelColors[0:2], modelColors[525], sedList[0].name, sedList[1].name
+        modelColors = np.transpose(modelColors)
 
         #Match the catalog colors to models
-        for matchMags in catMags:
-            matchColors = []
-            for filtNum in range(0, len(matchMags)-1):
-                matchColors.append(matchMags[filtNum]-matchMags[filtNum+1])
-            distanceArray = []
-            for modelColor in colorName:
-                distance = 0.
-                for filtNum in range(0, len(filterList)-1):
-                    distance += np.power((modelColor[filtNum] - matchColors[filtNum]),2)
-                distanceArray.append(distance)
-            sedMatch = sedList[np.argmin(distanceArray)].name
-            sedMatches.append(sedMatch)
+        numCatMags = len(catMags)
+        numOn = 0
+        matchColors = []
+
+        for filtNum in range(0, len(filterList)-1):
+            matchColors.append(np.transpose(catMags)[filtNum] - np.transpose(catMags)[filtNum+1])
+
+        matchColors = np.transpose(matchColors)
+
+        for catObject in matchColors:
+            if numOn % 10000 == 0:
+                print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
+            distanceArray = np.zeros(len(sedList))
+            for filtNum in range(0, len(filterList)-1):
+                distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
+            sedMatches.append(sedList[np.nanargmin(distanceArray)].name)
+            numOn += 1
+            
         return sedMatches
 
     def matchToObserved(self, sedList, catRedshifts, catMags, filterList = ('u','g','r','i','z'),
@@ -123,8 +130,11 @@ class selectGalaxySED():
         phiArray, wavelenstep = galPhot.setupPhiArray_dict(bandpassDict, filterList)
         
         sedMatches = []
-
+        numCatMags = len(catMags)
+        numOn = 0
         for matchMags, matchRedshift in zip(catMags, catRedshifts):
+            if numOn % 100 == 0:
+                print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
             matchColors = []
             for filtNum in range(0, len(matchMags)-1):
                 matchColors.append(matchMags[filtNum]-matchMags[filtNum+1])
@@ -151,5 +161,6 @@ class selectGalaxySED():
                 distanceArray.append(distance)
             sedMatch = sedList[np.argmin(distanceArray)].name
             sedMatches.append(sedMatch)
+            numOn += 1
 
         return sedMatches
