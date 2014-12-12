@@ -95,7 +95,6 @@ class selectGalaxySED():
             for filtNum in range(0, len(filterList)-1):
                 colorInfo.append(sEDMagDict[filterList[filtNum]] - sEDMagDict[filterList[filtNum+1]])
             modelColors.append(colorInfo)
-        print modelColors[0:2], modelColors[525], sedList[0].name, sedList[1].name
         modelColors = np.transpose(modelColors)
 
         #Match the catalog colors to models
@@ -138,8 +137,9 @@ class selectGalaxySED():
             matchColors = []
             for filtNum in range(0, len(matchMags)-1):
                 matchColors.append(matchMags[filtNum]-matchMags[filtNum+1])
+            matchColors = np.transpose(matchColors)
                 
-            colorName = []
+            modelColors = []
 
             for galSpec in sedList:
                 fileSED = Sed()
@@ -150,17 +150,14 @@ class selectGalaxySED():
                 colorInfo = []
                 for filtNum in range(0, len(filterList)-1):
                     colorInfo.append(sEDMagDict[filterList[filtNum]] - sEDMagDict[filterList[filtNum+1]])
-                colorInfo.append(galSpec.name)
-                colorName.append(colorInfo)
+                modelColors.append(colorInfo)
+            modelColors = np.transpose(modelColors)
             
-            distanceArray = []
-            for modelColor in colorName:
-                distance = 0.
-                for filtNum in range(0, len(filterList)-1):
-                    distance += np.power((modelColor[filtNum] - matchColors[filtNum]),2)
-                distanceArray.append(distance)
-            sedMatch = sedList[np.argmin(distanceArray)].name
-            sedMatches.append(sedMatch)
+            distanceArray = np.zeros(len(sedList))
+            for filtNum in range(0, len(filterList)-1):
+                distanceArray += np.power((modelColors[filtNum] - matchColors[filtNum]),2)
+            sedMatches.append(sedList[np.argmin(distanceArray)].name)
+            print sedList[np.nanargmin(distanceArray)].name
             numOn += 1
 
         return sedMatches
