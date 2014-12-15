@@ -68,7 +68,7 @@ class CosmologyObject(object):
 
         param [in] Om0 is the current matter density paramter (fraction of critical density)
 
-        param [in] Ode0 is the current dark energy density parameter
+        param [in] Ok0 is the current curvature density parameter
 
         param [in] w0 is the current dark energy equation of state w0 paramter
 
@@ -86,10 +86,13 @@ class CosmologyObject(object):
 
         Om0 = 0.25
         Ob0  = 0.045 (baryons; not currently used in this code)
-        H0 =73.0
-        Ode0 = 0.75
+        H0 = 73.0
+        Ok0 = 0.0, (implying Ode0 approx 0.75)
         w0 = -1.0
         wa = 0.0
+
+        where 
+        Om0 + Ok0 + Ode0 + Ogamma0 + Onu0 = 1.0 
 
         sigma_8 = 0.9 (rms mass flucutation in an 8 h^-1 Mpc sphere;
                        not currently used in this code)
