@@ -228,9 +228,10 @@ class EBVbase(object):
         
         
         @param [in] galacticCoordinates is a numpy.array; the first row is galactic longitude,
-        the second row is galactic latitude
+        the second row is galactic latitude in radians
         
-        @param [in] equatorialCoordinates is a numpy.array; the first row is RA, the second row is Dec
+        @param [in] equatorialCoordinates is a numpy.array; the first row is RA, the second row is Dec in
+        radians
         
         @param [in] northMap the northern dust map
         

@@ -52,14 +52,14 @@ The methods in CosmologyObject have been tested on astropy v0.2.5 and v0.4.2
 import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
-
 from lsst.sims.catalogs.measures.instance import cached
+flatnessthresh = 1.0e-12
 
 __all__ = ["CosmologyObject", "CosmologyWrapper"]
 
 class CosmologyObject(object):
 
-    def __init__(self, H0=73.0, Om0=0.25, Ode0=None, w0=None, wa=None):
+    def __init__(self, H0=73.0, Om0=0.25, Ok0=None, w0=None, wa=None):
         """
         Initialize the cosmology wrapper with the parameters specified
         (e.g. does not account for massive neutrinos)
@@ -109,16 +109,21 @@ class CosmologyObject(object):
             isCosmologicalConstant = True
 
         isFlat = False
-        if Ode0 is None or Om0+Ode0==1.0:
+        if Ok0 is None or (numpy.abs(Ok0) < flatnessthresh):
             isFlat = True
 
         if isCosmologicalConstant and isFlat:
             universe = cosmology.FlatLambdaCDM(H0=H0, Om0=Om0)
         elif isCosmologicalConstant:
+            tmpmodel = cosmology.FlatLambdaCDM(H0=H0, Om0=Om0)
+            Ode0 = 1.0 - Om0 - tmpmodel.Ogamma0 - tmpmodel.Onu0 - Ok0 
             universe = cosmology.LambdaCDM(H0=H0, Om0=Om0, Ode0=Ode0)
         elif isFlat:
             universe = cosmology.Flatw0waCDM(H0=H0, Om0=Om0, w0=w0, wa=wa)
         else:
+            tmpmodel = cosmology.Flatw0waCDM(H0=H0, Om0=Om0, w0=w0, wa=wa)
+            Ode0 = 1.0 - Om0 - tmpmodel.Ogamma0 - tmpmodel.Onu0 - Ok0 
+
             universe = cosmology.w0waCDM(H0=H0, Om0=Om0, Ode0=Ode0,
                                          w0=w0, wa=wa)
 
@@ -372,7 +377,7 @@ class CosmologyWrapper(object):
 
     cosmology = CosmologyObject()
 
-    def setCosmology(self, H0=73.0, Om0=0.25, Ode0=None, w0=None, wa=None):
+    def setCosmology(self, H0=73.0, Om0=0.25, Ok0=None, w0=None, wa=None):
         """
         This method customizes the member variable self.cosmology by re-instantiating
         the CosmologyObject class
@@ -389,7 +394,7 @@ class CosmologyWrapper(object):
         param [in] wa is the wa parameter usesd to set the equation of state of dark energy
         w = w0 + wa z/(1+z)
         """
-        self.cosmology = CosmologyObject(H0=H0, Om0=Om0, Ode0=Ode0, w0=w0, wa=wa)
+        self.cosmology = CosmologyObject(H0=H0, Om0=Om0, Ok0=Ok0, w0=w0, wa=wa)
 
     @cached
     def get_cosmologicalDistanceModulus(self):
