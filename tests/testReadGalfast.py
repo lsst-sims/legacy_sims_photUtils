@@ -8,9 +8,199 @@ import re
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
+from lsst.sims.photUtils.readGalfast.selectGalaxySED import Spectrum
+from lsst.sims.photUtils.readGalfast.selectGalaxySED import selectGalaxySED
+from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.photUtils import Photometry as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
+
+class TestRGUtils(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        
+        if os.path.exists('exampleSpec.txt'):
+            os.unlink('exampleSpec.txt')
+
+        exampleSpecFile = open('exampleSpec.txt', 'w')
+        cls.wave = np.arange(300, 1200, 0.5)
+        cls.flux = np.arange(0, 900, 0.5)
+        for waveLine, fluxLine in zip(cls.wave, cls.flux):
+            exampleSpecFile.write(str(str(waveLine) + '    ' + str(fluxLine) + '\n'))
+        exampleSpecFile.close()
+    
+    def testReadSpectrum(self):
+        
+        #Make sure that wave and flux are read and stored properly
+        testSpec = Spectrum('exampleSpec.txt')
+        self.assertItemsEqual(self.wave, testSpec.wave)
+        self.assertItemsEqual(self.flux, testSpec.flux)
+        #Test to make sure other attributes remain unassigned
+        self.assertIsNone(testSpec.name)
+        self.assertIsNone(testSpec.type)
+        self.assertIsNone(testSpec.age)
+        self.assertIsNone(testSpec.metallicity)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.wave
+        del cls.flux
+
+        if os.path.exists('exampleSpec.txt'):
+            os.unlink('exampleSpec.txt')
+        
+class TestSelectGalaxySED(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        
+        #because SCons only knows about a limited subset of the LSST environment variables
+        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'), 'sdss')
+    
+        specMap = SpecMap()
+        specFileStart = 'Exp'
+        for key, val in sorted(specMap.subdir_map.iteritems()):
+            if re.match(key, specFileStart):
+                galSpecDir = str(val)
+        cls.galDir = str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + galSpecDir + '/')
+
+        #Set up Test Spectra Directory
+        cls.testSpecDir = 'testGalaxySEDSpectrum/'
+        
+        if os.path.exists(cls.testSpecDir):
+            shutil.rmtree(cls.testSpecDir)
+
+        os.mkdir(cls.testSpecDir)
+
+        galList = os.listdir(cls.galDir)[0:20]
+
+        for galFile in galList:
+            shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
+
+        testGalPhot = phot()
+        cls.filterList = ('u', 'g', 'r', 'i', 'z')
+        cls.testBandpassDict = testGalPhot.loadBandpasses(filterlist = cls.filterList,
+                                                          dataDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                          filterroot = 'sdss_')
+        cls.phiArray, cls.wavelenstep = testGalPhot.setupPhiArray_dict(cls.testBandpassDict, cls.filterList)
+
+    def testLoadBC03(self):
+
+        loadTestBC03 = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDs = loadTestBC03.loadBC03()
+
+        #Read in a list of the SEDs in the test galaxy sed directory
+        testGalList = os.listdir(self.testSpecDir)
+
+        #Make sure the names of seds in folder and set that was read in are the same
+        #This also tests that the name attribute is assigned to each Spectrum object correctly
+        testNames = []
+        for testSED in testSEDs:
+            testNames.append(testSED.name)
+        self.assertItemsEqual(testGalList, testNames)
+
+        #Test same condition if a subset is provided
+        testSubsetList = testGalList[0:2]
+        testSEDsubset = loadTestBC03.loadBC03(subset = testSubsetList)
+        testSubsetNames = []
+        for testSED in testSEDsubset:
+            testSubsetNames.append(testSED.name)
+        self.assertItemsEqual(testSubsetList, testSubsetNames)
+
+        #Test that attributes have been assigned
+        for testSED in testSEDsubset:
+            self.assertIsNotNone(testSED.name)
+            self.assertIsNotNone(testSED.type)
+            self.assertIsNotNone(testSED.age)
+            self.assertIsNotNone(testSED.metallicity)
+
+    def testMatchToRestFrame(self):
+
+        testMatching = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDList = testMatching.loadBC03()
+
+        testSEDNames = []
+        testMags = []
+
+        for testSED in testSEDList:
+            
+            getSEDMags = Sed()
+            testSEDNames.append(testSED.name)
+            getSEDMags.setSED(wavelen = testSED.wave, flambda = testSED.flux)
+            getSEDMags.resampleSED(wavelen_match=self.testBandpassDict[self.filterList[0]].wavelen)
+            getSEDMags.flambdaTofnu()
+            testMags.append(getSEDMags.manyMagCalc(self.phiArray, self.wavelenstep))
+
+        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags)
+
+        self.assertEqual(testSEDNames, testMatchingResults)
+
+    def testMatchToObserved(self):
+        
+        testMatching = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDList = testMatching.loadBC03()
+
+        testSEDNames = []
+        testRA = []
+        testDec = []
+        testRedshifts = []
+        extCoeffs = np.arange(1, 1.5, 0.1)
+        testMags = []
+        testMagsRedshift = []
+        testMagsExt = []
+
+        for testSED in testSEDList:
+
+            #As a check make sure that it matches when no extinction and no redshift are present
+            getSEDMags = Sed()
+            testSEDNames.append(testSED.name)
+            getSEDMags.setSED(wavelen = testSED.wave, flambda = testSED.flux)
+            getSEDMags.resampleSED(wavelen_match = self.testBandpassDict[self.filterList[0]].wavelen)
+            getSEDMags.flambdaTofnu()
+            testMags.append(getSEDMags.manyMagCalc(self.phiArray, self.wavelenstep))
+
+            #Check Extinction corrections
+            sedRA = np.random.uniform(10,170)
+            sedDec = np.random.uniform(10,80)
+            testRA.append(sedRA)
+            testDec.append(sedDec)
+            raDec = np.array((sedRA, sedDec)).reshape((2,1))
+            ebvVal = ebv().calculateEbv(equatorialCoordinates = raDec)
+            extVal = ebvVal*extCoeffs
+            testMagsExt.append(getSEDMags.manyMagCalc(self.phiArray, self.wavelenstep) + extVal)
+
+            #Setup magnitudes for testing matching to redshifted values
+            getRedshiftMags = Sed()
+            testZ = np.round(np.random.uniform(1.1,1.2), 3)
+            testRedshifts.append(testZ)
+            getRedshiftMags.setSED(wavelen = testSED.wave, flambda = testSED.flux)
+            getRedshiftMags.redshiftSED(testZ)
+            getRedshiftMags.resampleSED(wavelen_match = self.testBandpassDict[self.filterList[0]].wavelen)
+            getRedshiftMags.flambdaTofnu()
+            testMagsRedshift.append(getRedshiftMags.manyMagCalc(self.phiArray, self.wavelenstep))
+            
+        testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
+                                                           testMags, extinction = False)
+        testMatchingExtVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
+                                                           testMagsExt, extinction = True, 
+                                                           extCoeffs = extCoeffs)
+        testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
+                                                            testMagsRedshift, dzAcc = 3, extinction = False)
+
+        self.assertEqual(testSEDNames, testNoExtNoRedshift)
+        self.assertEqual(testSEDNames, testMatchingExtVals)
+        self.assertEqual(testSEDNames, testMatchingRedshift)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.galDir
+        del cls.filterList
+        del cls.testBandpassDict
+        del cls.phiArray
+        del cls.wavelenstep
+
+        shutil.rmtree(cls.testSpecDir)
 
 class TestSelectStarSED(unittest.TestCase):
 
@@ -23,7 +213,7 @@ class TestSelectStarSED(unittest.TestCase):
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
-        specMap= SpecMap()
+        specMap = SpecMap()
         cls._specMapDict = {}
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
         specFileTypes = ['kurucz', 'mlt','wd']
@@ -97,7 +287,7 @@ class TestSelectStarSED(unittest.TestCase):
         loadTestKurucz = selectStarSED(kuruczDir = self.testKDir)
         testSEDs = loadTestKurucz.loadKuruczSEDs()
 
-        #Read in a list of the SEDs in the kurucz sims sed directory
+        #Read in a list of the SEDs in the kurucz test sed directory
         testKuruczList = os.listdir(self.testKDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
@@ -142,7 +332,7 @@ class TestSelectStarSED(unittest.TestCase):
         loadTestMLT = selectStarSED(mltDir = self.testMLTDir)
         testSEDs = loadTestMLT.loadmltSEDs()
 
-        #Read in a list of the SEDs in the kurucz sims sed directory
+        #Read in a list of the SEDs in the mlt test sed directory
         testMLTList = os.listdir(self.testMLTDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
@@ -189,7 +379,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDNamesLists.append(testSEDs['HE']['sEDName'])
         testSEDNames = [name for nameList in testSEDNamesLists for name in nameList]
 
-        #Read in a list of the SEDs in the kurucz sims sed directory
+        #Read in a list of the SEDs in the wd test sed directory
         testWDList = os.listdir(self.testWDDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
@@ -571,6 +761,8 @@ class TestReadGalfast(unittest.TestCase):
 def suite():
     utilsTests.init()
     suites = []
+    suites += unittest.makeSuite(TestRGUtils)
+    suites += unittest.makeSuite(TestSelectGalaxySED)
     suites += unittest.makeSuite(TestSelectStarSED)
     suites += unittest.makeSuite(TestReadGalfast)
     return unittest.TestSuite(suites)

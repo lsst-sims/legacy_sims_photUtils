@@ -8,36 +8,10 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.photUtils import Photometry as phot
 from lsst.sims.photUtils.EBV import EBVbase as ebv
+from lsst.sims.photUtils.readGalfast.rgUtils import Spectrum
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
 __all__ = ["selectGalaxySED"]
-
-class Spectrum(object):
-    """
-    This class holds the spectral data of each model
-    """
-
-    def __init__(self, fileName):
-
-        """
-        @param [in] fileName is the name of the SED file you want to load.
-        """
-
-        self.wave, self.flux = self.readSpectrum(fileName)
-
-    def readSpectrum(self, fileName):
-        """
-        Loads the spectrum and saves it wavelengths and flux
-
-        @param [in] fileName is the name of the SED file you want to load.
-
-        @param [out] wave is the wavelength array from the file.
-
-        @param [out] flux is the flux (flambda) array from the file.
-        """
-
-        wave, flux = np.genfromtxt(fileName, unpack=True)
-        return wave, flux
 
 class selectGalaxySED():
 
@@ -268,6 +242,9 @@ class selectGalaxySED():
             if len(raDec.shape) == 1:
                 raDec = raDec.reshape((2,1))
             ebvVals = calcEBV.calculateEbv(equatorialCoordinates = raDec)
+        #If extinction is false is won't be used anyway so just set it to ones for the loop
+        else:
+            ebvVals = np.ones(len(catMags))
 
         for ebvValue, matchMags, matchRedshift in zip(ebvVals, catMags, catRedshifts):
             if numOn % 10000 == 0:
