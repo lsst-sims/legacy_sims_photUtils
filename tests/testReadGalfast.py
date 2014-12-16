@@ -133,7 +133,8 @@ class TestSelectGalaxySED(unittest.TestCase):
             getSEDMags.flambdaTofnu()
             testMags.append(getSEDMags.manyMagCalc(self.phiArray, self.wavelenstep))
 
-        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags)
+        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, 
+                                                            throughputDir = os.getenv('SDSS_THROUGHPUTS'))
 
         self.assertEqual(testSEDNames, testMatchingResults)
 
@@ -182,12 +183,17 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMagsRedshift.append(getRedshiftMags.manyMagCalc(self.phiArray, self.wavelenstep))
             
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMags, extinction = False)
+                                                           testMags, 
+                                                           throughputDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                           extinction = False)
         testMatchingExtVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMagsExt, extinction = True, 
-                                                           extCoeffs = extCoeffs)
+                                                           testMagsExt, 
+                                                           throughputDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                           extinction = True, extCoeffs = extCoeffs)
         testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
-                                                            testMagsRedshift, dzAcc = 3, extinction = False)
+                                                            testMagsRedshift, 
+                                                            throughputDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                            dzAcc = 3, extinction = False)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift)
         self.assertEqual(testSEDNames, testMatchingExtVals)
