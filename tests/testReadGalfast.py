@@ -56,6 +56,7 @@ class TestSelectGalaxySED(unittest.TestCase):
     def setUpClass(cls):
         
         #because SCons only knows about a limited subset of the LSST environment variables
+        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
         os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'), 'sdss')
     
         specMap = SpecMap()
