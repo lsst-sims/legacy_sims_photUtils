@@ -139,7 +139,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
             #Setup magnitudes for testing matching to redshifted values
             getRedshiftMags = Sed()
-            testZ = np.round(np.random.uniform(1.1,1.2), 3)
+            testZ = np.round(np.random.uniform(1.1,1.3),3)
             testRedshifts.append(testZ)
             getRedshiftMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
             getRedshiftMags.redshiftSED(testZ)

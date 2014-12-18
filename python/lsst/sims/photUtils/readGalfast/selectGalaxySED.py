@@ -196,15 +196,33 @@ class selectGalaxySED():
         galPhot.loadBandPassesFromFiles(filterList, bandPassDir = bandpassDir, bandPassRoot = filterRoot)
         galPhot.setupPhiArray_dict()
         
+        #Calculate ebv from ra, dec coordinates if needed
+        if extinction == True:
+            calcEBV = ebv()
+            raDec = np.array((catRA,catDec))
+            #If only matching one object need to reshape for calculateEbv
+            if len(raDec.shape) == 1:
+                raDec = raDec.reshape((2,1))
+            ebvVals = calcEBV.calculateEbv(equatorialCoordinates = raDec)
+
         minRedshift = np.round(np.min(catRedshifts), dzAcc)
         maxRedshift = np.round(np.max(catRedshifts), dzAcc)
         dz = np.power(10., (-1*dzAcc))
 
-        redshiftColors = {}
-        redshiftRange = np.arange(minRedshift - dz, maxRedshift + dz, dz)
+        redshiftRange = np.round(np.arange(minRedshift - dz, maxRedshift + (2*dz), dz), dzAcc)
         numRedshifted = 0
-        print 'Building Redshifted Color Set.'
+        sedMatches = [None] * len(catRedshifts)
+        redshiftIndex = np.argsort(catRedshifts)
+
+        numOn = 0
+        lastRedshift = -100
+        print 'Starting Matching. Arranged by redshift value.'
         for redshift in redshiftRange:
+
+            if numRedshifted % 10 == 0:
+                print '%i out of %i redshifts gone through' % (numRedshifted, len(redshiftRange))
+            numRedshifted += 1
+
             colorSet = []
             for galSpec in sedList:
                 sedColors = []
@@ -216,42 +234,22 @@ class selectGalaxySED():
                     sedColors.append(sEDMags[filtNum] - sEDMags[filtNum+1])
                 colorSet.append(sedColors)
             colorSet = np.transpose(colorSet)
-            redshiftColors[str(np.round(redshift,dzAcc))] = colorSet
-            if numRedshifted % 10 == 0:
-                print '%i out of %i redshifts gone through' % (numRedshifted, len(redshiftRange))
-            numRedshifted += 1
+            for currentIndex in redshiftIndex[numOn:]:
+                matchMags = catMags[currentIndex]
+                if lastRedshift < np.round(catRedshifts[currentIndex],dzAcc) <= redshift:
+                    if extinction == True:
+                        for filtNum in range(0, len(filterList)):
+                            matchMags[filtNum] = (matchMags[filtNum] 
+                                                  - (extCoeffs[filtNum]*ebvVals[currentIndex]))
+                    for filtNum in range(0, len(filterList)-1):
+                        matchColor = matchMags[filtNum] - matchMags[filtNum+1]
+                        distanceArray = np.power((colorSet[filtNum] - matchColor),2)
+                    sedMatches[currentIndex] = sedList[np.nanargmin(distanceArray)].name
+                    numOn += 1
+                else:
+                    break
+            lastRedshift = redshift
 
-        print 'Done Building Set. Starting Matching.'
-
-        sedMatches = []
-        numCatMags = len(catMags)
-        numOn = 0
-
-        #Calculate ebv from ra, dec coordinates if needed
-        if extinction == True:
-            calcEBV = ebv()
-            raDec = np.array((catRA,catDec))
-            #If only matching one object need to reshape for calculateEbv
-            if len(raDec.shape) == 1:
-                raDec = raDec.reshape((2,1))
-            ebvVals = calcEBV.calculateEbv(equatorialCoordinates = raDec)
-        #If extinction is false is won't be used anyway so just set it to ones for the loop
-        else:
-            ebvVals = np.ones(len(catMags))
-
-        for ebvValue, matchMags, matchRedshift in zip(ebvVals, catMags, catRedshifts):
-            if numOn % 10000 == 0:
-                print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
-            
-            distanceArray = np.zeros(len(sedList))
-            modelColors = redshiftColors[str(np.round(matchRedshift, dzAcc))]
-            if extinction == True:
-                for filtNum in range(0, len(filterList)):
-                    matchMags[filtNum] = matchMags[filtNum] - (extCoeffs[filtNum]*ebvValue)
-            for filtNum in range(0, len(filterList)-1):
-                matchColor = matchMags[filtNum] - matchMags[filtNum+1]
-                distanceArray += np.power((modelColors[filtNum] - matchColor),2)
-            sedMatches.append(sedList[np.nanargmin(distanceArray)].name)
-            numOn += 1
+        print 'Done Matching.'
 
         return sedMatches
