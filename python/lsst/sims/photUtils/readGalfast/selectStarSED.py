@@ -6,7 +6,7 @@ import re
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
-from lsst.sims.photUtils.photUtils import Photometry as phot
+from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
 __all__ = ["selectStarSED"]
@@ -74,20 +74,18 @@ class selectStarSED():
         #Load Bandpasses for SDSS colors to match to galfast output.
         #If somebody wants to use this with bandpasses other than sdss all they have to do is redefine
         #self.filterList, self.bandpassDict, self.phiArray self.wavelenstep before using other methods
-        starPhot = phot()
+        self.starPhot = phot()
         self.filterList = ('u', 'g', 'r', 'i', 'z')
-        self.bandpassDict = starPhot.loadBandpasses(filterlist=self.filterList, 
-                                                    dataDir = os.getenv("SDSS_THROUGHPUTS"), 
-                                                    filterroot='sdss_')
-        self.phiArray, self.wavelenstep = starPhot.setupPhiArray_dict(self.bandpassDict, 
-                                                                      self.filterList)
+        self.starPhot.loadBandPassesFromFiles(self.filterList, 
+                                             bandPassDir = os.getenv("SDSS_THROUGHPUTS"), 
+                                             bandPassRoot ='sdss_')
+        self.starPhot.setupPhiArray_dict()
 
         #Load Bandpasses for LSST colors to get colors from matched SEDs
-        lsstPhot = phot()
+        self.lsstPhot = phot()
         self.lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
-        self.lsstBandpassDict = lsstPhot.loadBandpasses()
-        self.lsstPhiArray, self.lsstWavelenstep = lsstPhot.setupPhiArray_dict(self.lsstBandpassDict, 
-                                                                              self.lsstFilterList)
+        self.lsstPhot.loadBandPassesFromFiles(self.lsstFilterList)
+        self.lsstPhot.setupPhiArray_dict()
 
     def loadKuruczSEDs(self, subset = None):
         """
@@ -138,27 +136,21 @@ class selectStarSED():
                 fileSED.logg = float(gravity[1:]) * 0.1
                 fileSED.temp = float(fineTemp)
                 
-                sEDPhotometry = phot()
-                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.phiArray, 
-                                                            self.wavelenstep, self.bandpassDict, 
-                                                            self.filterList)
-                lsstSedMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.lsstPhiArray,
-                                                                self.lsstWavelenstep, 
-                                                                self.lsstBandpassDict,
-                                                                self.lsstFilterList)
+                sEDMagList = self.starPhot.manyMagCalc_list(fileSED)
+                lsstSedMagList = self.lsstPhot.manyMagCalc_list(fileSED)
                 
                 kFiles.append(fileName)
-                kumg.append(sEDMagDict['u']-sEDMagDict['g']) #Calculate colors for SED matching
-                kgmr.append(sEDMagDict['g']-sEDMagDict['r'])
-                krmi.append(sEDMagDict['r']-sEDMagDict['i'])
-                kimz.append(sEDMagDict['i']-sEDMagDict['z'])
-                lsstumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g']) #lsst for catalog entry
-                lsstgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
-                lsstrmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
-                lsstimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
-                lsstzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
-                krMag[fileName] = sEDMagDict['r']
-                lsstrMag[fileName] = lsstSedMagDict['r']
+                kumg.append(sEDMagList[0]-sEDMagList[1]) #Calculate colors for SED matching
+                kgmr.append(sEDMagList[1]-sEDMagList[2])
+                krmi.append(sEDMagList[2]-sEDMagList[3])
+                kimz.append(sEDMagList[3]-sEDMagList[4])
+                lsstumg[fileName] = (lsstSedMagList[0]-lsstSedMagList[1]) #lsst for catalog entry
+                lsstgmr[fileName] = (lsstSedMagList[1]-lsstSedMagList[2])
+                lsstrmi[fileName] = (lsstSedMagList[2]-lsstSedMagList[3])
+                lsstimz[fileName] = (lsstSedMagList[3]-lsstSedMagList[4])
+                lsstzmy[fileName] = (lsstSedMagList[4]-lsstSedMagList[5])
+                krMag[fileName] = sEDMagList[2]
+                lsstrMag[fileName] = lsstSedMagList[2]
                 klogZ.append(fileSED.logZ)
                 klogg.append(fileSED.logg)
                 kTemp.append(fileSED.temp)
@@ -224,26 +216,22 @@ class selectStarSED():
             try:
                 fileSED.readSED_flambda(str(self.mltDir + fileName))
                 
-                sEDPhotometry = phot()
-                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.phiArray, self.wavelenstep,
-                                                            self.bandpassDict, self.filterList)
-                lsstSedMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.lsstPhiArray,
-                                                                self.lsstWavelenstep,
-                                                                self.lsstBandpassDict, self.lsstFilterList)
-
-                mltFiles.append(fileName)
-                mltumg.append(sEDMagDict['u']-sEDMagDict['g'])
-                mltgmr.append(sEDMagDict['g']-sEDMagDict['r'])
-                mltrmi.append(sEDMagDict['r']-sEDMagDict['i'])
-                mltimz.append(sEDMagDict['i']-sEDMagDict['z'])
-                lsstumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g']) #lsst for catalog entry
-                lsstgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
-                lsstrmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
-                lsstimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
-                lsstzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
-                mrMag[fileName] = sEDMagDict['r']
-                lsstrMag[fileName] = lsstSedMagDict['r']
+                sEDMagList = self.starPhot.manyMagCalc_list(fileSED)
+                lsstSedMagList = self.lsstPhot.manyMagCalc_list(fileSED)
                 
+                mltFiles.append(fileName)
+                mltumg.append(sEDMagList[0]-sEDMagList[1]) #Calculate colors for SED matching
+                mltgmr.append(sEDMagList[1]-sEDMagList[2])
+                mltrmi.append(sEDMagList[2]-sEDMagList[3])
+                mltimz.append(sEDMagList[3]-sEDMagList[4])
+                lsstumg[fileName] = (lsstSedMagList[0]-lsstSedMagList[1]) #lsst for catalog entry
+                lsstgmr[fileName] = (lsstSedMagList[1]-lsstSedMagList[2])
+                lsstrmi[fileName] = (lsstSedMagList[2]-lsstSedMagList[3])
+                lsstimz[fileName] = (lsstSedMagList[3]-lsstSedMagList[4])
+                lsstzmy[fileName] = (lsstSedMagList[4]-lsstSedMagList[5])
+                mrMag[fileName] = sEDMagList[2]
+                lsstrMag[fileName] = lsstSedMagList[2]
+
                 numOn += 1
             
             except:
@@ -307,39 +295,38 @@ class selectStarSED():
             try:
                 fileSED.readSED_flambda(str(self.wdDir + fileName))
                 
-                sEDPhotometry = phot()
-                sEDMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.phiArray, self.wavelenstep,
-                                                        self.bandpassDict, self.filterList)
-                lsstSedMagDict = sEDPhotometry.manyMagCalc_dict(fileSED, self.lsstPhiArray,
-                                                                self.lsstWavelenstep,
-                                                                self.lsstBandpassDict, self.lsstFilterList)
+                sEDMagList = self.starPhot.manyMagCalc_list(fileSED)
+                lsstSedMagList = self.lsstPhot.manyMagCalc_list(fileSED)
 
                 if fileName.split("_")[1] == 'He':    
+                
                     wdHEFiles.append(fileName)
-                    wdHEumg.append(sEDMagDict['u']-sEDMagDict['g'])
-                    wdHEgmr.append(sEDMagDict['g']-sEDMagDict['r'])
-                    wdHErmi.append(sEDMagDict['r']-sEDMagDict['i'])
-                    wdHEimz.append(sEDMagDict['i']-sEDMagDict['z'])
-                    lsstHEumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g']) 
-                    lsstHEgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
-                    lsstHErmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
-                    lsstHEimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
-                    lsstHEzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
-                    wdHErMag[fileName] = sEDMagDict['r']
-                    wdHElsstrMag[fileName] = lsstSedMagDict['r']
+                    wdHEumg.append(sEDMagList[0]-sEDMagList[1]) #Calculate colors for SED matching
+                    wdHEgmr.append(sEDMagList[1]-sEDMagList[2])
+                    wdHErmi.append(sEDMagList[2]-sEDMagList[3])
+                    wdHEimz.append(sEDMagList[3]-sEDMagList[4])
+                    lsstHEumg[fileName] = (lsstSedMagList[0]-lsstSedMagList[1]) #lsst for catalog entry
+                    lsstHEgmr[fileName] = (lsstSedMagList[1]-lsstSedMagList[2])
+                    lsstHErmi[fileName] = (lsstSedMagList[2]-lsstSedMagList[3])
+                    lsstHEimz[fileName] = (lsstSedMagList[3]-lsstSedMagList[4])
+                    lsstHEzmy[fileName] = (lsstSedMagList[4]-lsstSedMagList[5])
+                    wdHErMag[fileName] = sEDMagList[2]
+                    wdHElsstrMag[fileName] = lsstSedMagList[2]
+                    
                 else:
+                    
                     wdFiles.append(fileName)
-                    wdumg.append(sEDMagDict['u']-sEDMagDict['g'])
-                    wdgmr.append(sEDMagDict['g']-sEDMagDict['r'])
-                    wdrmi.append(sEDMagDict['r']-sEDMagDict['i'])
-                    wdimz.append(sEDMagDict['i']-sEDMagDict['z'])
-                    lsstumg[fileName] = (lsstSedMagDict['u']-lsstSedMagDict['g'])
-                    lsstgmr[fileName] = (lsstSedMagDict['g']-lsstSedMagDict['r'])
-                    lsstrmi[fileName] = (lsstSedMagDict['r']-lsstSedMagDict['i'])
-                    lsstimz[fileName] = (lsstSedMagDict['i']-lsstSedMagDict['z'])
-                    lsstzmy[fileName] = (lsstSedMagDict['z']-lsstSedMagDict['y'])
-                    wdrMag[fileName] = sEDMagDict['r']
-                    wdlsstrMag[fileName] = lsstSedMagDict['r']
+                    wdumg.append(sEDMagList[0]-sEDMagList[1]) #Calculate colors for SED matching
+                    wdgmr.append(sEDMagList[1]-sEDMagList[2])
+                    wdrmi.append(sEDMagList[2]-sEDMagList[3])
+                    wdimz.append(sEDMagList[3]-sEDMagList[4])
+                    lsstumg[fileName] = (lsstSedMagList[0]-lsstSedMagList[1]) #lsst for catalog entry
+                    lsstgmr[fileName] = (lsstSedMagList[1]-lsstSedMagList[2])
+                    lsstrmi[fileName] = (lsstSedMagList[2]-lsstSedMagList[3])
+                    lsstimz[fileName] = (lsstSedMagList[3]-lsstSedMagList[4])
+                    lsstzmy[fileName] = (lsstSedMagList[4]-lsstSedMagList[5])
+                    wdrMag[fileName] = sEDMagList[2]
+                    wdlsstrMag[fileName] = lsstSedMagList[2]
                     
                 numOn += 1
 

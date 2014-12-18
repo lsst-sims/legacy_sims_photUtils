@@ -8,48 +8,12 @@ import re
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
-from lsst.sims.photUtils.readGalfast.selectGalaxySED import Spectrum
 from lsst.sims.photUtils.readGalfast.selectGalaxySED import selectGalaxySED
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.photUtils import Photometry as phot
+from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
-class TestRGUtils(unittest.TestCase):
-    
-    @classmethod
-    def setUpClass(cls):
-        
-        if os.path.exists('exampleSpec.txt'):
-            os.unlink('exampleSpec.txt')
-
-        exampleSpecFile = open('exampleSpec.txt', 'w')
-        cls.wave = np.arange(300, 1200, 0.5)
-        cls.flux = np.arange(0, 900, 0.5)
-        for waveLine, fluxLine in zip(cls.wave, cls.flux):
-            exampleSpecFile.write(str(str(waveLine) + '    ' + str(fluxLine) + '\n'))
-        exampleSpecFile.close()
-    
-    def testReadSpectrum(self):
-        
-        #Make sure that wave and flux are read and stored properly
-        testSpec = Spectrum('exampleSpec.txt')
-        self.assertItemsEqual(self.wave, testSpec.wave)
-        self.assertItemsEqual(self.flux, testSpec.flux)
-        #Test to make sure other attributes remain unassigned
-        self.assertIsNone(testSpec.name)
-        self.assertIsNone(testSpec.type)
-        self.assertIsNone(testSpec.age)
-        self.assertIsNone(testSpec.metallicity)
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.wave
-        del cls.flux
-
-        if os.path.exists('exampleSpec.txt'):
-            os.unlink('exampleSpec.txt')
-        
 class TestSelectGalaxySED(unittest.TestCase):
 
     @classmethod
@@ -79,12 +43,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         for galFile in galList:
             shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
 
-        testGalPhot = phot()
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
-        cls.testBandpassDict = testGalPhot.loadBandpasses(filterlist = cls.filterList,
-                                                          dataDir = os.getenv('SDSS_THROUGHPUTS'),
-                                                          filterroot = 'sdss_')
-        cls.phiArray, cls.wavelenstep = testGalPhot.setupPhiArray_dict(cls.testBandpassDict, cls.filterList)
 
     def testLoadBC03(self):
 
@@ -118,6 +77,11 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     def testMatchToRestFrame(self):
 
+        galPhot = phot()
+        galPhot.loadBandPassesFromFiles(self.filterList, bandPassDir = os.getenv('SDSS_THROUGHPUTS'), 
+                               bandPassRoot = 'sdss_')
+        galPhot.setupPhiArray_dict()
+
         testMatching = selectGalaxySED(galDir = self.testSpecDir)
         testSEDList = testMatching.loadBC03()
 
@@ -128,18 +92,21 @@ class TestSelectGalaxySED(unittest.TestCase):
             
             getSEDMags = Sed()
             testSEDNames.append(testSED.name)
-            getSEDMags.setSED(wavelen = testSED.wave, flambda = testSED.flux)
-            getSEDMags.resampleSED(wavelen_match=self.testBandpassDict[self.filterList[0]].wavelen)
-            getSEDMags.flambdaTofnu()
-            testMags.append(getSEDMags.manyMagCalc(self.phiArray, self.wavelenstep))
+            getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
+            testMags.append(galPhot.manyMagCalc_list(getSEDMags))
 
         testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, 
-                                                            throughputDir = os.getenv('SDSS_THROUGHPUTS'))
+                                                            bandpassDir = os.getenv('SDSS_THROUGHPUTS'))
 
         self.assertEqual(testSEDNames, testMatchingResults)
 
     def testMatchToObserved(self):
         
+        galPhot = phot()
+        galPhot.loadBandPassesFromFiles(self.filterList, bandPassDir = os.getenv('SDSS_THROUGHPUTS'), 
+                               bandPassRoot = 'sdss_')
+        galPhot.setupPhiArray_dict()
+
         testMatching = selectGalaxySED(galDir = self.testSpecDir)
         testSEDList = testMatching.loadBC03()
 
@@ -157,10 +124,8 @@ class TestSelectGalaxySED(unittest.TestCase):
             #As a check make sure that it matches when no extinction and no redshift are present
             getSEDMags = Sed()
             testSEDNames.append(testSED.name)
-            getSEDMags.setSED(wavelen = testSED.wave, flambda = testSED.flux)
-            getSEDMags.resampleSED(wavelen_match = self.testBandpassDict[self.filterList[0]].wavelen)
-            getSEDMags.flambdaTofnu()
-            testMags.append(getSEDMags.manyMagCalc(self.phiArray, self.wavelenstep))
+            getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
+            testMags.append(galPhot.manyMagCalc_list(getSEDMags))
 
             #Check Extinction corrections
             sedRA = np.random.uniform(10,170)
@@ -170,29 +135,27 @@ class TestSelectGalaxySED(unittest.TestCase):
             raDec = np.array((sedRA, sedDec)).reshape((2,1))
             ebvVal = ebv().calculateEbv(equatorialCoordinates = raDec)
             extVal = ebvVal*extCoeffs
-            testMagsExt.append(getSEDMags.manyMagCalc(self.phiArray, self.wavelenstep) + extVal)
+            testMagsExt.append(galPhot.manyMagCalc_list(getSEDMags) + extVal)
 
             #Setup magnitudes for testing matching to redshifted values
             getRedshiftMags = Sed()
             testZ = np.round(np.random.uniform(1.1,1.2), 3)
             testRedshifts.append(testZ)
-            getRedshiftMags.setSED(wavelen = testSED.wave, flambda = testSED.flux)
+            getRedshiftMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
             getRedshiftMags.redshiftSED(testZ)
-            getRedshiftMags.resampleSED(wavelen_match = self.testBandpassDict[self.filterList[0]].wavelen)
-            getRedshiftMags.flambdaTofnu()
-            testMagsRedshift.append(getRedshiftMags.manyMagCalc(self.phiArray, self.wavelenstep))
+            testMagsRedshift.append(galPhot.manyMagCalc_list(getRedshiftMags))
             
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
                                                            testMags, 
-                                                           throughputDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                           bandpassDir = os.getenv('SDSS_THROUGHPUTS'),
                                                            extinction = False)
         testMatchingExtVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
                                                            testMagsExt, 
-                                                           throughputDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                           bandpassDir = os.getenv('SDSS_THROUGHPUTS'),
                                                            extinction = True, extCoeffs = extCoeffs)
         testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
                                                             testMagsRedshift, 
-                                                            throughputDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                            bandpassDir = os.getenv('SDSS_THROUGHPUTS'),
                                                             dzAcc = 3, extinction = False)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift)
@@ -203,9 +166,6 @@ class TestSelectGalaxySED(unittest.TestCase):
     def tearDownClass(cls):
         del cls.galDir
         del cls.filterList
-        del cls.testBandpassDict
-        del cls.phiArray
-        del cls.wavelenstep
 
         shutil.rmtree(cls.testSpecDir)
 
@@ -322,7 +282,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
         #Give kurucz like filename just so it works
         testSED.writeSED(self.kmTestName)
 
@@ -362,7 +322,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
         #Give mlt like filename just so it works
         testSED.writeSED(self.mTestName)
 
@@ -421,7 +381,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
         #Give WD like filename just so it works
         testName = 'bergeron_9999_99.dat_9999'
         testNameHe = 'bergeron_He_9999_99.dat_9999'
@@ -507,29 +467,23 @@ class TestSelectStarSED(unittest.TestCase):
             testSEDName = testSubsetList[testSEDNum].strip('.gz')
             getSEDColors.readSED_flambda(str(testMatching.sEDDir + '/' +
                                              str(specMap.__getitem__(testSEDName))))
-            getSEDColors.multiplyFluxNorm(getSEDColors.calcFluxNorm(10, testMatching.bandpassDict['r']))
-            testSEDPhotometry = phot()
-            testMagDict = testSEDPhotometry.manyMagCalc_dict(getSEDColors, testMatching.phiArray,
-                                                             testMatching.wavelenstep,
-                                                             testMatching.bandpassDict,
-                                                             testMatching.filterList)
+            getSEDColors.multiplyFluxNorm(getSEDColors.calcFluxNorm(10, testMatching.starPhot.bandPassList[2]))
+            testMagList = testMatching.starPhot.manyMagCalc_list(getSEDColors)
 
             #First test without reddening
-            testOutputName.append(testMatching.findSED(testMatchingDict, testMagDict['u'], testMagDict['g'],
-                                                       testMagDict['r'], testMagDict['i'], testMagDict['z'],
+            testOutputName.append(testMatching.findSED(testMatchingDict, testMagList[0], testMagList[1],
+                                                       testMagList[2], testMagList[3], testMagList[4],
                                                        0, testSubsetComp[testSEDNum], reddening = False))
             #Next test with reddening and custom coeffs
             am = 0.5
             reddenCoeffs = np.array([1.2, 1.1, 1.0, 0.9, 0.8])
             testReddening = am * reddenCoeffs
-            testReddenedMagDict = {}
-            for filter, coeffNum in zip(testMatching.filterList, range(0, len(testReddening))):
-                testReddenedMagDict[filter] = testMagDict[filter] + testReddening[coeffNum]
-            testOutputNameReddened.append(testMatching.findSED(testMatchingDict, testReddenedMagDict['u'],
-                                                               testReddenedMagDict['g'],
-                                                               testReddenedMagDict['r'],
-                                                               testReddenedMagDict['i'],
-                                                               testReddenedMagDict['z'], am,
+            testReddenedMagList = testMagList + testReddening
+            testOutputNameReddened.append(testMatching.findSED(testMatchingDict, testReddenedMagList[0],
+                                                               testReddenedMagList[1],
+                                                               testReddenedMagList[2],
+                                                               testReddenedMagList[3],
+                                                               testReddenedMagList[4], am,
                                                                testSubsetComp[testSEDNum], True,
                                                                reddenCoeffs))
         self.assertEqual(testOutputName, testSubsetList)
@@ -645,7 +599,6 @@ class TestReadGalfast(unittest.TestCase):
 
         testRG = readGalfast()
         sEDParams = selectStarSED()
-        testPhot = phot()
         absLSSTr = 10.
         DM = 10.
         am = 0.5
@@ -664,18 +617,15 @@ class TestReadGalfast(unittest.TestCase):
             testTypeDict = {}
             lsstgmrDict = {}; lsstumgDict = {}; lsstrmiDict = {}; lsstimzDict = {}; lsstzmyDict = {};
             lsstrMagsDict = {}
-            rMagDict[testSpectrum] = sEDObj.calcMag(sEDParams.bandpassDict['r'])
+            rMagDict[testSpectrum] = sEDObj.calcMag(sEDParams.lsstPhot.bandPassList[2])
             testTypeDict['rMags'] = rMagDict
-            lsstTestMagDict =  testPhot.manyMagCalc_dict(sEDObj, sEDParams.lsstPhiArray,
-                                                         sEDParams.lsstWavelenstep,
-                                                         sEDParams.lsstBandpassDict,
-                                                         sEDParams.lsstFilterList)
-            lsstgmrDict[testSpectrum] = lsstTestMagDict['g'] - lsstTestMagDict['r']
-            lsstumgDict[testSpectrum] = lsstTestMagDict['u'] - lsstTestMagDict['g']
-            lsstrmiDict[testSpectrum] = lsstTestMagDict['r'] - lsstTestMagDict['i']
-            lsstimzDict[testSpectrum] = lsstTestMagDict['i'] - lsstTestMagDict['z']
-            lsstzmyDict[testSpectrum] = lsstTestMagDict['z'] - lsstTestMagDict['y']
-            lsstrMagsDict[testSpectrum] = lsstTestMagDict['r']
+            lsstTestMagList =  sEDParams.lsstPhot.manyMagCalc_list(sEDObj)
+            lsstgmrDict[testSpectrum] = lsstTestMagList[1] - lsstTestMagList[2]
+            lsstumgDict[testSpectrum] = lsstTestMagList[0] - lsstTestMagList[1]
+            lsstrmiDict[testSpectrum] = lsstTestMagList[2] - lsstTestMagList[3]
+            lsstimzDict[testSpectrum] = lsstTestMagList[3] - lsstTestMagList[4]
+            lsstzmyDict[testSpectrum] = lsstTestMagList[4] - lsstTestMagList[5]
+            lsstrMagsDict[testSpectrum] = lsstTestMagList[2]
             testTypeDict['lsstgmr'] = lsstgmrDict
             testTypeDict['lsstumg'] = lsstumgDict
             testTypeDict['lsstrmi'] = lsstrmiDict
@@ -689,9 +639,9 @@ class TestReadGalfast(unittest.TestCase):
             sEDObj.readSED_flambda(sEDParams.sEDDir + '/starSED/' + testDir + '/' + testSpectrum)
             #Calculate the SDSSr if the SED's LSSTr is set to absLSSTr above
             #Then Make sure with this input you get the same LSSTr out of findLSSTMags
-            lsstFluxNorm = sEDObj.calcFluxNorm(absLSSTr, sEDParams.lsstBandpassDict['r'])
+            lsstFluxNorm = sEDObj.calcFluxNorm(absLSSTr, sEDParams.lsstPhot.bandPassList[2])
             sEDObj.multiplyFluxNorm(lsstFluxNorm)
-            absSDSSr = sEDObj.calcMag(sEDParams.bandpassDict['r'])
+            absSDSSr = sEDObj.calcMag(sEDParams.lsstPhot.bandPassList[2])
             testFluxNorm, testMagDict = testRG.findLSSTMags(testSpectrum, sEDDict, absSDSSr,
                                                             DM, am, lsstExtCoords)
             self.assertAlmostEqual(testFluxNorm, lsstFluxNorm)
@@ -768,7 +718,6 @@ class TestReadGalfast(unittest.TestCase):
 def suite():
     utilsTests.init()
     suites = []
-    suites += unittest.makeSuite(TestRGUtils)
     suites += unittest.makeSuite(TestSelectGalaxySED)
     suites += unittest.makeSuite(TestSelectStarSED)
     suites += unittest.makeSuite(TestReadGalfast)

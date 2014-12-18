@@ -6,9 +6,8 @@ import re
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
-from lsst.sims.photUtils.photUtils import Photometry as phot
+from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.photUtils.EBV import EBVbase as ebv
-from lsst.sims.photUtils.readGalfast.rgUtils import Spectrum
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
 __all__ = ["selectGalaxySED"]
@@ -21,7 +20,7 @@ class selectGalaxySED():
         @param [in] galDir is the directory where the galaxy SEDs are stored
         """
 
-        if galDir == None:
+        if galDir is None:
             #Use SpecMap to pull in directory's location in LSST Stack
             specMap = SpecMap()
             specFileStart = 'Exp' #Start of sample BC03 name in sims_sed_library
@@ -64,7 +63,8 @@ class selectGalaxySED():
                 print 'Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles)
  
             try:
-                spec = Spectrum(str(self.galDir + '/' + fileName))
+                spec = Sed()
+                spec.readSED_flambda(str(self.galDir + '/' + fileName))
                 spec.name = fileName
                 spec.type = fileName.split('.')[0]
                 spec.age = float(fileName.split('.')[1])
@@ -82,7 +82,7 @@ class selectGalaxySED():
         return sedList
 
     def matchToRestFrame(self, sedList, catMags, filterList = ('u', 'g', 'r', 'i', 'z'),
-                         throughputDir = os.getenv('SDSS_THROUGHPUTS'), filterRoot = 'sdss_'):
+                         bandpassDir = os.getenv('SDSS_THROUGHPUTS'), filterRoot = 'sdss_'):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
@@ -107,22 +107,18 @@ class selectGalaxySED():
 
         #Set up photometry to calculate model Mags
         galPhot = phot()
-        bandpassDict = galPhot.loadBandpasses(filterlist = filterList,
-                                                   dataDir = throughputDir,
-                                                   filterroot = filterRoot)
-        phiArray, wavelenstep = galPhot.setupPhiArray_dict(bandpassDict, filterList)
+        galPhot.loadBandPassesFromFiles(filterList, bandPassDir = bandpassDir, bandPassRoot = filterRoot)
+        galPhot.setupPhiArray_dict()
 
         modelColors = []
         sedMatches = []
 
         #Find the colors for all model SEDs
         for galSpec in sedList:
-            fileSED = Sed()
-            fileSED.setSED(galSpec.wave, flambda = galSpec.flux)
-            sEDMagDict = galPhot.manyMagCalc_dict(fileSED, phiArray, wavelenstep, bandpassDict, filterList)
+            sEDMags = galPhot.manyMagCalc_list(galSpec)
             colorInfo = []
             for filtNum in range(0, len(filterList)-1):
-                colorInfo.append(sEDMagDict[filterList[filtNum]] - sEDMagDict[filterList[filtNum+1]])
+                colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
             modelColors.append(colorInfo)
         modelColors = np.transpose(modelColors)
 
@@ -148,7 +144,7 @@ class selectGalaxySED():
         return sedMatches
 
     def matchToObserved(self, sedList, catRA, catDec, catRedshifts, catMags, 
-                        filterList = ('u','g','r','i','z'), throughputDir = os.getenv('SDSS_THROUGHPUTS'), 
+                        filterList = ('u','g','r','i','z'), bandpassDir = os.getenv('SDSS_THROUGHPUTS'), 
                         filterRoot = 'sdss_', dzAcc = 2, extinction = True, 
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
@@ -197,10 +193,8 @@ class selectGalaxySED():
 
         #Set up photometry to calculate model Mags
         galPhot = phot()
-        bandpassDict = galPhot.loadBandpasses(filterlist = filterList,
-                                              dataDir = throughputDir,
-                                              filterroot = filterRoot)
-        phiArray, wavelenstep = galPhot.setupPhiArray_dict(bandpassDict, filterList)
+        galPhot.loadBandPassesFromFiles(filterList, bandPassDir = bandpassDir, bandPassRoot = filterRoot)
+        galPhot.setupPhiArray_dict()
         
         minRedshift = np.round(np.min(catRedshifts), dzAcc)
         maxRedshift = np.round(np.max(catRedshifts), dzAcc)
@@ -215,12 +209,11 @@ class selectGalaxySED():
             for galSpec in sedList:
                 sedColors = []
                 fileSED = Sed()
-                fileSED.setSED(galSpec.wave, flambda = galSpec.flux)
+                fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
                 fileSED.redshiftSED(redshift)
-                sEDMagDict = galPhot.manyMagCalc_dict(fileSED, phiArray, wavelenstep,
-                                                      bandpassDict, filterList)
+                sEDMags = galPhot.manyMagCalc_list(fileSED)
                 for filtNum in range(0, len(filterList)-1):
-                    sedColors.append(sEDMagDict[filterList[filtNum]] - sEDMagDict[filterList[filtNum+1]])
+                    sedColors.append(sEDMags[filtNum] - sEDMags[filtNum+1])
                 colorSet.append(sedColors)
             colorSet = np.transpose(colorSet)
             redshiftColors[str(np.round(redshift,dzAcc))] = colorSet
