@@ -81,8 +81,7 @@ class selectGalaxySED():
 
         return sedList
 
-    def matchToRestFrame(self, sedList, catMags, filterList = ('u', 'g', 'r', 'i', 'z'),
-                         bandpassDir = os.getenv('SDSS_THROUGHPUTS'), filterRoot = 'sdss_'):
+    def matchToRestFrame(self, sedList, catMags, bandpassList):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
@@ -94,12 +93,7 @@ class selectGalaxySED():
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
 
-        @param [in] filterList is the set of filters corresponding to the object magnitudes in the order
-        they are organized in each row of the array.
-
-        @param [in] throughputDir is the directory where the filter throughputs are stored.
-
-        @param [in] filterroot is the root name of the throughputs in the directory that you want to use.
+        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
@@ -107,7 +101,7 @@ class selectGalaxySED():
 
         #Set up photometry to calculate model Mags
         galPhot = phot()
-        galPhot.loadBandPassesFromFiles(filterList, bandPassDir = bandpassDir, bandPassRoot = filterRoot)
+        galPhot.bandPassList = bandpassList
         galPhot.setupPhiArray_dict()
 
         modelColors = []
@@ -117,7 +111,7 @@ class selectGalaxySED():
         for galSpec in sedList:
             sEDMags = galPhot.manyMagCalc_list(galSpec)
             colorInfo = []
-            for filtNum in range(0, len(filterList)-1):
+            for filtNum in range(0, len(galPhot.bandPassList)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
             modelColors.append(colorInfo)
         modelColors = np.transpose(modelColors)
@@ -127,7 +121,7 @@ class selectGalaxySED():
         numOn = 0
         matchColors = []
 
-        for filtNum in range(0, len(filterList)-1):
+        for filtNum in range(0, len(galPhot.bandPassList)-1):
             matchColors.append(np.transpose(catMags)[filtNum] - np.transpose(catMags)[filtNum+1])
 
         matchColors = np.transpose(matchColors)
@@ -136,7 +130,7 @@ class selectGalaxySED():
             if numOn % 10000 == 0:
                 print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
             distanceArray = np.zeros(len(sedList))
-            for filtNum in range(0, len(filterList)-1):
+            for filtNum in range(0, len(galPhot.bandPassList)-1):
                 distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
             sedMatches.append(sedList[np.nanargmin(distanceArray)].name)
             numOn += 1
@@ -144,8 +138,9 @@ class selectGalaxySED():
         return sedMatches
 
     def matchToObserved(self, sedList, catRA, catDec, catRedshifts, catMags, 
-                        filterList = ('u','g','r','i','z'), bandpassDir = os.getenv('SDSS_THROUGHPUTS'), 
-                        filterRoot = 'sdss_', dzAcc = 2, extinction = True, 
+                        bandpassList, dzAcc = 2, extinction = True,
+                        #filterList = ('u','g','r','i','z'), bandpassDir = os.getenv('SDSS_THROUGHPUTS'), 
+                        #filterRoot = 'sdss_', dzAcc = 2, extinction = True, 
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
@@ -167,12 +162,7 @@ class selectGalaxySED():
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
 
-        @param [in] filterList is the set of filters corresponding to the object magnitudes in the order
-        they are organized in each row of the array.
-
-        @param [in] throughputDir is the directory where the filter throughputs are stored.
-
-        @param [in] filterroot is the root name of the throughputs in the directory that you want to use.
+        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes
 
         @param [in] dzAcc is the number of decimal places you want to use when building the redshift grid.
         For example, dzAcc = 2 will create a grid between the minimum and maximum redshifts with colors
@@ -193,7 +183,7 @@ class selectGalaxySED():
 
         #Set up photometry to calculate model Mags
         galPhot = phot()
-        galPhot.loadBandPassesFromFiles(filterList, bandPassDir = bandpassDir, bandPassRoot = filterRoot)
+        galPhot.bandPassList = bandpassList
         galPhot.setupPhiArray_dict()
         
         #Calculate ebv from ra, dec coordinates if needed
@@ -230,7 +220,7 @@ class selectGalaxySED():
                 fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
                 fileSED.redshiftSED(redshift)
                 sEDMags = galPhot.manyMagCalc_list(fileSED)
-                for filtNum in range(0, len(filterList)-1):
+                for filtNum in range(0, len(galPhot.bandPassList)-1):
                     sedColors.append(sEDMags[filtNum] - sEDMags[filtNum+1])
                 colorSet.append(sedColors)
             colorSet = np.transpose(colorSet)
@@ -238,10 +228,10 @@ class selectGalaxySED():
                 matchMags = catMags[currentIndex]
                 if lastRedshift < np.round(catRedshifts[currentIndex],dzAcc) <= redshift:
                     if extinction == True:
-                        for filtNum in range(0, len(filterList)):
+                        for filtNum in range(0, len(galPhot.bandPassList)):
                             matchMags[filtNum] = (matchMags[filtNum] 
                                                   - (extCoeffs[filtNum]*ebvVals[currentIndex]))
-                    for filtNum in range(0, len(filterList)-1):
+                    for filtNum in range(0, len(galPhot.bandPassList)-1):
                         matchColor = matchMags[filtNum] - matchMags[filtNum+1]
                         distanceArray = np.power((colorSet[filtNum] - matchColor),2)
                     sedMatches[currentIndex] = sedList[np.nanargmin(distanceArray)].name

@@ -5,6 +5,7 @@ import numpy as np
 import gzip
 import pyfits
 import re
+import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
@@ -18,10 +19,10 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        
+
         #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'), 'sdss')
+        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(eups.productDir('throughputs'),'baseline')
+        os.environ['SDSS_THROUGHPUTS'] = os.path.join(eups.productDir('throughputs'), 'sdss')
     
         specMap = SpecMap()
         specFileStart = 'Exp'
@@ -95,8 +96,7 @@ class TestSelectGalaxySED(unittest.TestCase):
             getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
             testMags.append(galPhot.manyMagCalc_list(getSEDMags))
 
-        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, 
-                                                            bandpassDir = os.getenv('SDSS_THROUGHPUTS'))
+        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, galPhot.bandPassList)
 
         self.assertEqual(testSEDNames, testMatchingResults)
 
@@ -146,16 +146,12 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMagsRedshift.append(galPhot.manyMagCalc_list(getRedshiftMags))
             
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMags, 
-                                                           bandpassDir = os.getenv('SDSS_THROUGHPUTS'),
-                                                           extinction = False)
+                                                           testMags, galPhot.bandPassList, extinction = False)
         testMatchingExtVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMagsExt, 
-                                                           bandpassDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                           testMagsExt, galPhot.bandPassList,
                                                            extinction = True, extCoeffs = extCoeffs)
         testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
-                                                            testMagsRedshift, 
-                                                            bandpassDir = os.getenv('SDSS_THROUGHPUTS'),
+                                                            testMagsRedshift, galPhot.bandPassList,
                                                             dzAcc = 3, extinction = False)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift)
@@ -175,8 +171,8 @@ class TestSelectStarSED(unittest.TestCase):
     def setUpClass(cls):
 
         #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
+        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(eups.productDir('throughputs'),'baseline')
+        os.environ['SDSS_THROUGHPUTS'] = os.path.join(eups.productDir('throughputs'), 'sdss')
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
@@ -495,8 +491,8 @@ class TestReadGalfast(unittest.TestCase):
     def setUpClass(cls):
 
         #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
+        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(eups.productDir('throughputs'),'baseline')
+        os.environ['SDSS_THROUGHPUTS'] = os.path.join(eups.productDir('throughputs'), 'sdss')
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
