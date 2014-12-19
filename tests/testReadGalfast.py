@@ -496,7 +496,7 @@ class TestReadGalfast(unittest.TestCase):
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
-        specMap= SpecMap()
+        specMap = SpecMap()
         cls._specMapDict = {}
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
         specFileTypes = ['kurucz', 'mlt','wd']

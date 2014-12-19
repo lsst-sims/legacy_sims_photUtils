@@ -175,7 +175,8 @@ class readGalfast():
         return distanceKpc
 
     def loadGalfast(self, filenameList, outFileList, sEDPath = None, kuruczPath = None, 
-                    mltPath = None, wdPath = None):
+                    mltPath = None, wdPath = None, kuruczSubset = None, 
+                    mltSubset = None, wdSubset = None):
         """
         This is customized for the outputs we currently need for the purposes of consistent output
         It will read in a galfast output file and output desired values for database input into a file
@@ -194,6 +195,15 @@ class readGalfast():
 
         @param [in] wdPath is the same as the previous two except that it specifies a path to an
         alternate white dwarf SED directory.
+
+        @param [in] kuruczSubset is a list which provides a subset of the kurucz files within the
+        kurucz folder that one wants to use
+
+        @param [in] mltSubset is a list which provides a subset of the mlt files within the
+        mlt folder that one wants to use
+
+        @param [in] wdSubset is a list which provides a subset of the wd files within the
+        wd folder that one wants to use
 
         """
 
@@ -214,9 +224,20 @@ class readGalfast():
         selectStarSED0 = selectStarSED(sEDDir = sEDPath, kuruczDir = kuruczPath, 
                                        mltDir = mltPath, wdDir = wdPath)
 
-        sEDDict['kurucz'] = selectStarSED0.loadKuruczSEDs()
-        sEDDict['mlt'] = selectStarSED0.loadmltSEDs()
-        wdDict = selectStarSED0.loadwdSEDs()
+        if kuruczSubset is None:
+            sEDDict['kurucz'] = selectStarSED0.loadKuruczSEDs()
+        else:
+            sEDDict['kurucz'] = selectStarSED0.loadKuruczSEDs(subset = kuruczSubset)
+            
+        if mltSubset is None:
+            sEDDict['mlt'] = selectStarSED0.loadmltSEDs()
+        else:
+            sEDDict['mlt'] = selectStarSED0.loadmltSEDs(subset = subset)
+
+        if wdSubset is None:
+            wdDict = selectStarSED0.loadwdSEDs()
+        else:
+            wdDict = selectStarSED0.loadwdSEDs(subset = subset)            
         sEDDict['wdH'] = wdDict['H']
         sEDDict['wdHE'] = wdDict['HE']
 

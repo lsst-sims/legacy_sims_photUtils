@@ -109,7 +109,9 @@ class selectGalaxySED():
 
         #Find the colors for all model SEDs
         for galSpec in sedList:
-            sEDMags = galPhot.manyMagCalc_list(galSpec)
+            fileSED = Sed()
+            fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
+            sEDMags = galPhot.manyMagCalc_list(fileSED)
             colorInfo = []
             for filtNum in range(0, len(galPhot.bandPassList)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
@@ -134,13 +136,13 @@ class selectGalaxySED():
                 distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
             sedMatches.append(sedList[np.nanargmin(distanceArray)].name)
             numOn += 1
+
+        print 'Done Matching. Matched %i catalog objects to SEDs' % (numCatMags)
             
         return sedMatches
 
     def matchToObserved(self, sedList, catRA, catDec, catRedshifts, catMags, 
                         bandpassList, dzAcc = 2, extinction = True,
-                        #filterList = ('u','g','r','i','z'), bandpassDir = os.getenv('SDSS_THROUGHPUTS'), 
-                        #filterRoot = 'sdss_', dzAcc = 2, extinction = True, 
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
@@ -240,6 +242,6 @@ class selectGalaxySED():
                     break
             lastRedshift = redshift
 
-        print 'Done Matching.'
+        print 'Done Matching. Matched %i catalog objects to SEDs' % (len(catMags))
 
         return sedMatches
