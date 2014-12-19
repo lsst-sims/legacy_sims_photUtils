@@ -42,7 +42,7 @@ class selectStarSED():
         alternate white dwarf SED directory.                                 
         """
 
-        if sEDDir == None:
+        if sEDDir is None:
             self.sEDDir = os.environ['SIMS_SED_LIBRARY_DIR']
         else:
             self.sEDDir = sEDDir
@@ -56,17 +56,17 @@ class selectStarSED():
                 if re.match(key, specStart):
                     specMapDict[specKey] = str(val)
         
-        if kuruczDir == None:
+        if kuruczDir is None:
             self.kuruczDir = str(self.sEDDir + '/' + specMapDict['kurucz'] + '/')
         else:
             self.kuruczDir = kuruczDir
 
-        if mltDir == None:
+        if mltDir is None:
             self.mltDir = str(self.sEDDir + '/' + specMapDict['mlt'] + '/')
         else:
             self.mltDir = mltDir
 
-        if wdDir == None:
+        if wdDir is None:
             self.wdDir = str(self.sEDDir + '/' + specMapDict['wd'] + '/')
         else:
             self.wdDir = wdDir
