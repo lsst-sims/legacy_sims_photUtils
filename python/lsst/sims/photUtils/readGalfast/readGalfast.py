@@ -232,12 +232,12 @@ class readGalfast():
         if mltSubset is None:
             sEDDict['mlt'] = selectStarSED0.loadmltSEDs()
         else:
-            sEDDict['mlt'] = selectStarSED0.loadmltSEDs(subset = subset)
+            sEDDict['mlt'] = selectStarSED0.loadmltSEDs(subset = mltSubset)
 
         if wdSubset is None:
             wdDict = selectStarSED0.loadwdSEDs()
         else:
-            wdDict = selectStarSED0.loadwdSEDs(subset = subset)            
+            wdDict = selectStarSED0.loadwdSEDs(subset = wdSubset)            
         sEDDict['wdH'] = wdDict['H']
         sEDDict['wdHE'] = wdDict['HE']
 

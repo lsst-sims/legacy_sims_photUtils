@@ -3,6 +3,7 @@ import gzip
 import pyfits
 import numpy as np
 import re
+import eups
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
@@ -77,8 +78,9 @@ class selectStarSED():
         self.starPhot = phot()
         self.filterList = ('u', 'g', 'r', 'i', 'z')
         self.starPhot.loadBandPassesFromFiles(self.filterList, 
-                                             bandPassDir = os.getenv("SDSS_THROUGHPUTS"), 
-                                             bandPassRoot ='sdss_')
+                                              bandPassDir = os.path.join(eups.productDir('throughputs'),
+                                                                         'sdss'),
+                                              bandPassRoot ='sdss_')
         self.starPhot.setupPhiArray_dict()
 
         #Load Bandpasses for LSST colors to get colors from matched SEDs

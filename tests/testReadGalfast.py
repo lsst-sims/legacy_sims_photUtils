@@ -20,16 +20,12 @@ class TestSelectGalaxySED(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(eups.productDir('throughputs'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(eups.productDir('throughputs'), 'sdss')
-    
         specMap = SpecMap()
         specFileStart = 'Exp'
         for key, val in sorted(specMap.subdir_map.iteritems()):
             if re.match(key, specFileStart):
                 galSpecDir = str(val)
-        cls.galDir = str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + galSpecDir + '/')
+        cls.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir + '/')
 
         #Set up Test Spectra Directory
         cls.testSpecDir = 'testGalaxySEDSpectrum/'
@@ -96,7 +92,14 @@ class TestSelectGalaxySED(unittest.TestCase):
             getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
             testMags.append(galPhot.manyMagCalc_list(getSEDMags))
 
-        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, galPhot.bandPassList)
+        #Since default bandPassList should be SDSS ugrizy shouldn't need to specify it
+        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags)
+
+        self.assertEqual(testSEDNames, testMatchingResults)
+
+        #Now test what happens if we pass in a bandPassList
+        testMatchingResultsNoDefault = testMatching.matchToRestFrame(testSEDList, testMags,
+                                                                     galPhot.bandPassList)
 
         self.assertEqual(testSEDNames, testMatchingResults)
 
@@ -146,17 +149,24 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMagsRedshift.append(galPhot.manyMagCalc_list(getRedshiftMags))
             
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMags, galPhot.bandPassList, extinction = False)
+                                                           testMags, extinction = False)
         testMatchingExtVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMagsExt, galPhot.bandPassList,
+                                                           testMagsExt,
                                                            extinction = True, extCoeffs = extCoeffs)
         testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
-                                                            testMagsRedshift, galPhot.bandPassList,
+                                                            testMagsRedshift,
                                                             dzAcc = 3, extinction = False)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift)
         self.assertEqual(testSEDNames, testMatchingExtVals)
         self.assertEqual(testSEDNames, testMatchingRedshift)
+
+        #Now make sure if we are pass in a bandPassList it still works
+        testNoDefaultBandpass = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20),
+                                                             testMags, bandpassList = galPhot.bandPassList,
+                                                             extinction = False)
+
+        self.assertEqual(testSEDNames, testNoDefaultBandpass)
 
     @classmethod
     def tearDownClass(cls):
@@ -169,10 +179,6 @@ class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
-        #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(eups.productDir('throughputs'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(eups.productDir('throughputs'), 'sdss')
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
@@ -200,9 +206,9 @@ class TestSelectStarSED(unittest.TestCase):
         os.makedirs(cls.testKDir)
         os.mkdir(cls.testMLTDir)
         os.mkdir(cls.testWDDir)
-        cls.kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['wd'] + '/'
+        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         kList = os.listdir(cls.kDir)[0:20]
         #Use particular indices to get different types of seds within mlt and wds
         for kFile, mltFile, wdFile in zip(kList, 
@@ -490,10 +496,6 @@ class TestReadGalfast(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(eups.productDir('throughputs'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(eups.productDir('throughputs'), 'sdss')
-
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
         specMap = SpecMap()
@@ -517,9 +519,9 @@ class TestReadGalfast(unittest.TestCase):
         os.makedirs(cls.testKDir)
         os.mkdir(cls.testMLTDir)
         os.mkdir(cls.testWDDir)
-        cls.kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['wd'] + '/'
+        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         #Use particular indices to get different types of seds within mlt and wds
         for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20], 
                                           np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 

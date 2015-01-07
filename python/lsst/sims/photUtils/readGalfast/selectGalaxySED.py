@@ -3,6 +3,7 @@ import gzip
 import pyfits
 import numpy as np
 import re
+import eups
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
@@ -27,7 +28,7 @@ class selectGalaxySED():
             for key, val in sorted(specMap.subdir_map.iteritems()):
                 if re.match(key, specFileStart):
                     galSpecDir = str(val)
-            self.galDir = str(os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + galSpecDir)            
+            self.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir)            
         else:
             self.galDir = galDir
 
@@ -66,9 +67,10 @@ class selectGalaxySED():
                 spec = Sed()
                 spec.readSED_flambda(str(self.galDir + '/' + fileName))
                 spec.name = fileName
-                spec.type = fileName.split('.')[0]
-                spec.age = float(fileName.split('.')[1])
-                metallicity = fileName.split('.')[2].split('Z')[0]
+                fileNameAsList = fileName.split('.')
+                spec.type = fileNameAsList[0]
+                spec.age = float(fileNameAsList[1])
+                metallicity = fileNameAsList[2].split('Z')[0]
                 #Final form is z/zSun
                 spec.metallicity = float(metallicity) * (10 ** ((len(metallicity)-1)*-1))
 
@@ -81,7 +83,7 @@ class selectGalaxySED():
 
         return sedList
 
-    def matchToRestFrame(self, sedList, catMags, bandpassList):
+    def matchToRestFrame(self, sedList, catMags, bandpassList = None):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
@@ -93,7 +95,8 @@ class selectGalaxySED():
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
 
-        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes
+        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes. If left
+        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses.
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
@@ -101,7 +104,12 @@ class selectGalaxySED():
 
         #Set up photometry to calculate model Mags
         galPhot = phot()
-        galPhot.bandPassList = bandpassList
+        if bandpassList is None:
+            galPhot.loadBandPassesFromFiles(['u','g','r','i','z'], 
+                                            bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                            bandPassRoot = 'sdss_')
+        else:
+            galPhot.bandPassList = bandpassList
         galPhot.setupPhiArray_dict()
 
         modelColors = []
@@ -142,7 +150,7 @@ class selectGalaxySED():
         return sedMatches
 
     def matchToObserved(self, sedList, catRA, catDec, catRedshifts, catMags, 
-                        bandpassList, dzAcc = 2, extinction = True,
+                        bandpassList = None, dzAcc = 2, extinction = True,
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
@@ -153,7 +161,7 @@ class selectGalaxySED():
         defined by the parameter dzAcc.
 
         @param [in] sedList is the set of spectral objects from the models SEDs provided by loadBC03
-        or other custom loader routine
+        or other custom loader routine.
 
         @param [in] catRA is an array of the RA positions for each catalog object.
 
@@ -164,7 +172,9 @@ class selectGalaxySED():
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
 
-        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes
+        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes. If left
+        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
+        default extCoeffs.
 
         @param [in] dzAcc is the number of decimal places you want to use when building the redshift grid.
         For example, dzAcc = 2 will create a grid between the minimum and maximum redshifts with colors
@@ -174,10 +184,11 @@ class selectGalaxySED():
         dust in the milky way. This uses calculateEBV from EBV.py to find an EBV value for the object's
         ra and dec coordinates and then uses the coefficients provided by extCoeffs which should come
         from Schlafly and Finkbeiner (2011) for the correct filters and in the same order as provided
-        in filterList.
+        in bandpassList.
 
-        @param [in] extCoords are the Schlafly and Finkbeiner (2011) coefficients for the given filters
-        from filterList and need to be in the same order as filterList.
+        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) coefficients for the given filters
+        from bandpassList and need to be in the same order as bandpassList. The default given are the SDSS
+        [u,g,r,i,z] values.
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
@@ -185,7 +196,12 @@ class selectGalaxySED():
 
         #Set up photometry to calculate model Mags
         galPhot = phot()
-        galPhot.bandPassList = bandpassList
+        if bandpassList is None:
+            galPhot.loadBandPassesFromFiles(['u','g','r','i','z'], 
+                                            bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                            bandPassRoot = 'sdss_')
+        else:
+            galPhot.bandPassList = bandpassList
         galPhot.setupPhiArray_dict()
         
         #Calculate ebv from ra, dec coordinates if needed
