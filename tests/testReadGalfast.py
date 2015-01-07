@@ -75,8 +75,9 @@ class TestSelectGalaxySED(unittest.TestCase):
     def testMatchToRestFrame(self):
 
         galPhot = phot()
-        galPhot.loadBandPassesFromFiles(self.filterList, bandPassDir = os.getenv('SDSS_THROUGHPUTS'), 
-                               bandPassRoot = 'sdss_')
+        galPhot.loadBandPassesFromFiles(self.filterList, 
+                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandPassRoot = 'sdss_')
         galPhot.setupPhiArray_dict()
 
         testMatching = selectGalaxySED(galDir = self.testSpecDir)
@@ -106,8 +107,9 @@ class TestSelectGalaxySED(unittest.TestCase):
     def testMatchToObserved(self):
         
         galPhot = phot()
-        galPhot.loadBandPassesFromFiles(self.filterList, bandPassDir = os.getenv('SDSS_THROUGHPUTS'), 
-                               bandPassRoot = 'sdss_')
+        galPhot.loadBandPassesFromFiles(self.filterList, 
+                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandPassRoot = 'sdss_')
         galPhot.setupPhiArray_dict()
 
         testMatching = selectGalaxySED(galDir = self.testSpecDir)
