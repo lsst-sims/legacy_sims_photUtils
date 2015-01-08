@@ -5,25 +5,186 @@ import numpy as np
 import gzip
 import pyfits
 import re
+import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
+from lsst.sims.photUtils.readGalfast.selectGalaxySED import selectGalaxySED
+from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.photUtils import Photometry as phot
+from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
+
+class TestSelectGalaxySED(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        specMap = SpecMap()
+        specFileStart = 'Exp'
+        for key, val in sorted(specMap.subdir_map.iteritems()):
+            if re.match(key, specFileStart):
+                galSpecDir = str(val)
+        cls.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir + '/')
+
+        #Set up Test Spectra Directory
+        cls.testSpecDir = 'testGalaxySEDSpectrum/'
+        
+        if os.path.exists(cls.testSpecDir):
+            shutil.rmtree(cls.testSpecDir)
+
+        os.mkdir(cls.testSpecDir)
+
+        galList = os.listdir(cls.galDir)[0:20]
+
+        for galFile in galList:
+            shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
+
+        cls.filterList = ('u', 'g', 'r', 'i', 'z')
+
+    def testLoadBC03(self):
+
+        loadTestBC03 = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDs = loadTestBC03.loadBC03()
+
+        #Read in a list of the SEDs in the test galaxy sed directory
+        testGalList = os.listdir(self.testSpecDir)
+
+        #Make sure the names of seds in folder and set that was read in are the same
+        #This also tests that the name attribute is assigned to each Spectrum object correctly
+        testNames = []
+        for testSED in testSEDs:
+            testNames.append(testSED.name)
+        self.assertItemsEqual(testGalList, testNames)
+
+        #Test same condition if a subset is provided
+        testSubsetList = testGalList[0:2]
+        testSEDsubset = loadTestBC03.loadBC03(subset = testSubsetList)
+        testSubsetNames = []
+        for testSED in testSEDsubset:
+            testSubsetNames.append(testSED.name)
+        self.assertItemsEqual(testSubsetList, testSubsetNames)
+
+        #Test that attributes have been assigned
+        for testSED in testSEDsubset:
+            self.assertIsNotNone(testSED.name)
+            self.assertIsNotNone(testSED.type)
+            self.assertIsNotNone(testSED.age)
+            self.assertIsNotNone(testSED.metallicity)
+
+    def testMatchToRestFrame(self):
+
+        galPhot = phot()
+        galPhot.loadBandPassesFromFiles(self.filterList, 
+                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandPassRoot = 'sdss_')
+        galPhot.setupPhiArray_dict()
+
+        testMatching = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDList = testMatching.loadBC03()
+
+        testSEDNames = []
+        testMags = []
+
+        for testSED in testSEDList:
+            
+            getSEDMags = Sed()
+            testSEDNames.append(testSED.name)
+            getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
+            testMags.append(galPhot.manyMagCalc_list(getSEDMags))
+
+        #Since default bandPassList should be SDSS ugrizy shouldn't need to specify it
+        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags)
+
+        self.assertEqual(testSEDNames, testMatchingResults)
+
+        #Now test what happens if we pass in a bandPassList
+        testMatchingResultsNoDefault = testMatching.matchToRestFrame(testSEDList, testMags,
+                                                                     galPhot.bandPassList)
+
+        self.assertEqual(testSEDNames, testMatchingResults)
+
+    def testMatchToObserved(self):
+        
+        galPhot = phot()
+        galPhot.loadBandPassesFromFiles(self.filterList, 
+                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandPassRoot = 'sdss_')
+        galPhot.setupPhiArray_dict()
+
+        testMatching = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDList = testMatching.loadBC03()
+
+        testSEDNames = []
+        testRA = []
+        testDec = []
+        testRedshifts = []
+        extCoeffs = np.arange(1, 1.5, 0.1)
+        testMags = []
+        testMagsRedshift = []
+        testMagsExt = []
+
+        for testSED in testSEDList:
+
+            #As a check make sure that it matches when no extinction and no redshift are present
+            getSEDMags = Sed()
+            testSEDNames.append(testSED.name)
+            getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
+            testMags.append(galPhot.manyMagCalc_list(getSEDMags))
+
+            #Check Extinction corrections
+            sedRA = np.random.uniform(10,170)
+            sedDec = np.random.uniform(10,80)
+            testRA.append(sedRA)
+            testDec.append(sedDec)
+            raDec = np.array((sedRA, sedDec)).reshape((2,1))
+            ebvVal = ebv().calculateEbv(equatorialCoordinates = raDec)
+            extVal = ebvVal*extCoeffs
+            testMagsExt.append(galPhot.manyMagCalc_list(getSEDMags) + extVal)
+
+            #Setup magnitudes for testing matching to redshifted values
+            getRedshiftMags = Sed()
+            testZ = np.round(np.random.uniform(1.1,1.3),3)
+            testRedshifts.append(testZ)
+            getRedshiftMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
+            getRedshiftMags.redshiftSED(testZ)
+            testMagsRedshift.append(galPhot.manyMagCalc_list(getRedshiftMags))
+            
+        testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
+                                                           testMags, extinction = False)
+        testMatchingExtVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
+                                                           testMagsExt,
+                                                           extinction = True, extCoeffs = extCoeffs)
+        testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
+                                                            testMagsRedshift,
+                                                            dzAcc = 3, extinction = False)
+
+        self.assertEqual(testSEDNames, testNoExtNoRedshift)
+        self.assertEqual(testSEDNames, testMatchingExtVals)
+        self.assertEqual(testSEDNames, testMatchingRedshift)
+
+        #Now make sure if we are pass in a bandPassList it still works
+        testNoDefaultBandpass = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20),
+                                                             testMags, bandpassList = galPhot.bandPassList,
+                                                             extinction = False)
+
+        self.assertEqual(testSEDNames, testNoDefaultBandpass)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.galDir
+        del cls.filterList
+
+        shutil.rmtree(cls.testSpecDir)
 
 class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
-
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
-        specMap= SpecMap()
+        specMap = SpecMap()
         cls._specMapDict = {}
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
         specFileTypes = ['kurucz', 'mlt','wd']
@@ -47,9 +208,9 @@ class TestSelectStarSED(unittest.TestCase):
         os.makedirs(cls.testKDir)
         os.mkdir(cls.testMLTDir)
         os.mkdir(cls.testWDDir)
-        cls.kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['wd'] + '/'
+        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         kList = os.listdir(cls.kDir)[0:20]
         #Use particular indices to get different types of seds within mlt and wds
         for kFile, mltFile, wdFile in zip(kList, 
@@ -97,7 +258,7 @@ class TestSelectStarSED(unittest.TestCase):
         loadTestKurucz = selectStarSED(kuruczDir = self.testKDir)
         testSEDs = loadTestKurucz.loadKuruczSEDs()
 
-        #Read in a list of the SEDs in the kurucz sims sed directory
+        #Read in a list of the SEDs in the kurucz test sed directory
         testKuruczList = os.listdir(self.testKDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
@@ -125,7 +286,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
         #Give kurucz like filename just so it works
         testSED.writeSED(self.kmTestName)
 
@@ -142,7 +303,7 @@ class TestSelectStarSED(unittest.TestCase):
         loadTestMLT = selectStarSED(mltDir = self.testMLTDir)
         testSEDs = loadTestMLT.loadmltSEDs()
 
-        #Read in a list of the SEDs in the kurucz sims sed directory
+        #Read in a list of the SEDs in the mlt test sed directory
         testMLTList = os.listdir(self.testMLTDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
@@ -165,7 +326,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
         #Give mlt like filename just so it works
         testSED.writeSED(self.mTestName)
 
@@ -189,7 +350,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDNamesLists.append(testSEDs['HE']['sEDName'])
         testSEDNames = [name for nameList in testSEDNamesLists for name in nameList]
 
-        #Read in a list of the SEDs in the kurucz sims sed directory
+        #Read in a list of the SEDs in the wd test sed directory
         testWDList = os.listdir(self.testWDDir)
 
         #First make sure that all SEDs are correctly accounted for if no subset provided
@@ -224,7 +385,7 @@ class TestSelectStarSED(unittest.TestCase):
         testSEDsColors = selectStarSED()
 
         testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.bandpassDict['r']))
+        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
         #Give WD like filename just so it works
         testName = 'bergeron_9999_99.dat_9999'
         testNameHe = 'bergeron_He_9999_99.dat_9999'
@@ -310,29 +471,23 @@ class TestSelectStarSED(unittest.TestCase):
             testSEDName = testSubsetList[testSEDNum].strip('.gz')
             getSEDColors.readSED_flambda(str(testMatching.sEDDir + '/' +
                                              str(specMap.__getitem__(testSEDName))))
-            getSEDColors.multiplyFluxNorm(getSEDColors.calcFluxNorm(10, testMatching.bandpassDict['r']))
-            testSEDPhotometry = phot()
-            testMagDict = testSEDPhotometry.manyMagCalc_dict(getSEDColors, testMatching.phiArray,
-                                                             testMatching.wavelenstep,
-                                                             testMatching.bandpassDict,
-                                                             testMatching.filterList)
+            getSEDColors.multiplyFluxNorm(getSEDColors.calcFluxNorm(10, testMatching.starPhot.bandPassList[2]))
+            testMagList = testMatching.starPhot.manyMagCalc_list(getSEDColors)
 
             #First test without reddening
-            testOutputName.append(testMatching.findSED(testMatchingDict, testMagDict['u'], testMagDict['g'],
-                                                       testMagDict['r'], testMagDict['i'], testMagDict['z'],
+            testOutputName.append(testMatching.findSED(testMatchingDict, testMagList[0], testMagList[1],
+                                                       testMagList[2], testMagList[3], testMagList[4],
                                                        0, testSubsetComp[testSEDNum], reddening = False))
             #Next test with reddening and custom coeffs
             am = 0.5
             reddenCoeffs = np.array([1.2, 1.1, 1.0, 0.9, 0.8])
             testReddening = am * reddenCoeffs
-            testReddenedMagDict = {}
-            for filter, coeffNum in zip(testMatching.filterList, range(0, len(testReddening))):
-                testReddenedMagDict[filter] = testMagDict[filter] + testReddening[coeffNum]
-            testOutputNameReddened.append(testMatching.findSED(testMatchingDict, testReddenedMagDict['u'],
-                                                               testReddenedMagDict['g'],
-                                                               testReddenedMagDict['r'],
-                                                               testReddenedMagDict['i'],
-                                                               testReddenedMagDict['z'], am,
+            testReddenedMagList = testMagList + testReddening
+            testOutputNameReddened.append(testMatching.findSED(testMatchingDict, testReddenedMagList[0],
+                                                               testReddenedMagList[1],
+                                                               testReddenedMagList[2],
+                                                               testReddenedMagList[3],
+                                                               testReddenedMagList[4], am,
                                                                testSubsetComp[testSEDNum], True,
                                                                reddenCoeffs))
         self.assertEqual(testOutputName, testSubsetList)
@@ -343,13 +498,9 @@ class TestReadGalfast(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        #because SCons only knows about a limited subset of the LSST environment variables
-        os.environ['LSST_THROUGHPUTS_DEFAULT'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
-        os.environ['SDSS_THROUGHPUTS'] = os.path.join(os.getenv('THROUGHPUTS_DIR'),'sdss')
-
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
-        specMap= SpecMap()
+        specMap = SpecMap()
         cls._specMapDict = {}
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
         specFileTypes = ['kurucz', 'mlt','wd']
@@ -370,9 +521,9 @@ class TestReadGalfast(unittest.TestCase):
         os.makedirs(cls.testKDir)
         os.mkdir(cls.testMLTDir)
         os.mkdir(cls.testWDDir)
-        cls.kDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = os.environ['SIMS_SED_LIBRARY_DIR'] + '/' + cls._specMapDict['wd'] + '/'
+        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         #Use particular indices to get different types of seds within mlt and wds
         for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20], 
                                           np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 
@@ -448,7 +599,6 @@ class TestReadGalfast(unittest.TestCase):
 
         testRG = readGalfast()
         sEDParams = selectStarSED()
-        testPhot = phot()
         absLSSTr = 10.
         DM = 10.
         am = 0.5
@@ -467,18 +617,15 @@ class TestReadGalfast(unittest.TestCase):
             testTypeDict = {}
             lsstgmrDict = {}; lsstumgDict = {}; lsstrmiDict = {}; lsstimzDict = {}; lsstzmyDict = {};
             lsstrMagsDict = {}
-            rMagDict[testSpectrum] = sEDObj.calcMag(sEDParams.bandpassDict['r'])
+            rMagDict[testSpectrum] = sEDObj.calcMag(sEDParams.lsstPhot.bandPassList[2])
             testTypeDict['rMags'] = rMagDict
-            lsstTestMagDict =  testPhot.manyMagCalc_dict(sEDObj, sEDParams.lsstPhiArray,
-                                                         sEDParams.lsstWavelenstep,
-                                                         sEDParams.lsstBandpassDict,
-                                                         sEDParams.lsstFilterList)
-            lsstgmrDict[testSpectrum] = lsstTestMagDict['g'] - lsstTestMagDict['r']
-            lsstumgDict[testSpectrum] = lsstTestMagDict['u'] - lsstTestMagDict['g']
-            lsstrmiDict[testSpectrum] = lsstTestMagDict['r'] - lsstTestMagDict['i']
-            lsstimzDict[testSpectrum] = lsstTestMagDict['i'] - lsstTestMagDict['z']
-            lsstzmyDict[testSpectrum] = lsstTestMagDict['z'] - lsstTestMagDict['y']
-            lsstrMagsDict[testSpectrum] = lsstTestMagDict['r']
+            lsstTestMagList =  sEDParams.lsstPhot.manyMagCalc_list(sEDObj)
+            lsstgmrDict[testSpectrum] = lsstTestMagList[1] - lsstTestMagList[2]
+            lsstumgDict[testSpectrum] = lsstTestMagList[0] - lsstTestMagList[1]
+            lsstrmiDict[testSpectrum] = lsstTestMagList[2] - lsstTestMagList[3]
+            lsstimzDict[testSpectrum] = lsstTestMagList[3] - lsstTestMagList[4]
+            lsstzmyDict[testSpectrum] = lsstTestMagList[4] - lsstTestMagList[5]
+            lsstrMagsDict[testSpectrum] = lsstTestMagList[2]
             testTypeDict['lsstgmr'] = lsstgmrDict
             testTypeDict['lsstumg'] = lsstumgDict
             testTypeDict['lsstrmi'] = lsstrmiDict
@@ -492,9 +639,9 @@ class TestReadGalfast(unittest.TestCase):
             sEDObj.readSED_flambda(sEDParams.sEDDir + '/starSED/' + testDir + '/' + testSpectrum)
             #Calculate the SDSSr if the SED's LSSTr is set to absLSSTr above
             #Then Make sure with this input you get the same LSSTr out of findLSSTMags
-            lsstFluxNorm = sEDObj.calcFluxNorm(absLSSTr, sEDParams.lsstBandpassDict['r'])
+            lsstFluxNorm = sEDObj.calcFluxNorm(absLSSTr, sEDParams.lsstPhot.bandPassList[2])
             sEDObj.multiplyFluxNorm(lsstFluxNorm)
-            absSDSSr = sEDObj.calcMag(sEDParams.bandpassDict['r'])
+            absSDSSr = sEDObj.calcMag(sEDParams.lsstPhot.bandPassList[2])
             testFluxNorm, testMagDict = testRG.findLSSTMags(testSpectrum, sEDDict, absSDSSr,
                                                             DM, am, lsstExtCoords)
             self.assertAlmostEqual(testFluxNorm, lsstFluxNorm)
@@ -571,6 +718,7 @@ class TestReadGalfast(unittest.TestCase):
 def suite():
     utilsTests.init()
     suites = []
+    suites += unittest.makeSuite(TestSelectGalaxySED)
     suites += unittest.makeSuite(TestSelectStarSED)
     suites += unittest.makeSuite(TestReadGalfast)
     return unittest.TestSuite(suites)
