@@ -329,7 +329,7 @@ class PhotometryGalaxies(PhotometryBase):
     """
 
     def calculate_component_magnitudes(self,objectNames, componentNames, \
-                                       magNorm = 15.0, internalAv = None, redshift = None,
+                                       magNorm = None, internalAv = None, redshift = None,
                                        cosmologicalDistanceModulus = None, specFileMap=None):
 
         """
