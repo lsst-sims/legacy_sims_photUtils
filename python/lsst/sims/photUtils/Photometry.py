@@ -14,6 +14,7 @@ import os
 import numpy
 from lsst.sims.photUtils import Sed
 from lsst.sims.photUtils import Bandpass
+from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
 __all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
@@ -80,7 +81,7 @@ class PhotometryBase(object):
         self.waveLenStep = None
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self, sedList, magNorm=15.0, resample_same=False, specFileMap=None):
+    def loadSeds(self, sedList, magNorm=None, resample_same=False, specFileMap=None):
         """
         Takes the list of filename sedList and returns an array of SED objects.
 
@@ -94,6 +95,13 @@ class PhotometryBase(object):
         @param [in] resample_same governs whether or not to resample the Seds
         so that they are all on the same wavelength grid
 
+        @param [in] specFileMap is a mapping from the names in sedList to the absolute
+        path to the SED files.  It is an instantiation of the class defined in
+
+        sims_catalogs_measures/python/lsst/sims/catalogs_measures/instance/fileMaps.py
+
+        If not provided, a default will be instantiated.
+
         @param [out] sedOut is a list of Sed objects
 
         """
@@ -102,7 +110,7 @@ class PhotometryBase(object):
             if hasattr(self, 'specFileMap'):
                 specFileMap = self.specFileMap
             else:
-                raise RuntimeError('Cannot call PhotometryBase.loadSeds without a specFileMap')
+                specFileMap = defaultSpecMap
 
         dataDir=os.getenv('SIMS_SED_LIBRARY_DIR')
 
@@ -657,12 +665,34 @@ class PhotometryStars(PhotometryBase):
         @param [in] sedNames is a list of sed file names
 
         @param [in] specFileMap is a class which maps between sedNames and the absolute path to
-        the SED files.  Generally, it will be an instantiation of the classes defined in
+        the SED files.  It is an instantiation of the class defined in
+
         sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
 
-        magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
+        if not provided, a default will be instantiated
+
+        @param [out] magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
 
         """
+
+        if idNames is None:
+            raise RuntimeError('Cannot call PhotometryStars.calculate_magnitudes without idNames')
+
+        if magNorm is None:
+            raise RuntimeError('Cannot call PhotometryStars.calculate_magnitudes without magNorm')
+
+        if sedNames is None:
+            raise RuntimeError('Cannot call PhotometryStars.calculate_magnitudes without sedNames')
+
+        if specFileMap is None:
+            if hasattr(self, 'specFileMap'):
+                specFileMap=self.specFileMap
+            else:
+                specFileMap = defaultSpecMap
+
+        if len(idNames) != len(magNorm) or len(idNames) != len(sedNames) or len(sedNames) != len(magNorm):
+            raise RuntimeError('In PhotometryStars.calculate_magnitudes, had %d idnames, %d magNorms, and %d sedNames '
+                                % (len(idNames), len(magNorm), len(sedNames)))
 
         sedList = self.loadSeds(sedNames, magNorm=magNorm, specFileMap=specFileMap)
 
