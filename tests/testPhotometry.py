@@ -142,6 +142,63 @@ class photometryUnitTest(unittest.TestCase):
         magnitudes = phot.calculate_magnitudes(idNames=idNames, sedNames=sedNames,
                                                magNorm=magNorm)
 
+    def testGalaxyPhotometryStandAlone(self):
+        idNames = ['Alice', 'Bob', 'Charlie']
+
+        diskSeds = ['Const.80E07.02z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
+        diskMagNorm = [24.2, 28.1, 29.0]
+        diskAv = [3.1, 3.2, 2.9]
+
+        bulgeSeds = ['Inst.80E07.002Z.spec','Const.80E07.02z.spec','Burst.19E07.0005Z.spec']
+        bulgeMagNorm = [25.0, 28.0, 27.1]
+        bulgeAv = [2.8, 3.2, 3.3]
+
+        agnSeds = ['agn.spec', 'agn.spec', 'agn.spec']
+        agnMagNorm = [22.0, 23.0, 26.0]
+
+        redshift = [0.2, 0.3, 1.1]
+        cosmologicalDistanceModulus = [5.0, 3.0, 4.5]
+
+        diskSedsDummy = ['Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
+        diskMagNormDummy = [28.1, 29.0]
+        diskAvDummy = [3.2, 2.9]
+
+        bulgeSedsDummy = ['Const.80E07.02z.spec','Burst.19E07.0005Z.spec']
+        bulgeMagNormDummy = [28.0, 27.1]
+        bulgeAvDummy = [3.2, 3.3]
+
+        agnSeds = ['agn.spec', 'agn.spec', 'agn.spec']
+        agnMagNorm = [22.0, 23.0, 26.0]
+
+        redshiftDummy = [0.3, 1.1]
+        cosmologicalDistanceModulusDummy = [3.0, 4.5]
+
+        phot = PhotometryGalaxies()
+        phot.loadBandPassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSedsDummy, diskMagNorm=diskMagNorm, diskAv=diskAv,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNormDummy, diskAv=diskAvDummy,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNorm, diskAv=diskAvDummy,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSedsDummy, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNormDummy, bulgeAv=bulgeAv,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAvDummy,
+                          redshift=redshift)
 
     def testAlternateBandpassesStars(self):
         """
