@@ -80,7 +80,7 @@ class PhotometryBase(object):
         self.waveLenStep = None
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self, sedList, magNorm=15.0, resample_same=False):
+    def loadSeds(self, sedList, magNorm=15.0, resample_same=False, specFileMap=None):
         """
         Takes the list of filename sedList and returns an array of SED objects.
 
@@ -97,6 +97,12 @@ class PhotometryBase(object):
         @param [out] sedOut is a list of Sed objects
 
         """
+
+        if specFileMap is None:
+            if hasattr(self, 'specFileMap'):
+                specFileMap = self.specFileMap
+            else:
+                raise RuntimeError('Cannot call PhotometryBase.loadSeds without a specFileMap')
 
         dataDir=os.getenv('SIMS_SED_LIBRARY_DIR')
 
@@ -118,7 +124,7 @@ class PhotometryBase(object):
 
             if sedName not in uniqueSedDict:
                 sed = Sed()
-                sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
+                sed.readSED_flambda(os.path.join(dataDir, specFileMap[sedName]))
 
                 if resample_same:
                     if firstsed:
@@ -631,7 +637,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
 
-    def calculate_magnitudes(self, idNames):
+    def calculate_magnitudes(self, idNames=None, magNorm=None, sedNames=None, specFileMap=None):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of lists of magnitudes
@@ -646,13 +652,19 @@ class PhotometryStars(PhotometryBase):
 
         @param [in] idNames is a list of names uniquely identifying the objects being considered
 
+        @param [in] magNorm is a list of magnitude normalizations
+
+        @param [in] sedNames is a list of sed file names
+
+        @param [in] specFileMap is a class which maps between sedNames and the absolute path to
+        the SED files.  Generally, it will be an instantiation of the classes defined in
+        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
+
         magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
 
         """
 
-        sedNames = self.column_by_name('sedFilename')
-        magNorm = self.column_by_name('magNorm')
-        sedList = self.loadSeds(sedNames,magNorm = magNorm)
+        sedList = self.loadSeds(sedNames, magNorm=magNorm, specFileMap=specFileMap)
 
         magDict = {}
         for (name,sed) in zip(idNames,sedList):
@@ -673,7 +685,9 @@ class PhotometryStars(PhotometryBase):
 
         """
 
-        magDict = self.calculate_magnitudes(idNames)
+        magNorm = self.column_by_name('magNorm')
+        sedNames = self.column_by_name('sedFilename')
+        magDict = self.calculate_magnitudes(idNames, magNorm=magNorm, sedNames=sedNames)
         output = None
 
         for i in range(len(self.bandPassList)):
