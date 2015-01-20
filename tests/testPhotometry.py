@@ -208,7 +208,7 @@ class photometryUnitTest(unittest.TestCase):
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           agnNames=agnSeds, agnMagNorm=agnMagNormDummy)
-                          
+
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
                           redshift=redshiftDummy)
@@ -216,6 +216,26 @@ class photometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
                           redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulusDummy)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, redshift=redshift)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeAv=bulgeAv, redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNorm, redshift=redshift)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskAv=diskAv, redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSeds, redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNorm, diskAv=diskAv)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSeds, agnMagNorm=agnMagNorm)
 
     def testAlternateBandpassesStars(self):
         """

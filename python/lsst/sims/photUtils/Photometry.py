@@ -485,6 +485,12 @@ class PhotometryGalaxies(PhotometryBase):
                 specFileMap = defaultSpecMap
 
         if diskNames is not None:
+            if diskAv is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need diskAv')
+
+            if diskMagNorm is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need diskMagNorm')
+
             if len(diskNames) != len(idNames):
                 raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d diskNames'
                                    % (len(diskNames), len(idNames)))
@@ -493,6 +499,12 @@ class PhotometryGalaxies(PhotometryBase):
                                    % (len(diskNames), len(diskAv), len(diskMagNorm)))
 
         if bulgeNames is not None:
+            if bulgeAv is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need bulgeAv')
+
+            if bulgeMagNorm is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need bulgeMagNorm')
+
             if len(bulgeNames) != len(idNames):
                 raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d bulgeNames'
                                    % (len(bulgeNames), len(idNames)))
@@ -501,12 +513,18 @@ class PhotometryGalaxies(PhotometryBase):
                                    % (len(bulgeNames), len(bulgeAv), len(bulgeMagNorm)))
 
         if agnNames is not None:
+            if agnMagNorm is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need agnMagNorm')
+
             if len(agnNames) != len(idNames):
                 raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d agnNames'
                                    % (len(agnNames), len(idNames)))
             if len(agnNames) != len(agnMagNorm):
                 raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d agnNames and %d agnMagNorms'
                                    % (len(agnNames), len(agnMagNorm)))
+
+        if redshift is None:
+            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need redshift')
 
         if len(idNames) != len(redshift):
             raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d redshifts'
