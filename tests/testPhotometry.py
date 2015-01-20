@@ -6,9 +6,11 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
+
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
+from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies
@@ -104,6 +106,43 @@ class photometryUnitTest(unittest.TestCase):
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
         os.unlink("testGalaxiesOutput.txt")
+
+    def testStandAloneStellarPhotometry(self):
+        """
+        Test that it is possible to run PhotometryStars.calculate_magnitudes
+        outside of the context of an InstanceCatalog
+        """
+        idNames = ['1','2','3']
+        sedNames = ['km20_5750.fits_g40_5790','m2.0Full.dat',
+                     'bergeron_6500_85.dat_6700']
+        magNorm = [28.5, 23.0, 21.0]
+
+        dummyId = ['1', '2']
+        dummySed = ['km20_5750.fits_g40_5790','m2.0Full.dat']
+        dummyMagNorm = [28.5, 23.0]
+        bandPassNames = ['u','g','r','i','z','y']
+
+        phot = PhotometryStars()
+        phot.loadBandPassesFromFiles(bandPassNames)
+        phot.setupPhiArray_dict()
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          sedNames=sedNames, magNorm=magNorm)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=idNames, magNorm=magNorm)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=idNames, sedNames=sedNames)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=dummyId, sedNames=sedNames, magNorm=magNorm)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=idNames, sedNames=dummySed, magNorm=magNorm)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=idNames, sedNames=sedNames, magNorm=dummyMagNorm)
+
+        magnitudes = phot.calculate_magnitudes(idNames=idNames, sedNames=sedNames,
+                                               magNorm=magNorm)
+
 
     def testAlternateBandpassesStars(self):
         """
