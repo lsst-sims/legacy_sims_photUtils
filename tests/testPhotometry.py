@@ -124,7 +124,6 @@ class photometryUnitTest(unittest.TestCase):
 
         phot = PhotometryStars()
         phot.loadBandPassesFromFiles(bandPassNames)
-        phot.setupPhiArray_dict()
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes,
                           sedNames=sedNames, magNorm=magNorm)

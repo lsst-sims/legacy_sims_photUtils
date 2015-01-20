@@ -80,6 +80,7 @@ class PhotometryBase(object):
 
         self.phiArray = None
         self.waveLenStep = None
+        self.setupPhiArray_dict()
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self, sedList, magNorm=None, resample_same=False, specFileMap=None):
@@ -627,13 +628,11 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList and then call self.setupPhiArray_dict()
-        so that the bandPasses are available to the mixin.  Ideally, we
-        would only do this once for the whole catalog
+        into self.bandPassList so that the bandPasses are available to the
+        mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandPassList is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames)
-            self.setupPhiArray_dict()
 
         return self.meta_magnitudes_getter(idNames)
 
@@ -767,13 +766,11 @@ class PhotometryStars(PhotometryBase):
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList and then call self.setupPhiArray_dict()
-        so that the bandPasses are available to the mixin.  Ideally, we
-        would only do this once for the whole catalog
+        into self.bandPassList so that the bandPasses are available to the
+        mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandPassList is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames)
-            self.setupPhiArray_dict()
 
         return self.meta_magnitudes_getter(idNames)
 
