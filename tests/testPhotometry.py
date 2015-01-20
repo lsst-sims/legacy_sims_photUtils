@@ -170,6 +170,9 @@ class photometryUnitTest(unittest.TestCase):
         agnSeds = ['agn.spec', 'agn.spec', 'agn.spec']
         agnMagNorm = [22.0, 23.0, 26.0]
 
+        agnSedsDummy = ['agn.spec', 'agn.spec']
+        agnMagNormDummy = [22.0, 26.0]
+
         redshiftDummy = [0.3, 1.1]
         cosmologicalDistanceModulusDummy = [3.0, 4.5]
 
@@ -199,6 +202,20 @@ class photometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAvDummy,
                           redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSedsDummy, agnMagNorm=agnMagNorm)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSeds, agnMagNorm=agnMagNormDummy)
+                          
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                          redshift=redshiftDummy)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                          redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulusDummy)
 
     def testAlternateBandpassesStars(self):
         """
