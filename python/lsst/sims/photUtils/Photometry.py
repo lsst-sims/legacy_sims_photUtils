@@ -329,7 +329,8 @@ class PhotometryGalaxies(PhotometryBase):
     """
 
     def calculate_component_magnitudes(self,objectNames, componentNames, \
-                                       magNorm = 15.0, internalAv = None, redshift = None):
+                                       magNorm = 15.0, internalAv = None, redshift = None,
+                                       cosmologicalDistanceModulus = None, specFileMap=None):
 
         """
         Calculate the magnitudes for different components (disk, bulge, agn, etc) of galaxies.
@@ -346,21 +347,28 @@ class PhotometryGalaxies(PhotometryBase):
 
         @param [in] redshift is pretty self-explanatory
 
+        @param [in] cosmologicalDistanceModulus is the effective distance modulus due to cosmological
+        expansion (if that has not already been accounted for in magNorm).  This is optional.
+
+        @param [in] specFileMap is a mapping between the filenames in diskNames, bulgeNames, and agnNames
+        and the absolute locations of the corresponding files.  It is an instantiation of the class defined
+        in
+
+        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
+
+        If not provided, a default will be instantiated.
+
         @param [out] componentMags is a dict of lists such that
         magnitude["objectname"][i] will return the magnitude in the ith
         for the associated component Sed
 
         """
 
-        if 'cosmologicalDistanceModulus' in self.iter_column_names():
-            cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
-        else:
-            cosmologicalDistanceModulus = None
 
         componentMags = {}
 
-        if componentNames != []:
-            componentSed = self.loadSeds(componentNames, magNorm = magNorm)
+        if componentNames != [] and componentNames is not None:
+            componentSed = self.loadSeds(componentNames, magNorm = magNorm, specFileMap=specFileMap)
             self.applyAvAndRedshift(componentSed, internalAv = internalAv, redshift = redshift)
 
             for i in range(len(objectNames)):
@@ -413,7 +421,10 @@ class PhotometryGalaxies(PhotometryBase):
 
         return outMag
 
-    def calculate_magnitudes(self, idNames):
+    def calculate_magnitudes(self, idNames, diskNames=None, diskMagNorm=None, diskAv=None,
+                             bulgeNames=None, bulgeMagNorm=None, bulgeAv=None,
+                             agnNames=None, agnMagNorm=None,
+                             redshift=None, cosmologicalDistanceModulus=None, specFileMap=None):
         """
         Take the array of bandpasses in self.bandPassList and the array of galaxy
         names idNames ane return a dict of dicts of lists of magnitudes
@@ -431,6 +442,35 @@ class PhotometryGalaxies(PhotometryBase):
         @param [in] idNames is a list of names uniquely identifying the objects whose magnitudes
         are being calculated
 
+        @param [in] diskNames is a list of the names of the files containing disk SEDs
+
+        @param [in] diskMagNorm is a list of magnitude normalizations for disk SEDs
+
+        @param [in] diskAv is a list of extinction Av due to dust internal to the disk of the galaxy
+
+        @param [in] bulgeNames is a list of the names of the files containing bulge SEDs
+
+        @param [in] bulgeMagNorm is a list of the magnitude normalizations of the bulge SEDs
+
+        @param [in] bulgeAv is a ist of extinction Av due to dust internal to the bulge of the galaxy
+
+        @param [in] agnNames is a list of the names of the files containing AGN SEDs
+
+        @param [in] agnMagNorm is a list of the magnitude normalizations of the AGN SEDs
+
+        @param [in] redshift is a list of the redshifts of the galaxies
+
+        @param [in] cosmologicalDistanceModulus is a list of the distance modulii due to
+        cosmological expansion (assuming that has not been accounted for by the magNorms).
+        This is optional.
+
+        @param [in] specFileMap is a mapping between the filenames in diskNames, bulgeNames, and agnNames
+        and the absolute locations of the corresponding files.  It is an instantiation of the class defined
+        in
+
+        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
+
+        If not provided, a default will be instantiated.
 
         @param [out] masterDict is a dict of magnitudes such that
         masterDict['AAA']['BBB'][i] is the magnitude in the ith bandPass of component BBB of galaxy AAA
@@ -438,27 +478,56 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
-        diskNames=self.column_by_name('sedFilenameDisk')
-        bulgeNames=self.column_by_name('sedFilenameBulge')
-        agnNames=self.column_by_name('sedFilenameAgn')
+        if specFileMap is None:
+            if hasattr(self, 'specFileMap'):
+                specFileMap = self.specFileMap
+            else:
+                specFileMap = defaultSpecMap
 
-        diskmn = self.column_by_name('magNormDisk')
-        bulgemn = self.column_by_name('magNormBulge')
-        agnmn = self.column_by_name('magNormAgn')
+        if diskNames is not None:
+            if len(diskNames) != len(idNames):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d diskNames'
+                                   % (len(diskNames), len(idNames)))
+            if len(diskNames) != len(diskAv) or len(diskNames) != len(diskMagNorm) or len(diskMagNorm) != len(diskAv):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d diskNames, %d diskAvs, and %d diskMagNorms'
+                                   % (len(diskNames), len(diskAv), len(diskMagNorm)))
 
-        bulgeAv = self.column_by_name('internalAvBulge')
-        diskAv = self.column_by_name('internalAvDisk')
+        if bulgeNames is not None:
+            if len(bulgeNames) != len(idNames):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d bulgeNames'
+                                   % (len(bulgeNames), len(idNames)))
+            if len(bulgeNames) != len(bulgeAv) or len(bulgeNames) != len(bulgeMagNorm) or len(bulgeMagNorm) != len(bulgeAv):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d bulgeNames, %d bulgeAvs, and %d bulgeMagNorms'
+                                   % (len(bulgeNames), len(bulgeAv), len(bulgeMagNorm)))
 
-        redshift = self.column_by_name('redshift')
+        if agnNames is not None:
+            if len(agnNames) != len(idNames):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d agnNames'
+                                   % (len(agnNames), len(idNames)))
+            if len(agnNames) != len(agnMagNorm):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d agnNames and %d agnMagNorms'
+                                   % (len(agnNames), len(agnMagNorm)))
 
-        diskMags = self.calculate_component_magnitudes(idNames,diskNames,magNorm = diskmn, \
-                        internalAv = diskAv, redshift = redshift)
+        if len(idNames) != len(redshift):
+            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d redshifts'
+                               % (len(idNames), len(redshift)))
 
-        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,magNorm = bulgemn, \
-                        internalAv = bulgeAv, redshift = redshift)
 
-        agnMags = self.calculate_component_magnitudes(idNames,agnNames,magNorm = agnmn, \
-                        redshift = redshift)
+        if cosmologicalDistanceModulus is not None and len(idNames) != len(cosmologicalDistanceModulus):
+            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d cosmologicalDistanceModuli'
+                               % (len(idNames), len(cosmologicalDistanceModulus)))
+
+        diskMags = self.calculate_component_magnitudes(idNames,diskNames,magNorm = diskMagNorm, \
+                        internalAv = diskAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                        specFileMap=specFileMap)
+
+        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,magNorm = bulgeMagNorm, \
+                        internalAv = bulgeAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                        specFileMap=specFileMap)
+
+        agnMags = self.calculate_component_magnitudes(idNames,agnNames,magNorm = agnMagNorm, \
+                        redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                        specFileMap=specFileMap)
 
         total_mags = []
         masterDict = {}
@@ -492,7 +561,30 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
-        magDict=self.calculate_magnitudes(idNames)
+        diskNames=self.column_by_name('sedFilenameDisk')
+        bulgeNames=self.column_by_name('sedFilenameBulge')
+        agnNames=self.column_by_name('sedFilenameAgn')
+
+        diskmn = self.column_by_name('magNormDisk')
+        bulgemn = self.column_by_name('magNormBulge')
+        agnmn = self.column_by_name('magNormAgn')
+
+        bulgeAv = self.column_by_name('internalAvBulge')
+        diskAv = self.column_by_name('internalAvDisk')
+
+        redshift = self.column_by_name('redshift')
+
+        if 'cosmologicalDistanceModulus' in self.iter_column_names():
+            cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
+        else:
+            cosmologicalDistanceModulus = None
+
+        magDict=self.calculate_magnitudes(idNames,
+                                          diskNames=diskNames, diskMagNorm=diskmn, diskAv=diskAv,
+                                          bulgeNames=bulgeNames, bulgeMagNorm=bulgemn, bulgeAv=bulgeAv,
+                                          agnNames=agnNames, agnMagNorm=agnmn,
+                                          redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                                          specFileMap=self.specFileMap)
 
         firstRowTotal = []
         firstRowDisk = []
