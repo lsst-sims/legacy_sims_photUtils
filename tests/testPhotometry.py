@@ -237,6 +237,47 @@ class photometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           agnNames=agnSeds, agnMagNorm=agnMagNorm)
 
+        bulgeNamePossibilities = [bulgeSeds, None]
+        diskNamePossibilities = [diskSeds, None]
+        agnNamePossibilities = [agnSeds, None]
+
+        for bulgeNames in bulgeNamePossibilities:
+            for diskNames in diskNamePossibilities:
+                for agnNames in agnNamePossibilities:
+
+                    magnitudes = phot.calculate_magnitudes(idNames, redshift=redshift,
+                                                           bulgeNames=bulgeNames, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                                                           diskNames=diskNames, diskMagNorm=diskMagNorm, diskAv=diskAv,
+                                                           agnNames=agnNames, agnMagNorm=agnMagNorm)
+
+                    for name in idNames:
+                        for i in range(len(phot.bandPassList)):
+                            if bulgeNames is None:
+                                self.assertTrue(magnitudes[name]['bulge'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['bulge'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['bulge'][i]))
+
+                            if diskNames is None:
+                                self.assertTrue(magnitudes[name]['disk'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['disk'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['disk'][i]))
+
+                            if agnNames is None:
+                                self.assertTrue(magnitudes[name]['agn'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['agn'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['agn'][i]))
+
+                            if agnNames is None and diskNames is None and bulgeNames is None:
+                                self.assertTrue(magnitudes[name]['total'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['total'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['total'][i]))
+
+
+
     def testAlternateBandpassesStars(self):
         """
         This will test our ability to do photometry using non-LSST bandpasses.
