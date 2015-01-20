@@ -60,14 +60,15 @@ class PhotometryBase(object):
         self.bandPassList (which is being cached so that
         it does not have to be loaded again unless we change which bandpasses we want)
 
-        bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
+        @param [in] bandPassDir is the name of the directory where the bandpass files are stored
+
+        @param [in] bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
         that the bandPasses are stored in files of the type
 
-        $LSST_THROUGHPUTS_DEFAULT/bandPassRoot_bandPassList[i].dat
+        bandPassDir/bandPassRoot_bandPassList[i].dat
 
         if we want to load bandpasses for a telescope other than LSST, we would do so
-        by altering bandPassRoot (currently no infrastructure exists for altering the directory
-        in which bandpass files are stored)
+        by altering bandPassDir and bandPassRoot
         """
 
         self.bandPassList = []
