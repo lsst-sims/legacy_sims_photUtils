@@ -53,19 +53,23 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandPassList)
 
-    def loadBandPassesFromFiles(self,bandPassNames, bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
-    bandPassRoot = 'total_'):
+    def loadBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+                                bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
+                                bandPassRoot = 'total_'):
         """
         This will take the list of band passes named by bandPassNames and use them to set up
         self.bandPassList (which is being cached so that
         it does not have to be loaded again unless we change which bandpasses we want)
+
+        @param [in] bandPassNames is a list of names identifying each filter.
+        Defaults to ['u', 'g', 'r', 'i', 'z', 'y']
 
         @param [in] bandPassDir is the name of the directory where the bandpass files are stored
 
         @param [in] bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
         that the bandPasses are stored in files of the type
 
-        bandPassDir/bandPassRoot_bandPassList[i].dat
+        bandPassDir/bandPassRoot_bandPassNames[i].dat
 
         if we want to load bandpasses for a telescope other than LSST, we would do so
         by altering bandPassDir and bandPassRoot
@@ -734,7 +738,6 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
         idNames = self.column_by_name('galid')
-        bandPassNames = ['u','g','r','i','z','y']
 
         """
         Here is where we need some code to load a list of bandPass objects
@@ -742,7 +745,7 @@ class PhotometryGalaxies(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPassesFromFiles(bandPassNames)
+            self.loadBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 
@@ -863,7 +866,6 @@ class PhotometryStars(PhotometryBase):
 
         """
         idNames = self.column_by_name('id')
-        bandPassNames = ['u','g','r','i','z','y']
 
         """
         Here is where we need some code to load a list of bandPass objects
@@ -871,7 +873,7 @@ class PhotometryStars(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPassesFromFiles(bandPassNames)
+            self.loadBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 
