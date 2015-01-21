@@ -14,6 +14,7 @@ import os
 import numpy
 from lsst.sims.photUtils import Sed
 from lsst.sims.photUtils import Bandpass
+from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
 __all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
@@ -52,21 +53,26 @@ class PhotometryBase(object):
         sedobj = Sed()
         self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandPassList)
 
-    def loadBandPassesFromFiles(self,bandPassNames, bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
-    bandPassRoot = 'total_'):
+    def loadBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+                                bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
+                                bandPassRoot = 'total_'):
         """
         This will take the list of band passes named by bandPassNames and use them to set up
         self.bandPassList (which is being cached so that
         it does not have to be loaded again unless we change which bandpasses we want)
 
-        bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
+        @param [in] bandPassNames is a list of names identifying each filter.
+        Defaults to ['u', 'g', 'r', 'i', 'z', 'y']
+
+        @param [in] bandPassDir is the name of the directory where the bandpass files are stored
+
+        @param [in] bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
         that the bandPasses are stored in files of the type
 
-        $LSST_THROUGHPUTS_DEFAULT/bandPassRoot_bandPassList[i].dat
+        bandPassDir/bandPassRoot_bandPassNames[i].dat
 
         if we want to load bandpasses for a telescope other than LSST, we would do so
-        by altering bandPassRoot (currently no infrastructure exists for altering the directory
-        in which bandpass files are stored)
+        by altering bandPassDir and bandPassRoot
         """
 
         self.bandPassList = []
@@ -78,9 +84,10 @@ class PhotometryBase(object):
 
         self.phiArray = None
         self.waveLenStep = None
+        self.setupPhiArray_dict()
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
-    def loadSeds(self, sedList, magNorm=15.0, resample_same=False):
+    def loadSeds(self, sedList, magNorm=None, resample_same=False, specFileMap=None):
         """
         Takes the list of filename sedList and returns an array of SED objects.
 
@@ -94,9 +101,22 @@ class PhotometryBase(object):
         @param [in] resample_same governs whether or not to resample the Seds
         so that they are all on the same wavelength grid
 
+        @param [in] specFileMap is a mapping from the names in sedList to the absolute
+        path to the SED files.  It is an instantiation of the class defined in
+
+        sims_catalogs_measures/python/lsst/sims/catalogs_measures/instance/fileMaps.py
+
+        If not provided, a default will be instantiated.
+
         @param [out] sedOut is a list of Sed objects
 
         """
+
+        if specFileMap is None:
+            if hasattr(self, 'specFileMap'):
+                specFileMap = self.specFileMap
+            else:
+                specFileMap = defaultSpecMap
 
         dataDir=os.getenv('SIMS_SED_LIBRARY_DIR')
 
@@ -118,7 +138,7 @@ class PhotometryBase(object):
 
             if sedName not in uniqueSedDict:
                 sed = Sed()
-                sed.readSED_flambda(os.path.join(dataDir, self.specFileMap[sedName]))
+                sed.readSED_flambda(os.path.join(dataDir, specFileMap[sedName]))
 
                 if resample_same:
                     if firstsed:
@@ -313,7 +333,8 @@ class PhotometryGalaxies(PhotometryBase):
     """
 
     def calculate_component_magnitudes(self,objectNames, componentNames, \
-                                       magNorm = 15.0, internalAv = None, redshift = None):
+                                       magNorm = None, internalAv = None, redshift = None,
+                                       cosmologicalDistanceModulus = None, specFileMap=None):
 
         """
         Calculate the magnitudes for different components (disk, bulge, agn, etc) of galaxies.
@@ -330,21 +351,28 @@ class PhotometryGalaxies(PhotometryBase):
 
         @param [in] redshift is pretty self-explanatory
 
+        @param [in] cosmologicalDistanceModulus is the effective distance modulus due to cosmological
+        expansion (if that has not already been accounted for in magNorm).  This is optional.
+
+        @param [in] specFileMap is a mapping between the filenames in diskNames, bulgeNames, and agnNames
+        and the absolute locations of the corresponding files.  It is an instantiation of the class defined
+        in
+
+        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
+
+        If not provided, a default will be instantiated.
+
         @param [out] componentMags is a dict of lists such that
         magnitude["objectname"][i] will return the magnitude in the ith
         for the associated component Sed
 
         """
 
-        if 'cosmologicalDistanceModulus' in self.iter_column_names():
-            cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
-        else:
-            cosmologicalDistanceModulus = None
 
         componentMags = {}
 
-        if componentNames != []:
-            componentSed = self.loadSeds(componentNames, magNorm = magNorm)
+        if componentNames != [] and componentNames is not None:
+            componentSed = self.loadSeds(componentNames, magNorm = magNorm, specFileMap=specFileMap)
             self.applyAvAndRedshift(componentSed, internalAv = internalAv, redshift = redshift)
 
             for i in range(len(objectNames)):
@@ -397,7 +425,10 @@ class PhotometryGalaxies(PhotometryBase):
 
         return outMag
 
-    def calculate_magnitudes(self, idNames):
+    def calculate_magnitudes(self, idNames, diskNames=None, diskMagNorm=None, diskAv=None,
+                             bulgeNames=None, bulgeMagNorm=None, bulgeAv=None,
+                             agnNames=None, agnMagNorm=None,
+                             redshift=None, cosmologicalDistanceModulus=None, specFileMap=None):
         """
         Take the array of bandpasses in self.bandPassList and the array of galaxy
         names idNames ane return a dict of dicts of lists of magnitudes
@@ -415,6 +446,35 @@ class PhotometryGalaxies(PhotometryBase):
         @param [in] idNames is a list of names uniquely identifying the objects whose magnitudes
         are being calculated
 
+        @param [in] diskNames is a list of the names of the files containing disk SEDs
+
+        @param [in] diskMagNorm is a list of magnitude normalizations for disk SEDs
+
+        @param [in] diskAv is a list of extinction Av due to dust internal to the disk of the galaxy
+
+        @param [in] bulgeNames is a list of the names of the files containing bulge SEDs
+
+        @param [in] bulgeMagNorm is a list of the magnitude normalizations of the bulge SEDs
+
+        @param [in] bulgeAv is a ist of extinction Av due to dust internal to the bulge of the galaxy
+
+        @param [in] agnNames is a list of the names of the files containing AGN SEDs
+
+        @param [in] agnMagNorm is a list of the magnitude normalizations of the AGN SEDs
+
+        @param [in] redshift is a list of the redshifts of the galaxies
+
+        @param [in] cosmologicalDistanceModulus is a list of the distance modulii due to
+        cosmological expansion (assuming that has not been accounted for by the magNorms).
+        This is optional.
+
+        @param [in] specFileMap is a mapping between the filenames in diskNames, bulgeNames, and agnNames
+        and the absolute locations of the corresponding files.  It is an instantiation of the class defined
+        in
+
+        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
+
+        If not provided, a default will be instantiated.
 
         @param [out] masterDict is a dict of magnitudes such that
         masterDict['AAA']['BBB'][i] is the magnitude in the ith bandPass of component BBB of galaxy AAA
@@ -422,27 +482,74 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
-        diskNames=self.column_by_name('sedFilenameDisk')
-        bulgeNames=self.column_by_name('sedFilenameBulge')
-        agnNames=self.column_by_name('sedFilenameAgn')
+        if specFileMap is None:
+            if hasattr(self, 'specFileMap'):
+                specFileMap = self.specFileMap
+            else:
+                specFileMap = defaultSpecMap
 
-        diskmn = self.column_by_name('magNormDisk')
-        bulgemn = self.column_by_name('magNormBulge')
-        agnmn = self.column_by_name('magNormAgn')
+        if diskNames is not None:
+            if diskAv is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need diskAv')
 
-        bulgeAv = self.column_by_name('internalAvBulge')
-        diskAv = self.column_by_name('internalAvDisk')
+            if diskMagNorm is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need diskMagNorm')
 
-        redshift = self.column_by_name('redshift')
+            if len(diskNames) != len(idNames):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d diskNames'
+                                   % (len(diskNames), len(idNames)))
+            if len(diskNames) != len(diskAv) or len(diskNames) != len(diskMagNorm) or len(diskMagNorm) != len(diskAv):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d diskNames, %d diskAvs, and %d diskMagNorms'
+                                   % (len(diskNames), len(diskAv), len(diskMagNorm)))
 
-        diskMags = self.calculate_component_magnitudes(idNames,diskNames,magNorm = diskmn, \
-                        internalAv = diskAv, redshift = redshift)
+        if bulgeNames is not None:
+            if bulgeAv is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need bulgeAv')
 
-        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,magNorm = bulgemn, \
-                        internalAv = bulgeAv, redshift = redshift)
+            if bulgeMagNorm is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need bulgeMagNorm')
 
-        agnMags = self.calculate_component_magnitudes(idNames,agnNames,magNorm = agnmn, \
-                        redshift = redshift)
+            if len(bulgeNames) != len(idNames):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d bulgeNames'
+                                   % (len(bulgeNames), len(idNames)))
+            if len(bulgeNames) != len(bulgeAv) or len(bulgeNames) != len(bulgeMagNorm) or len(bulgeMagNorm) != len(bulgeAv):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d bulgeNames, %d bulgeAvs, and %d bulgeMagNorms'
+                                   % (len(bulgeNames), len(bulgeAv), len(bulgeMagNorm)))
+
+        if agnNames is not None:
+            if agnMagNorm is None:
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need agnMagNorm')
+
+            if len(agnNames) != len(idNames):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d agnNames'
+                                   % (len(agnNames), len(idNames)))
+            if len(agnNames) != len(agnMagNorm):
+                raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d agnNames and %d agnMagNorms'
+                                   % (len(agnNames), len(agnMagNorm)))
+
+        if redshift is None:
+            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes need redshift')
+
+        if len(idNames) != len(redshift):
+            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d redshifts'
+                               % (len(idNames), len(redshift)))
+
+
+        if cosmologicalDistanceModulus is not None and len(idNames) != len(cosmologicalDistanceModulus):
+            raise RuntimeError('In PhotometryGalaxies.calculate_magnitudes have %d galaxies and %d cosmologicalDistanceModuli'
+                               % (len(idNames), len(cosmologicalDistanceModulus)))
+
+        diskMags = self.calculate_component_magnitudes(idNames,diskNames,magNorm = diskMagNorm, \
+                        internalAv = diskAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                        specFileMap=specFileMap)
+
+        bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,magNorm = bulgeMagNorm, \
+                        internalAv = bulgeAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                        specFileMap=specFileMap)
+
+        agnMags = self.calculate_component_magnitudes(idNames,agnNames,magNorm = agnMagNorm, \
+                        redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                        specFileMap=specFileMap)
 
         total_mags = []
         masterDict = {}
@@ -476,7 +583,30 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
 
-        magDict=self.calculate_magnitudes(idNames)
+        diskNames=self.column_by_name('sedFilenameDisk')
+        bulgeNames=self.column_by_name('sedFilenameBulge')
+        agnNames=self.column_by_name('sedFilenameAgn')
+
+        diskmn = self.column_by_name('magNormDisk')
+        bulgemn = self.column_by_name('magNormBulge')
+        agnmn = self.column_by_name('magNormAgn')
+
+        bulgeAv = self.column_by_name('internalAvBulge')
+        diskAv = self.column_by_name('internalAvDisk')
+
+        redshift = self.column_by_name('redshift')
+
+        if 'cosmologicalDistanceModulus' in self.iter_column_names():
+            cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
+        else:
+            cosmologicalDistanceModulus = None
+
+        magDict=self.calculate_magnitudes(idNames,
+                                          diskNames=diskNames, diskMagNorm=diskmn, diskAv=diskAv,
+                                          bulgeNames=bulgeNames, bulgeMagNorm=bulgemn, bulgeAv=bulgeAv,
+                                          agnNames=agnNames, agnMagNorm=agnmn,
+                                          redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
+                                          specFileMap=self.specFileMap)
 
         firstRowTotal = []
         firstRowDisk = []
@@ -608,17 +738,14 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
         idNames = self.column_by_name('galid')
-        bandPassNames = ['u','g','r','i','z','y']
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList and then call self.setupPhiArray_dict()
-        so that the bandPasses are available to the mixin.  Ideally, we
-        would only do this once for the whole catalog
+        into self.bandPassList so that the bandPasses are available to the
+        mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPassesFromFiles(bandPassNames)
-            self.setupPhiArray_dict()
+            self.loadBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 
@@ -631,7 +758,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
 
-    def calculate_magnitudes(self, idNames):
+    def calculate_magnitudes(self, idNames, magNorm, sedNames, specFileMap=None):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of lists of magnitudes
@@ -646,13 +773,32 @@ class PhotometryStars(PhotometryBase):
 
         @param [in] idNames is a list of names uniquely identifying the objects being considered
 
-        magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
+        @param [in] magNorm is a list of magnitude normalizations
+
+        @param [in] sedNames is a list of sed file names
+
+        @param [in] specFileMap is a class which maps between sedNames and the absolute path to
+        the SED files.  It is an instantiation of the class defined in
+
+        sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
+
+        if not provided, a default will be instantiated
+
+        @param [out] magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
 
         """
 
-        sedNames = self.column_by_name('sedFilename')
-        magNorm = self.column_by_name('magNorm')
-        sedList = self.loadSeds(sedNames,magNorm = magNorm)
+        if specFileMap is None:
+            if hasattr(self, 'specFileMap'):
+                specFileMap=self.specFileMap
+            else:
+                specFileMap = defaultSpecMap
+
+        if len(idNames) != len(magNorm) or len(idNames) != len(sedNames) or len(sedNames) != len(magNorm):
+            raise RuntimeError('In PhotometryStars.calculate_magnitudes, had %d idnames, %d magNorms, and %d sedNames '
+                                % (len(idNames), len(magNorm), len(sedNames)))
+
+        sedList = self.loadSeds(sedNames, magNorm=magNorm, specFileMap=specFileMap)
 
         magDict = {}
         for (name,sed) in zip(idNames,sedList):
@@ -673,7 +819,9 @@ class PhotometryStars(PhotometryBase):
 
         """
 
-        magDict = self.calculate_magnitudes(idNames)
+        magNorm = self.column_by_name('magNorm')
+        sedNames = self.column_by_name('sedFilename')
+        magDict = self.calculate_magnitudes(idNames, magNorm=magNorm, sedNames=sedNames)
         output = None
 
         for i in range(len(self.bandPassList)):
@@ -718,17 +866,14 @@ class PhotometryStars(PhotometryBase):
 
         """
         idNames = self.column_by_name('id')
-        bandPassNames = ['u','g','r','i','z','y']
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList and then call self.setupPhiArray_dict()
-        so that the bandPasses are available to the mixin.  Ideally, we
-        would only do this once for the whole catalog
+        into self.bandPassList so that the bandPasses are available to the
+        mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPassesFromFiles(bandPassNames)
-            self.setupPhiArray_dict()
+            self.loadBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 

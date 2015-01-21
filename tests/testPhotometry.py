@@ -6,9 +6,11 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
+
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
+from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies
@@ -104,6 +106,173 @@ class photometryUnitTest(unittest.TestCase):
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
         os.unlink("testGalaxiesOutput.txt")
+
+    def testStandAloneStellarPhotometry(self):
+        """
+        Test that it is possible to run PhotometryStars.calculate_magnitudes
+        outside of the context of an InstanceCatalog
+        """
+        idNames = ['1','2','3']
+        sedNames = ['km20_5750.fits_g40_5790','m2.0Full.dat',
+                     'bergeron_6500_85.dat_6700']
+        magNorm = [28.5, 23.0, 21.0]
+
+        dummyId = ['1', '2']
+        dummySed = ['km20_5750.fits_g40_5790','m2.0Full.dat']
+        dummyMagNorm = [28.5, 23.0]
+        bandPassNames = ['u','g','r','i','z','y']
+
+        phot = PhotometryStars()
+        phot.loadBandPassesFromFiles(bandPassNames)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=dummyId, sedNames=sedNames, magNorm=magNorm)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=idNames, sedNames=dummySed, magNorm=magNorm)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
+                          idNames=idNames, sedNames=sedNames, magNorm=dummyMagNorm)
+
+        magnitudes = phot.calculate_magnitudes(idNames=idNames, sedNames=sedNames,
+                                               magNorm=magNorm)
+
+    def testGalaxyPhotometryStandAlone(self):
+        idNames = ['Alice', 'Bob', 'Charlie']
+
+        diskSeds = ['Const.80E07.02Z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
+        diskMagNorm = [24.2, 28.1, 29.0]
+        diskAv = [3.1, 3.2, 2.9]
+
+        bulgeSeds = ['Inst.80E07.002Z.spec','Const.80E07.02Z.spec','Burst.19E07.0005Z.spec']
+        bulgeMagNorm = [25.0, 28.0, 27.1]
+        bulgeAv = [2.8, 3.2, 3.3]
+
+        agnSeds = ['agn.spec', 'agn.spec', 'agn.spec']
+        agnMagNorm = [22.0, 23.0, 26.0]
+
+        redshift = [0.2, 0.3, 1.1]
+        cosmologicalDistanceModulus = [5.0, 3.0, 4.5]
+
+        diskSedsDummy = ['Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
+        diskMagNormDummy = [28.1, 29.0]
+        diskAvDummy = [3.2, 2.9]
+
+        bulgeSedsDummy = ['Const.80E07.02Z.spec','Burst.19E07.0005Z.spec']
+        bulgeMagNormDummy = [28.0, 27.1]
+        bulgeAvDummy = [3.2, 3.3]
+
+        agnSeds = ['agn.spec', 'agn.spec', 'agn.spec']
+        agnMagNorm = [22.0, 23.0, 26.0]
+
+        agnSedsDummy = ['agn.spec', 'agn.spec']
+        agnMagNormDummy = [22.0, 26.0]
+
+        redshiftDummy = [0.3, 1.1]
+        cosmologicalDistanceModulusDummy = [3.0, 4.5]
+
+        phot = PhotometryGalaxies()
+        phot.loadBandPassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSedsDummy, diskMagNorm=diskMagNorm, diskAv=diskAv,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNormDummy, diskAv=diskAvDummy,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNorm, diskAv=diskAvDummy,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSedsDummy, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNormDummy, bulgeAv=bulgeAv,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAvDummy,
+                          redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSedsDummy, agnMagNorm=agnMagNorm)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSeds, agnMagNorm=agnMagNormDummy)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                          redshift=redshiftDummy)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                          redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulusDummy)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, redshift=redshift)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeAv=bulgeAv, redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNorm, redshift=redshift)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskAv=diskAv, redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSeds, redshift=redshift)
+
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          bulgeNames=bulgeSeds, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          diskNames=diskSeds, diskMagNorm=diskMagNorm, diskAv=diskAv)
+        self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
+                          agnNames=agnSeds, agnMagNorm=agnMagNorm)
+
+        bulgeNamePossibilities = [bulgeSeds, None]
+        diskNamePossibilities = [diskSeds, None]
+        agnNamePossibilities = [agnSeds, None]
+
+        for bulgeNames in bulgeNamePossibilities:
+            for diskNames in diskNamePossibilities:
+                for agnNames in agnNamePossibilities:
+
+                    magnitudes = phot.calculate_magnitudes(idNames, redshift=redshift,
+                                                           bulgeNames=bulgeNames, bulgeMagNorm=bulgeMagNorm, bulgeAv=bulgeAv,
+                                                           diskNames=diskNames, diskMagNorm=diskMagNorm, diskAv=diskAv,
+                                                           agnNames=agnNames, agnMagNorm=agnMagNorm)
+
+                    for name in idNames:
+                        for i in range(len(phot.bandPassList)):
+                            flux=0.0
+                            if bulgeNames is None:
+                                self.assertTrue(magnitudes[name]['bulge'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['bulge'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['bulge'][i]))
+                                flux += numpy.power(10.0, -0.4*(magnitudes[name]['bulge'][i]-22.0))
+
+                            if diskNames is None:
+                                self.assertTrue(magnitudes[name]['disk'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['disk'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['disk'][i]))
+                                flux += numpy.power(10.0, -0.4*(magnitudes[name]['disk'][i]-22.0))
+
+                            if agnNames is None:
+                                self.assertTrue(magnitudes[name]['agn'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['agn'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['agn'][i]))
+                                flux += numpy.power(10.0, -0.4*(magnitudes[name]['agn'][i]-22.0))
+
+                            if agnNames is None and diskNames is None and bulgeNames is None:
+                                self.assertTrue(magnitudes[name]['total'][i] is None)
+                            else:
+                                self.assertTrue(magnitudes[name]['total'][i] is not None)
+                                self.assertFalse(numpy.isnan(magnitudes[name]['total'][i]))
+                                self.assertAlmostEqual(magnitudes[name]['total'][i], -2.5*numpy.log10(flux)+22.0, 10)
 
     def testAlternateBandpassesStars(self):
         """
