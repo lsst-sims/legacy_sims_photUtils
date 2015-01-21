@@ -126,13 +126,6 @@ class photometryUnitTest(unittest.TestCase):
         phot.loadBandPassesFromFiles(bandPassNames)
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes,
-                          sedNames=sedNames, magNorm=magNorm)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
-                          idNames=idNames, magNorm=magNorm)
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
-                          idNames=idNames, sedNames=sedNames)
-
-        self.assertRaises(RuntimeError, phot.calculate_magnitudes,
                           idNames=dummyId, sedNames=sedNames, magNorm=magNorm)
         self.assertRaises(RuntimeError, phot.calculate_magnitudes,
                           idNames=idNames, sedNames=dummySed, magNorm=magNorm)

@@ -755,7 +755,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
 
-    def calculate_magnitudes(self, idNames=None, magNorm=None, sedNames=None, specFileMap=None):
+    def calculate_magnitudes(self, idNames, magNorm, sedNames, specFileMap=None):
         """
         Take the array of bandpass keys bandPassList and the array of
         star names idNames and return a dict of lists of magnitudes
@@ -784,15 +784,6 @@ class PhotometryStars(PhotometryBase):
         @param [out] magDict['AAA'][i] is the magnitude in the ith bandpass for object AAA
 
         """
-
-        if idNames is None:
-            raise RuntimeError('Cannot call PhotometryStars.calculate_magnitudes without idNames')
-
-        if magNorm is None:
-            raise RuntimeError('Cannot call PhotometryStars.calculate_magnitudes without magNorm')
-
-        if sedNames is None:
-            raise RuntimeError('Cannot call PhotometryStars.calculate_magnitudes without sedNames')
 
         if specFileMap is None:
             if hasattr(self, 'specFileMap'):
