@@ -258,8 +258,8 @@ class readGalfast():
                 inFits = True
 
             fOut = open(outFile, 'w')
-            fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm, ' +\
-                       'LSSTugrizy, SDSSugriz, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
+            fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm, magNorm, ' +\
+                       'LSSTugrizy, SDSSugriz, absSDSSr, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
 
             lineNum = 0
@@ -319,7 +319,8 @@ class readGalfast():
                     sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
                     
                 #End of input, now onto processing and output
-                sEDName = selectStarSED0.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, am, pop)
+                sEDName, magNorm = selectStarSED0.findSED(sEDDict, sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, 
+                                                          am, pop)
                 ####
 
                 fluxNorm, lsstMagDict = self.findLSSTMags(sEDName, sEDDict, absSDSSr,
@@ -328,13 +329,13 @@ class readGalfast():
                 distKpc = self.convDMtoKpc(DM)
                 ebv = am / 2.285 #From Schlafly and Finkbeiner for sdssr
                 ebvInf = amInf / 2.285
-                outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,' +\
+                outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7e,%3.7e,' +\
                          '%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
-                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f' +\
+                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
                          '%3.7f,%i,%3.7f,%3.7f,%3.7f\n'
-                outDat = (oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm,
+                outDat = (oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, fluxNorm, magNorm,
                           lsstMagDict['u'], lsstMagDict['g'], lsstMagDict['r'], 
                           lsstMagDict['i'], lsstMagDict['z'], lsstMagDict['y'],
                           sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr,
