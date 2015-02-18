@@ -139,7 +139,7 @@ class photometryUnitTest(unittest.TestCase):
         bandPassNames = ['u','g','r','i','z','y']
 
         phot = PhotometryStars()
-        phot.loadBandPassesFromFiles(bandPassNames)
+        phot.loadTotalBandPassesFromFiles(bandPassNames)
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes,
                           idNames=dummyId, sedNames=sedNames, magNorm=magNorm)
@@ -188,7 +188,7 @@ class photometryUnitTest(unittest.TestCase):
         cosmologicalDistanceModulusDummy = [3.0, 4.5]
 
         phot = PhotometryGalaxies()
-        phot.loadBandPassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
+        phot.loadTotalBandPassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           diskNames=diskSedsDummy, diskMagNorm=diskMagNorm, diskAv=diskAv,

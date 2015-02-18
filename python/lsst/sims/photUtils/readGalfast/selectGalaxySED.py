@@ -43,7 +43,7 @@ class selectGalaxySED(rgGalaxy):
         #Set up photometry to calculate model Mags
         galPhot = phot()
         if bandpassList is None:
-            galPhot.loadBandPassesFromFiles(['u','g','r','i','z'], 
+            galPhot.loadTotalBandPassesFromFiles(['u','g','r','i','z'], 
                                             bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                             bandPassRoot = 'sdss_')
         else:
@@ -151,7 +151,7 @@ class selectGalaxySED(rgGalaxy):
         #Set up photometry to calculate model Mags
         galPhot = phot()
         if bandpassList is None:
-            galPhot.loadBandPassesFromFiles(['u','g','r','i','z'], 
+            galPhot.loadTotalBandPassesFromFiles(['u','g','r','i','z'], 
                                             bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                             bandPassRoot = 'sdss_')
         else:

@@ -27,7 +27,7 @@ class PhotometryBase(object):
     an SED object it can calculate magnitudes.
 
     In order to avoid duplication of work, the bandPasses, wavelength array, and phi array
-    are stored as instance variables once they are read in by self.loadBandPassesFromFiles()
+    are stored as instance variables once they are read in by self.loadTotalBandPassesFromFiles()
 
     To initiailize a different set of bandPasses, call self.loadBandPassesFromFiles() with a different
     set of arguments.
@@ -56,13 +56,16 @@ class PhotometryBase(object):
         if self.bandpassDict is not None:
             self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
 
-    def loadBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+    def loadTotalBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
                                 bandPassRoot = 'total_'):
         """
         This will take the list of band passes named by bandPassNames and use them to set up
         self.bandpassDict (which is being cached so that
         it does not have to be loaded again unless we change which bandpasses we want)
+
+        The bandpasses loaded this way are total bandpasses: they account for instrumental
+        and atmospheric transmission.
 
         @param [in] bandPassNames is a list of names identifying each filter.
         Defaults to ['u', 'g', 'r', 'i', 'z', 'y']
@@ -746,7 +749,7 @@ class PhotometryGalaxies(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadBandPassesFromFiles()
+            self.loadTotalBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 
@@ -874,7 +877,7 @@ class PhotometryStars(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadBandPassesFromFiles()
+            self.loadTotalBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 
