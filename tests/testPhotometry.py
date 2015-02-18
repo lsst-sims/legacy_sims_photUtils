@@ -244,7 +244,7 @@ class photometryUnitTest(unittest.TestCase):
                                                            agnNames=agnNames, agnMagNorm=agnMagNorm)
 
                     for name in idNames:
-                        for i in range(len(phot.bandPassList)):
+                        for i in range(len(phot.bandpassDict)):
                             flux=0.0
                             if bulgeNames is None:
                                 self.assertTrue(magnitudes[name]['bulge'][i] is None)

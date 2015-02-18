@@ -100,7 +100,7 @@ class cartoonPhotometryStars(PhotometryStars):
         bandPassNames=['u','g','r','i','z']
         bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
-        if self.bandPassList is None or self.phiArray is None:
+        if self.bandpassDict is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames,bandPassDir = bandPassDir,
                     bandPassRoot = 'test_bandpass_')
 
@@ -159,7 +159,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         bandPassNames=['u','g','r','i','z']
         bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
-        if self.bandPassList is None or self.phiArray is None:
+        if self.bandpassDict is None or self.phiArray is None:
             self.loadBandPassesFromFiles(bandPassNames,bandPassDir = bandPassDir,
                       bandPassRoot = 'test_bandpass_')
 

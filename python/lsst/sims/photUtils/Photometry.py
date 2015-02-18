@@ -12,6 +12,7 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 import os
 import numpy
+from collections import OrderedDict
 from lsst.sims.photUtils import Sed
 from lsst.sims.photUtils import Bandpass
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
@@ -37,7 +38,8 @@ class PhotometryBase(object):
     dict keeyed to the array of bandpass keys stored in self.bandPassKey
     """
 
-    bandPassList = None #bandpasses loaded in this particular catalog
+    bandpassDict = None #bandpasses loaded in this particular catalog
+    nBandpasses = 0
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
 
@@ -51,7 +53,8 @@ class PhotometryBase(object):
         """
 
         sedobj = Sed()
-        self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandPassList)
+        if self.bandpassDict is not None:
+            self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
 
     def loadBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
@@ -75,13 +78,14 @@ class PhotometryBase(object):
         by altering bandPassDir and bandPassRoot
         """
 
-        self.bandPassList = []
+        self.bandpassDict = OrderedDict()
 
         for w in bandPassNames:
             bandPassDummy = Bandpass()
             bandPassDummy.readThroughput(os.path.join(bandPassDir,"%s.dat" % (bandPassRoot + w)))
-            self.bandPassList.append(bandPassDummy)
+            self.bandpassDict[w] = bandPassDummy
 
+        self.nBandpasses = len(self.bandpassDict)
         self.phiArray = None
         self.waveLenStep = None
         self.setupPhiArray_dict()
@@ -205,7 +209,7 @@ class PhotometryBase(object):
                     #magnitude).
                     sedList[i].redshiftSED(redshift[i], dimming=False)
                     sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
-                    sedList[i].resampleSED(wavelen_match=self.bandPassList[0].wavelen)
+                    sedList[i].resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
 
     def manyMagCalc_list(self, sedobj):
         """
@@ -223,7 +227,7 @@ class PhotometryBase(object):
 
         magList = []
         if sedobj.wavelen is not None:
-            sedobj.resampleSED(wavelen_match=self.bandPassList[0].wavelen)
+            sedobj.resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
 
             #for some reason, moving this call to flambdaTofnu()
             #to a point earlier in the
@@ -237,12 +241,11 @@ class PhotometryBase(object):
             sedobj.flambdaTofnu()
 
             magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
-            i = 0
-            for f in self.bandPassList:
+
+            for i in range(self.nBandpasses):
                 magList.append(magArray[i])
-                i = i + 1
         else:
-            for f in self.bandPassList:
+            for i in range(self.nBandpasses):
                 magList.append(None)
 
         return magList
@@ -386,7 +389,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         else:
             subList=[]
-            for b in self.bandPassList:
+            for i in range(self.nBandpasses):
                 subList.append(None)
             for i in range(len(objectNames)):
                 componentMags[objectNames[i]]=subList
@@ -556,12 +559,10 @@ class PhotometryGalaxies(PhotometryBase):
 
         for i in range(len(idNames)):
             total_mags=[]
-            j=0
-            for ff in self.bandPassList:
+
+            for j in range(self.nBandpasses):
                 total_mags.append(self.sum_magnitudes(disk = diskMags[idNames[i]][j],
                                 bulge = bulgeMags[idNames[i]][j], agn = agnMags[idNames[i]][j]))
-
-                j += 1
 
             subDict={}
             subDict["total"] = total_mags
@@ -620,7 +621,7 @@ class PhotometryGalaxies(PhotometryBase):
         outputDisk = None
         outputAgn = None
 
-        for i in range(len(self.bandPassList)):
+        for i in range(self.nBandpasses):
             rowTotal = []
             rowDisk = []
             rowBulge = []
@@ -744,7 +745,7 @@ class PhotometryGalaxies(PhotometryBase):
         into self.bandPassList so that the bandPasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandPassList is None or self.phiArray is None:
+        if self.bandpassDict is None or self.phiArray is None:
             self.loadBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
@@ -824,7 +825,7 @@ class PhotometryStars(PhotometryBase):
         magDict = self.calculate_magnitudes(idNames, magNorm=magNorm, sedNames=sedNames)
         output = None
 
-        for i in range(len(self.bandPassList)):
+        for i in range(self.nBandpasses):
             row = []
             for name in idNames:
                 row.append(magDict[name][i])
@@ -872,7 +873,7 @@ class PhotometryStars(PhotometryBase):
         into self.bandPassList so that the bandPasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandPassList is None or self.phiArray is None:
+        if self.bandpassDict is None or self.phiArray is None:
             self.loadBandPassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
