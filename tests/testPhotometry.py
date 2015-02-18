@@ -51,16 +51,22 @@ class variabilityUnitTest(unittest.TestCase):
         results = self.galaxy.query_columns(['varParamStr'], obs_metadata=self.obs_metadata,
                                              constraint='VarParamStr is not NULL')
         result = getOneChunk(results)
+        ct = 0
         for row in result:
             mags=galcat.applyVariability(row['varParamStr'])
+            ct += 1
+        self.assertTrue(ct>0) #to make sure that the test was actually performed
 
     def testStarVariability(self):
         starcat = testStars(self.star, obs_metadata=self.obs_metadata)
         results = self.star.query_columns(['varParamStr'], obs_metadata=self.obs_metadata,
                                          constraint='VarParamStr is not NULL')
         result = getOneChunk(results)
+        ct = 0
         for row in result:
+            ct += 1
             mags=starcat.applyVariability(row['varParamStr'])
+        self.assertTrue(ct>0) #to make sure that the test was actually performed
 
 class photometryUnitTest(unittest.TestCase):
 
@@ -95,16 +101,26 @@ class photometryUnitTest(unittest.TestCase):
     def testStars(self):
         test_cat=testStars(self.star, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testStarsOutput.txt")
+        cat = open("testStarsOutput.txt")
+        lines = cat.readlines()
+        self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
+        cat.close()
         results = self.star.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
+        self.assertTrue(len(result)>0) #to make sure some results are returned
         os.unlink("testStarsOutput.txt")
 
 
     def testGalaxies(self):
         test_cat=testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testGalaxiesOutput.txt")
+        cat = open("testGalaxiesOutput.txt")
+        lines = cat.readlines()
+        self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
+        cat.close()
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
+        self.assertTrue(len(result)>0) #to make sure some results are returned
         os.unlink("testGalaxiesOutput.txt")
 
     def testStandAloneStellarPhotometry(self):
@@ -134,6 +150,8 @@ class photometryUnitTest(unittest.TestCase):
 
         magnitudes = phot.calculate_magnitudes(idNames=idNames, sedNames=sedNames,
                                                magNorm=magNorm)
+        for n in idNames:
+            self.assertTrue(len(magnitudes[n])==len(bandPassNames)) #to make sure we calculated all the magnitudes
 
     def testGalaxyPhotometryStandAlone(self):
         idNames = ['Alice', 'Bob', 'Charlie']
@@ -311,13 +329,15 @@ class photometryUnitTest(unittest.TestCase):
         i = 0
 
         #since all of the SEDs in the cartoon database are the same, just test on the first
-        #if we ever include more SEDs, this can be somethin like
+        #if we ever include more SEDs, this can be something like
         #for ss in test_cata.sedMasterList:
         #
         ss=test_cat.sedMasterList[0]
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
         mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+        self.assertTrue(len(mags)==len(test_cat.bandpassDict))
+        self.assertTrue(len(mags)>0)
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
         i += 1
@@ -353,6 +373,7 @@ class photometryUnitTest(unittest.TestCase):
 
         components = ['Bulge', 'Disk', 'Agn']
 
+        ct = 0
         for cc in components:
             i = 0
 
@@ -362,9 +383,11 @@ class photometryUnitTest(unittest.TestCase):
                     ss.flambdaTofnu()
                     mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
                     for j in range(len(mags)):
+                        ct += 1
                         self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
                 i += 1
 
+        self.assertTrue(ct>0)
         os.unlink("testGalaxiesCartoon.txt")
 
     def testEBV(self):
