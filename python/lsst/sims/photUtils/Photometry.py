@@ -38,8 +38,8 @@ class PhotometryBase(object):
     dict keeyed to the array of bandpass keys stored in self.bandPassKey
     """
 
-    bandpassDict = None #bandpasses loaded in this particular catalog
-    nBandpasses = 0
+    bandpassDict = None #bandpasses loaded in this particular catalog; will be an OrderedDict
+    nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
 
@@ -61,7 +61,7 @@ class PhotometryBase(object):
                                 bandPassRoot = 'total_'):
         """
         This will take the list of band passes named by bandPassNames and use them to set up
-        self.bandPassList (which is being cached so that
+        self.bandpassDict (which is being cached so that
         it does not have to be loaded again unless we change which bandpasses we want)
 
         @param [in] bandPassNames is a list of names identifying each filter.
@@ -215,12 +215,12 @@ class PhotometryBase(object):
         """
         Return a list of magnitudes for a single Sed object.
 
-        Bandpass information is taken from the instance variables self.bandPassList,
+        Bandpass information is taken from the instance variables self.bandpassDict,
         self.phiArray, and self.waveLenStep
 
         @param [in] sedobj is an Sed object
 
-        @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandPassList
+        @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
         """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
@@ -433,14 +433,14 @@ class PhotometryGalaxies(PhotometryBase):
                              agnNames=None, agnMagNorm=None,
                              redshift=None, cosmologicalDistanceModulus=None, specFileMap=None):
         """
-        Take the array of bandpasses in self.bandPassList and the array of galaxy
+        Take the array of bandpasses in self.bandpassDict and the array of galaxy
         names idNames ane return a dict of dicts of lists of magnitudes
 
         the first level key is galid (the name of the galaxy)
 
         the second level key is "total", "bulge", "disk", or "agn"
 
-        this yields a list of magnitudes corresponding to the bandPasses in self.bandPassList
+        this yields a list of magnitudes corresponding to the bandPasses in self.bandpassDict
 
         We need to index the galaxies by some unique identifier, such as galid
         because it is possible for galaxies to have the same sed filenames but
@@ -578,7 +578,7 @@ class PhotometryGalaxies(PhotometryBase):
 
     def meta_magnitudes_getter(self, idNames):
         """
-        This method will return the magnitudes for galaxies in the bandpasses stored in self.bandPassList
+        This method will return the magnitudes for galaxies in the bandpasses stored in self.bandpassDict
 
         @param [in] idNames is a list of object IDs
 
@@ -742,7 +742,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList so that the bandPasses are available to the
+        into self.bandpassDict so that the bandPasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
@@ -761,12 +761,12 @@ class PhotometryStars(PhotometryBase):
 
     def calculate_magnitudes(self, idNames, magNorm, sedNames, specFileMap=None):
         """
-        Take the array of bandpass keys bandPassList and the array of
+        Take the bandpasses in bandpassDict and the array of
         star names idNames and return a dict of lists of magnitudes
 
         The first level key will be the name of the star (idName)
 
-        This will give you a list of magnitudes corresponding to self.bandPassList
+        This will give you a list of magnitudes corresponding to self.bandpassDict
 
         As with galaxies, it is important that we identify stars by a unique
         identifier, rather than their sedFilename, because different stars
@@ -816,7 +816,7 @@ class PhotometryStars(PhotometryBase):
         @param [in] idNames is a list of object names
 
         @param [out] output is a 2d numpy array in which the rows are the bandpasses
-        from bandPassList and the columns are the objects from idNames
+        from bandpassDict and the columns are the objects from idNames
 
         """
 
@@ -870,7 +870,7 @@ class PhotometryStars(PhotometryBase):
 
         """
         Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList so that the bandPasses are available to the
+        into self.bandpassDict so that the bandPasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
