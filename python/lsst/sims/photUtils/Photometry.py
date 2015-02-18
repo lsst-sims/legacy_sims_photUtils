@@ -12,6 +12,7 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 import os
 import numpy
+import eups
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed
 from lsst.sims.photUtils import Bandpass
@@ -38,10 +39,17 @@ class PhotometryBase(object):
     dict keeyed to the array of bandpass keys stored in self.bandPassKey
     """
 
-    bandpassDict = None #bandpasses loaded in this particular catalog; will be an OrderedDict
+    bandpassDict = None #total (hardware plus atmosphere) bandpasses loaded in this particular catalog;
+                        #will be an OrderedDict
+    hardwareBandpassDict = None #bandpasses associated with just the telescope hardware
+    atmosphereBandpass = None #bandpass of the atmosphere
     nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
+
+    atmosphereSED = None #the emission spectrum of the atmosphere
+    atmosphereSEDnormalized = None #this will be a tuple of (bandpassName, magnitude) indicating how
+                                   #atmosphereSED was normalized
 
     def setupPhiArray_dict(self):
         """
@@ -55,6 +63,41 @@ class PhotometryBase(object):
         sedobj = Sed()
         if self.bandpassDict is not None:
             self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
+
+    def loadBandPassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+                                filedir = os.path.join(eups.productDir('throughputs'), 'baseline'),
+                                bandpassRoot = 'filter_',
+                                componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                                                 'lens1.dat', 'lens2.dat', 'lens3.dat'],
+                                atmosphereBandpass='atmos.dat', atmosphereSED='darksky.dat'):
+
+        self.atmosphereSED = Sed()
+        self.atmosphereSED.readSED_flambda(os.path.join(filedir, atmosphereSED))
+        self.atmosphereSEDnormalized = None
+
+        self.atmosphereBandpass = Bandpass()
+        self.atmosphereBandpass.readThroughput(os.path.join(filedir, atmosphereBandpass))
+
+        commonComponents = []
+        for cc in componentList:
+            commonComponents.append(os.path.join(filedir,cc))
+
+        self.bandpassDict = OrderedDict()
+        self.hardwareBandpassDict = OrderedDict()
+        for w in bandpassNames:
+            components = commonComponents + [os.path.join(filedir,"%s.dat" % (bandpassRoot +w))]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            self.hardwareBandpassDict[w] = bandpassDummy
+            wv, sb = bandpassDummy.multiplyThroughputs(atmosphereBandpass.wavelen, atmospherBandpass.sb)
+            bandpassDummy = Bandpass(wavelen=wv, sb=sb)
+            self.bandpassDict[w] = bandpassDummy
+
+        self.phiArray = None
+        self.waveLenStep = None
+        self.nBandpasses = len(self.bandpassDict)
+        self.setupPhiArray_dict()
+
 
     def loadTotalBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
@@ -252,6 +295,43 @@ class PhotometryBase(object):
                 magList.append(None)
 
         return magList
+
+    def normalizeAtmosphereSED(self, obs_metadata):
+        fNorm = self.atmosphereSED(obs_metadata.skyBrightness, self.hardwareBandpassDict[obs_metadata.bandpass])
+        self.atmosphereSED.multiplyFluxNorm(fNorm)
+
+    def calculatePhotometricUncertainty(self, sedobj, magnitudes=None, obs_metadata=None):
+
+        if obs_metadata is None:
+            raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
+
+        snr = []
+
+        if self.atmosphereSed is None or self.hardwareBandpassDict is None:
+            if magnitudes is None:
+                raise RuntimeError("Need to pass in magnitudes to calculate photometric uncertainty without "
+                                   + "specific hardware bandpasses and atmosphere SED")
+
+            for i in range(len(magnitudes)):
+                snr.append(sedobj.calcSNR_mag(magnitudes[i], obs_metadata.m5(self.bandpassDict.keys()[i])))
+        else:
+            if obs_metadata.bandpass is None:
+                raise RuntimeError("ObservationMetaData needs a bandpass to calculate photometric uncertainty")
+            if obs_metadata.skyBrightness is None:
+                raise RuntimeError("ObservationMetaData needs skyBrightness to calculate photometric uncertainty")
+
+            if self.atmosphereSEDnormalized is None or \
+                self.atmosphereSEDnormalized[0] != obs_metadata.bandpass or \
+                self.atmospherSEDnormalized[1] != obs_metadata.skyBrightness:
+
+                    self.normalizeAtmosphereSED(obs_metadata)
+
+            for i in range(self.nBandpasses):
+                snr.append(sedobj.calcSNR_psf(self.bandpassDict.values()[i], self.atmosphereSED,
+                                              self.hardwareBandpassDict.values()[i]))
+
+        #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
+        return 2.5*numpylog10(1.0+1.0/snr)
 
     def calculateLSSTPhotometricUncertaintyFromColumn(self, nameTag, columnNames):
         """
