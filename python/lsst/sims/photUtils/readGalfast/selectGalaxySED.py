@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import eups
+from collections import OrderedDict
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.readGalfast.rgUtils import rgGalaxy
@@ -46,7 +47,10 @@ class selectGalaxySED(rgGalaxy):
                                             bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                             bandPassRoot = 'sdss_')
         else:
-            galPhot.bandPassList = bandpassList
+            galPhot.bandpassDict = OrderedDict()
+            for i in range(len(bandpassList)):
+                galPhot.bandpassDict[str(i)] = bandpassList[i]
+            galPhot.nBandpasses = len(galPhot.bandpassDict)
         galPhot.setupPhiArray_dict()
 
         modelColors = []
@@ -55,6 +59,16 @@ class selectGalaxySED(rgGalaxy):
 
         #Find the colors for all model SEDs
         modelColors = self.calcBasicColors(sedList, galPhot)
+
+        for galSpec in sedList:
+            fileSED = Sed()
+            fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
+            sEDMags = galPhot.manyMagCalc_list(fileSED)
+            colorInfo = []
+            for filtNum in range(0, galPhot.nBandpasses-1):
+                colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
+            modelColors.append(colorInfo)
+>>>>>>> updated the readGalFast code to reflect the change from
         modelColors = np.transpose(modelColors)
 
         #Match the catalog colors to models
@@ -62,7 +76,7 @@ class selectGalaxySED(rgGalaxy):
         numOn = 0
         matchColors = []
 
-        for filtNum in range(0, len(galPhot.bandPassList)-1):
+        for filtNum in range(0, galPhot.nBandpasses-1):
             matchColors.append(np.transpose(catMags)[filtNum] - np.transpose(catMags)[filtNum+1])
 
         matchColors = np.transpose(matchColors)
@@ -71,7 +85,7 @@ class selectGalaxySED(rgGalaxy):
             if numOn % 10000 == 0:
                 print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
             distanceArray = np.zeros(len(sedList))
-            for filtNum in range(0, len(galPhot.bandPassList)-1):
+            for filtNum in range(0, galPhot.nBandpasses-1):
                 distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
             matchedSEDNum = np.nanargmin(distanceArray)
             sedMatches.append(sedList[matchedSEDNum].name)
@@ -141,7 +155,10 @@ class selectGalaxySED(rgGalaxy):
                                             bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                             bandPassRoot = 'sdss_')
         else:
-            galPhot.bandPassList = bandpassList
+            galPhot.bandpassDict = OrderedDict()
+            for i in range(len(bandpassList)):
+                galPhot.bandpassDict[str(i)] = bandpassList[i]
+            galPhot.nBandpasses = len(galPhot.bandpassDict)
         galPhot.setupPhiArray_dict()
         
         #Calculate ebv from ra, dec coordinates if needed
@@ -182,6 +199,7 @@ class selectGalaxySED(rgGalaxy):
                 fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
                 fileSED.redshiftSED(redshift)
                 sedColors = self.calcBasicColors([fileSED], galPhot)
+
                 colorSet.append(sedColors)
             colorSet = np.transpose(colorSet)
             for currentIndex in redshiftIndex[numOn:]:
