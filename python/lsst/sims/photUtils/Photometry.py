@@ -253,7 +253,7 @@ class PhotometryBase(object):
 
         return magList
 
-    def calculatePhotometricUncertaintyFromColumn(self, nameTag, columnNames):
+    def calculateLSSTPhotometricUncertaintyFromColumn(self, nameTag, columnNames):
         """
         This method reads in a dict of column names and passes out
         the associated photometric uncertainties.  The output will be
@@ -279,11 +279,11 @@ class PhotometryBase(object):
         for filterName in columnNames:
             magnitudes[filterName] = self.column_by_name(columnNames[filterName])
 
-        outputDict = self.calculatePhotometricUncertainty(magnitudes)
+        outputDict = self.calculateLSSTPhotometricUncertainty(magnitudes)
 
         return outputDict
 
-    def calculatePhotometricUncertainty(self, magnitudes):
+    def calculateLSSTPhotometricUncertainty(self, magnitudes):
         """
         This method is based on equations 3.1, 3.2 and Table 3.2
         of the LSST Science Book (version 2.0)
@@ -691,7 +691,7 @@ class PhotometryGalaxies(PhotometryBase):
         columnNames['z'] = 'zRecalc'
         columnNames['y'] = 'yRecalc'
 
-        totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        totalDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
 
         columnNames = {}
         columnNames['u'] = 'uDisk'
@@ -701,7 +701,7 @@ class PhotometryGalaxies(PhotometryBase):
         columnNames['z'] = 'zDisk'
         columnNames['y'] = 'yDisk'
 
-        diskDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        diskDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
 
         columnNames = {}
         columnNames['u'] = 'uBulge'
@@ -711,7 +711,7 @@ class PhotometryGalaxies(PhotometryBase):
         columnNames['z'] = 'zBulge'
         columnNames['y'] = 'yBulge'
 
-        bulgeDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        bulgeDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
 
         columnNames = {}
         columnNames['u'] = 'uAgn'
@@ -721,7 +721,7 @@ class PhotometryGalaxies(PhotometryBase):
         columnNames['z'] = 'zAgn'
         columnNames['y'] = 'yAgn'
 
-        agnDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        agnDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
 
         return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
                             totalDict['i'],totalDict['z'],totalDict['y'],
@@ -856,7 +856,7 @@ class PhotometryStars(PhotometryBase):
         columnNames['z'] = 'lsst_z'
         columnNames['y'] = 'lsst_y'
 
-        outputDict = self.calculatePhotometricUncertaintyFromColumn('id',columnNames)
+        outputDict = self.calculateLSSTPhotometricUncertaintyFromColumn('id',columnNames)
 
 
         return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],

@@ -116,7 +116,7 @@ class Variability(PhotometryBase):
         columnNames['z'] = 'lsst_z_var'
         columnNames['y'] = 'lsst_y_var'
 
-        outputDict = self.calculatePhotometricUncertaintyFromColumn('id',columnNames)
+        outputDict = self.calculateLSSTPhotometricUncertaintyFromColumn('id',columnNames)
 
         return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
                             outputDict['i'],outputDict['z'],outputDict['y']])
@@ -265,7 +265,7 @@ class Variability(PhotometryBase):
         columnNames['z'] = 'zRecalc_var'
         columnNames['y'] = 'yRecalc_var'
 
-        totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        totalDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
 
         columnNames = {}
         columnNames['u'] = 'uAgn_var'
@@ -275,7 +275,7 @@ class Variability(PhotometryBase):
         columnNames['z'] = 'zAgn_var'
         columnNames['y'] = 'yAgn_var'
 
-        agnDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        agnDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
 
         return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
                             totalDict['i'],totalDict['z'],totalDict['y'],
