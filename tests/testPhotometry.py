@@ -431,21 +431,8 @@ class uncertaintyUnitTest(unittest.TestCase):
         fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
         self.starSED.multiplyFluxNorm(fNorm)
 
-    def tearDown(self):
-        del self.starSED
-
-    def testUncertaintyExceptions(self):
-        phot = PhotometryBase()
-        phot.loadBandpassesFromFiles()
-        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED)
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g')
-        self.assertRaises(RuntimeError,phot.calculatePhotometricUncertainty, self.starSED, obs_metadata=obs_metadata)
-
-    def testRawUncertainty(self):
-        phot = PhotometryBase()
-        phot.loadBandpassesFromFiles()
-        totalBandpasses = []
-        hardwareBandpasses = []
+        self.totalBandpasses = []
+        self.hardwareBandpasses = []
 
         componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                          'lens1.dat', 'lens2.dat', 'lens3.dat']
@@ -453,38 +440,97 @@ class uncertaintyUnitTest(unittest.TestCase):
         for c in componentList:
             hardwareComponents.append(os.path.join(eups.productDir('throughputs'),'baseline',c))
 
-        bandPasses = ['u', 'g', 'r', 'i', 'z', 'y']
-        for b in bandPasses:
+        self.bandpasses = ['u', 'g', 'r', 'i', 'z', 'y']
+        for b in self.bandpasses:
             filterName = os.path.join(eups.productDir('throughputs'),'baseline','filter_%s.dat' % b)
             components = hardwareComponents + [filterName]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
-            hardwareBandpasses.append(bandpassDummy)
+            self.hardwareBandpasses.append(bandpassDummy)
             components = components + [os.path.join(eups.productDir('throughputs'),'baseline','atmos.dat')]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
-            totalBandpasses.append(bandpassDummy)
+            self.totalBandpasses.append(bandpassDummy)
 
+
+
+    def tearDown(self):
+        del self.starSED
+        del self.bandpasses
+        del self.hardwareBandpasses
+        del self.totalBandpasses
+
+    def testUncertaintyExceptions(self):
+        phot = PhotometryBase()
+        phot.loadBandpassesFromFiles()
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g')
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED, obs_metadata=obs_metadata)
+
+        phot = PhotometryBase()
+        phot.loadTotalBandPassesFromFiles()
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0)
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED, obs_metadata=obs_metadata)
+
+    def testRawSEDUncertainty(self):
+        phot = PhotometryBase()
+        phot.loadBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='r',
                                            skyBrightness=22.0)
 
         magnitudes = phot.manyMagCalc_list(self.starSED)
-        for i in range(len(bandPasses)):
-            m = self.starSED.calcMag(totalBandpasses[i])
+        for i in range(len(self.bandpasses)):
+            m = self.starSED.calcMag(self.totalBandpasses[i])
             self.assertAlmostEqual(m, magnitudes[i], 10)
 
         sigma = phot.calculatePhotometricUncertainty(self.starSED, obs_metadata=obs_metadata)
 
         skySED = Sed()
         skySED.readSED_flambda(os.path.join(eups.productDir('throughputs'),'baseline','darksky.dat'))
-        fNorm = skySED.calcFluxNorm(22.0, hardwareBandpasses[2])
+        fNorm = skySED.calcFluxNorm(22.0, self.hardwareBandpasses[2])
         skySED.multiplyFluxNorm(fNorm)
-        for i in range(len(bandPasses)):
-           snr = self.starSED.calcSNR_psf(totalBandpasses[i], skySED, hardwareBandpasses[i])
+        for i in range(len(self.bandpasses)):
+           snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySED, self.hardwareBandpasses[i])
            m = 2.5*numpy.log10(1.0+1.0/snr)
            self.assertAlmostEqual(sigma[i], m, 10)
 
+    def testRawM5Uncertainty(self):
+        phot = PhotometryBase()
+        phot.loadTotalBandPassesFromFiles()
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=25.0)
+        magnitudes = phot.manyMagCalc_list(self.starSED)
+        sigma = phot.calculatePhotometricUncertainty(self.starSED, magnitudes=magnitudes, obs_metadata=obs_metadata)
+        for i in range(len(self.bandpasses)):
+            snr = self.starSED.calcSNR_mag(magnitudes[i], 25.0)
+            ss = 2.5*numpy.log10(1.0+1.0/snr)
+            self.assertAlmostEqual(ss, sigma[i], 10)
 
+        m5={'u':21.0, 'g':23.5, 'r':27.0, 'i': 19.0, 'z': 22.0, 'y':24.0}
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
+        sigma = phot.calculatePhotometricUncertainty(self.starSED, magnitudes=magnitudes, obs_metadata=obs_metadata)
+        snr = self.starSED.calcSNR_mag(magnitudes[0], 21.0)
+        ss = 2.5*numpy.log10(1.0+1.0/snr)
+        self.assertAlmostEqual(ss, sigma[0], 10)
+
+        snr = self.starSED.calcSNR_mag(magnitudes[1], 23.5)
+        ss = 2.5*numpy.log10(1.0+1.0/snr)
+        self.assertAlmostEqual(ss, sigma[1], 10)
+
+        snr = self.starSED.calcSNR_mag(magnitudes[2], 27.0)
+        ss = 2.5*numpy.log10(1.0+1.0/snr)
+        self.assertAlmostEqual(ss, sigma[2], 10)
+
+        snr = self.starSED.calcSNR_mag(magnitudes[3], 19.0)
+        ss = 2.5*numpy.log10(1.0+1.0/snr)
+        self.assertAlmostEqual(ss, sigma[3], 10)
+
+        snr = self.starSED.calcSNR_mag(magnitudes[4], 22.0)
+        ss = 2.5*numpy.log10(1.0+1.0/snr)
+        self.assertAlmostEqual(ss, sigma[4], 10)
+
+        snr = self.starSED.calcSNR_mag(magnitudes[5], 24.0)
+        ss = 2.5*numpy.log10(1.0+1.0/snr)
+        self.assertAlmostEqual(ss, sigma[5], 10)
 
 def suite():
     utilsTests.init()
