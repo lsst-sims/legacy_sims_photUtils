@@ -392,6 +392,36 @@ class photometryUnitTest(unittest.TestCase):
         self.assertTrue(ct>0)
         os.unlink("testGalaxiesCartoon.txt")
 
+    def testEBV(self):
+
+        ebvObject = EBVbase()
+        ra = []
+        dec = []
+        gLat = []
+        gLon = []
+        for i in range(10):
+            ra.append(i*2.0*numpy.pi/10.0)
+            dec.append(i*numpy.pi/10.0)
+
+            gLat.append(-0.5*numpy.pi+i*numpy.pi/10.0)
+            gLon.append(i*2.0*numpy.pi/10.0)
+
+            equatorialCoordinates=numpy.array([ra,dec])
+            galacticCoordinates=numpy.array([gLon,gLat])
+
+        ebvOutput = ebvObject.calculateEbv(equatorialCoordinates=equatorialCoordinates)
+        self.assertEqual(len(ebvOutput),len(ra))
+
+        ebvOutput = ebvObject.calculateEbv(galacticCoordinates=galacticCoordinates)
+        self.assertEqual(len(ebvOutput),len(gLon))
+
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=equatorialCoordinates,
+        galacticCoordinates=galacticCoordinates)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=None, galacticCoordinates=None)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv)
+
+class uncertaintyUnitTest(unittest.TestCase):
+
     def testRawUncertainty(self):
         phot = PhotometryBase()
         phot.loadBandpassesFromFiles()
@@ -443,39 +473,14 @@ class photometryUnitTest(unittest.TestCase):
            m = 2.5*numpy.log10(1.0+1.0/snr)
            self.assertAlmostEqual(sigma[i], m, 10)
 
-    def testEBV(self):
 
-        ebvObject = EBVbase()
-        ra = []
-        dec = []
-        gLat = []
-        gLon = []
-        for i in range(10):
-            ra.append(i*2.0*numpy.pi/10.0)
-            dec.append(i*numpy.pi/10.0)
-
-            gLat.append(-0.5*numpy.pi+i*numpy.pi/10.0)
-            gLon.append(i*2.0*numpy.pi/10.0)
-
-            equatorialCoordinates=numpy.array([ra,dec])
-            galacticCoordinates=numpy.array([gLon,gLat])
-
-        ebvOutput = ebvObject.calculateEbv(equatorialCoordinates=equatorialCoordinates)
-        self.assertEqual(len(ebvOutput),len(ra))
-
-        ebvOutput = ebvObject.calculateEbv(galacticCoordinates=galacticCoordinates)
-        self.assertEqual(len(ebvOutput),len(gLon))
-
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=equatorialCoordinates,
-        galacticCoordinates=galacticCoordinates)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=None, galacticCoordinates=None)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv)
 
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(variabilityUnitTest)
     suites += unittest.makeSuite(photometryUnitTest)
+    suites += unittest.makeSuite(uncertaintyUnitTest)
     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 
