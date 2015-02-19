@@ -434,6 +434,13 @@ class uncertaintyUnitTest(unittest.TestCase):
     def tearDown(self):
         del self.starSED
 
+    def testUncertaintyExceptions(self):
+        phot = PhotometryBase()
+        phot.loadBandpassesFromFiles()
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g')
+        self.assertRaises(RuntimeError,phot.calculatePhotometricUncertainty, self.starSED, obs_metadata=obs_metadata)
+
     def testRawUncertainty(self):
         phot = PhotometryBase()
         phot.loadBandpassesFromFiles()
