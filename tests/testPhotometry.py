@@ -2,15 +2,17 @@ import numpy
 
 import os
 import unittest
+import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
 
+from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
-from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
+from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies
@@ -389,6 +391,57 @@ class photometryUnitTest(unittest.TestCase):
 
         self.assertTrue(ct>0)
         os.unlink("testGalaxiesCartoon.txt")
+
+    def testRawUncertainty(self):
+        phot = PhotometryBase()
+        phot.loadBandpassesFromFiles()
+        totalBandpasses = []
+        hardwareBandpasses = []
+
+        starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        starSED = Sed()
+        starSED.readSED_flambda(starName)
+        imsimband = Bandpass()
+        imsimband.imsimBandpass()
+        fNorm = starSED.calcFluxNorm(22.0, imsimband)
+        starSED.multiplyFluxNorm(fNorm)
+
+        componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                         'lens1.dat', 'lens2.dat', 'lens3.dat']
+        hardwareComponents = []
+        for c in componentList:
+            hardwareComponents.append(os.path.join(eups.productDir('throughputs'),'baseline',c))
+
+        bandPasses = ['u', 'g', 'r', 'i', 'z', 'y']
+        for b in bandPasses:
+            filterName = os.path.join(eups.productDir('throughputs'),'baseline','filter_%s.dat' % b)
+            components = hardwareComponents + [filterName]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            hardwareBandpasses.append(bandpassDummy)
+            components = components + [os.path.join(eups.productDir('throughputs'),'baseline','atmos.dat')]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            totalBandpasses.append(bandpassDummy)
+
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='r',
+                                           skyBrightness=22.0)
+
+        magnitudes = phot.manyMagCalc_list(starSED)
+        for i in range(len(bandPasses)):
+            m = starSED.calcMag(totalBandpasses[i])
+            self.assertAlmostEqual(m, magnitudes[i], 10)
+
+        sigma = phot.calculatePhotometricUncertainty(starSED, obs_metadata=obs_metadata)
+
+        skySED = Sed()
+        skySED.readSED_flambda(os.path.join(eups.productDir('throughputs'),'baseline','darksky.dat'))
+        fNorm = skySED.calcFluxNorm(22.0, hardwareBandpasses[2])
+        skySED.multiplyFluxNorm(fNorm)
+        for i in range(len(bandPasses)):
+           snr = starSED.calcSNR_psf(totalBandpasses[i], skySED, hardwareBandpasses[i])
+           m = 2.5*numpy.log10(1.0+1.0/snr)
+           self.assertAlmostEqual(sigma[i], m, 10)
 
     def testEBV(self):
 
