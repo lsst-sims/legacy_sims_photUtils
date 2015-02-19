@@ -422,19 +422,23 @@ class photometryUnitTest(unittest.TestCase):
 
 class uncertaintyUnitTest(unittest.TestCase):
 
+    def setUp(self):
+        starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        self.starSED = Sed()
+        self.starSED.readSED_flambda(starName)
+        imsimband = Bandpass()
+        imsimband.imsimBandpass()
+        fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
+        self.starSED.multiplyFluxNorm(fNorm)
+
+    def tearDown(self):
+        del self.starSED
+
     def testRawUncertainty(self):
         phot = PhotometryBase()
         phot.loadBandpassesFromFiles()
         totalBandpasses = []
         hardwareBandpasses = []
-
-        starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
-        starSED = Sed()
-        starSED.readSED_flambda(starName)
-        imsimband = Bandpass()
-        imsimband.imsimBandpass()
-        fNorm = starSED.calcFluxNorm(22.0, imsimband)
-        starSED.multiplyFluxNorm(fNorm)
 
         componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                          'lens1.dat', 'lens2.dat', 'lens3.dat']
@@ -457,19 +461,19 @@ class uncertaintyUnitTest(unittest.TestCase):
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='r',
                                            skyBrightness=22.0)
 
-        magnitudes = phot.manyMagCalc_list(starSED)
+        magnitudes = phot.manyMagCalc_list(self.starSED)
         for i in range(len(bandPasses)):
-            m = starSED.calcMag(totalBandpasses[i])
+            m = self.starSED.calcMag(totalBandpasses[i])
             self.assertAlmostEqual(m, magnitudes[i], 10)
 
-        sigma = phot.calculatePhotometricUncertainty(starSED, obs_metadata=obs_metadata)
+        sigma = phot.calculatePhotometricUncertainty(self.starSED, obs_metadata=obs_metadata)
 
         skySED = Sed()
         skySED.readSED_flambda(os.path.join(eups.productDir('throughputs'),'baseline','darksky.dat'))
         fNorm = skySED.calcFluxNorm(22.0, hardwareBandpasses[2])
         skySED.multiplyFluxNorm(fNorm)
         for i in range(len(bandPasses)):
-           snr = starSED.calcSNR_psf(totalBandpasses[i], skySED, hardwareBandpasses[i])
+           snr = self.starSED.calcSNR_psf(totalBandpasses[i], skySED, hardwareBandpasses[i])
            m = 2.5*numpy.log10(1.0+1.0/snr)
            self.assertAlmostEqual(sigma[i], m, 10)
 
