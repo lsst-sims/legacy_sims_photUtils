@@ -457,7 +457,7 @@ class Bandpass:
         neff = flatSed.calcNeff(seeing, platescale)
 
         #calculate the square of the noise due to the instrument
-        instr_noise_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+        noise_instr_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
 
         #now solve equation 41 of hte SNR document for the neff * sigma_total^2 term
         #given snr=5 and counts as calculated above
@@ -465,9 +465,9 @@ class Bandpass:
 
         skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
         skyCountsTarget = skyNoiseTarget*gain
-        skyCounts = skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain) \
+        skyCounts = skysed.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain) \
                     * platescale * platescale
-        skysed.mulitplyFluxNorm(skyCountsTarget/skyCounts)
+        skysed.multiplyFluxNorm(skyCountsTarget/skyCounts)
 
     def calcM5(self, skysed, hardware, expTime=PhotometricDefaults.exptime,
                nexp=PhotometricDefaults.nexp, readnoise=PhotometricDefaults.rdnoise,
@@ -491,7 +491,7 @@ class Bandpass:
         snr = 5.0
         v_n, noise_instr_sq, \
         noise_sky_sq, noise_skymeasurement_sq, \
-        skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardwarebandpass, readnoise,
+        skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardware, readnoise,
                                                           darkcurrent, othernoise, seeing,
                                                           effarea, expTime, nexp, platescale,
                                                           gain)
