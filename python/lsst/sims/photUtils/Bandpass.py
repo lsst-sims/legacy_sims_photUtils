@@ -61,24 +61,11 @@ import os
 import warnings
 import numpy
 import gzip
+from lsst.sims.photUtils import PhotometricDefaults
 from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation.
 
 __all__ = ["Bandpass"]
 
-# The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
-MINWAVELEN = 300
-MAXWAVELEN = 1150
-WAVELENSTEP = 0.1
-
-EXPTIME = 15                      # Default exposure time. (option for method calls).
-NEXP = 2                          # Default number of exposures. (option for methods).
-EFFAREA = numpy.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
-GAIN = 2.3                        # Default gain. (option for method call).
-RDNOISE = 5                       # Default value - readnoise electrons or adu per pixel (per exposure)
-DARKCURRENT = 0.2                 # Default value - dark current electrons or adu per pixel per second
-OTHERNOISE = 4.69                 # Default value - other noise electrons or adu per pixel per exposure
-PLATESCALE = 0.2                  # Default value - "/pixel
-SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Default seeing values (in ")
 
 class Bandpass:
     """
@@ -97,17 +84,17 @@ class Bandpass:
         """
         if wavelen_min is None:
             if wavelen is None:
-                wavelen_min = MINWAVELEN
+                wavelen_min = PhotometricDefaults.minwavelen
             else:
                 wavelen_min = wavelen.min()
         if wavelen_max is None:
             if wavelen is None:
-                wavelen_max = MAXWAVELEN
+                wavelen_max = PhotometricDefaults.maxwavelen
             else:
                 wavelen_max = wavelen.max()
         if wavelen_step is None:
             if wavelen is None:
-                wavelen_step = WAVELENSTEP
+                wavelen_step = PhotometricDefaults.wavelenstep
             else:
                 wavelen_step = numpy.diff(wavelen).min()
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
@@ -415,7 +402,9 @@ class Bandpass:
         sb_new = self.sb * sb_other
         return wavelen_new, sb_new
 
-    def calcZP_t(self, expTime=EXPTIME, effarea=EFFAREA, gain=GAIN):
+    def calcZP_t(self, expTime=PhotometricDefaults.exptime,
+                 effarea=PhotometricDefaults.effarea,
+                 gain=PhotometricDefaults.gain):
         """
         Calculate the instrumental zeropoint for a bandpass.
         """
@@ -441,10 +430,12 @@ class Bandpass:
         zp_t = flatsource.calcMag(self)
         return zp_t
 
-    def calcM5(self, skysed, hardware, expTime=EXPTIME, nexp=NEXP, readnoise=RDNOISE,
-               darkcurrent=DARKCURRENT, othernoise=OTHERNOISE,
-               seeing=SEEING['r'], platescale=PLATESCALE,
-               gain=GAIN, effarea=EFFAREA):
+    def calcM5(self, skysed, hardware, expTime=PhotometricDefaults.exptime,
+               nexp=PhotometricDefaults.nexp, readnoise=PhotometricDefaults.rdnoise,
+               darkcurrent=PhotometricDefaults.darkcurrent,
+               othernoise=PhotometricDefaults.othernoise,
+               seeing=PhotometricDefaults.seeing['r'], platescale=PhotometricDefaults.platescale,
+               gain=PhotometricDefaults.gain, effarea=PhotometricDefaults.effarea):
         """
         Calculate the AB magnitude of a 5-sigma above sky background source.
 

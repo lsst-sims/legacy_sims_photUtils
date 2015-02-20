@@ -87,29 +87,9 @@ order as the bandpasses) of this SED in each of those bandpasses.
 import warnings
 import numpy
 import gzip
+from lsst.sims.photUtils import PhotometricDefaults
 
 __all__ = ["Sed"]
-
-# The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
-MINWAVELEN = 300
-MAXWAVELEN = 1150
-WAVELENSTEP = 0.1
-
-LIGHTSPEED = 299792458       # speed of light, = 2.9979e8 m/s
-PLANCK = 6.626068e-27        # planck's constant, = 6.626068e-27 ergs*seconds
-NM2M = 1.00e-9               # nanometers to meters conversion = 1e-9 m/nm
-ERGSETC2JANSKY = 1.00e23     # erg/cm2/s/Hz to Jansky units (fnu)
-
-EXPTIME = 15                      # Default exposure time. (option for method calls).
-NEXP = 2                          # Default number of exposures. (option for methods).
-EFFAREA = numpy.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
-GAIN = 2.3                        # Default gain. (option for method call).
-RDNOISE = 5                       # Default value - readnoise electrons per pixel (per exposure)
-DARKCURRENT = 0.2                 # Default value - dark current electrons per pixel per second
-OTHERNOISE = 4.69                 # Default value - other noise electrons or adu per pixel per exposure
-PLATESCALE = 0.2                  # Default value - "/pixel
-SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Default seeing values (in ")
-
 
 class Sed(object):
     """Class for holding and utilizing spectral energy distributions (SEDs)"""
@@ -167,7 +147,8 @@ class Sed(object):
         self.name = name
         return
 
-    def setFlatSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP, name='Flat'):
+    def setFlatSED(self, wavelen_min=PhotometricDefaults.minwavelen, wavelen_max=PhotometricDefaults.maxwavelen,
+                   wavelen_step=PhotometricDefaults.wavelenstep, name='Flat'):
         """
         Populate the wavelength/flambda/fnu fields in sed according to a flat fnu source.
         """
@@ -435,8 +416,8 @@ class Sed(object):
             self.fnu = None
         # Now on with the calculation.
         # Calculate fnu.
-        fnu = flambda * wavelen * wavelen * NM2M / LIGHTSPEED
-        fnu = fnu * ERGSETC2JANSKY
+        fnu = flambda * wavelen * wavelen * PhotometricDefaults.nm2m / PhotometricDefaults.lightspeed
+        fnu = fnu * PhotometricDefaults.ergsetc2jansky
         # If are using/updating self, then *all* wavelen/flambda/fnu will be gridded.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -462,8 +443,8 @@ class Sed(object):
             fnu = self.fnu
         # On with the calculation.
         # Calculate flambda.
-        flambda = fnu / wavelen / wavelen * LIGHTSPEED / NM2M
-        flambda = flambda / ERGSETC2JANSKY
+        flambda = fnu / wavelen / wavelen * PhotometricDefaults.lightspeed / PhotometricDefaults.nm2m
+        flambda = flambda / PhotometricDefaults.ergsetc2jansky
         # If updating self, then *all of wavelen/fnu/flambda will be updated.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -620,7 +601,7 @@ class Sed(object):
         return wavelen, flambda
 
 
-    def multiplySED(self, other_sed, wavelen_step=WAVELENSTEP):
+    def multiplySED(self, other_sed, wavelen_step=PhotometricDefaults.wavelenstep):
         """
         Multiply two SEDs together - flambda * flambda - and return a new sed object.
 
@@ -655,7 +636,8 @@ class Sed(object):
     ## routines related to magnitudes and fluxes
 
     def calcADU(self, bandpass, wavelen=None, fnu=None,
-                expTime=EXPTIME, effarea=EFFAREA, gain=GAIN):
+                expTime=PhotometricDefaults.exptime, effarea=PhotometricDefaults.effarea,
+                gain=PhotometricDefaults.gain):
         """
         Calculate the number of adu from camera, using sb and fnu.
 
@@ -678,7 +660,9 @@ class Sed(object):
         dlambda = wavelen[1] - wavelen[0]
         # Nphoton in units of 10^-23 ergs/cm^s/nm.
         nphoton = (fnu / wavelen * bandpass.sb).sum()
-        adu = nphoton * (expTime * effarea/gain) * (1/ERGSETC2JANSKY) * (1/PLANCK) * dlambda
+        adu = nphoton * (expTime * effarea/gain) * \
+              (1/PhotometricDefaults.ergsetc2jansky) * \
+              (1/PhotometricDefaults.planck) * dlambda
         return adu
 
 
@@ -804,7 +788,7 @@ class Sed(object):
 
     def renormalizeSED(self, wavelen=None, flambda=None, fnu=None,
                        lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
-                       wavelen_step=WAVELENSTEP):
+                       wavelen_step=PhotometricDefaults.wavelenstep):
         """
         Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
 
@@ -933,10 +917,13 @@ class Sed(object):
         return
 
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass,
-                    readnoise=RDNOISE, darkcurrent=DARKCURRENT,
-                    othernoise=OTHERNOISE, seeing=SEEING['r'],
-                    effarea=EFFAREA, expTime=EXPTIME, nexp=1,
-                    platescale=PLATESCALE, gain=1, verbose=False):
+                    readnoise=PhotometricDefaults.rdnoise,
+                    darkcurrent=PhotometricDefaults.darkcurrent,
+                    othernoise=PhotometricDefaults.othernoise,
+                    seeing=PhotometricDefaults.seeing['r'],
+                    effarea=PhotometricDefaults.effarea,
+                    expTime=PhotometricDefaults.exptime, nexp=1,
+                    platescale=PhotometricDefaults.platescale, gain=1, verbose=False):
         """
         Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
 
