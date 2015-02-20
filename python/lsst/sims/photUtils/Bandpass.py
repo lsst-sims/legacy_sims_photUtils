@@ -429,7 +429,7 @@ class Bandpass:
         dlambda = self.wavelen[1] - self.wavelen[0]
         # Set up flat source of arbitrary brightness,
         #   but where the units of fnu are Jansky (for AB mag zeropoint = -8.9).
-        flatsource = Sed.Sed()
+        flatsource = Sed()
         flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
                               wavelen_step=self.wavelen_step)
         adu = flatsource.calcADU(self, expTime=expTime, effarea=effarea, gain=gain)
@@ -464,7 +464,7 @@ class Bandpass:
         v_n = neff* (skynoise**2 + noise_instr**2)
         counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
         # Create a flat fnu source that has the required counts (in electrons) in this bandpass.
-        flatsource = Sed.Sed()
+        flatsource = Sed()
         flatsource.setFlatSED()
         counts_flat = flatsource.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
         flatsource.multiplyFluxNorm(counts_5sigma/counts_flat)
