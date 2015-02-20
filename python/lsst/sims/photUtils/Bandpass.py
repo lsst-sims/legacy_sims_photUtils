@@ -443,22 +443,27 @@ class Bandpass:
         The exposure time, nexp, readnoise, darkcurrent, gain,
         seeing and platescale are also necessary.
         """
-        # This calculation comes from equation #42 in the SNR document.
-        snr = 5.0
-        noise_instr = numpy.sqrt(nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2)
-        neff = 2.436 * (seeing/platescale)**2
-        # Calculate the sky counts. Note that the atmosphere should not be included in sky counts.
-        skycounts = skysed.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain)
-        skycounts = skycounts * platescale * platescale
-        # Calculate the sky noise.
-        skynoise  = numpy.sqrt(skycounts/gain)
-        v_n = neff* (skynoise**2 + noise_instr**2)
-        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
-        # Create a flat fnu source that has the required counts (in electrons) in this bandpass.
+        #This comes from equation 45 of the SNR document (v1.2, May 2010)
+        #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+
+        #create a flat fnu source
         flatsource = Sed()
         flatsource.setFlatSED()
+        snr = 5.0
+        v_n, noise_instr_sq, \
+        noise_sky_sq, noise_skymeasurement_sq, \
+        skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardwarebandpass, readnoise,
+                                                          darkcurrent, othernoise, seeing,
+                                                          effarea, expTime, nexp, platescale,
+                                                          gain)
+
+        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
+
+        #renormalize flatsource so that it has the required counts to be a 5-sigma detection
+        #given the specified background
         counts_flat = flatsource.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
         flatsource.multiplyFluxNorm(counts_5sigma/counts_flat)
+
         # Calculate the AB magnitude of this source.
         mag_5sigma = flatsource.calcMag(self)
         return mag_5sigma
