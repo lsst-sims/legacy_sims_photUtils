@@ -1,6 +1,7 @@
 import numpy as np
 import warnings
 import unittest
+import lsst.utils.tests as utilsTests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 
@@ -111,11 +112,17 @@ class TestSedName(unittest.TestCase):
         testsed.name = newname
         self.assertEqual(testsed.name, newname)
 
-if __name__ == "__main__":
-    suitelist = []
-    suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedWavelenLimits))
-    suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedName))
-    suite = unittest.TestSuite(suitelist)
-    #unittest.TextTestRunner(verbosity=2).run(suite)
 
-    unittest.main()
+def suite():
+    utilsTests.init()
+    suites = []
+    suites += unittest.makeSuite(TestSedWavelenLimits)
+    suites += unittest.makeSuite(TestSedName)
+    return unittest.TestSuite(suites)
+
+def run(shouldExit = False):
+    utilsTests.run(suite(),shouldExit)
+
+if __name__ == "__main__":
+    run(True)
+
