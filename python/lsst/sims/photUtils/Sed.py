@@ -916,6 +916,9 @@ class Sed(object):
         f.close()
         return
 
+    def calcNeff(self, seeing, platescale):
+        return 2.436*(seeing/platescale)**2
+
     def calcInstrNoiseSq(self, readnoise, darkcurrent, expTime, nexp, othernoise):
         return nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
 
@@ -923,7 +926,7 @@ class Sed(object):
                            othernoise, seeing, effarea, expTime, nexp, platescale, gain):
 
         #Calculate the effective number of pixels for double-Gaussian PSF
-        neff = 2.436*(seeing/platescale)**2
+        neff = self.calcNeff(seeing, platescale)
 
         #Calculate the counts form the sky
         skycounts = skySed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain) \
