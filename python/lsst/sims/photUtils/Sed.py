@@ -916,6 +916,9 @@ class Sed(object):
         f.close()
         return
 
+    def calcInstrNoiseSq(self, readnoise, darkcurrent, expTime, nexp, othernoise):
+        return nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
+
     def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, readnoise, darkcurrent,
                            othernoise, seeing, effarea, expTime, nexp, platescale, gain):
 
@@ -928,7 +931,7 @@ class Sed(object):
 
         #Calculate the square of the noise due to instrumental effects.
         #Include the readout noise as many times as there are exposures
-        noise_instr_sq = nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
+        noise_instr_sq = self.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
 
         #Calculate the square of the noise due to sky background poisson noise
         noise_sky_sq = skycounts/gain
