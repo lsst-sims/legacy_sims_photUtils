@@ -916,6 +916,29 @@ class Sed(object):
         f.close()
         return
 
+    def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, readnoise, darkcurrent,
+                           othernoise, seeing, effarea, expTime, nexp, platescale, gain):
+
+        #Calculate the effective number of pixels for double-Gaussian PSF
+        neff = 2.436*(seeing/platescale)**2
+
+        #Calculate the counts form the sky
+        skycounts = skySed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain) \
+                    * platescale * platescale
+
+        #Calculate the square of the noise due to instrumental effects.
+        #Include the readout noise as many times as there are exposures
+        noise_instr_sq = nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
+
+        #Calculate teh square of the noise due to sky background poisson noise
+        noise_sky_sq = skycounts/gain
+
+        #Discount error in sky measurement for now
+        noise_skymeasurement_sq = 0
+
+        total_noise_sq = neff*(noise_sky_sq + noise_instr_sq + noise_skymeasurement_sq)
+        return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
+
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass,
                     readnoise=PhotometricDefaults.rdnoise,
                     darkcurrent=PhotometricDefaults.darkcurrent,
@@ -935,22 +958,18 @@ class Sed(object):
         """
         # Calculate the counts from the source.
         sourcecounts = self.calcADU(totalbandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
-        # Calculate the counts from the sky.
-        skycounts = (skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
-                     * platescale * platescale)
-        # Calculate the effective number of pixels for double-Gaussian PSF.
-        neff = 2.436*(seeing/platescale)**2
-        # Calculate the (square of the) noise due to instrumental effects.
-        # Include the readout noise twice because 30 seconds is two exposures.
-        noise_instr_sq = nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
-        # Calculate the (square of the) noise due to sky background poisson noise.
-        noise_sky_sq = skycounts/gain
-        # Discount error in sky measurement for now.
-        noise_skymeasurement_sq = 0
+
         # Calculate the (square of the) noise due to signal poisson noise.
         noise_source_sq = sourcecounts/gain
+
+        non_source_noise_sq, \
+        noise_instr_sq, \
+        noise_sky_sq, \
+        noise_skymeasurement_sq, \
+        skycounts, neff = self.calcNonSourceNoiseSq(skysed, hardwarebandpass, readnoise, darkcurrent, \
+                                                    othernoise, seeing, effarea, expTime, nexp, platescale, gain)
         # Calculate total noise
-        noise = numpy.sqrt(noise_source_sq + neff*(noise_sky_sq+noise_instr_sq+noise_skymeasurement_sq))
+        noise = numpy.sqrt(noise_source_sq + non_source_noise_sq)
         # Calculate the signal to noise ratio.
         snr = sourcecounts / noise
         if verbose:
