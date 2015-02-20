@@ -430,6 +430,45 @@ class Bandpass:
         zp_t = flatsource.calcMag(self)
         return zp_t
 
+    def setM5(self, m5target, skysed, hardware,
+              expTime=PhotometricDefaults.exptime,
+              nexp=PhotometricDefaults.nexp,
+              readnoise=PhotometricDefaults.rdnoise,
+              darkcurrent=PhotometricDefaults.darkcurrent,
+              othernoise=PhotometricDefaults.othernoise,
+              seeing=PhotometricDefaults.seeing['r'],
+              platescale=PhotometricDefaults.platescale,
+              gain=PhotometricDefaults.gain,
+              effarea=PhotometricDefaults.effarea):
+
+        #This is based on the LSST SNR document (v1.2, May 2010)
+        #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+
+        #instantiate a flat SED
+        flatSed = Sed()
+        flatSed.setFlatSED()
+
+        #normalize the SED so that it has a magnitude equal to the desired m5
+        fNorm = flatSed.calcFluxNorm(m5target, self)
+        flatSed.multiplyFluxNorm(fNorm)
+        counts = flatSed.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
+
+        #calculate the effective number of pixels for a double-Gaussian PSF
+        neff = flatSed.calcNeff(seeing, platescale)
+
+        #calculate the square of the noise due to the instrument
+        instr_noise_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+
+        #now solve equation 41 of hte SNR document for the neff * sigma_total^2 term
+        #given snr=5 and counts as calculated above
+        nSigmaSq = (counts*counts)/25.0 - counts/gain
+
+        skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
+        skyCountsTarget = skyNoiseTarget*gain
+        skyCounts = skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain) \
+                    * platescale * platescale
+        skysed.mulitplyFluxNorm(skyCountsTarget/skyCounts)
+
     def calcM5(self, skysed, hardware, expTime=PhotometricDefaults.exptime,
                nexp=PhotometricDefaults.nexp, readnoise=PhotometricDefaults.rdnoise,
                darkcurrent=PhotometricDefaults.darkcurrent,
