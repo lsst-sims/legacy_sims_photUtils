@@ -930,7 +930,7 @@ class Sed(object):
         #Include the readout noise as many times as there are exposures
         noise_instr_sq = nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
 
-        #Calculate teh square of the noise due to sky background poisson noise
+        #Calculate the square of the noise due to sky background poisson noise
         noise_sky_sq = skycounts/gain
 
         #Discount error in sky measurement for now
