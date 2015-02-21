@@ -89,8 +89,9 @@ class PhotometryBase(object):
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.hardwareBandpassDict[w] = bandpassDummy
-            wv, sb = bandpassDummy.multiplyThroughputs(self.atmosphereBandpass.wavelen, self.atmosphereBandpass.sb)
-            bandpassDummy = Bandpass(wavelen=wv, sb=sb)
+            components += [os.path.join(filedir, atmosphereBandpass)]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
             self.bandpassDict[w] = bandpassDummy
 
         self.phiArray = None
