@@ -47,6 +47,8 @@ class PhotometryBase(object):
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
 
+    sedList = None
+
     atmosphereSED = None #the emission spectrum of the atmosphere
     atmosphereSEDnormalized = None #this will be a tuple of (bandpassName, magnitude) indicating how
                                    #atmosphereSED was normalized
@@ -214,6 +216,7 @@ class PhotometryBase(object):
 
             sedOut.append(sed)
 
+        self.sedList = sedOut
         return sedOut
 
     def applyAvAndRedshift(self,sedList, internalAv=None, redshift=None):
