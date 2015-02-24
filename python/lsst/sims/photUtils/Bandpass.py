@@ -433,11 +433,6 @@ class Bandpass:
     def calcGamma(self, m5target,
                   expTime=PhotometricDefaults.exptime,
                   nexp=PhotometricDefaults.nexp,
-                  readnoise=PhotometricDefaults.rdnoise,
-                  darkcurrent=PhotometricDefaults.darkcurrent,
-                  othernoise=PhotometricDefaults.othernoise,
-                  seeing=PhotometricDefaults.seeing['r'],
-                  platescale=PhotometricDefaults.platescale,
                   gain=PhotometricDefaults.gain,
                   effarea=PhotometricDefaults.effarea):
 

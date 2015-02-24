@@ -14,8 +14,7 @@ import os
 import numpy
 import eups
 from collections import OrderedDict
-from lsst.sims.photUtils import Sed
-from lsst.sims.photUtils import Bandpass
+from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -322,7 +321,11 @@ class PhotometryBase(object):
             self.gammaDict = OrderedDict()
             for i in range(self.nBandpasses):
                 b = self.bandpassDict.keys()[i]
-                self.gammaDict[b] = self.bandpassDict[b].calcGamma(obs_metadata.m5(b))
+                self.gammaDict[b] = self.bandpassDict[b].calcGamma(obs_metadata.m5(b),
+                                                                   expTime=PhotometricDefaults.exptime,
+                                                                   nexp=PhotometricDefaults.nexp,
+                                                                   gain=PhotometricDefaults.gain,
+                                                                   effarea=PhotometricDefaults.effarea)
 
         sigma = numpy.zeros(self.nBandpasses, numpy.float64)
 
