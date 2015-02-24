@@ -48,6 +48,7 @@ class PhotometryBase(object):
     waveLenStep = None
 
     gammaDict = None
+    sig2sys = None
     sedList = None
 
     atmosphereSED = None #the emission spectrum of the atmosphere
@@ -936,19 +937,32 @@ class PhotometryStars(PhotometryBase):
         magnitudes
         """
 
-        columnNames = {}
-        columnNames['u'] = 'lsst_u'
-        columnNames['g'] = 'lsst_g'
-        columnNames['r'] = 'lsst_r'
-        columnNames['i'] = 'lsst_i'
-        columnNames['z'] = 'lsst_z'
-        columnNames['y'] = 'lsst_y'
+        uu = self.column_by_name('lsst_u')
+        gg = self.column_by_name('lsst_g')
+        rr = self.column_by_name('lsst_r')
+        ii = self.column_by_name('lsst_i')
+        zz = self.column_by_name('lsst_z')
+        yy = self.column_by_name('lsst_y')
 
-        outputDict = self.calculateLSSTPhotometricUncertaintyFromColumn('id',columnNames)
+        sigmaU = []
+        sigmaG = []
+        sigmaR = []
+        sigmaI = []
+        sigmaZ = []
+        sigmaY = []
 
+        for i in range(len(uu)):
+            sigDummy = self.calculatePhotometricUncertainty([uu[i], gg[i], rr[i], ii[i], zz[i], yy[i]],
+                                                            obs_metadata=self.obs_metadata,
+                                                            sig2sys=self.sig2sys)
+            sigmaU.append(sigDummy[0])
+            sigmaG.append(sigDummy[1])
+            sigmaR.append(sigDummy[2])
+            sigmaI.append(sigDummy[3])
+            sigmaZ.append(sigDummy[4])
+            sigmaY.append(sigDummy[5])
 
-        return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
-                            outputDict['i'],outputDict['z'],outputDict['y']])
+        return numpy.array([sigmaU, sigmaG, sigmaR, sigmaI, sigmaZ, sigmaY])
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
