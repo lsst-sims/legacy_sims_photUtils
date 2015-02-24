@@ -340,6 +340,27 @@ class PhotometryBase(object):
 
         return sigma
 
+    def calculatePhotometricUncertaintyFromColumnNames(self, magnitudeColumnNames):
+        magnitudes = []
+        for cc in magnitudeColumnNames:
+            magnitudes.append(self.column_by_name(cc));
+
+        rows = len(magnitudes[0])
+        cols = len(magnitudeColumnNames)
+
+        output = numpy.zeros((cols, rows), numpy.float64)
+        for i in range(rows):
+            magDummy = []
+
+            for j in range(cols):
+                magDummy.append(magnitudes[j][i])
+            sigDummy = self.calculatePhotometricUncertainty(magDummy, obs_metadata=self.obs_metadata, sig2sys=self.sig2sys)
+
+            for j in range(cols):
+                output[j][i] = sigDummy[j]
+
+        return output
+
     def calculateLSSTPhotometricUncertaintyFromColumn(self, nameTag, columnNames):
         """
         This method reads in a dict of column names and passes out
@@ -772,54 +793,19 @@ class PhotometryGalaxies(PhotometryBase):
         Getter for photometric uncertainties associated with galaxies
         """
 
-        columnNames = {}
-        columnNames['u'] = 'uRecalc'
-        columnNames['g'] = 'gRecalc'
-        columnNames['r'] = 'rRecalc'
-        columnNames['i'] = 'iRecalc'
-        columnNames['z'] = 'zRecalc'
-        columnNames['y'] = 'yRecalc'
+        columnNames = ['uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc']
+        output = self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
 
-        totalDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
+        columnNames = ['uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge']
+        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
-        columnNames = {}
-        columnNames['u'] = 'uDisk'
-        columnNames['g'] = 'gDisk'
-        columnNames['r'] = 'rDisk'
-        columnNames['i'] = 'iDisk'
-        columnNames['z'] = 'zDisk'
-        columnNames['y'] = 'yDisk'
+        columnNames = ['uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk']
+        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
-        diskDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
+        columnNames = ['uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn']
+        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
-        columnNames = {}
-        columnNames['u'] = 'uBulge'
-        columnNames['g'] = 'gBulge'
-        columnNames['r'] = 'rBulge'
-        columnNames['i'] = 'iBulge'
-        columnNames['z'] = 'zBulge'
-        columnNames['y'] = 'yBulge'
-
-        bulgeDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
-
-        columnNames = {}
-        columnNames['u'] = 'uAgn'
-        columnNames['g'] = 'gAgn'
-        columnNames['r'] = 'rAgn'
-        columnNames['i'] = 'iAgn'
-        columnNames['z'] = 'zAgn'
-        columnNames['y'] = 'yAgn'
-
-        agnDict = self.calculateLSSTPhotometricUncertaintyFromColumn('galid',columnNames)
-
-        return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
-                            totalDict['i'],totalDict['z'],totalDict['y'],
-                            bulgeDict['u'],bulgeDict['g'],bulgeDict['r'],
-                            bulgeDict['i'],bulgeDict['z'],bulgeDict['y'],
-                            diskDict['u'],diskDict['g'],diskDict['r'],
-                            diskDict['i'],diskDict['z'],diskDict['y'],
-                            agnDict['u'],agnDict['g'],agnDict['r'],
-                            agnDict['i'],agnDict['z'],agnDict['y']])
+        return output
 
     @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
               'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
@@ -937,32 +923,10 @@ class PhotometryStars(PhotometryBase):
         magnitudes
         """
 
-        uu = self.column_by_name('lsst_u')
-        gg = self.column_by_name('lsst_g')
-        rr = self.column_by_name('lsst_r')
-        ii = self.column_by_name('lsst_i')
-        zz = self.column_by_name('lsst_z')
-        yy = self.column_by_name('lsst_y')
+        magnitudeColumnNames = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i',
+                                'lsst_z', 'lsst_y']
 
-        sigmaU = []
-        sigmaG = []
-        sigmaR = []
-        sigmaI = []
-        sigmaZ = []
-        sigmaY = []
-
-        for i in range(len(uu)):
-            sigDummy = self.calculatePhotometricUncertainty([uu[i], gg[i], rr[i], ii[i], zz[i], yy[i]],
-                                                            obs_metadata=self.obs_metadata,
-                                                            sig2sys=self.sig2sys)
-            sigmaU.append(sigDummy[0])
-            sigmaG.append(sigDummy[1])
-            sigmaR.append(sigDummy[2])
-            sigmaI.append(sigDummy[3])
-            sigmaZ.append(sigDummy[4])
-            sigmaY.append(sigDummy[5])
-
-        return numpy.array([sigmaU, sigmaG, sigmaR, sigmaI, sigmaZ, sigmaY])
+        return self.calculatePhotometricUncertaintyFromColumnNames(magnitudeColumnNames)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
