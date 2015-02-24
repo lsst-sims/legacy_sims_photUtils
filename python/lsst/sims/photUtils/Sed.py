@@ -951,8 +951,9 @@ class Sed(object):
                     othernoise=PhotometricDefaults.othernoise,
                     seeing=PhotometricDefaults.seeing['r'],
                     effarea=PhotometricDefaults.effarea,
-                    expTime=PhotometricDefaults.exptime, nexp=1,
-                    platescale=PhotometricDefaults.platescale, gain=1, verbose=False):
+                    expTime=PhotometricDefaults.exptime, nexp=PhotometricDefaults.nexp,
+                    platescale=PhotometricDefaults.platescale,
+                    gain=PhotometricDefaults.gain, verbose=False):
         """
         Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
 
