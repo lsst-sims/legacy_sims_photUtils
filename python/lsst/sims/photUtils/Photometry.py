@@ -47,6 +47,7 @@ class PhotometryBase(object):
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
 
+    gammaDict = None
     sedList = None
 
     atmosphereSED = None #the emission spectrum of the atmosphere
@@ -86,6 +87,7 @@ class PhotometryBase(object):
 
         self.bandpassDict = OrderedDict()
         self.hardwareBandpassDict = OrderedDict()
+        self.gammaDict = None
         for w in bandpassNames:
             components = commonComponents + [os.path.join(filedir,"%s.dat" % (bandpassRoot +w))]
             bandpassDummy = Bandpass()
@@ -128,6 +130,7 @@ class PhotometryBase(object):
         """
 
         self.bandpassDict = OrderedDict()
+        self.gammaDict = None
 
         for w in bandPassNames:
             bandPassDummy = Bandpass()
@@ -304,38 +307,33 @@ class PhotometryBase(object):
         fNorm = self.atmosphereSED.calcFluxNorm(obs_metadata.skyBrightness, self.hardwareBandpassDict[obs_metadata.bandpass])
         self.atmosphereSED.multiplyFluxNorm(fNorm)
 
-    def calculatePhotometricUncertainty(self, sedobj, magnitudes=None, obs_metadata=None):
+    def calculatePhotometricUncertainty(self, magnitudes, obs_metadata=None):
 
         if obs_metadata is None:
             raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
 
-        snr = numpy.zeros(self.nBandpasses, numpy.float64)
+        if len(magnitudes) != self.nBandpasses:
+            raise RuntimeError("Passed %d magnitudes to " %len(magnitudes) + \
+                                " PhotometryBase.calculatePhotometricUncertainty; " + \
+                                "needed %d " % self.nBandpasses)
 
-        if self.atmosphereSED is None or self.hardwareBandpassDict is None:
-            if magnitudes is None:
-                raise RuntimeError("Need to pass in magnitudes to calculate photometric uncertainty without "
-                                   + "specific hardware bandpasses and atmosphere SED")
-
-            for i in range(len(magnitudes)):
-                snr[i] = sedobj.calcSNR_mag(magnitudes[i], obs_metadata.m5(self.bandpassDict.keys()[i]))
-        else:
-            if obs_metadata.bandpass is None:
-                raise RuntimeError("ObservationMetaData needs a bandpass to calculate photometric uncertainty")
-            if obs_metadata.skyBrightness is None:
-                raise RuntimeError("ObservationMetaData needs skyBrightness to calculate photometric uncertainty")
-
-            if self.atmosphereSEDnormalized is None or \
-                self.atmosphereSEDnormalized[0] != obs_metadata.bandpass or \
-                self.atmospherSEDnormalized[1] != obs_metadata.skyBrightness:
-
-                    self.normalizeAtmosphereSED(obs_metadata)
-
+        if self.gammaDict is None or len(self.gammaDict) != self.nBandpasses:
+            self.gammaDict = OrderedDict()
             for i in range(self.nBandpasses):
-                snr[i] = sedobj.calcSNR_psf(self.bandpassDict.values()[i], self.atmosphereSED,
-                                            self.hardwareBandpassDict.values()[i])
+                b = self.bandpassDict.keys()[i]
+                self.gammaDict[b] = self.bandpassDict[b].calcGamma(obs_metadata.m5(b))
 
-        #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
-        return 2.5*numpy.log10(1.0+1.0/snr)
+        sigma = numpy.zeros(self.nBandpasses, numpy.float64)
+
+        for i in range(self.nBandpasses):
+            gg = self.gammaDict.values()[i]
+            xx = numpy.power(10.0,0.4*(magnitudes[i] - obs_metadata.m5(self.bandpassDict.keys()[i])))
+            noiseOverSignal = numpy.sqrt((0.04-gg)*xx+gg*xx*xx)
+
+            #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
+            sigma[i] = 2.5*numpy.log10(1.0+noiseOverSignal)
+
+        return sigma
 
     def calculateLSSTPhotometricUncertaintyFromColumn(self, nameTag, columnNames):
         """
@@ -381,14 +379,14 @@ class PhotometryBase(object):
         sigma2Sys = 0.003*0.003 #also taken from the Science Book
                          #see the paragraph between equations 3.1 and 3.2
 
-        gamma = {}
+        gammaLSST = {}
 
-        gamma['u'] = 0.037
-        gamma['g'] = 0.038
-        gamma['r'] = 0.039
-        gamma['i'] = 0.039
-        gamma['z'] = 0.040
-        gamma['y'] = 0.040
+        gammaLSST['u'] = 0.037
+        gammaLSST['g'] = 0.038
+        gammaLSST['r'] = 0.039
+        gammaLSST['i'] = 0.039
+        gammaLSST['z'] = 0.040
+        gammaLSST['y'] = 0.040
 
         sigOut={}
 
@@ -402,8 +400,8 @@ class PhotometryBase(object):
                 if mm is not None:
 
                     xx=10**(0.4*(mm - self.obs_metadata.m5(filterName)))
-                    ss = (0.04 - gamma[filterName])*xx + \
-                         gamma[filterName]*xx*xx
+                    ss = (0.04 - gammaLSST[filterName])*xx + \
+                         gammaLSST[filterName]*xx*xx
 
                     sigmaSquared = ss + sigma2Sys
 

@@ -13,6 +13,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase
+from lsst.sims.photUtils import PhotometricDefaults
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies
@@ -463,74 +464,48 @@ class uncertaintyUnitTest(unittest.TestCase):
     def testUncertaintyExceptions(self):
         phot = PhotometryBase()
         phot.loadBandpassesFromFiles()
-        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED)
+        magnitudes = [22.0, 23.0, 24.0, 25.0, 26.0, 27.0]
+        shortMagnitudes = [22.0]
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, magnitudes)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5=23.0)
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, shortMagnitudes, obs_metadata=obs_metadata)
+
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g')
-        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED, obs_metadata=obs_metadata)
+        self.assertRaises(ValueError, phot.calculatePhotometricUncertainty, magnitudes, obs_metadata=obs_metadata)
 
-        phot = PhotometryBase()
-        phot.loadTotalBandPassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0)
-        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, self.starSED, obs_metadata=obs_metadata)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5={'u':22.0, 'g':24.0})
+        self.assertRaises(ValueError, phot.calculatePhotometricUncertainty, magnitudes, obs_metadata=obs_metadata)
 
-    def testRawSEDUncertainty(self):
-        phot = PhotometryBase()
-        phot.loadBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='r',
-                                           skyBrightness=22.0)
+    def testRawUncertainty(self):
+        for ii in range(2):
+            if ii == 0:
+                msgroot = "m5 is a float"
+                m5 = 25.0
+            else:
+                msgroot = "m5 is a dict"
+                m5 = {'u':23.0, 'g':21.0, 'r':24.6, 'i':23.6, 'z':22.5, 'y':20.0}
 
-        magnitudes = phot.manyMagCalc_list(self.starSED)
-        for i in range(len(self.bandpasses)):
-            m = self.starSED.calcMag(self.totalBandpasses[i])
-            self.assertAlmostEqual(m, magnitudes[i], 10)
+            phot = PhotometryBase()
+            phot.loadTotalBandPassesFromFiles()
+            obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
+            magnitudes = phot.manyMagCalc_list(self.starSED)
 
-        sigma = phot.calculatePhotometricUncertainty(self.starSED, obs_metadata=obs_metadata)
+            skySeds = []
 
-        skySED = Sed()
-        skySED.readSED_flambda(os.path.join(eups.productDir('throughputs'),'baseline','darksky.dat'))
-        fNorm = skySED.calcFluxNorm(22.0, self.hardwareBandpasses[2])
-        skySED.multiplyFluxNorm(fNorm)
-        for i in range(len(self.bandpasses)):
-           snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySED, self.hardwareBandpasses[i])
-           m = 2.5*numpy.log10(1.0+1.0/snr)
-           self.assertAlmostEqual(sigma[i], m, 10)
+            for i in range(len(self.bandpasses)):
+                skyDummy = Sed()
+                skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+                self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy, self.hardwareBandpasses[i],
+                                              seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                skySeds.append(skyDummy)
 
-    def testRawM5Uncertainty(self):
-        phot = PhotometryBase()
-        phot.loadTotalBandPassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=25.0)
-        magnitudes = phot.manyMagCalc_list(self.starSED)
-        sigma = phot.calculatePhotometricUncertainty(self.starSED, magnitudes=magnitudes, obs_metadata=obs_metadata)
-        for i in range(len(self.bandpasses)):
-            snr = self.starSED.calcSNR_mag(magnitudes[i], 25.0)
-            ss = 2.5*numpy.log10(1.0+1.0/snr)
-            self.assertAlmostEqual(ss, sigma[i], 10)
-
-        m5={'u':21.0, 'g':23.5, 'r':27.0, 'i': 19.0, 'z': 22.0, 'y':24.0}
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
-        sigma = phot.calculatePhotometricUncertainty(self.starSED, magnitudes=magnitudes, obs_metadata=obs_metadata)
-        snr = self.starSED.calcSNR_mag(magnitudes[0], 21.0)
-        ss = 2.5*numpy.log10(1.0+1.0/snr)
-        self.assertAlmostEqual(ss, sigma[0], 10)
-
-        snr = self.starSED.calcSNR_mag(magnitudes[1], 23.5)
-        ss = 2.5*numpy.log10(1.0+1.0/snr)
-        self.assertAlmostEqual(ss, sigma[1], 10)
-
-        snr = self.starSED.calcSNR_mag(magnitudes[2], 27.0)
-        ss = 2.5*numpy.log10(1.0+1.0/snr)
-        self.assertAlmostEqual(ss, sigma[2], 10)
-
-        snr = self.starSED.calcSNR_mag(magnitudes[3], 19.0)
-        ss = 2.5*numpy.log10(1.0+1.0/snr)
-        self.assertAlmostEqual(ss, sigma[3], 10)
-
-        snr = self.starSED.calcSNR_mag(magnitudes[4], 22.0)
-        ss = 2.5*numpy.log10(1.0+1.0/snr)
-        self.assertAlmostEqual(ss, sigma[4], 10)
-
-        snr = self.starSED.calcSNR_mag(magnitudes[5], 24.0)
-        ss = 2.5*numpy.log10(1.0+1.0/snr)
-        self.assertAlmostEqual(ss, sigma[5], 10)
+            sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata)
+            for i in range(len(self.bandpasses)):
+                snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+                                               seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                ss = 2.5*numpy.log10(1.0+1.0/snr)
+                msg = '%e is not %e; failed when ' % (ss, sigma[i]) + msgroot
+                self.assertAlmostEqual(ss, sigma[i], 10, msg=msg)
 
 def suite():
     utilsTests.init()
