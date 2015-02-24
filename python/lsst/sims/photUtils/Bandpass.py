@@ -459,7 +459,7 @@ class Bandpass:
         #calculate the square of the noise due to the instrument
         noise_instr_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
 
-        #now solve equation 41 of hte SNR document for the neff * sigma_total^2 term
+        #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
         #given snr=5 and counts as calculated above
         nSigmaSq = (counts*counts)/25.0 - counts/gain
 
