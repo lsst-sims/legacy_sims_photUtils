@@ -407,7 +407,9 @@ class PhotometryBase(object):
 
                     sigmaSquared = ss + sigma2Sys
 
-                    subList.append(numpy.sqrt(sigmaSquared))
+                    #note that the sigmaSquared calculated above is the (noise/signal)^2
+                    #in flux; needs to be converted to magnitudes
+                    subList.append(2.5*numpy.log10(1.0+numpy.sqrt(sigmaSquared)))
 
                 else:
                     subList.append(None)
