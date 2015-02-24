@@ -8,7 +8,7 @@ class PhotometricDefaults(object):
     minwavelen = 300
     maxwavelen = 1150
     wavelenstep = 0.1
-    
+
     lightspeed = 299792458       # speed of light, = 2.9979e8 m/s
     planck = 6.626068e-27        # planck's constant, = 6.626068e-27 ergs*seconds
     nm2m = 1.00e-9               # nanometers to meters conversion = 1e-9 m/nm
