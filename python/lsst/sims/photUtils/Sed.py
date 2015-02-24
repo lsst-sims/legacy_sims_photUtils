@@ -1072,18 +1072,35 @@ class Sed:
             phiarray[i] = bp.phi
             i = i + 1
         return phiarray, wavelen_step
-    
+    def manyFluxCalc(self, phiarray, wavelen_step):
+        """
+        Calculate many fluxes for many bandpasses using a single sed.
+
+        Use setupPhiArray first, and note that Sed.manyFluxCalc *assumes*
+        phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
+        These assumptions are to avoid error checking within this function (for speed), but could lead
+        to errors if method is used incorrectly.
+        """
+        # Calculate phis and resample onto same wavelength grid
+        flux = numpy.empty(len(phiarray), dtype='float')
+        flux = numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step 
+        return flux
+
+
     def manyMagCalc(self, phiarray, wavelen_step):
-        """Calculate many magnitudes for many bandpasses using a single sed.
+        """
+        Calculate many magnitudes for many bandpasses using a single sed.
 
         This method assumes that there will be flux within a particular bandpass
         (could return '-Inf' for a magnitude if there is none).
         Use setupPhiArray first, and note that Sed.manyMagCalc *assumes*
         phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
         These assumptions are to avoid error checking within this function (for speed), but could lead
-        to errors if method is used incorrectly. 
+        to errors if method is used incorrectly.
         """
         # Calculate phis and resample onto same wavelength grid
+        flux = self.manyFluxCalc(phiarray, wavelen_step)
+
         mags = numpy.empty(len(phiarray), dtype='float')
-        mags = -2.5*numpy.log10(numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
+        mags = -2.5*numpy.log10(flux) - self.zp
         return mags
