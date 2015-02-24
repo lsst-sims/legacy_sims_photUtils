@@ -507,6 +507,44 @@ class uncertaintyUnitTest(unittest.TestCase):
                 msg = '%e is not %e; failed when ' % (ss, sigma[i]) + msgroot
                 self.assertAlmostEqual(ss, sigma[i], 10, msg=msg)
 
+    def testSystematicUncertainty(self):
+        sig2sys = 0.002
+        for ii in range(2):
+            if ii == 0:
+                msgroot = "m5 is a float"
+                m5 = 25.0
+            else:
+                msgroot = "m5 is a dict"
+                m5 = {'u':23.0, 'g':21.0, 'r':24.6, 'i':23.6, 'z':22.5, 'y':20.0}
+
+            phot = PhotometryBase()
+            phot.loadTotalBandPassesFromFiles()
+            obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
+            magnitudes = phot.manyMagCalc_list(self.starSED)
+
+            skySeds = []
+
+            for i in range(len(self.bandpasses)):
+                skyDummy = Sed()
+                skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+                self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy, self.hardwareBandpasses[i],
+                                              seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                skySeds.append(skyDummy)
+
+            sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
+            for i in range(len(self.bandpasses)):
+                snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+                                               seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+
+                control = 1.0/(snr*snr) + sig2sys
+                test = numpy.power(numpy.power(10.0, sigma[i]/2.5) -1.0, 2)
+
+                msg = '%e is not %e; failed when ' % (test, control) + msgroot
+
+                self.assertAlmostEqual(test, control, 10, msg=msg)
+
+
+
 def suite():
     utilsTests.init()
     suites = []

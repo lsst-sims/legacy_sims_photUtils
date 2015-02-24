@@ -307,7 +307,7 @@ class PhotometryBase(object):
         fNorm = self.atmosphereSED.calcFluxNorm(obs_metadata.skyBrightness, self.hardwareBandpassDict[obs_metadata.bandpass])
         self.atmosphereSED.multiplyFluxNorm(fNorm)
 
-    def calculatePhotometricUncertainty(self, magnitudes, obs_metadata=None):
+    def calculatePhotometricUncertainty(self, magnitudes, obs_metadata=None, sig2sys=None):
 
         if obs_metadata is None:
             raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
@@ -328,7 +328,11 @@ class PhotometryBase(object):
         for i in range(self.nBandpasses):
             gg = self.gammaDict.values()[i]
             xx = numpy.power(10.0,0.4*(magnitudes[i] - obs_metadata.m5(self.bandpassDict.keys()[i])))
-            noiseOverSignal = numpy.sqrt((0.04-gg)*xx+gg*xx*xx)
+            sigmaSq = (0.04-gg)*xx+gg*xx*xx
+            if sig2sys is None:
+                noiseOverSignal = numpy.sqrt(sigmaSq)
+            else:
+                noiseOverSignal = numpy.sqrt(sigmaSq + sig2sys)
 
             #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
             sigma[i] = 2.5*numpy.log10(1.0+noiseOverSignal)
