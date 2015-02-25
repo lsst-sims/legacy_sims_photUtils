@@ -48,7 +48,6 @@ class PhotometryBase(object):
 
     gammaDict = None
     sig2sys = None
-    sedList = None
 
     atmosphereSED = None #the emission spectrum of the atmosphere
     atmosphereSEDnormalized = None #this will be a tuple of (bandpassName, magnitude) indicating how
@@ -219,7 +218,6 @@ class PhotometryBase(object):
 
             sedOut.append(sed)
 
-        self.sedList = sedOut
         return sedOut
 
     def applyAvAndRedshift(self,sedList, internalAv=None, redshift=None):
