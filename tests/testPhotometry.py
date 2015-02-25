@@ -422,6 +422,9 @@ class photometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, ebvObject.calculateEbv)
 
 class uncertaintyUnitTest(unittest.TestCase):
+    """
+    Test the calculation of photometric uncertainties
+    """
 
     def setUp(self):
         starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
@@ -462,6 +465,9 @@ class uncertaintyUnitTest(unittest.TestCase):
         del self.totalBandpasses
 
     def testUncertaintyExceptions(self):
+        """
+        Test the calculatePhotometricUncertainty raises exceptions when it needs to
+        """
         phot = PhotometryBase()
         phot.loadBandpassesFromFiles()
         magnitudes = [22.0, 23.0, 24.0, 25.0, 26.0, 27.0]
@@ -477,6 +483,10 @@ class uncertaintyUnitTest(unittest.TestCase):
         self.assertRaises(ValueError, phot.calculatePhotometricUncertainty, magnitudes, obs_metadata=obs_metadata)
 
     def testRawUncertainty(self):
+        """
+        Test that values calculated by calculatePhotometricUncertainty agree
+        with values calculated by Sed.calcSNR_psf
+        """
         for ii in range(2):
             if ii == 0:
                 msgroot = "m5 is a float"
@@ -508,6 +518,9 @@ class uncertaintyUnitTest(unittest.TestCase):
                 self.assertAlmostEqual(ss, sigma[i], 10, msg=msg)
 
     def testSystematicUncertainty(self):
+        """
+        Test that systematic uncertainty is added correctly
+        """
         sig2sys = 0.002
         for ii in range(2):
             if ii == 0:
