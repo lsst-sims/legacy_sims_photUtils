@@ -139,10 +139,10 @@ class photometryUnitTest(unittest.TestCase):
         dummyId = ['1', '2']
         dummySed = ['km20_5750.fits_g40_5790','m2.0Full.dat']
         dummyMagNorm = [28.5, 23.0]
-        bandPassNames = ['u','g','r','i','z','y']
+        bandpassNames = ['u','g','r','i','z','y']
 
         phot = PhotometryStars()
-        phot.loadTotalBandpassesFromFiles(bandPassNames)
+        phot.loadTotalBandpassesFromFiles(bandpassNames)
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes,
                           idNames=dummyId, sedNames=sedNames, magNorm=magNorm)
@@ -154,7 +154,7 @@ class photometryUnitTest(unittest.TestCase):
         magnitudes = phot.calculate_magnitudes(idNames=idNames, sedNames=sedNames,
                                                magNorm=magNorm)
         for n in idNames:
-            self.assertTrue(len(magnitudes[n])==len(bandPassNames)) #to make sure we calculated all the magnitudes
+            self.assertTrue(len(magnitudes[n])==len(bandpassNames)) #to make sure we calculated all the magnitudes
 
     def testGalaxyPhotometryStandAlone(self):
         idNames = ['Alice', 'Bob', 'Charlie']
@@ -191,7 +191,7 @@ class photometryUnitTest(unittest.TestCase):
         cosmologicalDistanceModulusDummy = [3.0, 4.5]
 
         phot = PhotometryGalaxies()
-        phot.loadTotalBandpassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
+        phot.loadTotalBandpassesFromFiles(bandpassNames=['u','g','r','i','z','y'])
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           diskNames=diskSedsDummy, diskMagNorm=diskMagNorm, diskAv=diskAv,

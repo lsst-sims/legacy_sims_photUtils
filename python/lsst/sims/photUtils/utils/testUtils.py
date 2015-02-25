@@ -97,12 +97,12 @@ class cartoonPhotometryStars(PhotometryStars):
         """
 
         idNames = self.column_by_name('id')
-        bandPassNames=['u','g','r','i','z']
-        bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        bandpassNames=['u','g','r','i','z']
+        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles(bandPassNames,bandPassDir = bandPassDir,
-                    bandPassRoot = 'test_bandpass_')
+            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                    bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames)
 
@@ -156,12 +156,12 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         """
 
         idNames = self.column_by_name('galid')
-        bandPassNames=['u','g','r','i','z']
-        bandPassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+        bandpassNames=['u','g','r','i','z']
+        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandpassesFromFiles(bandPassNames,bandPassDir = bandPassDir,
-                      bandPassRoot = 'test_bandpass_')
+            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                      bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames)
 

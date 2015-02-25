@@ -43,8 +43,8 @@ class selectGalaxySED(rgGalaxy):
         galPhot = phot()
         if bandpassList is None:
             galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
-                                            bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
-                                            bandPassRoot = 'sdss_')
+                                            bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                            bandpassRoot = 'sdss_')
         else:
             galPhot.bandpassDict = OrderedDict()
             for i in range(len(bandpassList)):
@@ -152,8 +152,8 @@ class selectGalaxySED(rgGalaxy):
         galPhot = phot()
         if bandpassList is None:
             galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
-                                            bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
-                                            bandPassRoot = 'sdss_')
+                                            bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                            bandpassRoot = 'sdss_')
         else:
             galPhot.bandpassDict = OrderedDict()
             for i in range(len(bandpassList)):

@@ -56,7 +56,7 @@ class PhotometryBase(object):
     def setupPhiArray_dict(self):
         """
         Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
-        self.bandPasses
+        self.bandpasses
 
         The results from this calculation will be stored in the instance variables
         self.phiArray and self.waveLenStep for future use by self.manyMagCalc_list()
@@ -103,9 +103,9 @@ class PhotometryBase(object):
         self.setupPhiArray_dict()
 
 
-    def loadTotalBandpassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
-                                bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
-                                bandPassRoot = 'total_'):
+    def loadTotalBandpassesFromFiles(self,bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+                                bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
+                                bandpassRoot = 'total_'):
         """
         This will take the list of band passes named by bandPassNames and use them to set up
         self.bandpassDict (which is being cached so that
@@ -131,10 +131,10 @@ class PhotometryBase(object):
         self.bandpassDict = OrderedDict()
         self.gammaDict = None
 
-        for w in bandPassNames:
-            bandPassDummy = Bandpass()
-            bandPassDummy.readThroughput(os.path.join(bandPassDir,"%s.dat" % (bandPassRoot + w)))
-            self.bandpassDict[w] = bandPassDummy
+        for w in bandpassNames:
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughput(os.path.join(bandpassDir,"%s.dat" % (bandpassRoot + w)))
+            self.bandpassDict[w] = bandpassDummy
 
         self.nBandpasses = len(self.bandpassDict)
         self.phiArray = None
