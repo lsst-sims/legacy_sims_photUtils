@@ -1074,7 +1074,7 @@ class Sed:
         return phiarray, wavelen_step
     def manyFluxCalc(self, phiarray, wavelen_step):
         """
-        Calculate many fluxes for many bandpasses using a single sed.
+        Calculate band fluxes of a single sed in multiple bandpasses
 
         Use setupPhiArray first, and note that Sed.manyFluxCalc *assumes*
         phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
