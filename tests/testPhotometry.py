@@ -142,7 +142,7 @@ class photometryUnitTest(unittest.TestCase):
         bandPassNames = ['u','g','r','i','z','y']
 
         phot = PhotometryStars()
-        phot.loadTotalBandPassesFromFiles(bandPassNames)
+        phot.loadTotalBandpassesFromFiles(bandPassNames)
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes,
                           idNames=dummyId, sedNames=sedNames, magNorm=magNorm)
@@ -191,7 +191,7 @@ class photometryUnitTest(unittest.TestCase):
         cosmologicalDistanceModulusDummy = [3.0, 4.5]
 
         phot = PhotometryGalaxies()
-        phot.loadTotalBandPassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
+        phot.loadTotalBandpassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           diskNames=diskSedsDummy, diskMagNorm=diskMagNorm, diskAv=diskAv,
@@ -486,7 +486,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                 m5 = {'u':23.0, 'g':21.0, 'r':24.6, 'i':23.6, 'z':22.5, 'y':20.0}
 
             phot = PhotometryBase()
-            phot.loadTotalBandPassesFromFiles()
+            phot.loadTotalBandpassesFromFiles()
             obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
             magnitudes = phot.manyMagCalc_list(self.starSED)
 
@@ -518,7 +518,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                 m5 = {'u':23.0, 'g':21.0, 'r':24.6, 'i':23.6, 'z':22.5, 'y':20.0}
 
             phot = PhotometryBase()
-            phot.loadTotalBandPassesFromFiles()
+            phot.loadTotalBandpassesFromFiles()
             obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
             magnitudes = phot.manyMagCalc_list(self.starSED)
 

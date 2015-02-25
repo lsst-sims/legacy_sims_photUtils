@@ -27,7 +27,7 @@ class PhotometryBase(object):
     an SED object it can calculate magnitudes.
 
     In order to avoid duplication of work, the bandPasses, wavelength array, and phi array
-    are stored as instance variables once they are read in by self.loadTotalBandPassesFromFiles()
+    are stored as instance variables once they are read in by self.loadTotalBandpassesFromFiles()
 
     To initiailize a different set of bandPasses, call self.loadBandPassesFromFiles() with a different
     set of arguments.
@@ -103,7 +103,7 @@ class PhotometryBase(object):
         self.setupPhiArray_dict()
 
 
-    def loadTotalBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+    def loadTotalBandpassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
                                 bandPassRoot = 'total_'):
         """
@@ -744,7 +744,7 @@ class PhotometryGalaxies(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandPassesFromFiles()
+            self.loadTotalBandpassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 
@@ -863,7 +863,7 @@ class PhotometryStars(PhotometryBase):
         mixin.  Ideally, we would only do this once for the whole catalog
         """
         if self.bandpassDict is None or self.phiArray is None:
-            self.loadTotalBandPassesFromFiles()
+            self.loadTotalBandpassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 

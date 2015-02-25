@@ -297,7 +297,7 @@ class TestRGGalaxy(unittest.TestCase):
 
         #Set up Test Spectra Directory
         cls.testSpecDir = 'testGalaxySEDSpectrum/'
-        
+
         if os.path.exists(cls.testSpecDir):
             shutil.rmtree(cls.testSpecDir)
 
@@ -390,7 +390,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         magNormStep = 1
 
         for testSED in testSEDList:
-            
+
             getSEDMags = Sed()
             testSEDNames.append(testSED.name)
             getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
@@ -463,7 +463,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         #Will also test in passing of non-default bandpass
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
                                                            testMags, reddening = False,
-                                                           bandpassList = galPhot.bandPassList)
+                                                           bandpassList = galPhot.bandpassDict.values())
         testMatchingEbvVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
                                                            testMagsExt,
                                                            reddening = True, extCoeffs = extCoeffs,
@@ -528,11 +528,11 @@ class TestSelectStarSED(unittest.TestCase):
             shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
         #Load in extra kurucz to test Logz Readout
         if 'km01_7000.fits_g40_7140.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'), 
+            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'),
                             str(cls.testKDir + 'km01_7000.fits_g40_7140.gz'))
         if 'kp01_7000.fits_g40_7240.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
-                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
+            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'),
+                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))
 
     def testFindSED(self):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
@@ -675,8 +675,8 @@ class TestReadGalfast(unittest.TestCase):
         cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
         cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20], 
-                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 
+        for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20],
+                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)],
                                           np.array(os.listdir(cls.wdDir))[np.arange(-10,11)]):
             shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
             shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))

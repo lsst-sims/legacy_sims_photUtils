@@ -11,7 +11,6 @@ from lsst.sims.photUtils.EBV import EBVbase as ebv
 __all__ = ["selectGalaxySED"]
 
 class selectGalaxySED(rgGalaxy):
-
     """
     This class provides methods to match galaxy catalog magnitudes to an SED.
     """
@@ -43,7 +42,7 @@ class selectGalaxySED(rgGalaxy):
         #Set up photometry to calculate model Mags
         galPhot = phot()
         if bandpassList is None:
-            galPhot.loadTotalBandPassesFromFiles(['u','g','r','i','z'], 
+            galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                             bandPassRoot = 'sdss_')
         else:
@@ -95,6 +94,7 @@ class selectGalaxySED(rgGalaxy):
             numOn += 1
 
         print 'Done Matching. Matched %i catalog objects to SEDs' % (numCatMags)
+
             
         return sedMatches, magNormMatches
 
@@ -122,7 +122,7 @@ class selectGalaxySED(rgGalaxy):
         It should be organized so that there is one object's magnitudes along each row.
 
         @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes. If left
-        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
+        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with
         default extCoeffs.
 
         @param [in] dzAcc is the number of decimal places you want to use when building the redshift grid.
@@ -151,7 +151,7 @@ class selectGalaxySED(rgGalaxy):
         #Set up photometry to calculate model Mags
         galPhot = phot()
         if bandpassList is None:
-            galPhot.loadTotalBandPassesFromFiles(['u','g','r','i','z'], 
+            galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                             bandPassRoot = 'sdss_')
         else:
@@ -160,7 +160,7 @@ class selectGalaxySED(rgGalaxy):
                 galPhot.bandpassDict[str(i)] = bandpassList[i]
             galPhot.nBandpasses = len(galPhot.bandpassDict)
         galPhot.setupPhiArray_dict()
-        
+
         #Calculate ebv from ra, dec coordinates if needed
         if reddening == True:
             calcEBV = ebv()
