@@ -111,6 +111,10 @@ class PhotometryBase(object):
         for purposes of photometric calculations
         """
 
+        #This method isn't really used now.
+        #It exists in anticipation of a time when we will will load
+        #a skySED and normalize it based on the sky brightness, rather
+        #than m5.
 
         self.skySED = Sed()
         self.skySED.readSED_flambda(os.path.join(filedir, skySED))
