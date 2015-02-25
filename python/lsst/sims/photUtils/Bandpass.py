@@ -430,28 +430,47 @@ class Bandpass:
         zp_t = flatsource.calcMag(self)
         return zp_t
 
-    def calcGamma(self, m5target,
+    def calcGamma(self, m5,
                   expTime=PhotometricDefaults.exptime,
                   nexp=PhotometricDefaults.nexp,
                   gain=PhotometricDefaults.gain,
                   effarea=PhotometricDefaults.effarea):
 
+        """
+        Calculate the gamma parameter used for determining photometric
+        signal to noise in equation 5 of the LSST overview paper
+        (arXive:0805.2366)
+
+        @param [in] m5 is the magnitude at which a 5-sigma detection occurs
+        in this Bandpass
+
+        @param [in] expTime is the duration of a single exposure in seconds
+
+        @param [in] nexp is the number of exposures being combined
+
+        @param [in] gain is the number of electrons per ADU
+
+        @param [in] effarea is the effective area of the primary mirror
+        in square centimeters
+
+        @param [out] gamma
+        """
         #This is based on the LSST SNR document (v1.2, May 2010)
         #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
-        #as well as equations 4-6 of Sesar et al 2007 (arXiv:0805.2366)
+        #as well as equations 4-6 of the overview paper (arXiv:0805.2366)
 
         #instantiate a flat SED
         flatSed = Sed()
         flatSed.setFlatSED()
 
         #normalize the SED so that it has a magnitude equal to the desired m5
-        fNorm = flatSed.calcFluxNorm(m5target, self)
+        fNorm = flatSed.calcFluxNorm(m5, self)
         flatSed.multiplyFluxNorm(fNorm)
         counts = flatSed.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
 
         #The expression for gamma below comes from:
         #
-        #1) Take the approximation N^2 = N0^2 + alpha S from footnote 88 in Sesar et al 2007
+        #1) Take the approximation N^2 = N0^2 + alpha S from footnote 88 in the overview paper
         #where N is the noise in flux of a source, N0 is the noise in flux due to sky brightness
         #and instrumentation, S is the number of counts registered from the source and alpha
         #is some constant
@@ -462,7 +481,7 @@ class Bandpass:
         #
         #3) Substitute this expression for alpha back into the equation for (N/S)^2
         #for a general source.  Re-factor the equation so that it looks like equation
-        #5 of Sesar et al 2007 (note that x = S5/S).  This should give you gamma = (N0/S5)^2
+        #5 of the overview paper (note that x = S5/S).  This should give you gamma = (N0/S5)^2
         #
         #4) Solve equation 41 of the SNR document for the neff * sigma_total^2 term
         #given snr=5 and counts as calculated above.  Note that neff * sigma_total^2
@@ -484,6 +503,40 @@ class Bandpass:
               platescale=PhotometricDefaults.platescale,
               gain=PhotometricDefaults.gain,
               effarea=PhotometricDefaults.effarea):
+        """
+        Take an SED representing the sky and normalize it so that
+        m5 (the magnitude at which an object is detected in this
+        bandpass at 5-sigma) is set to some specified value.
+
+        @param [in] the desired value of m5
+
+        @param [in] skysed is an instantiation of the Sed class representing
+        sky emission
+
+        @param [in] hardware is an instantiation of the Bandpass class representing
+        the throughput due solely to instrumentation.
+
+        @param [in] expTime is the duration of a single exposure in seconds
+
+        @param [in] nexp is the number of exposures being combined
+
+        @param [in] readnoise
+
+        @param [in] darkcurrent
+
+        @param [in] othernoise
+
+        @param [in] seeing in arcseconds
+
+        @param [in] platescale in arcseconds per pixel
+
+        @param [in] gain in electrons per ADU
+
+        @param [in] effarea is the effective area of the primary mirror in square centimeters
+
+        This method does not return anything, but it does renormalize skysed
+        so that m5 is set to the desired value
+        """
 
         #This is based on the LSST SNR document (v1.2, May 2010)
         #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf

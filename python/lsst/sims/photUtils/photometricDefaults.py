@@ -3,6 +3,11 @@ import numpy
 __all__ = ["PhotometricDefaults"]
 
 class PhotometricDefaults(object):
+    """
+    This class exists to store default values of parameters characterizing
+    noise due to the telescope in one place.
+    """
+
     # The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
 
     minwavelen = 300

@@ -117,7 +117,7 @@ class cartoonPhotometryStars(PhotometryStars):
 
         #the two variables below will allow us to get at the SED and magnitude
         #data from within the unit test class, so that we can be sure
-        #that the mixin loaded the correct bandPasses
+        #that the mixin loaded the correct bandpasses
         sublist = self.loadSeds(sedNames,magNorm = magNormList)
         for ss in sublist:
             self.sedMasterList.append(ss)

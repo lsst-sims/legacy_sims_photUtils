@@ -917,13 +917,81 @@ class Sed(object):
         return
 
     def calcNeff(self, seeing, platescale):
+        """
+        Calculate the effective number of pixels in a double Gaussian PSF
+
+        @param [in] seeing in arcseconds
+
+        @param [in] platescale in arcseconds per pixel
+
+        @param [out] the effective number of pixels contained by a double
+        Gaussian PSF
+
+        see equation 31 of the SNR document
+        http://www.astro.washington.edu/users/ivezic/Teaching/Astr511/LSST_SNRdoc.pdf
+        """
         return 2.436*(seeing/platescale)**2
 
     def calcInstrNoiseSq(self, readnoise, darkcurrent, expTime, nexp, othernoise):
+        """
+        Combine all of the noise due to intrumentation into one value
+
+        @param [in] readnoise
+
+        @param [in] darkcurrent
+
+        @param [in] expTime (length of a single exposure in seconds)
+
+        @param [in] nexp (number of exposures)
+
+        @param [in] othernoise (noise from sources not accounted for above)
+
+        @param [out] The noise due to all of these sources added in quadrature
+        """
         return nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
 
     def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, readnoise, darkcurrent,
                            othernoise, seeing, effarea, expTime, nexp, platescale, gain):
+        """
+        Calculate the noise due to things that are not the source being observed
+        (i.e. intrumentation and sky background)
+
+        @param [in] skySed -- an instantiation of the Sed class representing the sky
+
+        @param [in] hardwarebandpass -- an instantiation of the Bandpass class representing
+        just the instrumentation throughputs
+
+        @param [in] readnoise
+
+        @param [in] darkcurrent
+
+        @param [in] othernoise
+
+        @param [in] seeing in arcseconds
+
+        @param [in] effarea -- effective area of the primary mirror in square centimeters
+
+        @param [in] expTime -- duration of one exposure in seconds
+
+        @param [in] nexp -- number of exposures being combined
+
+        @param [in] platescale in arcseconds per pixel
+
+        @param [in] gain in electrons per adu
+
+        @param [out] total noise squared (in ADU)
+
+        @param [out] noise squared due just to the instrument
+
+        @param [out] noise squared due to the sky
+
+        @param [out] noise squared due to sky measurement (presently set to zero)
+
+        @param [out] the effective number of pixels in a double Gaussian PSF
+        """
+
+        #This method outputs all of the parameters calculated along the way
+        #so that the verbose version of calcSNR_psf still works
 
         #Calculate the effective number of pixels for double-Gaussian PSF
         neff = self.calcNeff(seeing, platescale)

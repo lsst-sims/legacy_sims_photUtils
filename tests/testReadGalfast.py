@@ -404,6 +404,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, magNormAcc = magNormStep,
                                                             bandpassList = galPhot.bandPassList)
 
+
         self.assertEqual(testSEDNames, testMatchingResults[0])
         np.testing.assert_almost_equal(testMagNormList, testMatchingResults[1], decimal = magNormStep)
 
