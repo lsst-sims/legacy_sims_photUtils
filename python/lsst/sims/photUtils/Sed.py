@@ -278,7 +278,7 @@ class Sed(object):
         """
         wavelen = numpy.copy(self.wavelen)
         # Check if fnu currently set.
-        if fnu is not None:
+        if self.fnu is not None:
             # Get new memory copy of fnu.
             fnu = numpy.copy(self.fnu)
         else:
