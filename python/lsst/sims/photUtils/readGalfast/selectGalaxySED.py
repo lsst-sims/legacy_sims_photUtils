@@ -11,7 +11,7 @@ from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
 __all__ = ["selectGalaxySED"]
 
-class selectGalaxySED():
+class selectGalaxySED(rgUtils):
 
     def __init__(self, galDir = None):
         
@@ -145,7 +145,7 @@ class selectGalaxySED():
                 distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
             matchedSEDNum = np.nanargmin(distanceArray)
             sedMatches.append(sedList[matchedSEDNum].name)
-            magNorm = rgUtils().calcMagNorm(catMags[numOn], sedList[matchedSEDNum], 
+            magNorm = self.calcMagNorm(catMags[numOn], sedList[matchedSEDNum], 
                                        galPhot, stepSize = np.power(10, -float(magNormAcc)))
             magNormMatches.append(magNorm)
             numOn += 1
@@ -262,7 +262,7 @@ class selectGalaxySED():
                         distanceArray = np.power((colorSet[filtNum] - matchColor),2)
                     matchedSEDNum = np.nanargmin(distanceArray)
                     sedMatches[currentIndex] = sedList[matchedSEDNum].name
-                    magNormVal = rgUtils().calcMagNorm(matchMags, sedList[matchedSEDNum],galPhot,
+                    magNormVal = self.calcMagNorm(matchMags, sedList[matchedSEDNum],galPhot,
                                                   redshift = catRedshifts[currentIndex],
                                                   stepSize = np.power(10, -float(magNormAcc)))
                     magNormMatches[currentIndex] = magNormVal

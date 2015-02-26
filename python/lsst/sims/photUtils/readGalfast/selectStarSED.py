@@ -10,7 +10,7 @@ from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
 __all__ = ["selectStarSED"]
 
-class selectStarSED():
+class selectStarSED(rgUtils):
 
     """
     This class provides a way to match incoming star colors to those of the approriate SED.
@@ -86,7 +86,6 @@ class selectStarSED():
         self.lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
         self.lsstPhot.loadBandPassesFromFiles(self.lsstFilterList)
         self.lsstPhot.setupPhiArray_dict()
-        self.findMagNorm = rgUtils()
 
     def loadKuruczSEDs(self, subset = None):
         """
@@ -508,6 +507,6 @@ class selectStarSED():
             
         matchedSEDNum = np.argmin(distance)
         magNormSED.readSED_flambda(str(str(sedPrefix[sedType]) + str(sEDName[matchedSEDNum])))
-        magNorm = self.findMagNorm.calcMagNorm(objMags, magNormSED, self.starPhot,
+        magNorm = self.calcMagNorm(objMags, magNormSED, self.starPhot,
                                    stepSize = np.power(10, -float(magNormAcc)), initBand = 1)
         return sEDName[matchedSEDNum], magNorm

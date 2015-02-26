@@ -11,6 +11,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 
 class rgUtils():
 
+class rgBase():
     """
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
     """
