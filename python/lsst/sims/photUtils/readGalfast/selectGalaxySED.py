@@ -1,12 +1,10 @@
 import os
-import gzip
-import pyfits
 import numpy as np
 import re
 import eups
 
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.Bandpass import Bandpass
+from lsst.sims.photUtils.readGalfast.rgUtils import rgUtils
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
@@ -83,7 +81,7 @@ class selectGalaxySED():
 
         return sedList
 
-    def matchToRestFrame(self, sedList, catMags, bandpassList = None):
+    def matchToRestFrame(self, sedList, catMags, bandpassList = None, magNormAcc = 2):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
@@ -97,6 +95,8 @@ class selectGalaxySED():
 
         @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes. If left
         equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses.
+        
+        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
@@ -114,6 +114,7 @@ class selectGalaxySED():
 
         modelColors = []
         sedMatches = []
+        magNormMatches = []
 
         #Find the colors for all model SEDs
         for galSpec in sedList:
@@ -142,15 +143,19 @@ class selectGalaxySED():
             distanceArray = np.zeros(len(sedList))
             for filtNum in range(0, len(galPhot.bandPassList)-1):
                 distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
-            sedMatches.append(sedList[np.nanargmin(distanceArray)].name)
+            matchedSEDNum = np.nanargmin(distanceArray)
+            sedMatches.append(sedList[matchedSEDNum].name)
+            magNorm = rgUtils().calcMagNorm(catMags[numOn], sedList[matchedSEDNum], 
+                                       galPhot, stepSize = np.power(10, -float(magNormAcc)))
+            magNormMatches.append(magNorm)
             numOn += 1
 
         print 'Done Matching. Matched %i catalog objects to SEDs' % (numCatMags)
             
-        return sedMatches
+        return sedMatches, magNormMatches
 
     def matchToObserved(self, sedList, catRA, catDec, catRedshifts, catMags, 
-                        bandpassList = None, dzAcc = 2, extinction = True,
+                        bandpassList = None, dzAcc = 2, magNormAcc = 2, extinction = True,
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
@@ -179,6 +184,8 @@ class selectGalaxySED():
         @param [in] dzAcc is the number of decimal places you want to use when building the redshift grid.
         For example, dzAcc = 2 will create a grid between the minimum and maximum redshifts with colors
         calculated at every 0.01 change in redshift.
+        
+        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
         @param [in] extinction is a boolean that determines whether to correct catalog magnitudes for 
         dust in the milky way. This uses calculateEBV from EBV.py to find an EBV value for the object's
@@ -220,6 +227,7 @@ class selectGalaxySED():
         redshiftRange = np.round(np.arange(minRedshift - dz, maxRedshift + (2*dz), dz), dzAcc)
         numRedshifted = 0
         sedMatches = [None] * len(catRedshifts)
+        magNormMatches = [None] * len(catRedshifts)
         redshiftIndex = np.argsort(catRedshifts)
 
         numOn = 0
@@ -252,7 +260,12 @@ class selectGalaxySED():
                     for filtNum in range(0, len(galPhot.bandPassList)-1):
                         matchColor = matchMags[filtNum] - matchMags[filtNum+1]
                         distanceArray = np.power((colorSet[filtNum] - matchColor),2)
-                    sedMatches[currentIndex] = sedList[np.nanargmin(distanceArray)].name
+                    matchedSEDNum = np.nanargmin(distanceArray)
+                    sedMatches[currentIndex] = sedList[matchedSEDNum].name
+                    magNormVal = rgUtils().calcMagNorm(matchMags, sedList[matchedSEDNum],galPhot,
+                                                  redshift = catRedshifts[currentIndex],
+                                                  stepSize = np.power(10, -float(magNormAcc)))
+                    magNormMatches[currentIndex] = magNormVal
                     numOn += 1
                 else:
                     break
@@ -260,4 +273,4 @@ class selectGalaxySED():
 
         print 'Done Matching. Matched %i catalog objects to SEDs' % (len(catMags))
 
-        return sedMatches
+        return sedMatches, magNormMatches

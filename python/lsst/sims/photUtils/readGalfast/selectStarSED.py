@@ -1,12 +1,10 @@
 import os
-import gzip
-import pyfits
 import numpy as np
 import re
 import eups
 
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.Bandpass import Bandpass
+from lsst.sims.photUtils.readGalfast.rgUtils import rgUtils
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
@@ -88,6 +86,7 @@ class selectStarSED():
         self.lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
         self.lsstPhot.loadBandPassesFromFiles(self.lsstFilterList)
         self.lsstPhot.setupPhiArray_dict()
+        self.findMagNorm = rgUtils()
 
     def loadKuruczSEDs(self, subset = None):
         """
@@ -400,10 +399,11 @@ class selectStarSED():
         galgmr = magGCorr - magRCorr
         galrmi = magRCorr - magICorr
         galimz = magICorr - magZCorr
+        objMags = [magUCorr, magGCorr, magRCorr, magICorr, magZCorr]
         
-        return galumg, galgmr, galrmi, galimz
+        return galumg, galgmr, galrmi, galimz, objMags
 
-    def findSED(self, sEDDict, magU, magG, magR, magI, magZ, am, comp, reddening = True, 
+    def findSED(self, sEDDict, magU, magG, magR, magI, magZ, am, comp, reddening = True, magNormAcc = 2,
                 coeffs=np.array([1.8551, 1.4455, 1.0, 0.7431, 0.5527])):
 
         """
@@ -430,6 +430,8 @@ class selectStarSED():
 
         @param [in] reddening indicates whether there is extinction and reddening included
         in the galfast output
+        
+        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
         @param [in] coeffs is the set of coefficients from galfast's photometry.conf file that scale
         the extinction in each band, usually calibrated to 1.0 in R-band        
@@ -437,15 +439,21 @@ class selectStarSED():
         @param [out] sEDName is the name of the SED file that most closely matches the input mags
         accounting for type of star
         
+        @param [out] magNorm is the magnitude normalization for the given magnitudes and SED
+        
         """
         
         if reddening == True:
-            umg, gmr, rmi, imz = self.deReddenGalfast(am, magU, magG, magR, magI, magZ, coeffs)
+            umg, gmr, rmi, imz, objMags = self.deReddenGalfast(am, magU, magG, magR, magI, magZ, coeffs)
         else:
             umg = magU - magG
             gmr = magG - magR
             rmi = magR - magI
             imz = magI - magZ
+            objMags = [magU, magG, magR, magI, magZ]
+            
+        magNormSED = Sed()
+        sedPrefix = {1:self.kuruczDir, 2:self.wdDir, 3:self.mltDir}
 
         if 10 <= comp < 20:
             #This is a Galfast outputted WD
@@ -460,6 +468,7 @@ class selectStarSED():
             wdimz = np.array(wdDict['imz'])
             
             sEDName = wdDict['sEDName']
+            sedType = 2
             
             distance = np.power((wdumg - umg),2) + np.power((wdgmr - gmr),2) +\
                 np.power((wdrmi - rmi),2) + np.power((wdimz - imz),2)
@@ -472,14 +481,13 @@ class selectStarSED():
 
                 mltDict = sEDDict['mlt']
                 
-                mltumg = np.array(mltDict['umg'])
-                mltgmr = np.array(mltDict['gmr'])
+                #u,g mags unreliable for cool stars
                 mltrmi = np.array(mltDict['rmi'])
                 mltimz = np.array(mltDict['imz'])
                 
                 sEDName = mltDict['sEDName']
+                sedType = 3
 
-                #u,g mags unreliable for cool stars
                 distance = np.power((mltrmi - rmi), 2) + np.power((mltimz - imz), 2)
 
             else:
@@ -493,8 +501,13 @@ class selectStarSED():
                 kimz = np.array(kDict['imz'])
                 
                 sEDName = kDict['sEDName']
+                sedType = 1
                 
                 distance = np.power((kumg - umg),2) + np.power((kgmr - gmr),2) +\
                     np.power((krmi - rmi),2) + np.power((kimz - imz),2)
             
-        return sEDName[np.argmin(distance)]
+        matchedSEDNum = np.argmin(distance)
+        magNormSED.readSED_flambda(str(str(sedPrefix[sedType]) + str(sEDName[matchedSEDNum])))
+        magNorm = self.findMagNorm.calcMagNorm(objMags, magNormSED, self.starPhot,
+                                   stepSize = np.power(10, -float(magNormAcc)), initBand = 1)
+        return sEDName[matchedSEDNum], magNorm
