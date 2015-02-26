@@ -55,7 +55,7 @@ class rgUtils():
                                                           fnu = sedTest.fnu)
         normedSED.setSED(norm_wavelen, fnu = norm_fnu)
         sedMags = np.array(photObj.manyMagCalc_list(normedSED))
-        diff = (objectMags - sedMags)
+        diff = np.sort(objectMags - sedMags)
         diffSq = np.sum(diff**2, dtype=np.float64)
         diffSqPrev = np.sum(diff**2, dtype=np.float64)
         #Search either downward or upward along magNorm axis based upon greatest difference
@@ -72,7 +72,7 @@ class rgUtils():
                                                               fnu = sedTest.fnu)
             normedSED.setSED(norm_wavelen, fnu = norm_fnu)
             sedMags = np.array(photObj.manyMagCalc_list(normedSED))
-            diff = (objectMags - sedMags)
+            diff = np.sort(objectMags - sedMags)
             diffSq = np.sum(diff**2, dtype=np.float64)
 
         return testMagNorm
