@@ -1153,7 +1153,8 @@ class Sed(object):
 
         Returns
         -------
-        `np.ndarray` with size equal to number of bandpass filters  band flux values in units of ergs/cm^2/sec
+        `np.ndarray` with size equal to number of bandpass filters  band flux 
+        values in units of ergs/cm^2/sec
         """
         # Calculate phis and resample onto same wavelength grid
         flux = numpy.empty(len(phiarray), dtype='float')
@@ -1172,7 +1173,6 @@ class Sed(object):
         These assumptions are to avoid error checking within this function (for speed), but could lead
         to errors if method is used incorrectly.
         """
-        # Calculate phis and resample onto same wavelength grid
-        mags = numpy.empty(len(phiarray), dtype='float')
-        mags = -2.5*numpy.log10(numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
+        fluxes = manyFluxCalc(self, phiarray, wavelen_step) 
+        mags = -2.5*numpy.log10(fluxes) - self.zp
         return mags
