@@ -519,7 +519,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
     def testSystematicUncertainty(self):
         """
-        Test that systematic uncertainty is added correctly
+        Test that systematic uncertainty is added correctly.
         """
         sig2sys = 0.002
         for ii in range(2):
