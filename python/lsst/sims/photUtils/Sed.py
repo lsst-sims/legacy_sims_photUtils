@@ -1134,6 +1134,32 @@ class Sed(object):
             phiarray[i] = bp.phi
             i = i + 1
         return phiarray, wavelen_step
+    def manyFluxCalc(self, phiarray, wavelen_step):
+        """
+        Calculate fluxes of a single sed for which fnu has been evaluated in a 
+        set of bandpasses for which phiarray has been set up to have the same 
+        wavelength grid as the SED in units of ergs/cm^2/sec. 
+
+
+        Parameters
+        ----------
+        phiarray: `np.ndarray`, mandatory
+            phiarray corresponding to the list of bandpasses in which the band
+            fluxes need to be calculated, in the same wavelength grid as the SED
+        
+        wavelen_step: `float`, mandatory
+            the uniform grid size of the SED
+
+
+        Returns
+        -------
+        `np.ndarray` with size equal to number of bandpass filters  band flux values in units of ergs/cm^2/sec
+        """
+        # Calculate phis and resample onto same wavelength grid
+        flux = numpy.empty(len(phiarray), dtype='float')
+        flux = numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step 
+        return flux
+
 
     def manyMagCalc(self, phiarray, wavelen_step):
         """
