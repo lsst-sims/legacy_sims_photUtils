@@ -56,8 +56,8 @@ class rgUtils():
         normedSED.setSED(norm_wavelen, fnu = norm_fnu)
         sedMags = np.array(photObj.manyMagCalc_list(normedSED))
         diff = (objectMags - sedMags)
-        diffSq = np.sum(diff**2)
-        diffSqPrev = np.sum(diff**2)
+        diffSq = np.sum(diff**2, dtype=np.float64)
+        diffSqPrev = np.sum(diff**2, dtype=np.float64)
         #Search either downward or upward along magNorm axis based upon greatest difference
         if diff[np.argmax(np.abs(diff))] < 0:
             alphaAdd = -stepSize
@@ -65,7 +65,7 @@ class rgUtils():
             alphaAdd = stepSize
         #Recursively adjust the magNorm until you reach a minimum in the sum squared error of the mags
         while diffSq <= diffSqPrev:
-            diffSqPrev = np.sum(diff**2)
+            diffSqPrev = np.sum(diff**2, dtype=np.float64)
             testMagNorm += alphaAdd
             testFluxNorm = sedTest.calcFluxNorm(testMagNorm, imSimBand)
             norm_wavelen, norm_fnu = sedTest.multiplyFluxNorm(testFluxNorm, wavelen = sedTest.wavelen, 
@@ -73,6 +73,6 @@ class rgUtils():
             normedSED.setSED(norm_wavelen, fnu = norm_fnu)
             sedMags = np.array(photObj.manyMagCalc_list(normedSED))
             diff = (objectMags - sedMags)
-            diffSq = np.sum(diff**2)
+            diffSq = np.sum(diff**2, dtype=np.float64)
 
         return testMagNorm
