@@ -10,17 +10,17 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 
 class rgUtils():
-    
+
     """
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
-    """    
-    
+    """
+
     def calcMagNorm(self, objectMags, sedObj, photObj, redshift = None, stepSize = 0.01, initBand = 0):
-        
+
         """
         This will find the magNorm value that gives the closest match to the magnitudes of the object
         using the matched SED.
-        
+
         @param [in] objectMags are the magnitude values for the object with extinction matching that of
         the SED object. In the normal case using the selectSED routines above it will be dereddened mags.
 
@@ -40,7 +40,7 @@ class rgUtils():
 
         @param [out] testMagNorm is the magnitude normalization for the given magnitudes and SED
         """
-        
+
         sedTest = Sed()
         sedTest.setSED(sedObj.wavelen, flambda = sedObj.flambda)
         if redshift is not None:
@@ -68,7 +68,7 @@ class rgUtils():
             diffSqPrev = np.sum(diff**2, dtype=np.float64)
             testMagNorm += alphaAdd
             testFluxNorm = sedTest.calcFluxNorm(testMagNorm, imSimBand)
-            norm_wavelen, norm_fnu = sedTest.multiplyFluxNorm(testFluxNorm, wavelen = sedTest.wavelen, 
+            norm_wavelen, norm_fnu = sedTest.multiplyFluxNorm(testFluxNorm, wavelen = sedTest.wavelen,
                                                               fnu = sedTest.fnu)
             normedSED.setSED(norm_wavelen, fnu = norm_fnu)
             sedMags = np.array(photObj.manyMagCalc_list(normedSED))
