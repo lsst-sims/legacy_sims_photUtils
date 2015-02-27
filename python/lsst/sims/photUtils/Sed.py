@@ -1173,6 +1173,6 @@ class Sed(object):
         These assumptions are to avoid error checking within this function (for speed), but could lead
         to errors if method is used incorrectly.
         """
-        fluxes = manyFluxCalc(self, phiarray, wavelen_step) 
+        fluxes = self.manyFluxCalc(phiarray, wavelen_step) 
         mags = -2.5*numpy.log10(fluxes) - self.zp
         return mags
