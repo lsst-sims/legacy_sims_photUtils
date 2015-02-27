@@ -64,7 +64,10 @@ class rgUtils():
         else:
             alphaAdd = stepSize
         #Recursively adjust the magNorm until you reach a minimum in the sum squared error of the mags
-        while diffSq <= diffSqPrev:
+
+        bestMagNorm = testMagNorm
+        bestDiffSq = diffSq
+        while diffSq - diffSqPrev < 1.0e-10:
             diffSqPrev = np.sum(diff**2, dtype=np.float64)
             testMagNorm += alphaAdd
             testFluxNorm = sedTest.calcFluxNorm(testMagNorm, imSimBand)
@@ -74,5 +77,8 @@ class rgUtils():
             sedMags = np.array(photObj.manyMagCalc_list(normedSED))
             diff = np.sort(objectMags - sedMags)
             diffSq = np.sum(diff**2, dtype=np.float64)
+            if diffSq < bestDiffSq:
+                bestMagNorm = testMagNorm
+                bestDiffSq = diffSq
 
-        return testMagNorm
+        return bestMagNorm
