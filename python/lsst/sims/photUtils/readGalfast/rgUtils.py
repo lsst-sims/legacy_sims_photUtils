@@ -38,7 +38,7 @@ class rgUtils():
         the first naive match guess. Since imsimbandpass uses 500nm the best option is to use that closest
         or encompassing 500 nm. Be aware, this starts at 0, but is initialized to 1 meaning second in array.
 
-        @param [out] testMagNorm is the magnitude normalization for the given magnitudes and SED
+        @param [out] bestMagNorm is the magnitude normalization for the given magnitudes and SED
         """
 
         sedTest = Sed()
