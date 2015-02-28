@@ -1,85 +1,15 @@
 import os
 import numpy as np
-import re
 import eups
 
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.readGalfast.rgUtils import rgUtils
+from lsst.sims.photUtils.readGalfast.rgUtils import rgGalaxy
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.photUtils.EBV import EBVbase as ebv
-from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
 __all__ = ["selectGalaxySED"]
 
-class selectGalaxySED(rgUtils):
-
-    def __init__(self, galDir = None):
-        
-        """
-        @param [in] galDir is the directory where the galaxy SEDs are stored
-        """
-
-        if galDir is None:
-            #Use SpecMap to pull in directory's location in LSST Stack
-            specMap = SpecMap()
-            specFileStart = 'Exp' #Start of sample BC03 name in sims_sed_library
-            for key, val in sorted(specMap.subdir_map.iteritems()):
-                if re.match(key, specFileStart):
-                    galSpecDir = str(val)
-            self.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir)            
-        else:
-            self.galDir = galDir
-
-    def loadBC03(self, subset = None):
-
-        """
-        This loads the Bruzual and Charlot SEDs that are currently in the SIMS_SED_LIBRARY.
-        If the user wants to use different SEDs another loading method can be created and used in place
-        of this.
-        
-        @param [in] subset is the list of the subset of files in the galDir that the user
-        can specify if using all the SEDs in the directory is not desired.
-
-        @param [out] sedList is the set of model SED spectra objects to be passed onto the matching routines.
-        """
-
-        files = []
-
-        if subset is None:
-            for fileName in os.listdir(self.galDir):
-                files.append(fileName)
-        else:
-            for fileName in subset:
-                files.append(fileName)
-
-        numFiles = len(files)
-        numOn = 0
-
-        sedList = []
-
-        for fileName in files:
-            if numOn % 100 == 0:
-                print 'Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles)
- 
-            try:
-                spec = Sed()
-                spec.readSED_flambda(str(self.galDir + '/' + fileName))
-                spec.name = fileName
-                fileNameAsList = fileName.split('.')
-                spec.type = fileNameAsList[0]
-                spec.age = float(fileNameAsList[1])
-                metallicity = fileNameAsList[2].split('Z')[0]
-                #Final form is z/zSun
-                spec.metallicity = float(metallicity) * (10 ** ((len(metallicity)-1)*-1))
-
-            except:
-                continue
-
-            sedList.append(spec)
-
-            numOn += 1
-
-        return sedList
+class selectGalaxySED(rgGalaxy):
 
     def matchToRestFrame(self, sedList, catMags, bandpassList = None, magNormAcc = 2):
 
@@ -117,15 +47,7 @@ class selectGalaxySED(rgUtils):
         magNormMatches = []
 
         #Find the colors for all model SEDs
-        for galSpec in sedList:
-            fileSED = Sed()
-            fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
-            sEDMags = galPhot.manyMagCalc_list(fileSED)
-            colorInfo = []
-            for filtNum in range(0, len(galPhot.bandPassList)-1):
-                colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
-            modelColors.append(colorInfo)
-        modelColors = np.transpose(modelColors)
+        modelColors = self.calcBasicColors(sedList, galPhot)
 
         #Match the catalog colors to models
         numCatMags = len(catMags)
@@ -219,6 +141,9 @@ class selectGalaxySED(rgUtils):
             if len(raDec.shape) == 1:
                 raDec = raDec.reshape((2,1))
             ebvVals = calcEBV.calculateEbv(equatorialCoordinates = raDec)
+            objMags = self.deReddenMags(ebvVals, catMags, extCoeffs)
+        else:
+            objMags = catMags
 
         minRedshift = np.round(np.min(catRedshifts), dzAcc)
         maxRedshift = np.round(np.max(catRedshifts), dzAcc)
@@ -251,12 +176,8 @@ class selectGalaxySED(rgUtils):
                 colorSet.append(sedColors)
             colorSet = np.transpose(colorSet)
             for currentIndex in redshiftIndex[numOn:]:
-                matchMags = catMags[currentIndex]
+                matchMags = objMags[currentIndex]
                 if lastRedshift < np.round(catRedshifts[currentIndex],dzAcc) <= redshift:
-                    if extinction == True:
-                        for filtNum in range(0, len(galPhot.bandPassList)):
-                            matchMags[filtNum] = (matchMags[filtNum] 
-                                                  - (extCoeffs[filtNum]*ebvVals[currentIndex]))
                     for filtNum in range(0, len(galPhot.bandPassList)-1):
                         matchColor = matchMags[filtNum] - matchMags[filtNum+1]
                         distanceArray = np.power((colorSet[filtNum] - matchColor),2)
