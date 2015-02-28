@@ -10,14 +10,16 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
 from lsst.sims.photUtils.readGalfast.selectGalaxySED import selectGalaxySED
-from lsst.sims.photUtils.readGalfast.rgUtils import rgUtils
+from lsst.sims.photUtils.readGalfast.rgUtils import rgBase
+from lsst.sims.photUtils.readGalfast.rgUtils import rgStar
+from lsst.sims.photUtils.readGalfast.rgUtils import rgGalaxy
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
-class TestRGUtils(unittest.TestCase):
+class TestRGBase(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
@@ -46,7 +48,7 @@ class TestRGUtils(unittest.TestCase):
     
     def testCalcMagNorm(self):
         
-        testUtils = rgUtils()        
+        testUtils = rgBase()        
         
         galPhot = phot()
         galPhot.loadBandPassesFromFiles(self.filterList, 
@@ -54,13 +56,17 @@ class TestRGUtils(unittest.TestCase):
                                         bandPassRoot = 'sdss_')
         galPhot.setupPhiArray_dict()
         
-        testMatching = selectGalaxySED(galDir = self.testSpecDir)
-        testSEDList = testMatching.loadBC03()      
+#        testMatching = selectGalaxySED(galDir = self.testSpecDir)
+#        testSEDList = testMatching.loadBC03() 
+        testWavelen = np.arange(200,1400,1.0)
+        testFlambda = np.ones(len(testWavelen))
+        unChangedSED = Sed()
+        unChangedSED.setSED(testWavelen, flambda = testFlambda)
         
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
         testSED = Sed()
-        testSED.setSED(testSEDList[0].wavelen, flambda = testSEDList[0].flambda)
+        testSED.setSED(testWavelen, flambda = testFlambda)
         magNorm = 20.0
         redVal = 0.1
         testSED.redshiftSED(redVal)
@@ -68,11 +74,270 @@ class TestRGUtils(unittest.TestCase):
         testSED.multiplyFluxNorm(fluxNorm)
         sedMags = galPhot.manyMagCalc_list(testSED)
         stepSize = 0.001
-        testMagNorm = testUtils.calcMagNorm(sedMags, testSEDList[0], galPhot, 
-                                               redshift = redVal, stepSize = stepSize)
+        testMagNorm = testUtils.calcMagNorm(sedMags, unChangedSED, galPhot, 
+                                            redshift = redVal, stepSize = stepSize)
         
         self.assertAlmostEqual(magNorm, testMagNorm, delta = stepSize)
+
+    def testDeReddenGalfast(self):
+
+        """Test that consistent numbers come out of deReddening procedure"""
+
+        am = 0.5
+        coeffs = np.ones(5)
+        mags = np.arange(2,-3,-1)
+
+        testDeRedColors = rgBase().deReddenGalfast(am, mags[0], mags[1], mags[2], mags[3],
+                                                          mags[4], coeffs)
+
+        #Test Output
+        expectedDeRed = np.ones(4)
+        np.testing.assert_equal(testDeRedColors[:4], expectedDeRed)
+        np.testing.assert_equal(testDeRedColors[4], mags-(am*coeffs))
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.galDir
+        del cls.filterList
+
+        shutil.rmtree(cls.testSpecDir)
+
+class TestRGStar(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        #Left this in after removing loading SEDs so that we can make sure that if the structure of
+        #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
+        specMap = SpecMap()
+        cls._specMapDict = {}
+        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
+        specFileTypes = ['kurucz', 'mlt','wd']
+        for specStart, specKey in zip(specFileStart, specFileTypes):
+            for key, val in sorted(specMap.subdir_map.iteritems()):
+                if re.match(key, specStart):
+                    cls._specMapDict[specKey] = str(val)
+
+        cls.kmTestName = 'km99_9999.fits_g99_9999'
+        cls.mTestName = 'm99.99Full.dat'
+
+        #Set up Test Spectra Directory
+        cls.testSpecDir = 'testReadGalfastSpectra'
+        cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
+        cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
+        cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
+
+        if os.path.exists(cls.testSpecDir):
+            shutil.rmtree(cls.testSpecDir)
+
+        os.makedirs(cls.testKDir)
+        os.mkdir(cls.testMLTDir)
+        os.mkdir(cls.testWDDir)
+        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
+        kList = os.listdir(cls.kDir)[0:20]
+        #Use particular indices to get different types of seds within mlt and wds
+        for kFile, mltFile, wdFile in zip(kList, 
+                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 
+                                          np.array(os.listdir(cls.wdDir))[np.arange(-10,11)]):
+            shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
+            shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))
+            shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
+        #Load in extra kurucz to test Logz Readout
+        if 'km01_7000.fits_g40_7140.gz' not in kList:
+            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'), 
+                            str(cls.testKDir + 'km01_7000.fits_g40_7140.gz'))
+        if 'kp01_7000.fits_g40_7240.gz' not in kList:
+            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
+                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._specMapDict
+        del cls.kDir
+        del cls.mltDir
+        del cls.wdDir
+
+        if os.path.exists(cls.kmTestName):
+            os.unlink(cls.kmTestName)
+
+        if os.path.exists(cls.mTestName):
+            os.unlink(cls.mTestName)
+
+        del cls.kmTestName
+        del cls.mTestName
+
+        shutil.rmtree(cls.testSpecDir)
+
+    def testDefaults(self):
+        """Make sure that if there are Nones for the init that they load the correct dirs"""
+        loadTest = rgStar()
+        self.assertEqual(loadTest.kuruczDir, self.kDir)
+        self.assertEqual(loadTest.mltDir, self.mltDir)
+        self.assertEqual(loadTest.wdDir, self.wdDir)
+
+    def testLoadKurucz(self):
+        """Test SED loading algorithm by making sure SEDs are all accounted for """
+        #Test Matching to Kurucz SEDs
+        loadTestKurucz = rgStar(kuruczDir = self.testKDir)
+        testSEDs = loadTestKurucz.loadKuruczSEDs()
+
+        #Read in a list of the SEDs in the kurucz test sed directory
+        testKuruczList = os.listdir(self.testKDir)
+
+        #First make sure that all SEDs are correctly accounted for if no subset provided
+        testNames = []
+        for testSED in testSEDs:
+            testNames.append(testSED.name)
+        self.assertItemsEqual(testKuruczList, testNames)
+
+        #Test same condition if subset is provided
+        testSubsetList = ['km01_7000.fits_g40_7140.gz', 'kp01_7000.fits_g40_7240.gz']
+        testSEDsSubset = loadTestKurucz.loadKuruczSEDs(subset = testSubsetList)
+
+        #Next make sure that correct subset loads if subset is provided
+        testSubsetNames = []
+        testSubsetLogZ = []
+        testSubsetLogG = []
+        testSubsetTemp = []
+        for testSED in testSEDsSubset:
+            testSubsetNames.append(testSED.name)
+            testSubsetLogZ.append(testSED.logZ)
+            testSubsetLogG.append(testSED.logg)
+            testSubsetTemp.append(testSED.temp)
+        self.assertItemsEqual(testSubsetList, testSubsetNames)
+        self.assertEqual(testSubsetLogZ, [-0.1, 0.1]) #Test both pos. and neg. get in right
+        self.assertEqual(testSubsetLogG, [4.0, 4.0]) #Test storage of logg and temp
+        self.assertEqual(testSubsetTemp, [7140, 7240])
+
+        #Test that attributes have been assigned
+        for testSED in testSEDsSubset:
+            self.assertIsNotNone(testSED.name)
+            self.assertIsNotNone(testSED.logZ)
+            self.assertIsNotNone(testSED.logg)
+            self.assertIsNotNone(testSED.temp)
+
+    def testLoadMLT(self):
+        """Test SED loading algorithm by making sure SEDs are all accounted for"""
+        #Test Matching to mlt SEDs
+        loadTestMLT = rgStar(mltDir = self.testMLTDir)
+        testSEDs = loadTestMLT.loadmltSEDs()
+
+        #Read in a list of the SEDs in the mlt test sed directory
+        testMLTList = os.listdir(self.testMLTDir)
+
+        #First make sure that all SEDs are correctly accounted for if no subset provided
+        testNames = []
+        for testSED in testSEDs:
+            testNames.append(testSED.name)
+        self.assertItemsEqual(testMLTList, testNames)
+
+        #Next make sure that correct subset loads if subset is provided
+        testSubsetList = testMLTList[0:2]
+        testSEDsubset = loadTestMLT.loadmltSEDs(subset = testSubsetList)
+        testSubsetNames = []
+        for testSED in testSEDsubset:
+            testSubsetNames.append(testSED.name)
+        self.assertItemsEqual(testSubsetList, testSubsetNames)
+
+        #Test that attributes have been assigned
+        for testSED in testSEDsubset:
+            self.assertIsNotNone(testSED.name)
+
+    def testLoadWD(self):
+        """Test SED loading algorithm by making sure SEDs are all accounted for and
+        values for each property have been calculated."""
+        #Test Matching to WD SEDs
+        loadTestWD = rgStar(wdDir = self.testWDDir)
+        testSEDsH, testSEDsHE = loadTestWD.loadwdSEDs()
+
+        #Add extra step because WD SEDs are separated into helium and hydrogen
+        testNames = []
+        for testH, testHE in zip(testSEDsH, testSEDsHE):
+            testNames.append(testH.name)
+            testNames.append(testHE.name)
+
+        #Read in a list of the SEDs in the wd test sed directory
+        testWDList = os.listdir(self.testWDDir)
+
+        #First make sure that all SEDs are correctly accounted for if no subset provided
+        self.assertItemsEqual(testNames, testWDList)
+
+        #Test same condition if subset is provided
+        testSubsetList = ['bergeron_10000_75.dat_10100.gz', 'bergeron_He_9000_80.dat_9400.gz']
+
+        testSEDsSubsetH, testSEDsSubsetHE = selectStarSED().loadwdSEDs(subset = testSubsetList)
+
+        testNamesSubset = []
+        for testH, testHE in zip(testSEDsSubsetH, testSEDsSubsetHE):
+            testNamesSubset.append(testH.name)
+            testNamesSubset.append(testHE.name)
+
+        #Next make sure that correct subset loads if subset is provided
+        self.assertItemsEqual(testNamesSubset, testSubsetList)
+
+        #Make sure that the names get separated into correct wd type
+        self.assertEqual(testSEDsSubsetH[0].name, testSubsetList[0])
+        self.assertEqual(testSEDsSubsetHE[0].name, testSubsetList[1])
+
+class TestRGGalaxy(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+
+        specMap = SpecMap()
+        specFileStart = 'Exp'
+        for key, val in sorted(specMap.subdir_map.iteritems()):
+            if re.match(key, specFileStart):
+                galSpecDir = str(val)
+        cls.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir + '/')
+
+        #Set up Test Spectra Directory
+        cls.testSpecDir = 'testGalaxySEDSpectrum/'
         
+        if os.path.exists(cls.testSpecDir):
+            shutil.rmtree(cls.testSpecDir)
+
+        os.mkdir(cls.testSpecDir)
+
+        galList = os.listdir(cls.galDir)[0:20]
+
+        for galFile in galList:
+            shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
+
+        cls.filterList = ('u', 'g', 'r', 'i', 'z')
+
+    def testLoadBC03(self):
+
+        loadTestBC03 = rgGalaxy(galDir = self.testSpecDir)
+        testSEDs = loadTestBC03.loadBC03()
+
+        #Read in a list of the SEDs in the test galaxy sed directory
+        testGalList = os.listdir(self.testSpecDir)
+
+        #Make sure the names of seds in folder and set that was read in are the same
+        #This also tests that the name attribute is assigned to each Spectrum object correctly
+        testNames = []
+        for testSED in testSEDs:
+            testNames.append(testSED.name)
+        self.assertItemsEqual(testGalList, testNames)
+
+        #Test same condition if a subset is provided
+        testSubsetList = testGalList[0:2]
+        testSEDsubset = loadTestBC03.loadBC03(subset = testSubsetList)
+        testSubsetNames = []
+        for testSED in testSEDsubset:
+            testSubsetNames.append(testSED.name)
+        self.assertItemsEqual(testSubsetList, testSubsetNames)
+
+        #Test that attributes have been assigned
+        for testSED in testSEDsubset:
+            self.assertIsNotNone(testSED.name)
+            self.assertIsNotNone(testSED.type)
+            self.assertIsNotNone(testSED.age)
+            self.assertIsNotNone(testSED.metallicity)
+
     @classmethod
     def tearDownClass(cls):
         del cls.galDir
@@ -106,36 +371,6 @@ class TestSelectGalaxySED(unittest.TestCase):
             shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
 
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
-
-    def testLoadBC03(self):
-
-        loadTestBC03 = selectGalaxySED(galDir = self.testSpecDir)
-        testSEDs = loadTestBC03.loadBC03()
-
-        #Read in a list of the SEDs in the test galaxy sed directory
-        testGalList = os.listdir(self.testSpecDir)
-
-        #Make sure the names of seds in folder and set that was read in are the same
-        #This also tests that the name attribute is assigned to each Spectrum object correctly
-        testNames = []
-        for testSED in testSEDs:
-            testNames.append(testSED.name)
-        self.assertItemsEqual(testGalList, testNames)
-
-        #Test same condition if a subset is provided
-        testSubsetList = testGalList[0:2]
-        testSEDsubset = loadTestBC03.loadBC03(subset = testSubsetList)
-        testSubsetNames = []
-        for testSED in testSEDsubset:
-            testSubsetNames.append(testSED.name)
-        self.assertItemsEqual(testSubsetList, testSubsetNames)
-
-        #Test that attributes have been assigned
-        for testSED in testSEDsubset:
-            self.assertIsNotNone(testSED.name)
-            self.assertIsNotNone(testSED.type)
-            self.assertIsNotNone(testSED.age)
-            self.assertIsNotNone(testSED.metallicity)
 
     def testMatchToRestFrame(self):
 
@@ -331,183 +566,6 @@ class TestSelectStarSED(unittest.TestCase):
 
         shutil.rmtree(cls.testSpecDir)
 
-    def testDefaults(self):
-        """Make sure that if there are Nones for the init that they load the correct dirs"""
-        loadTest = selectStarSED()
-        self.assertEqual(loadTest.kuruczDir, self.kDir)
-        self.assertEqual(loadTest.mltDir, self.mltDir)
-        self.assertEqual(loadTest.wdDir, self.wdDir)
-
-    def testLoadKurucz(self):
-        """Test SED loading algorithm by making sure SEDs are all accounted for """
-        #Test Matching to Kurucz SEDs
-        loadTestKurucz = selectStarSED(kuruczDir = self.testKDir)
-        testSEDs = loadTestKurucz.loadKuruczSEDs()
-
-        #Read in a list of the SEDs in the kurucz test sed directory
-        testKuruczList = os.listdir(self.testKDir)
-
-        #First make sure that all SEDs are correctly accounted for if no subset provided
-        self.assertEqual(testSEDs['sEDName'], testKuruczList)
-
-        #Then test to make sure no values are null in any of the lists within the dictionary
-        for key in testSEDs.keys():
-            for item in testSEDs[key]:
-                self.assertIsNotNone(item)
-
-        #Test same condition if subset is provided
-        testSubsetList = ['km01_7000.fits_g40_7140.gz', 'kp01_7000.fits_g40_7240.gz']
-        testSEDsSubset = loadTestKurucz.loadKuruczSEDs(subset = testSubsetList)
-
-        #Next make sure that correct subset loads if subset is provided
-        self.assertEqual(testSEDsSubset['sEDName'], testSubsetList)
-
-        #Finally make sure that values are being entered into dictionaries correctly
-        self.assertEqual(testSEDsSubset['logZ'], [-0.1, 0.1]) #Test both pos. and neg. get in right
-        self.assertEqual(testSEDsSubset['logg'], [4.0, 4.0])
-        self.assertEqual(testSEDsSubset['temp'], [7140, 7240])
-
-        #Now test colors are being calculated correctly by loading a flat sed into it
-        testSED = Sed()
-        testSEDsColors = selectStarSED()
-
-        testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
-        #Give kurucz like filename just so it works
-        testSED.writeSED(self.kmTestName)
-
-        testSEDsColors.kuruczDir = str(os.getcwd() + '/')
-        testColors = testSEDsColors.loadKuruczSEDs(subset = [self.kmTestName])
-        self.assertAlmostEqual(testColors['umg'][0], 0.0)
-        self.assertAlmostEqual(testColors['gmr'][0], 0.0)
-        self.assertAlmostEqual(testColors['rmi'][0], 0.0)
-        self.assertAlmostEqual(testColors['imz'][0], 0.0)
-
-    def testLoadMLT(self):
-        """Test SED loading algorithm by making sure SEDs are all accounted for"""
-        #Test Matching to mlt SEDs
-        loadTestMLT = selectStarSED(mltDir = self.testMLTDir)
-        testSEDs = loadTestMLT.loadmltSEDs()
-
-        #Read in a list of the SEDs in the mlt test sed directory
-        testMLTList = os.listdir(self.testMLTDir)
-
-        #First make sure that all SEDs are correctly accounted for if no subset provided
-        self.assertItemsEqual(testSEDs['sEDName'], testMLTList)
-
-        #Then test to make sure no values are null in any of the lists within the dictionary
-        for key in testSEDs.keys():
-            for item in testSEDs[key]:
-                self.assertIsNotNone(item)
-
-        #Test same condition if subset is provided
-        testSubsetList = ['m0.0Full.dat.gz']
-        testSEDsSubset = selectStarSED().loadmltSEDs(subset = testSubsetList)
-
-        #Next make sure that correct subset loads if subset is provided
-        self.assertItemsEqual(testSEDsSubset['sEDName'], testSubsetList)
-
-        #Now test colors are being calculated correctly by loading a flat sed into it
-        testSED = Sed()
-        testSEDsColors = selectStarSED()
-
-        testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
-        #Give mlt like filename just so it works
-        testSED.writeSED(self.mTestName)
-
-        testSEDsColors.mltDir = str(os.getcwd() + '/')
-        testColors = testSEDsColors.loadmltSEDs(subset = [self.mTestName])
-        self.assertAlmostEqual(testColors['umg'][0], 0.0)
-        self.assertAlmostEqual(testColors['gmr'][0], 0.0)
-        self.assertAlmostEqual(testColors['rmi'][0], 0.0)
-        self.assertAlmostEqual(testColors['imz'][0], 0.0)
-
-    def testLoadWD(self):
-        """Test SED loading algorithm by making sure SEDs are all accounted for and
-        values for each property have been calculated."""
-        #Test Matching to WD SEDs
-        loadTestWD = selectStarSED(wdDir = self.testWDDir)
-        testSEDs = loadTestWD.loadwdSEDs()
-
-        #Add extra step because WD SEDs are separated into helium and hydrogen
-        testSEDNamesLists = []
-        testSEDNamesLists.append(testSEDs['H']['sEDName'])
-        testSEDNamesLists.append(testSEDs['HE']['sEDName'])
-        testSEDNames = [name for nameList in testSEDNamesLists for name in nameList]
-
-        #Read in a list of the SEDs in the wd test sed directory
-        testWDList = os.listdir(self.testWDDir)
-
-        #First make sure that all SEDs are correctly accounted for if no subset provided
-        self.assertItemsEqual(testSEDNames, testWDList)
-
-        #Then test to make sure no values are null in any of the lists within the dictionary
-        for wdType in ['H', 'HE']:
-            for key in testSEDs[wdType].keys():
-                for item in testSEDs[wdType][key]:
-                    self.assertIsNotNone(item)
-
-        #Test same condition if subset is provided
-        testSubsetList = ['bergeron_10000_75.dat_10100.gz', 'bergeron_He_9000_80.dat_9400.gz']
-
-        testSEDsSubset = selectStarSED().loadwdSEDs(subset = testSubsetList)
-
-        #Add extra step because WD SEDs are separated into helium and hydrogen
-        testSEDNamesSubsetLists = []
-        testSEDNamesSubsetLists.append(testSEDsSubset['H']['sEDName'])
-        testSEDNamesSubsetLists.append(testSEDsSubset['HE']['sEDName'])
-        testSEDNamesSubset = [name for nameList in testSEDNamesSubsetLists for name in nameList]
-
-        #Next make sure that correct subset loads if subset is provided
-        self.assertItemsEqual(testSEDNamesSubset, testSubsetList)
-
-        #Make sure that the names get separated into correct wd type
-        self.assertItemsEqual(testSEDsSubset['H']['sEDName'], [testSubsetList[0]])
-        self.assertItemsEqual(testSEDsSubset['HE']['sEDName'], [testSubsetList[1]])
-
-        #Now test colors are being calculated correctly by loading a flat sed into it
-        testSED = Sed()
-        testSEDsColors = selectStarSED()
-
-        testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
-        testSED.multiplyFluxNorm(testSED.calcFluxNorm(10, testSEDsColors.starPhot.bandPassList[2]))
-        #Give WD like filename just so it works
-        testName = 'bergeron_9999_99.dat_9999'
-        testNameHe = 'bergeron_He_9999_99.dat_9999'
-        testSED.writeSED(testName)
-        testSED.writeSED(testNameHe)
-
-        testSEDsColors.wdDir = str(os.getcwd() + '/')
-        testColors = testSEDsColors.loadwdSEDs(subset = [testName, testNameHe])
-        self.assertAlmostEqual(testColors['H']['umg'][0], 0.0)
-        self.assertAlmostEqual(testColors['H']['gmr'][0], 0.0)
-        self.assertAlmostEqual(testColors['H']['rmi'][0], 0.0)
-        self.assertAlmostEqual(testColors['H']['imz'][0], 0.0)
-        self.assertAlmostEqual(testColors['HE']['umg'][0], 0.0)
-        self.assertAlmostEqual(testColors['HE']['gmr'][0], 0.0)
-        self.assertAlmostEqual(testColors['HE']['rmi'][0], 0.0)
-        self.assertAlmostEqual(testColors['HE']['imz'][0], 0.0)
-
-        os.unlink(testName)
-        os.unlink(testNameHe)
-
-    def testDeReddenGalfast(self):
-
-        """Test that consistent numbers come out of deReddening procedure"""
-
-        am = 0.5
-        coeffs = np.ones(5)
-        mags = np.arange(2,-3,-1)
-
-        testDeRedColors = selectStarSED().deReddenGalfast(am, mags[0], mags[1], mags[2], mags[3],
-                                                          mags[4], coeffs)
-
-        #Test Output
-        expectedDeRed = np.ones(4)
-        np.testing.assert_equal(testDeRedColors[:4], expectedDeRed)
-        np.testing.assert_equal(testDeRedColors[4], mags-(am*coeffs))
-
     def testFindSED(self):
 
         """Pull SEDs from each type and make sure that each SED gets matched to itself."""
@@ -694,60 +752,6 @@ class TestReadGalfast(unittest.TestCase):
         testFullHeaderDict = testRG.parseGalfast(testFullHeader)
         self.assertEqual(testFullHeaderDict, actualFullHeaderDict)
 
-    def testFindLSSTMags(self):
-
-        """Make sure that the Magnitudes you get from spectra are correct"""
-
-        testRG = readGalfast()
-        sEDParams = selectStarSED()
-        absLSSTr = 10.
-        DM = 10.
-        am = 0.5
-        lsstExtCoords = [1.25, 1.15, 1.05, 0.95, 0.85, 0.75]
-        sEDDict = {}
-
-        #Test a kurucz, an mlt, and a wd
-        testSpectra = ['bergeron_10000_75.dat_10100.gz', 'm0.0Full.dat.gz', 'km01_7000.fits_g40_7140.gz']
-        testTypes = ['wdH', 'mlt', 'kurucz']
-        testDirs = ['wDs', 'mlt', 'kurucz']
-        #Build SedDict
-        for testSpectrum, testType, testDir in zip(testSpectra, testTypes, testDirs):
-            sEDObj = Sed()
-            sEDObj.readSED_flambda(sEDParams.sEDDir + '/starSED/' + testDir + '/' + testSpectrum)
-            rMagDict = {}
-            testTypeDict = {}
-            lsstgmrDict = {}; lsstumgDict = {}; lsstrmiDict = {}; lsstimzDict = {}; lsstzmyDict = {};
-            lsstrMagsDict = {}
-            rMagDict[testSpectrum] = sEDObj.calcMag(sEDParams.lsstPhot.bandPassList[2])
-            testTypeDict['rMags'] = rMagDict
-            lsstTestMagList =  sEDParams.lsstPhot.manyMagCalc_list(sEDObj)
-            lsstgmrDict[testSpectrum] = lsstTestMagList[1] - lsstTestMagList[2]
-            lsstumgDict[testSpectrum] = lsstTestMagList[0] - lsstTestMagList[1]
-            lsstrmiDict[testSpectrum] = lsstTestMagList[2] - lsstTestMagList[3]
-            lsstimzDict[testSpectrum] = lsstTestMagList[3] - lsstTestMagList[4]
-            lsstzmyDict[testSpectrum] = lsstTestMagList[4] - lsstTestMagList[5]
-            lsstrMagsDict[testSpectrum] = lsstTestMagList[2]
-            testTypeDict['lsstgmr'] = lsstgmrDict
-            testTypeDict['lsstumg'] = lsstumgDict
-            testTypeDict['lsstrmi'] = lsstrmiDict
-            testTypeDict['lsstimz'] = lsstimzDict
-            testTypeDict['lsstzmy'] = lsstzmyDict
-            testTypeDict['lsstrMags'] = lsstrMagsDict
-            sEDDict[testType] = testTypeDict
-
-        for testSpectrum, testType, testDir in zip(testSpectra, testTypes, testDirs):
-            sEDObj = Sed()
-            sEDObj.readSED_flambda(sEDParams.sEDDir + '/starSED/' + testDir + '/' + testSpectrum)
-            #Calculate the SDSSr if the SED's LSSTr is set to absLSSTr above
-            #Then Make sure with this input you get the same LSSTr out of findLSSTMags
-            lsstFluxNorm = sEDObj.calcFluxNorm(absLSSTr, sEDParams.lsstPhot.bandPassList[2])
-            sEDObj.multiplyFluxNorm(lsstFluxNorm)
-            absSDSSr = sEDObj.calcMag(sEDParams.lsstPhot.bandPassList[2])
-            testFluxNorm, testMagDict = testRG.findLSSTMags(testSpectrum, sEDDict, absSDSSr,
-                                                            DM, am, lsstExtCoords)
-            self.assertAlmostEqual(testFluxNorm, lsstFluxNorm)
-            self.assertAlmostEqual(testMagDict['r'] - DM - (am * lsstExtCoords[2]), absLSSTr)
-
     def testConvDMtoKpc(self):
 
         """Make sure Distance Modulus get correctly converted to distance in kpc"""
@@ -819,7 +823,9 @@ class TestReadGalfast(unittest.TestCase):
 def suite():
     utilsTests.init()
     suites = []
-    suites += unittest.makeSuite(TestRGUtils)
+    suites += unittest.makeSuite(TestRGBase)
+    suites += unittest.makeSuite(TestRGStar)
+    suites += unittest.makeSuite(TestRGGalaxy)
     suites += unittest.makeSuite(TestSelectGalaxySED)
     suites += unittest.makeSuite(TestSelectStarSED)
     suites += unittest.makeSuite(TestReadGalfast)
