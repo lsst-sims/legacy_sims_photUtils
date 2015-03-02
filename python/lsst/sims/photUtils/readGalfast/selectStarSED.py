@@ -15,7 +15,7 @@ class selectStarSED(rgStar):
     """
 
     def findSED(self, sedList, catMags, catRA, catDec, reddening = True, magNormAcc = 2, bandpassList = None, 
-                colors = False, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
+                colors = None, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
         This will find the closest match to an input SED. sEDDict must have 'kurucz', 'mlt', 'wdH', or 'wdHE'
@@ -68,8 +68,8 @@ class selectStarSED(rgStar):
             modelColors = self.calcBasicColors(sedList, starPhot)
         else:
             modelColors = colors
-        
-        matchColors = []
+        #Transpose so that all values for one color are in one row as needed for the matching loop below
+        modelColors = np.transpose(modelColors)
 
         if reddening == True:
             calcEBV = ebv()
@@ -83,7 +83,7 @@ class selectStarSED(rgStar):
             objMags = catMags
             
         matchColors = []
-        
+
         for filtNum in range(0, len(extCoeffs)-1):
             matchColors.append(np.transpose(objMags)[filtNum] - np.transpose(objMags)[filtNum+1])
 
@@ -95,8 +95,6 @@ class selectStarSED(rgStar):
         magNormMatches = []
 
         for catObject in matchColors:
-            if numOn % 10000 == 0:
-                print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
             distanceArray = np.zeros(len(sedList))
             for filtNum in range(0, len(starPhot.bandPassList)-1):
                 distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
@@ -106,7 +104,10 @@ class selectStarSED(rgStar):
                                        starPhot, stepSize = np.power(10, -float(magNormAcc)))
             magNormMatches.append(magNorm)
             numOn += 1
+            if numOn % 10000 == 0:
+                print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
         
-        print 'Done Matching. Matched %i catalog objects to SEDs' % (numCatMags)
+        if numCatMags > 1:        
+            print 'Done Matching. Matched %i catalog objects to SEDs' % (numCatMags)
 
         return sedMatches, magNormMatches

@@ -48,6 +48,7 @@ class selectGalaxySED(rgGalaxy):
 
         #Find the colors for all model SEDs
         modelColors = self.calcBasicColors(sedList, galPhot)
+        modelColors = np.transpose(modelColors)
 
         #Match the catalog colors to models
         numCatMags = len(catMags)

@@ -16,6 +16,7 @@ from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 __all__ = ["rgBase", "rgStar", "rgGalaxy"]
 
 class rgBase():
+
     """
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
     """
@@ -113,7 +114,6 @@ class rgBase():
             for filtNum in range(0, len(photObj.bandPassList)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
             modelColors.append(colorInfo)
-        modelColors = np.transpose(modelColors)
         
         return modelColors
         

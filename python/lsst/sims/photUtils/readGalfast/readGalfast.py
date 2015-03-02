@@ -2,7 +2,6 @@ import os
 import gzip
 import pyfits
 import eups
-import numpy as np
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
