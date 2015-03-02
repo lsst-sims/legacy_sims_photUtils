@@ -203,6 +203,14 @@ class readGalfast():
                                                                     'sdss'),
                                          bandPassRoot = 'sdss_')
         sdssPhot.setupPhiArray_dict()
+        
+        #Load Bandpasses for LSST colors to get colors from matched SEDs        
+        lsstPhot = phot()
+        lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
+        lsstPhot.loadBandPassesFromFiles(lsstFilterList)
+        lsstPhot.setupPhiArray_dict()
+        imSimBand = Bandpass()
+        imSimBand.imsimBandpass()
 
         #Calculate colors and add them to the SED objects
         kuruczColors = selectStarSED0.calcBasicColors(kuruczList, sdssPhot)
@@ -308,14 +316,6 @@ class readGalfast():
                 testSED.setSED(listDict[sedType][positionDict[sEDName[0]]].wavelen, 
                                flambda = listDict[sedType][positionDict[sEDName[0]]].flambda)
 
-                #Load Bandpasses for LSST colors to get colors from matched SEDs
-                lsstPhot = phot()
-                lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
-                lsstPhot.loadBandPassesFromFiles(lsstFilterList)
-                lsstPhot.setupPhiArray_dict()
-
-                imSimBand = Bandpass()
-                imSimBand.imsimBandpass()
                 fluxNorm = testSED.calcFluxNorm(magNorm[0], imSimBand)
                 testSED.multiplyFluxNorm(fluxNorm)
                 
@@ -340,5 +340,6 @@ class readGalfast():
                           FeH, pop, distKpc, ebv, ebvInf)
                 fOut.write(outFmt % outDat)
                 lineNum += 1
+                print lineNum, "k"
                 if lineNum % 10000 == 0:
                     print str(str(lineNum) + ' done')

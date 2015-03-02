@@ -119,6 +119,20 @@ class rgBase():
         
     def deReddenMags(self, ebvVals, catMags, extCoeffs):
         
+        """
+        This will correct for extinction effects in a set of catalog Magnitudes.
+        
+        @param [in] ebvVals is a list of ebv Values from calculateEBV in ebv.py or given by user that
+        correspond to the same set of objects as the set of magnitudes.
+        
+        @param [in] catMags is an array of the magnitudes of the catalog objects.
+        
+        @param [in] extCoeffs is a list of the coefficients which should come
+        from Schlafly and Finkbeiner (2011) for the same filters and in the same order as the catalog mags.
+        
+        @param[out] deRedMags is the array of corrected magnitudes.
+        """
+        
         deRedMags = catMags - np.outer(np.array(ebvVals), np.array(extCoeffs))
 
         return deRedMags

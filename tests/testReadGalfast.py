@@ -293,7 +293,7 @@ class TestRGGalaxy(unittest.TestCase):
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
     def testLoadBC03(self):
-
+        """Test Loader for Bruzual and Charlot Galaxies"""
         loadTestBC03 = rgGalaxy(galDir = self.testSpecDir)
         testSEDs = loadTestBC03.loadBC03()
 
@@ -357,7 +357,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
     def testMatchToRestFrame(self):
-
+        """Test that Galaxies with no effects added into catalog mags are matched correctly."""
         galPhot = phot()
         galPhot.loadBandPassesFromFiles(self.filterList, 
                                         bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
@@ -399,7 +399,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         self.assertEqual(testSEDNames, testMatchingResultsNoDefault[0])
 
     def testMatchToObserved(self):
-        
+        """Test that Galaxy SEDs with extinction or redshift are matched correctly"""
         galPhot = phot()
         galPhot.loadBandPassesFromFiles(self.filterList, 
                                         bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
@@ -551,9 +551,8 @@ class TestSelectStarSED(unittest.TestCase):
         shutil.rmtree(cls.testSpecDir)
 
     def testFindSED(self):
-
-        """Pull SEDs from each type and make sure that each SED gets matched to itself."""
-
+        """Pull SEDs from each type and make sure that each SED gets matched to itself.
+        Includes testing with extinction and passing in only colors."""
         starPhot = phot()
         starPhot.loadBandPassesFromFiles(('u','g','r','i','z'), 
                                         bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
@@ -765,7 +764,7 @@ class TestReadGalfast(unittest.TestCase):
         #Write example files and then load in and make sure example output files are created
         #First .txt
         exampleIn = open('example.txt', 'w')
-        inHeader = '# lb[2] XYZ[3] radec[2] absSDSSr{alias=M1;alias=absmag;band=SDSSr;} DM comp FeH ' +\
+        inHeader = '# lb[2] radec[2] XYZ[3] absSDSSr{alias=M1;alias=absmag;band=SDSSr;} DM comp FeH ' +\
                    'vcyl[3] pmlb[3] pmradec[3] Am AmInf SDSSugriz[5]{class=magnitude;fieldNames=0:SDSSu,' +\
                    '1:SDSSg,2:SDSSr,3:SDSSi,4:SDSSz;} SDSSugrizPhotoFlags{class=flags;} \n'
         testComment = '# Comment\n'

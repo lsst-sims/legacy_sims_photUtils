@@ -18,40 +18,47 @@ class selectStarSED(rgStar):
                 colors = None, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
-        This will find the closest match to an input SED. sEDDict must have 'kurucz', 'mlt', 'wdH', or 'wdHE'
-        depending on which types you are inputting and will determine which it is based upon its 
-        galfast component value
+        This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
+        the observed frame and can correct for extinction from within the milky way as well if needed.
+        In order to make things faster it first calculates colors for all model SEDs at redshifts between
+        the minimum and maximum redshifts of the catalog objects provided with a grid spacing in redshift
+        defined by the parameter dzAcc.
 
-        @param [in] sEDDict is a dictionary from the load(type) routines that are a part of this class
+        @param [in] sedList is the set of spectral objects from the models SEDs provided by loadBC03
+        or other custom loader routine.
+        
+        @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
+        It should be organized so that there is one object's magnitudes along each row.
 
-        @param [in] magU is the U-band magnitude from galfast output
+        @param [in] catRA is an array of the RA positions for each catalog object.
 
-        @param [in] magG is the G-band magnitude from galfast output
+        @param [in] catDec is an array of the Dec position for each catalog object.
 
-        @param [in] magR is the R-band magnitude from galfast output
-
-        @param [in] magI is the I-band magnitude from galfast output
-
-        @param [in] magZ is the Z-band magnitude form galfast output
-
-        @param [in] am is the extinction parameter for the object from galfast output
-
-        @param [in] comp is the component number from the galfast output. Used to determine the type
-        of SED to use. See galfast documentation for more info.
-
-        @param [in] reddening indicates whether there is extinction and reddening included
-        in the galfast output
+        @param [in] reddening is a boolean that determines whether to correct catalog magnitudes for 
+        dust in the milky way. This uses calculateEBV from EBV.py to find an EBV value for the object's
+        ra and dec coordinates and then uses the coefficients provided by extCoeffs which should come
+        from Schlafly and Finkbeiner (2011) for the correct filters and in the same order as provided
+        in bandpassList.
         
         @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
-        @param [in] coeffs is the set of coefficients from galfast's photometry.conf file that scale
-        the extinction in each band, usually calibrated to 1.0 in R-band        
+        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes. If left
+        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
+        default extCoeffs.
+        
+        @param [in] colors is None if you are just providing a list of SED objects to match, but is the 
+        array holding the colors of those SED models (each row should be the colors for one model in the 
+        same order as sedList) if you have already calculated the colors.
 
-        @param [out] sEDName is the name of the SED file that most closely matches the input mags
-        accounting for type of star
-        
-        @param [out] magNorm is the magnitude normalization for the given magnitudes and SED
-        
+        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) coefficients for the given filters
+        from bandpassList and need to be in the same order as bandpassList. The default given are the SDSS
+        [u,g,r,i,z] values.
+
+        @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
+        object in the catalog.
+
+        @param [out] magNormMatches are the magnitude normalizations for the given magnitudes and 
+        matched SED.
         """
         
         starPhot = phot()

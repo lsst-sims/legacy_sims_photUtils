@@ -30,6 +30,9 @@ class selectGalaxySED(rgGalaxy):
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
+        
+        @param [out] magNormMatches are the magnitude normalizations for the given magnitudes and 
+        matched SED.
         """
 
         #Set up photometry to calculate model Mags
@@ -122,6 +125,9 @@ class selectGalaxySED(rgGalaxy):
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
+        
+        @param [out] magNormMatches are the magnitude normalizations for the given magnitudes and 
+        matched SED.
         """
 
         #Set up photometry to calculate model Mags
