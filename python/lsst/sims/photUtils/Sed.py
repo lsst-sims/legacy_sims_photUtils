@@ -1138,7 +1138,8 @@ class Sed(object):
         """
         Calculate fluxes of a single sed for which fnu has been evaluated in a 
         set of bandpasses for which phiarray has been set up to have the same 
-        wavelength grid as the SED in units of ergs/cm^2/sec. 
+        wavelength grid as the SED in units of ergs/cm^2/sec. It is assumed
+        that `self.fnu` is set before calling this method.
 
 
         Parameters
