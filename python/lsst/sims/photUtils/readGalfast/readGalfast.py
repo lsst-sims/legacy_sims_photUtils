@@ -119,7 +119,7 @@ class readGalfast():
 
     def loadGalfast(self, filenameList, outFileList, sEDPath = None, kuruczPath = None, 
                     mltPath = None, wdPath = None, kuruczSubset = None, 
-                    mltSubset = None, wdSubset = None, chunkSize = 100000):
+                    mltSubset = None, wdSubset = None, magNormAcc = 1, chunkSize = 10000):
         """
         This is customized for the outputs we currently need for the purposes of consistent output
         It will read in a galfast output file and output desired values for database input into a file
@@ -147,7 +147,10 @@ class readGalfast():
 
         @param [in] wdSubset is a list which provides a subset of the wd files within the
         wd folder that one wants to use
-
+        
+        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
+        
+        @param [in] chunkSize is the size of chunks of lines to be read from the catalog at one time.
         """
 
         for filename in filenameList:
@@ -230,25 +233,24 @@ class readGalfast():
                 inFits = False
                 gzFile = False
                 num_lines = sum(1 for line in open(filename))
-                print num_lines
+                print 'Total lines = %i' % num_lines
             elif filename.endswith('.gz'):
                 galfastIn = gzip.open(filename, 'r')
                 inFits = False
                 gzFile = True
                 num_lines = sum(1 for line in gzip.open(filename))
-                print num_lines
+                print 'Total lines = %i' % num_lines
             elif filename.endswith('fits'):
                 hdulist = pyfits.open(filename)
                 galfastIn = hdulist[1].data
                 num_lines = len(galfastIn)
-                print num_lines
+                print 'Total lines = %i' % num_lines
                 inFits = True
 
             fOut = open(outFile, 'w')
             fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, magNorm, ' +\
                        'LSSTugrizy, SDSSugriz, absSDSSr, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
-            numChunks = (num_lines/chunkSize) + 1
             header_length = 0
             if inFits == False:            
                 galfastDict = self.parseGalfast(galfastIn.readline())
@@ -260,13 +262,30 @@ class readGalfast():
                         header_status = False
                     else:
                         header_length += 1
-            print header_length
+            numChunks = ((num_lines-header_length)/chunkSize) + 1
 
-            for chunk in range(0,numChunks): 
+            for chunk in range(0,numChunks):
+                if chunk == numChunks-1:
+                    lastChunkSize = (num_lines - header_length) % chunkSize
+                    chunkSize = lastChunkSize
                 oID = np.arange(chunkSize*chunk, chunkSize*(chunk+1))
                 if inFits:
                     starData = galfastIn[chunkSize*chunk:(chunkSize*chunk + chunkSize)]
-                    print starData.field('SDSSugriz')
+                    sDSS = starData.field('SDSSugriz')
+                    gall, galb = np.transpose(starData.field('lb'))
+                    ra, dec = np.transpose(starData.field('radec'))
+                    coordX, coordY, coordZ = np.transpose(starData.field('XYZ'))
+                    DM = starData.field('DM')
+                    absSDSSr = starData.field('absSDSSr')
+                    pop = starData.field('comp')
+                    FeH = starData.field('FeH')
+                    vR, vPhi, vZ = np.transpose(starData.field('vcyl'))
+                    pml, pmb, vRadlb = np.transpose(starData.field('pmlb'))
+                    pmRA, pmDec, vRad = np.transpose(starData.field('pmradec'))
+                    am = starData.field('Am')
+                    amInf = starData.field('AmInf')
+                    sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = np.transpose(starData.field('SDSSugriz'))
+                    sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
                 else:
                     if gzFile == False:
                         with open(filename) as t_in:
@@ -276,92 +295,105 @@ class readGalfast():
                         with gzip.open(filename) as t_in:
                             starData = np.loadtxt(itertools.islice(t_in,((chunkSize*chunk)+header_length),
                                                                    ((chunkSize*(chunk+1))+header_length)))
-                    print starData
-                    lineData = line.split()
-                    gall = float(lineData[galfastDict['l']])
-                    galb = float(lineData[galfastDict['b']])
-                    ra = float(lineData[galfastDict['ra']])
-                    dec = float(lineData[galfastDict['dec']])
-                    coordX = float(lineData[galfastDict['X']])
-                    coordY = float(lineData[galfastDict['Y']])
-                    coordZ = float(lineData[galfastDict['Z']])
-                    DM = float(lineData[galfastDict['DM']])
-                    absSDSSr = float(lineData[galfastDict['absSDSSr']])
-                    pop = float(lineData[galfastDict['comp']])
-                    FeH = float(lineData[galfastDict['FeH']])
-                    vR = float(lineData[galfastDict['Vr']])
-                    vPhi = float(lineData[galfastDict['Vphi']])
-                    vZ = float(lineData[galfastDict['Vz']])
-                    pml = float(lineData[galfastDict['pml']])
-                    pmb = float(lineData[galfastDict['pmb']])
-                    vRadlb = float(lineData[galfastDict['vRadlb']])
-                    pmRA = float(lineData[galfastDict['pmra']])
-                    pmDec = float(lineData[galfastDict['pmdec']])
-                    vRad = float(lineData[galfastDict['vRad']])
-                    am = float(lineData[galfastDict['Am']])
-                    amInf = float(lineData[galfastDict['AmInf']])
-                    sDSSu = float(lineData[galfastDict['SDSSu']])
-                    sDSSg = float(lineData[galfastDict['SDSSg']])
-                    sDSSr = float(lineData[galfastDict['SDSSr']])
-                    sDSSi = float(lineData[galfastDict['SDSSi']])
-                    sDSSz = float(lineData[galfastDict['SDSSz']])
-                    sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
+                    starData = np.transpose(starData)
+                    gall = starData[galfastDict['l']]
+                    galb = starData[galfastDict['b']]
+                    ra = starData[galfastDict['ra']]
+                    dec = starData[galfastDict['dec']]
+                    coordX = starData[galfastDict['X']]
+                    coordY = starData[galfastDict['Y']]
+                    coordZ = starData[galfastDict['Z']]
+                    DM = starData[galfastDict['DM']]
+                    absSDSSr = starData[galfastDict['absSDSSr']]
+                    pop = starData[galfastDict['comp']]
+                    FeH = starData[galfastDict['FeH']]
+                    vR = starData[galfastDict['Vr']]
+                    vPhi = starData[galfastDict['Vphi']]
+                    vZ = starData[galfastDict['Vz']]
+                    pml = starData[galfastDict['pml']]
+                    pmb = starData[galfastDict['pmb']]
+                    vRadlb = starData[galfastDict['vRadlb']]
+                    pmRA = starData[galfastDict['pmra']]
+                    pmDec = starData[galfastDict['pmdec']]
+                    vRad = starData[galfastDict['vRad']]
+                    am = starData[galfastDict['Am']]
+                    amInf = starData[galfastDict['AmInf']]
+                    sDSS = np.transpose(starData[galfastDict['SDSSu']:galfastDict['SDSSz']+1])
+                    sDSSPhotoFlags = starData[galfastDict['SDSSPhotoFlags']]
                     
                 #End of input, now onto processing and output
-                if inFits:
-                    sdssMags = selectStarSED0.deReddenMags(starData.field('Am'), 
-                                                           starData.field('SDSSugriz'), 
-                                                           sdssExtCoeffs)[0]
+                sDSSunred = selectStarSED0.deReddenMags(am, sDSS, sdssExtCoeffs)
 
-                mIn = np.where(((starData.field('comp') < 10) | (starData.field('comp') >= 20)) & 
-                               (starData.field('SDSSugriz')[:,2] - starData.field('SDSSugriz')[:,3] > 0.59))
-                kIn = np.where(((starData.field('comp') < 10) | (starData.field('comp') >= 20)) &
-                               (starData.field('SDSSugriz')[:,2] - starData.field('SDSSugriz')[:,3] <= 0.59))
-                hIn = np.where((starData.field('comp') >= 10) & (starData.field('comp') < 15))
-                heIn = np.where((starData.field('comp') >= 15) & (starData.field('comp') < 20))
+                mIn = np.where(((pop < 10) | (pop >= 20)) & (sDSSunred[:,2] - sDSSunred[:,3] > 0.59))
+                kIn = np.where(((pop < 10) | (pop >= 20)) & (sDSSunred[:,2] - sDSSunred[:,3] <= 0.59))
+                hIn = np.where((pop >= 10) & (pop < 15))
+                heIn = np.where((pop >= 15) & (pop < 20))
 
                 sEDNameK, magNormK = selectStarSED0.findSED(listDict['kurucz'], 
-                                                            starData.field('SDSSugriz')[kIn], 
-                                                            starData.field('radec')[kIn,0], 
-                                                            starData.field('radec')[kIn,1],
+                                                            sDSSunred[kIn], ra[kIn], dec[kIn],
                                                             reddening = False, 
-                                                            magNormAcc = -1, colors = colorDict['kurucz'])
+                                                            magNormAcc = magNormAcc, 
+                                                            colors = colorDict['kurucz'])
                 sEDNameM, magNormM = selectStarSED0.findSED(listDict['mlt'], 
-                                                            starData.field('SDSSugriz')[mIn], 
-                                                            starData.field('radec')[mIn,0], 
-                                                            starData.field('radec')[mIn,1],
+                                                            sDSSunred[mIn], ra[mIn], dec[mIn],
                                                             reddening = False, 
-                                                            magNormAcc = -1, colors = colorDict['mlt'])
-                print len(sEDNameK), sEDNameK[0:2]
-                print len(sEDNameM), sEDNameM[0:2]
-                testSED = Sed()
-                testSED.setSED(listDict[sedType][positionDict[sEDName[0]]].wavelen, 
-                               flambda = listDict[sedType][positionDict[sEDName[0]]].flambda)
-
-                fluxNorm = testSED.calcFluxNorm(magNorm[0], imSimBand)
-                testSED.multiplyFluxNorm(fluxNorm)
-                
-                lsstMagsUnred = lsstPhot.manyMagCalc_list(testSED)
+                                                            magNormAcc = magNormAcc, 
+                                                            colors = colorDict['mlt'])
+                sEDNameH, magNormH = selectStarSED0.findSED(listDict['H'], 
+                                                            sDSSunred[hIn], ra[hIn], dec[hIn],
+                                                            reddening = False, 
+                                                            magNormAcc = magNormAcc, 
+                                                            colors = colorDict['H'])
+                sEDNameHE, magNormHE = selectStarSED0.findSED(listDict['HE'], 
+                                                              sDSSunred[heIn], ra[heIn], dec[heIn],
+                                                              reddening = False, 
+                                                              magNormAcc = magNormAcc, 
+                                                              colors = colorDict['HE'])
+                chunkNames = np.empty(chunkSize, dtype = 'S32')
+                chunkTypes = np.empty(chunkSize, dtype = 'S8')
+                chunkMagNorms = np.zeros(chunkSize)
+                chunkNames[kIn] = sEDNameK
+                chunkTypes[kIn] = 'kurucz'
+                chunkMagNorms[kIn] = magNormK
+                chunkNames[mIn] = sEDNameM
+                chunkTypes[mIn] = 'mlt'
+                chunkMagNorms[mIn] = magNormM
+                chunkNames[hIn] = sEDNameH
+                chunkTypes[hIn] = 'H'
+                chunkMagNorms[hIn] = magNormH
+                chunkNames[heIn] = sEDNameHE
+                chunkTypes[heIn] = 'HE'
+                chunkMagNorms[heIn] = magNormHE
+                lsstMagsUnred = []
+                for sedName, sedType, magNorm in zip(chunkNames, chunkTypes, chunkMagNorms):
+                    testSED = Sed()
+                    testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen, 
+                                   flambda = listDict[sedType][positionDict[sedName]].flambda)
+                    fluxNorm = testSED.calcFluxNorm(magNorm, imSimBand)
+                    testSED.multiplyFluxNorm(fluxNorm)
+                    lsstMagsUnred.append(lsstPhot.manyMagCalc_list(testSED))
                 #If the extinction value is negative then it will add the reddening back in
-                lsstMags = selectStarSED0.deReddenMags((-1.0*am), lsstMagsUnred, lsstExtCoeffs)[0]
-
+                lsstMags = selectStarSED0.deReddenMags((-1.0*am), lsstMagsUnred, 
+                                                       lsstExtCoeffs)
                 distKpc = self.convDMtoKpc(DM)
                 ebv = am / 2.285 #From Schlafly and Finkbeiner for sdssr
                 ebvInf = amInf / 2.285
-                outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%s,%3.7f,' +\
-                         '%3.7f,%3.7f,%3.7f,' +\
-                         '%3.7f,%3.7f,%3.7f,' +\
-                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
-                         '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
-                         '%3.7f,%i,%3.7f,%3.7f,%3.7f\n'
-                outDat = (oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName[0], magNorm[0],
-                          lsstMags[0], lsstMags[1], lsstMags[2], 
-                          lsstMags[3], lsstMags[4], lsstMags[5],
-                          sDSSu, sDSSg, sDSSr, sDSSi, sDSSz, absSDSSr,
-                          pmRA, pmDec, vRad, pml, pmb, vRadlb, vR, vPhi, vZ,
-                          FeH, pop, distKpc, ebv, ebvInf)
-                fOut.write(outFmt % outDat)
-                lineNum += 1
-                print lineNum, "k"
-                if lineNum % 10000 == 0:
-                    print str(str(lineNum) + ' done')
+                for line in range(0, chunkSize):
+                    outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                             '%3.7f,%3.7f,%s,%3.7f,' +\
+                             '%3.7f,%3.7f,%3.7f,' +\
+                             '%3.7f,%3.7f,%3.7f,' +\
+                             '%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                             '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                             '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
+                             '%3.7f,%i,%3.7f,%3.7f,%3.7f\n'
+                    outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line], 
+                              coordY[line], coordZ[line], chunkNames[line], chunkMagNorms[line],
+                              lsstMags[line][0], lsstMags[line][1], lsstMags[line][2], 
+                              lsstMags[line][3], lsstMags[line][4], lsstMags[line][5], 
+                              sDSS[line][0], sDSS[line][1], sDSS[line][2], sDSS[line][3], 
+                              sDSS[line][4], absSDSSr[line], pmRA[line], pmDec[line], vRad[line], 
+                              pml[line], pmb[line], vRadlb[line], vR[line], vPhi[line], vZ[line],
+                              FeH[line], pop[line], distKpc[line], ebv[line], ebvInf[line])
+                    fOut.write(outFmt % outDat)
+                print 'Chunk Num Done = %i out of %i' % (chunk+1, numChunks)
