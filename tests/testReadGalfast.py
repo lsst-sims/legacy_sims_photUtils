@@ -136,24 +136,6 @@ class TestRGStar(unittest.TestCase):
             shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
                             str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
 
-    @classmethod
-    def tearDownClass(cls):
-        del cls._specMapDict
-        del cls.kDir
-        del cls.mltDir
-        del cls.wdDir
-
-        if os.path.exists(cls.kmTestName):
-            os.unlink(cls.kmTestName)
-
-        if os.path.exists(cls.mTestName):
-            os.unlink(cls.mTestName)
-
-        del cls.kmTestName
-        del cls.mTestName
-
-        shutil.rmtree(cls.testSpecDir)
-
     def testDefaults(self):
         """Make sure that if there are Nones for the init that they load the correct dirs"""
         loadTest = rgStar()
@@ -238,8 +220,9 @@ class TestRGStar(unittest.TestCase):
 
         #Add extra step because WD SEDs are separated into helium and hydrogen
         testNames = []
-        for testH, testHE in zip(testSEDsH, testSEDsHE):
+        for testH in testSEDsH:
             testNames.append(testH.name)
+        for testHE in testSEDsHE:
             testNames.append(testHE.name)
 
         #Read in a list of the SEDs in the wd test sed directory
@@ -254,8 +237,9 @@ class TestRGStar(unittest.TestCase):
         testSEDsSubsetH, testSEDsSubsetHE = selectStarSED().loadwdSEDs(subset = testSubsetList)
 
         testNamesSubset = []
-        for testH, testHE in zip(testSEDsSubsetH, testSEDsSubsetHE):
+        for testH in testSEDsSubsetH:
             testNamesSubset.append(testH.name)
+        for testHE in testSEDsSubsetHE:
             testNamesSubset.append(testHE.name)
 
         #Next make sure that correct subset loads if subset is provided
@@ -264,6 +248,24 @@ class TestRGStar(unittest.TestCase):
         #Make sure that the names get separated into correct wd type
         self.assertEqual(testSEDsSubsetH[0].name, testSubsetList[0])
         self.assertEqual(testSEDsSubsetHE[0].name, testSubsetList[1])
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._specMapDict
+        del cls.kDir
+        del cls.mltDir
+        del cls.wdDir
+
+        if os.path.exists(cls.kmTestName):
+            os.unlink(cls.kmTestName)
+
+        if os.path.exists(cls.mTestName):
+            os.unlink(cls.mTestName)
+
+        del cls.kmTestName
+        del cls.mTestName
+
+        shutil.rmtree(cls.testSpecDir)
 
 class TestRGGalaxy(unittest.TestCase):
     
@@ -532,24 +534,6 @@ class TestSelectStarSED(unittest.TestCase):
             shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
                             str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
 
-    @classmethod
-    def tearDownClass(cls):
-        del cls._specMapDict
-        del cls.kDir
-        del cls.mltDir
-        del cls.wdDir
-
-        if os.path.exists(cls.kmTestName):
-            os.unlink(cls.kmTestName)
-
-        if os.path.exists(cls.mTestName):
-            os.unlink(cls.mTestName)
-
-        del cls.kmTestName
-        del cls.mTestName
-
-        shutil.rmtree(cls.testSpecDir)
-
     def testFindSED(self):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
         Includes testing with extinction and passing in only colors."""
@@ -577,21 +561,22 @@ class TestSelectStarSED(unittest.TestCase):
         magNormStep = 1
 
         for typeList in testSEDList:
-            typeSEDNames = []
-            typeMags = []
-            typeMagNorms = []
-            for testSED in typeList:
-                getSEDMags = Sed()
-                typeSEDNames.append(testSED.name)
-                getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
-                testMagNorm = np.round(np.random.uniform(20.0,22.0),magNormStep)
-                typeMagNorms.append(testMagNorm)
-                fluxNorm = getSEDMags.calcFluxNorm(testMagNorm, imSimBand)
-                getSEDMags.multiplyFluxNorm(fluxNorm)
-                typeMags.append(starPhot.manyMagCalc_list(getSEDMags))
-            testSEDNames.append(typeSEDNames)
-            testMags.append(typeMags)
-            testMagNormList.append(typeMagNorms)
+            if len(typeList) != 0:
+                typeSEDNames = []
+                typeMags = []
+                typeMagNorms = []
+                for testSED in typeList:
+                    getSEDMags = Sed()
+                    typeSEDNames.append(testSED.name)
+                    getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
+                    testMagNorm = np.round(np.random.uniform(20.0,22.0),magNormStep)
+                    typeMagNorms.append(testMagNorm)
+                    fluxNorm = getSEDMags.calcFluxNorm(testMagNorm, imSimBand)
+                    getSEDMags.multiplyFluxNorm(fluxNorm)
+                    typeMags.append(starPhot.manyMagCalc_list(getSEDMags))
+                testSEDNames.append(typeSEDNames)
+                testMags.append(typeMags)
+                testMagNormList.append(typeMagNorms)
             
         fakeRA = np.ones(len(testSEDList[0]))
         fakeDec = np.ones(len(testSEDList[0]))
@@ -640,6 +625,24 @@ class TestSelectStarSED(unittest.TestCase):
         np.testing.assert_almost_equal(testMagNormList[0], testMatchingColorsInput[1], 
                                        decimal = magNormStep)
 
+    @classmethod
+    def tearDownClass(cls):
+        del cls._specMapDict
+        del cls.kDir
+        del cls.mltDir
+        del cls.wdDir
+
+        if os.path.exists(cls.kmTestName):
+            os.unlink(cls.kmTestName)
+
+        if os.path.exists(cls.mTestName):
+            os.unlink(cls.mTestName)
+
+        del cls.kmTestName
+        del cls.mTestName
+
+        shutil.rmtree(cls.testSpecDir)
+
 class TestReadGalfast(unittest.TestCase):
 
     @classmethod
@@ -686,8 +689,8 @@ class TestReadGalfast(unittest.TestCase):
         if os.path.exists('exampleOutput.txt'):
             os.unlink('exampleOutput.txt')
 
-        if os.path.exists('exampleOutputGzip.txt'):
-            os.unlink('exampleOutputGzip.txt')
+        if os.path.exists('exampleOutputGzip.txt.gz'):
+            os.unlink('exampleOutputGzip.txt.gz')
 
         if os.path.exists('exampleOutputFits.txt'):
             os.unlink('exampleOutputFits.txt')
