@@ -124,9 +124,11 @@ class readGalfast():
         This is customized for the outputs we currently need for the purposes of consistent output
         It will read in a galfast output file and output desired values for database input into a file
 
-        @param [in] filenameList is a list of the galfast output files that will be loaded and processed
+        @param [in] filenameList is a list of the galfast output files that will be loaded and processed.
+        Can process fits, gzipped, or txt output from galfast.
 
-        @param [in] outFileList is a list of the names of the output files that will be created
+        @param [in] outFileList is a list of the names of the output files that will be created. If gzipped
+        output is desired simply write the filenames with .gz at the end.
 
         @param [in] kuruczPath is a place to specify a different path to kurucz SED files than the
         files in the LSST sims_sed_library. If set to None it will default to the LSST library. 
@@ -247,7 +249,10 @@ class readGalfast():
                 print 'Total lines = %i' % num_lines
                 inFits = True
 
-            fOut = open(outFile, 'w')
+            if outFile.endswith('.txt'):
+                fOut = open(outFile, 'w')
+            elif outFile.endswith('.gz'):
+                fOut = gzip.open(outFile, 'w')
             fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, magNorm, ' +\
                        'LSSTugrizy, SDSSugriz, absSDSSr, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
