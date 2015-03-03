@@ -2,6 +2,8 @@ import os
 import gzip
 import pyfits
 import eups
+import itertools
+import numpy as np
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
@@ -117,7 +119,7 @@ class readGalfast():
 
     def loadGalfast(self, filenameList, outFileList, sEDPath = None, kuruczPath = None, 
                     mltPath = None, wdPath = None, kuruczSubset = None, 
-                    mltSubset = None, wdSubset = None):
+                    mltSubset = None, wdSubset = None, chunkSize = 100000):
         """
         This is customized for the outputs we currently need for the purposes of consistent output
         It will read in a galfast output file and output desired values for database input into a file
@@ -226,45 +228,55 @@ class readGalfast():
             if filename.endswith('.txt'):
                 galfastIn = open(filename, 'r')
                 inFits = False
+                gzFile = False
+                num_lines = sum(1 for line in open(filename))
+                print num_lines
             elif filename.endswith('.gz'):
                 galfastIn = gzip.open(filename, 'r')
                 inFits = False
+                gzFile = True
+                num_lines = sum(1 for line in gzip.open(filename))
+                print num_lines
             elif filename.endswith('fits'):
                 hdulist = pyfits.open(filename)
                 galfastIn = hdulist[1].data
+                num_lines = len(galfastIn)
+                print num_lines
                 inFits = True
 
             fOut = open(outFile, 'w')
             fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, magNorm, ' +\
                        'LSSTugrizy, SDSSugriz, absSDSSr, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
+            numChunks = (num_lines/chunkSize) + 1
+            header_length = 0
+            if inFits == False:            
+                galfastDict = self.parseGalfast(galfastIn.readline())
+                header_length += 1
+                header_status = True
+                while header_status == True:
+                    newLine = galfastIn.readline()
+                    if newLine[0] != '#':
+                        header_status = False
+                    else:
+                        header_length += 1
+            print header_length
 
-            lineNum = 0
-
-            for line in galfastIn:
+            for chunk in range(0,numChunks): 
+                oID = np.arange(chunkSize*chunk, chunkSize*(chunk+1))
                 if inFits:
-                    oID = int(lineNum)
-                    starData = galfastIn[lineNum]
-                    gall, galb = starData.field('lb')
-                    ra, dec = starData.field('radec')
-                    coordX, coordY, coordZ = starData.field('XYZ')
-                    DM = starData.field('DM')
-                    absSDSSr = starData.field('absSDSSr')
-                    pop = starData.field('comp')
-                    FeH = starData.field('FeH')
-                    vR, vPhi, vZ = starData.field('vcyl')
-                    pml, pmb, vRadlb = starData.field('pmlb')
-                    pmRA, pmDec, vRad = starData.field('pmradec')
-                    am = starData.field('Am')
-                    amInf = starData.field('AmInf')
-                    sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = starData.field('SDSSugriz')
-                    sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
+                    starData = galfastIn[chunkSize*chunk:(chunkSize*chunk + chunkSize)]
+                    print starData.field('SDSSugriz')
                 else:
-                    if lineNum == 0:
-                        galfastDict = self.parseGalfast(line)
-                        lineNum += 1
-                    if line[0] == '#': continue
-                    oID = int(lineNum)
+                    if gzFile == False:
+                        with open(filename) as t_in:
+                            starData = np.loadtxt(itertools.islice(t_in,((chunkSize*chunk)+header_length),
+                                                                   ((chunkSize*(chunk+1))+header_length)))
+                    else:
+                        with gzip.open(filename) as t_in:
+                            starData = np.loadtxt(itertools.islice(t_in,((chunkSize*chunk)+header_length),
+                                                                   ((chunkSize*(chunk+1))+header_length)))
+                    print starData
                     lineData = line.split()
                     gall = float(lineData[galfastDict['l']])
                     galb = float(lineData[galfastDict['b']])
@@ -296,22 +308,32 @@ class readGalfast():
                     sDSSPhotoFlags = float(lineData[galfastDict['SDSSPhotoFlags']])
                     
                 #End of input, now onto processing and output
-                sdssMags = selectStarSED0.deReddenMags(am, [sDSSu, sDSSg, sDSSr, sDSSi, sDSSz], 
-                                                       sdssExtCoeffs)[0]
+                if inFits:
+                    sdssMags = selectStarSED0.deReddenMags(starData.field('Am'), 
+                                                           starData.field('SDSSugriz'), 
+                                                           sdssExtCoeffs)[0]
 
-                if 10 <= pop < 15:
-                    sedType = 'H'
-                elif 15 <= pop < 20:
-                    sedType = 'HE'
-                else:
-                    #Use mlt is sdss r-i > 0.59
-                    if (sdssMags[2] - sdssMags[3]) > 0.59:
-                        sedType = 'mlt'
-                    else:
-                        sedType = 'kurucz'
+                mIn = np.where(((starData.field('comp') < 10) | (starData.field('comp') >= 20)) & 
+                               (starData.field('SDSSugriz')[:,2] - starData.field('SDSSugriz')[:,3] > 0.59))
+                kIn = np.where(((starData.field('comp') < 10) | (starData.field('comp') >= 20)) &
+                               (starData.field('SDSSugriz')[:,2] - starData.field('SDSSugriz')[:,3] <= 0.59))
+                hIn = np.where((starData.field('comp') >= 10) & (starData.field('comp') < 15))
+                heIn = np.where((starData.field('comp') >= 15) & (starData.field('comp') < 20))
 
-                sEDName, magNorm = selectStarSED0.findSED(listDict[sedType], [sdssMags], ra, dec,
-                                                          reddening = False, colors = colorDict[sedType])
+                sEDNameK, magNormK = selectStarSED0.findSED(listDict['kurucz'], 
+                                                            starData.field('SDSSugriz')[kIn], 
+                                                            starData.field('radec')[kIn,0], 
+                                                            starData.field('radec')[kIn,1],
+                                                            reddening = False, 
+                                                            magNormAcc = -1, colors = colorDict['kurucz'])
+                sEDNameM, magNormM = selectStarSED0.findSED(listDict['mlt'], 
+                                                            starData.field('SDSSugriz')[mIn], 
+                                                            starData.field('radec')[mIn,0], 
+                                                            starData.field('radec')[mIn,1],
+                                                            reddening = False, 
+                                                            magNormAcc = -1, colors = colorDict['mlt'])
+                print len(sEDNameK), sEDNameK[0:2]
+                print len(sEDNameM), sEDNameM[0:2]
                 testSED = Sed()
                 testSED.setSED(listDict[sedType][positionDict[sEDName[0]]].wavelen, 
                                flambda = listDict[sedType][positionDict[sEDName[0]]].flambda)
