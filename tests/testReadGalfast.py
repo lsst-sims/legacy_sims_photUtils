@@ -770,16 +770,17 @@ class TestReadGalfast(unittest.TestCase):
         testComment = '# Comment\n'
         inData = '   1.79371816  -89.02816704   11.92064832  -27.62775082       7.15       0.22   ' +\
                  '-421.87   8.126   4.366   0 -0.095    13.7  -183.4    -6.2   -20.58   -12.60    ' +\
-                 '13.02    21.34   -11.26    13.02  0.037  0.037  14.350  12.949  12.529  12.381  12.358 0'
+                 '13.02    21.34   -11.26    13.02  0.037  0.037  14.350  12.949  12.529  12.381  12.358 0\n'
         exampleIn.write(inHeader)
         exampleIn.write(testComment)
         exampleIn.write(inData)
         exampleIn.close()
 
-        #Then gzipped
+        #Then gzipped. Also testing multiple lines in catalog.
         exampleGzipIn = gzip.open('gzipExample.txt.gz', 'w')
         exampleGzipIn.write(inHeader)
         exampleGzipIn.write(testComment)
+        exampleGzipIn.write(inData)
         exampleGzipIn.write(inData)
         exampleGzipIn.close()
 
@@ -800,12 +801,12 @@ class TestReadGalfast(unittest.TestCase):
         exampleTable = pyfits.new_table(cols)
         exampleTable.writeto('exampleFits.fits')
         testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
-                           ['exampleOutput.txt', 'exampleOutputGzip.txt', 'exampleOutputFits.txt'],
+                           ['exampleOutput.txt', 'exampleOutputGzip.txt.gz', 'exampleOutputFits.txt'],
                            kuruczPath = self.testKDir,
                            mltPath = self.testMLTDir,
                            wdPath = self.testWDDir)
         self.assertTrue(os.path.isfile('exampleOutput.txt'))
-        self.assertTrue(os.path.isfile('exampleOutputGzip.txt'))
+        self.assertTrue(os.path.isfile('exampleOutputGzip.txt.gz'))
         self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
 
 def suite():

@@ -229,24 +229,21 @@ class readGalfast():
         colorDict = {'kurucz':kuruczColors, 'mlt':mltColors, 'H':hColors, 'HE':heColors}
 
         for filename, outFile in zip(filenameList, outFileList):
-
             if filename.endswith('.txt'):
                 galfastIn = open(filename, 'r')
                 inFits = False
                 gzFile = False
                 num_lines = sum(1 for line in open(filename))
-                print 'Total lines = %i' % num_lines
             elif filename.endswith('.gz'):
                 galfastIn = gzip.open(filename, 'r')
                 inFits = False
                 gzFile = True
                 num_lines = sum(1 for line in gzip.open(filename))
-                print 'Total lines = %i' % num_lines
             elif filename.endswith('fits'):
                 hdulist = pyfits.open(filename)
                 galfastIn = hdulist[1].data
                 num_lines = len(galfastIn)
-                print 'Total lines = %i' % num_lines
+                gzFile = False
                 inFits = True
 
             if outFile.endswith('.txt'):
@@ -257,6 +254,7 @@ class readGalfast():
                        'LSSTugrizy, SDSSugriz, absSDSSr, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
             header_length = 0
+            numChunks = 0
             if inFits == False:            
                 galfastDict = self.parseGalfast(galfastIn.readline())
                 header_length += 1
@@ -267,15 +265,18 @@ class readGalfast():
                         header_status = False
                     else:
                         header_length += 1
+            print 'Total objects = %i' % (num_lines - header_length)
             numChunks = ((num_lines-header_length)/chunkSize) + 1
 
             for chunk in range(0,numChunks):
                 if chunk == numChunks-1:
                     lastChunkSize = (num_lines - header_length) % chunkSize
-                    chunkSize = lastChunkSize
-                oID = np.arange(chunkSize*chunk, chunkSize*(chunk+1))
+                    readSize = lastChunkSize
+                else:
+                    readSize = chunkSize
+                oID = np.arange(readSize*chunk, readSize*(chunk+1))
                 if inFits:
-                    starData = galfastIn[chunkSize*chunk:(chunkSize*chunk + chunkSize)]
+                    starData = galfastIn[readSize*chunk:(readSize*chunk + readSize)]
                     sDSS = starData.field('SDSSugriz')
                     gall, galb = np.transpose(starData.field('lb'))
                     ra, dec = np.transpose(starData.field('radec'))
@@ -289,17 +290,16 @@ class readGalfast():
                     pmRA, pmDec, vRad = np.transpose(starData.field('pmradec'))
                     am = starData.field('Am')
                     amInf = starData.field('AmInf')
-                    sDSSu, sDSSg, sDSSr, sDSSi, sDSSz = np.transpose(starData.field('SDSSugriz'))
                     sdssPhotoFlags = starData.field('SDSSugrizPhotoFlags')
                 else:
                     if gzFile == False:
                         with open(filename) as t_in:
-                            starData = np.loadtxt(itertools.islice(t_in,((chunkSize*chunk)+header_length),
-                                                                   ((chunkSize*(chunk+1))+header_length)))
+                            starData = np.loadtxt(itertools.islice(t_in,((readSize*chunk)+header_length),
+                                                                   ((readSize*(chunk+1))+header_length)))
                     else:
                         with gzip.open(filename) as t_in:
-                            starData = np.loadtxt(itertools.islice(t_in,((chunkSize*chunk)+header_length),
-                                                                   ((chunkSize*(chunk+1))+header_length)))
+                            starData = np.loadtxt(itertools.islice(t_in,((readSize*chunk)+header_length),
+                                                                   ((readSize*(chunk+1))+header_length)))
                     starData = np.transpose(starData)
                     gall = starData[galfastDict['l']]
                     galb = starData[galfastDict['b']]
@@ -328,7 +328,9 @@ class readGalfast():
                     
                 #End of input, now onto processing and output
                 sDSSunred = selectStarSED0.deReddenMags(am, sDSS, sdssExtCoeffs)
-
+                if readSize == 1:
+                    ra = np.array([ra])
+                    dec = np.array([dec])
                 mIn = np.where(((pop < 10) | (pop >= 20)) & (sDSSunred[:,2] - sDSSunred[:,3] > 0.59))
                 kIn = np.where(((pop < 10) | (pop >= 20)) & (sDSSunred[:,2] - sDSSunred[:,3] <= 0.59))
                 hIn = np.where((pop >= 10) & (pop < 15))
@@ -354,9 +356,9 @@ class readGalfast():
                                                               reddening = False, 
                                                               magNormAcc = magNormAcc, 
                                                               colors = colorDict['HE'])
-                chunkNames = np.empty(chunkSize, dtype = 'S32')
-                chunkTypes = np.empty(chunkSize, dtype = 'S8')
-                chunkMagNorms = np.zeros(chunkSize)
+                chunkNames = np.empty(readSize, dtype = 'S32')
+                chunkTypes = np.empty(readSize, dtype = 'S8')
+                chunkMagNorms = np.zeros(readSize)
                 chunkNames[kIn] = sEDNameK
                 chunkTypes[kIn] = 'kurucz'
                 chunkMagNorms[kIn] = magNormK
@@ -383,7 +385,7 @@ class readGalfast():
                 distKpc = self.convDMtoKpc(DM)
                 ebv = am / 2.285 #From Schlafly and Finkbeiner for sdssr
                 ebvInf = amInf / 2.285
-                for line in range(0, chunkSize):
+                for line in range(0, readSize):
                     outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
                              '%3.7f,%3.7f,%s,%3.7f,' +\
                              '%3.7f,%3.7f,%3.7f,' +\
@@ -392,13 +394,25 @@ class readGalfast():
                              '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
                              '%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
                              '%3.7f,%i,%3.7f,%3.7f,%3.7f\n'
-                    outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line], 
-                              coordY[line], coordZ[line], chunkNames[line], chunkMagNorms[line],
-                              lsstMags[line][0], lsstMags[line][1], lsstMags[line][2], 
-                              lsstMags[line][3], lsstMags[line][4], lsstMags[line][5], 
-                              sDSS[line][0], sDSS[line][1], sDSS[line][2], sDSS[line][3], 
-                              sDSS[line][4], absSDSSr[line], pmRA[line], pmDec[line], vRad[line], 
-                              pml[line], pmb[line], vRadlb[line], vR[line], vPhi[line], vZ[line],
-                              FeH[line], pop[line], distKpc[line], ebv[line], ebvInf[line])
+                    if readSize == 1:
+                        if inFits == True:
+                            sDSS = sDSS[0]
+                        outDat = (oID, ra[line], dec[line], gall, galb, coordX, 
+                                  coordY, coordZ, chunkNames, chunkMagNorms,
+                                  lsstMags[line][0], lsstMags[line][1], lsstMags[line][2], 
+                                  lsstMags[line][3], lsstMags[line][4], lsstMags[line][5], 
+                                  sDSS[0], sDSS[1], sDSS[2], sDSS[3], 
+                                  sDSS[4], absSDSSr, pmRA, pmDec, vRad, 
+                                  pml, pmb, vRadlb, vR, vPhi, vZ,
+                                  FeH, pop, distKpc, ebv, ebvInf)
+                    else:
+                        outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line], 
+                                  coordY[line], coordZ[line], chunkNames[line], chunkMagNorms[line],
+                                  lsstMags[line][0], lsstMags[line][1], lsstMags[line][2], 
+                                  lsstMags[line][3], lsstMags[line][4], lsstMags[line][5], 
+                                  sDSS[line][0], sDSS[line][1], sDSS[line][2], sDSS[line][3], 
+                                  sDSS[line][4], absSDSSr[line], pmRA[line], pmDec[line], vRad[line], 
+                                  pml[line], pmb[line], vRadlb[line], vR[line], vPhi[line], vZ[line],
+                                  FeH[line], pop[line], distKpc[line], ebv[line], ebvInf[line])
                     fOut.write(outFmt % outDat)
                 print 'Chunk Num Done = %i out of %i' % (chunk+1, numChunks)
