@@ -196,8 +196,8 @@ class rgStar(rgBase):
         @param [in] subset is the list of the subset of files wanted if one doesn't want all files
         in the kurucz directory.
 
-        @param [out] kDict is a dictionary with all the necessary kurucz information to match SEDs
-
+        @param [out] sedList is the set of model SED spectra objects to be passed onto the matching
+        routines.
         """
         files = []
 
@@ -251,8 +251,8 @@ class rgStar(rgBase):
         @param [in] subset is the list of the subset of files wanted if one doesn't want all files
         in the mlt directory.
 
-        @param [out] mltDict is a dictionary with all the necessary mlt information to match SEDs
-
+        @param [out] sedList is the set of model SED spectra objects to be passed onto the matching
+        routines.
         """
 
         files = []
@@ -298,9 +298,11 @@ class rgStar(rgBase):
         @param [in] subset is the list of the subset of files wanted if one doesn't want all files
         in the kurucz directory.
 
-        @param [out] wdAllDict is a dictionary with all the necessary wd information to match SEDs.
-        Notice that there is an extra layer of the dictionary due to the separation of H and HE WD SEDs.
-
+        @param [out] sedListH is the set of model SED spectra objects for Hydrogen WDs to be passed onto
+        the matching routines.
+        
+        @param [out] sedListHE is the set of model SED spectra objects for Helium WDs to be passed onto
+        the matching routines.
         """
         files = []
 
