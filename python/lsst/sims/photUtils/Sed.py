@@ -278,7 +278,7 @@ class Sed(object):
         """
         wavelen = numpy.copy(self.wavelen)
         # Check if fnu currently set.
-        if fnu is not None:
+        if self.fnu is not None:
             # Get new memory copy of fnu.
             fnu = numpy.copy(self.fnu)
         else:
@@ -1135,6 +1135,44 @@ class Sed(object):
             i = i + 1
         return phiarray, wavelen_step
 
+
+    def manyFluxCalc(self, phiarray, wavelen_step):
+        """
+        Calculate fluxes of a single sed for which fnu has been evaluated in a 
+        set of bandpasses for which phiarray has been set up to have the same 
+        wavelength grid as the SED in units of ergs/cm^2/sec. It is assumed
+        that `self.fnu` is set before calling this method, and that phiArray
+        has the same wavelength grid as the Sed.
+
+
+        Parameters
+        ----------
+        phiarray: `np.ndarray`, mandatory
+            phiarray corresponding to the list of bandpasses in which the band
+            fluxes need to be calculated, in the same wavelength grid as the SED
+        
+        wavelen_step: `float`, mandatory
+            the uniform grid size of the SED
+
+
+        Returns
+        -------
+        `np.ndarray` with size equal to number of bandpass filters  band flux 
+        values in units of ergs/cm^2/sec
+
+        .. note: Sed.manyFluxCalc `assumes` phiArray has the same wavelenghth
+        grid as the Sed and that `sed.fnu` has been calculated for the sed,
+        perhaps using `sed.flambdaTofnu()`. This requires calling
+        `sed.setupPhiArray()` first. These assumptions are to avoid error 
+        checking within this function (for speed), but could lead to errors if
+        method is used incorrectly.
+        """
+
+        flux = numpy.empty(len(phiarray), dtype='float')
+        flux = numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step 
+        return flux
+
+
     def manyMagCalc(self, phiarray, wavelen_step):
         """
         Calculate many magnitudes for many bandpasses using a single sed.
@@ -1142,11 +1180,11 @@ class Sed(object):
         This method assumes that there will be flux within a particular bandpass
         (could return '-Inf' for a magnitude if there is none).
         Use setupPhiArray first, and note that Sed.manyMagCalc *assumes*
-        phiArray has the same wavelength grid as the Sed, and that fnu has already been calculated for Sed.
-        These assumptions are to avoid error checking within this function (for speed), but could lead
-        to errors if method is used incorrectly.
+        phiArray has the same wavelength grid as the Sed, and that fnu has
+        already been calculated for Sed.
+        These assumptions are to avoid error checking within this function (for
+        speed), but could lead to errors if method is used incorrectly.
         """
-        # Calculate phis and resample onto same wavelength grid
-        mags = numpy.empty(len(phiarray), dtype='float')
-        mags = -2.5*numpy.log10(numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step) - self.zp
+        fluxes = self.manyFluxCalc(phiarray, wavelen_step) 
+        mags = -2.5*numpy.log10(fluxes) - self.zp
         return mags
