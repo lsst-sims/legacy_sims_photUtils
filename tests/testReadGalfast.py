@@ -44,14 +44,13 @@ class TestRGBase(unittest.TestCase):
 
         testUtils = rgBase()        
         testPhot = phot()
-        testPhot.loadBandPassesFromFiles(self.filterList, 
+        testPhot.loadTotalBandpassesFromFiles(self.filterList, 
                                         bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                         bandPassRoot = 'sdss_')
         testPhot.setupPhiArray_dict()
 
         unChangedSED = Sed()
         unChangedSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
-
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
         testSED = Sed()
