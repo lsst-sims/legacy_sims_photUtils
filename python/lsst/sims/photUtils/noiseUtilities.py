@@ -20,6 +20,14 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     m5 (the magnitude at which an object is detected in this
     bandpass at 5-sigma) is set to some specified value.
 
+    The 5-sigma limiting magnitude (m5) for an observation is
+    determined by a combination of the telescope and camera parameters
+    (such as diameter of the mirrors and the readnoise) together with the
+    sky background. This method (setM5) scales a provided sky background
+    Sed so that an observation would have a target m5 value, for the
+    provided hardware parameters. Using the resulting Sed in the
+    'calcM5' method will return this target value for m5.
+
     @param [in] the desired value of m5
 
     @param [in] skysed is an instantiation of the Sed class representing
@@ -96,9 +104,41 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     """
     Calculate the AB magnitude of a 5-sigma above sky background source.
 
-    Pass into this function the bandpass, hardware only of bandpass, and sky sed objects.
-    The exposure time, nexp, readnoise, darkcurrent, gain,
-    seeing and platescale are also necessary.
+    The 5-sigma limiting magnitude (m5) for an observation is determined by
+    a combination of the telescope and camera parameters (such as diameter
+    of the mirrors and the readnoise) together with the sky background. This
+    method (calcM5) calculates the expected m5 value for an observation given
+    a sky background Sed and hardware parameters.
+
+    @param [in] skysed is an instantiation of the Sed class representing
+    sky emission
+
+    @param [in] totalBandpass is an instantiation of the Bandpass class
+    representing the total throughput of the telescope (instrumentation
+    plus atmosphere)
+
+    @param [in] hardware is an instantiation of the Bandpass class representing
+    the throughput due solely to instrumentation.
+
+    @param [in] expTime is the duration of a single exposure in seconds
+
+    @param [in] nexp is the number of exposures being combined
+
+    @param [in] readnoise
+
+    @param [in] darkcurrent
+
+    @param [in] othernoise
+
+    @param [in] seeing in arcseconds
+
+    @param [in] platescale in arcseconds per pixel
+
+    @param [in] gain in electrons per ADU
+
+    @param [in] effarea is the effective area of the primary mirror in square centimeters
+
+    @param [out] returns the value of m5 for the given bandpass and sky SED
     """
     #This comes from equation 45 of the SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
