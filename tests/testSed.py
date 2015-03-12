@@ -6,6 +6,7 @@ import eups
 import lsst.utils.tests as utilsTests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
+from lsst.sims.photUtils import setM5, calcM5
 
 class TestSedWavelenLimits(unittest.TestCase):
     def setUp(self):
@@ -144,8 +145,8 @@ class TestM5(unittest.TestCase):
                 skysed = Sed()
                 skysed.readSED_flambda(skysedName)
 
-                normalizedSkySed = totalBandpass.setM5(m, skysed, hardwareBandpass)
-                m5Result = totalBandpass.calcM5(normalizedSkySed, hardwareBandpass)
+                normalizedSkySed = setM5(m, skysed, totalBandpass, hardwareBandpass)
+                m5Result = calcM5(normalizedSkySed, totalBandpass, hardwareBandpass)
                 self.assertAlmostEqual(m/m5Result, 1.0, 6)
 
 def suite():

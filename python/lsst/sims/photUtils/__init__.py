@@ -1,5 +1,6 @@
 from .photometricDefaults import *
 from .Bandpass import * 
+from .noiseUtilities import *
 from .Sed import *
 from .Photometry import *
 from .Variability import *

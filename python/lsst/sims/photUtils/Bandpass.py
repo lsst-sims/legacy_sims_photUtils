@@ -52,7 +52,6 @@ Methods:
  multiplyThroughputs : multiply self.wavelen/sb by given wavelen/sb and return
                        new wavelen/sb arrays (gridded like self)
  calcZP_t : calculate instrumental zeropoint for this bandpass
- calcM5: calculate the m5 value for a flat SED for this bandpass
  calcEffWavelen: calculate the effective wavelength (using both Sb and Phi) for this bandpass
  writeThroughput : utility to write bandpass information to file
 

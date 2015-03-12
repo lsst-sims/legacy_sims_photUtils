@@ -13,7 +13,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase
-from lsst.sims.photUtils import PhotometricDefaults
+from lsst.sims.photUtils import PhotometricDefaults, setM5
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies
@@ -505,9 +505,9 @@ class uncertaintyUnitTest(unittest.TestCase):
             for i in range(len(self.bandpasses)):
                 skyDummy = Sed()
                 skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-                normalizedSkyDummy = self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
-                                                                   self.hardwareBandpasses[i],
-                                                                   seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                normalizedSkyDummy = setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
+                                                           self.totalBandpasses[i], self.hardwareBandpasses[i],
+                                                           seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
                 skySeds.append(normalizedSkyDummy)
 
             sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata)
@@ -541,9 +541,9 @@ class uncertaintyUnitTest(unittest.TestCase):
             for i in range(len(self.bandpasses)):
                 skyDummy = Sed()
                 skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-                normalizedSkyDummy = self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
-                                                                   self.hardwareBandpasses[i],
-                                                                   seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                normalizedSkyDummy = setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
+                                                           self.totalBandpasses[i], self.hardwareBandpasses[i],
+                                                           seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
                 skySeds.append(normalizedSkyDummy)
 
             sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
