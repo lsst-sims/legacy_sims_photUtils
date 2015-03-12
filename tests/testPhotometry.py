@@ -505,9 +505,10 @@ class uncertaintyUnitTest(unittest.TestCase):
             for i in range(len(self.bandpasses)):
                 skyDummy = Sed()
                 skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-                self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy, self.hardwareBandpasses[i],
-                                              seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
-                skySeds.append(skyDummy)
+                normalizedSkyDummy = self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
+                                                                   self.hardwareBandpasses[i],
+                                                                   seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                skySeds.append(normalizedSkyDummy)
 
             sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata)
             for i in range(len(self.bandpasses)):
@@ -540,9 +541,10 @@ class uncertaintyUnitTest(unittest.TestCase):
             for i in range(len(self.bandpasses)):
                 skyDummy = Sed()
                 skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-                self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy, self.hardwareBandpasses[i],
-                                              seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
-                skySeds.append(skyDummy)
+                normalizedSkyDummy = self.totalBandpasses[i].setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
+                                                                   self.hardwareBandpasses[i],
+                                                                   seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                skySeds.append(normalizedSkyDummy)
 
             sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
             for i in range(len(self.bandpasses)):

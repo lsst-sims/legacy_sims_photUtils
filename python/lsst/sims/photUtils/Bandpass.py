@@ -534,8 +534,8 @@ class Bandpass:
 
         @param [in] effarea is the effective area of the primary mirror in square centimeters
 
-        This method does not return anything, but it does renormalize skysed
-        so that m5 is set to the desired value
+        @param [out] returns an instantiation of the Sed class that is the skysed renormalized
+        so that m5 has the desired value
         """
 
         #This is based on the LSST SNR document (v1.2, May 2010)
@@ -544,6 +544,9 @@ class Bandpass:
         #instantiate a flat SED
         flatSed = Sed()
         flatSed.setFlatSED()
+
+        skySedOut = Sed(wavelen=numpy.copy(skysed.wavelen),
+                        flambda=numpy.copy(skysed.flambda))
 
         #normalize the SED so that it has a magnitude equal to the desired m5
         fNorm = flatSed.calcFluxNorm(m5target, self)
@@ -562,9 +565,11 @@ class Bandpass:
 
         skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
         skyCountsTarget = skyNoiseTarget*gain
-        skyCounts = skysed.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain) \
+        skyCounts = skySedOut.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain) \
                     * platescale * platescale
-        skysed.multiplyFluxNorm(skyCountsTarget/skyCounts)
+        skySedOut.multiplyFluxNorm(skyCountsTarget/skyCounts)
+
+        return skySedOut
 
     def calcM5(self, skysed, hardware, expTime=PhotometricDefaults.exptime,
                nexp=PhotometricDefaults.nexp, readnoise=PhotometricDefaults.rdnoise,

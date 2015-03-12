@@ -144,8 +144,8 @@ class TestM5(unittest.TestCase):
                 skysed = Sed()
                 skysed.readSED_flambda(skysedName)
 
-                totalBandpass.setM5(m, skysed, hardwareBandpass)
-                m5Result = totalBandpass.calcM5(skysed, hardwareBandpass)
+                normalizedSkySed = totalBandpass.setM5(m, skysed, hardwareBandpass)
+                m5Result = totalBandpass.calcM5(normalizedSkySed, hardwareBandpass)
                 self.assertAlmostEqual(m/m5Result, 1.0, 6)
 
 def suite():
