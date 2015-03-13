@@ -96,7 +96,8 @@ class rgBase():
         the SEDs.
         
         @param [in] sedList is the set of spectral objects from the models SEDs provided by loaders in
-        rgStar or rgGalaxy.
+        rgStar or rgGalaxy. NOTE: Since this uses photometryBase.manyMagCalc_list the SED objects
+        will be changed.
         
         @param [in] photObj is a PhotometryBase class instance with the Bandpasses set to those
         for the magnitudes given for the catalog object
@@ -107,14 +108,12 @@ class rgBase():
         modelColors = []
         
         for specObj in sedList:
-            fileSED = Sed()
-            fileSED.setSED(wavelen = specObj.wavelen, flambda = specObj.flambda)
-            sEDMags = photObj.manyMagCalc_list(fileSED)
+            sEDMags = photObj.manyMagCalc_list(specObj)
             colorInfo = []
             for filtNum in range(0, len(photObj.bandPassList)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
             modelColors.append(colorInfo)
-        
+
         return modelColors
         
     def deReddenMags(self, ebvVals, catMags, extCoeffs):
@@ -128,17 +127,24 @@ class rgBase():
         @param [in] catMags is an array of the magnitudes of the catalog objects.
         
         @param [in] extCoeffs is a list of the coefficients which should come
-        from Schlafly and Finkbeiner (2011) for the same filters and in the same order as the catalog mags.
+        from Schlafly and Finkbeiner (2011) (ApJ, 737, 103) for the same filters and in the same order
+        as the catalog mags.
         
-        @param[out] deRedMags is the array of corrected magnitudes.
+        @param [out] deRedMags is the array of corrected magnitudes.
         """
-        
+
         deRedMags = catMags - np.outer(np.array(ebvVals), np.array(extCoeffs))
 
         return deRedMags
 
 class rgStar(rgBase):
-    
+
+    """
+    This class provides loading routines for the star SEDs currently in sims_sed_library. 
+    To load one's own SED library, the user can subclass this and add their own loader following 
+    the format of those included here.
+    """
+
     def __init__(self, sEDDir = None, kuruczDir = None, mltDir = None, wdDir = None):
 
         """
@@ -159,7 +165,7 @@ class rgStar(rgBase):
         """
 
         if sEDDir is None:
-            self.sEDDir = os.environ['SIMS_SED_LIBRARY_DIR']
+            self.sEDDir = eups.productDir('sims_sed_library')
         else:
             self.sEDDir = sEDDir
         #Use SpecMap to pull the directory locations
@@ -189,8 +195,8 @@ class rgStar(rgBase):
 
     def loadKuruczSEDs(self, subset = None):
         """
-        By default will load all seds in kurucz directory, otherwise a subset can be loaded if a 
-        list of filenames of only seds wanted in the folder is provided. Will skip over extraneous
+        By default will load all seds in kurucz directory. The user can also define a subset of
+        what's in the directory and load only those SEDs instead. Will skip over extraneous
         files in sed folder.
 
         @param [in] subset is the list of the subset of files wanted if one doesn't want all files
@@ -244,8 +250,8 @@ class rgStar(rgBase):
     def loadmltSEDs(self, subset = None):
 
         """
-        By default will load all seds in mlt directory, otherwise a subset can be loaded if a 
-        list of filenames of only seds wanted in the folder is provided. Will skip over extraneous
+        By default will load all seds in mlt directory. The user can also define a subset of
+        what's in the directory and load only those SEDs instead. Will skip over extraneous
         files in sed folder.
 
         @param [in] subset is the list of the subset of files wanted if one doesn't want all files
@@ -291,8 +297,8 @@ class rgStar(rgBase):
     def loadwdSEDs(self, subset = None):
 
         """
-        By default will load all seds in kurucz directory, otherwise a subset can be loaded if a 
-        list of filenames of only seds wanted in the folder is provided. Will skip over extraneous
+        By default will load all seds in wd directory. The user can also define a subset of                                                                           
+        what's in the directory and load only those SEDs instead. Will skip over extraneous
         files in sed folder.
 
         @param [in] subset is the list of the subset of files wanted if one doesn't want all files
@@ -340,6 +346,12 @@ class rgStar(rgBase):
         return sedListH, sedListHE
 
 class rgGalaxy(rgBase):
+
+    """
+    This class provides loading routines for the galaxy SEDs currently in sims_sed_library. 
+    To load one's own SED library, the user can subclass this and add their own loader following 
+    the format of those included here.
+    """
 
     def __init__(self, galDir = None):
         

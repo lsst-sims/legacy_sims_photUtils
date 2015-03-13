@@ -149,9 +149,9 @@ class readGalfast():
 
         @param [in] wdSubset is a list which provides a subset of the wd files within the
         wd folder that one wants to use
-        
+
         @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
-        
+
         @param [in] chunkSize is the size of chunks of lines to be read from the catalog at one time.
         """
 
@@ -178,7 +178,7 @@ class readGalfast():
 
         #Only need one dictionary since none of the names overlap
         positionDict = {}
-        for kuruczSED, kNum in zip(kuruczList, range(0, len(kuruczList))):
+        for kNum, kuruczSED in enumerate(kuruczList):
             positionDict[kuruczSED.name] = kNum
             
         if mltSubset is None:
@@ -186,7 +186,7 @@ class readGalfast():
         else:
             mltList = selectStarSED0.loadmltSEDs(subset = mltSubset)
 
-        for mltSED, mltNum in zip(mltList, range(0, len(mltList))):
+        for mltNum, mltSED in enumerate(mltList):
             positionDict[mltSED.name] = mltNum
 
         if wdSubset is None:
@@ -194,13 +194,15 @@ class readGalfast():
         else:
             wdListH, wdListHE = selectStarSED0.loadwdSEDs(subset = wdSubset)
 
-        for hSED, hNum in zip(wdListH, range(0, len(wdListH))):
+        for hNum, hSED in enumerate(wdListH):
             positionDict[hSED.name] = hNum
 
-        for heSED, heNum in zip(wdListHE, range(0, len(wdListHE))):
+        for heNum, heSED in enumerate(wdListHE):
             positionDict[heSED.name] = heNum
 
         #For adding/subtracting extinction when calculating colors
+        #Numbers below come from Schlafly and Finkbeiner (2011) (ApJ, 737, 103)
+        #normalized by SDSS r mag value
         sdssExtCoeffs = [1.8551, 1.4455, 1.0, 0.7431, 0.5527]
         lsstExtCoeffs = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
 
@@ -331,6 +333,13 @@ class readGalfast():
                 if readSize == 1:
                     ra = np.array([ra])
                     dec = np.array([dec])
+                """
+                Info about the following population cuts:
+                From Zeljko: "This color corresponds to the temperature (roughly spectral type M0) where
+                Kurucz models become increasingly bad, and thus we switch to empirical SEDs (the problem
+                is that for M and later stars, the effective surface temperature is low enough for 
+                molecules to form, and their opacity is too complex to easily model, especially TiO)."
+                """
                 mIn = np.where(((pop < 10) | (pop >= 20)) & (sDSSunred[:,2] - sDSSunred[:,3] > 0.59))
                 kIn = np.where(((pop < 10) | (pop >= 20)) & (sDSSunred[:,2] - sDSSunred[:,3] <= 0.59))
                 hIn = np.where((pop >= 10) & (pop < 15))
@@ -383,7 +392,7 @@ class readGalfast():
                 lsstMags = selectStarSED0.deReddenMags((-1.0*am), lsstMagsUnred, 
                                                        lsstExtCoeffs)
                 distKpc = self.convDMtoKpc(DM)
-                ebv = am / 2.285 #From Schlafly and Finkbeiner for sdssr
+                ebv = am / 2.285 #From Schlafly and Finkbeiner 2011, (ApJ, 737, 103)  for sdssr
                 ebvInf = amInf / 2.285
                 for line in range(0, readSize):
                     outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\

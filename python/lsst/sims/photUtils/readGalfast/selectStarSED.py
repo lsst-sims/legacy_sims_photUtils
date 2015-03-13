@@ -11,21 +11,18 @@ __all__ = ["selectStarSED"]
 class selectStarSED(rgStar):
 
     """
-    This class provides a way to match incoming star colors to those of the approriate SED.
+    This class provides a way to match star catalog magntiudes to those of the approriate SED.
     """
 
     def findSED(self, sedList, catMags, catRA, catDec, reddening = True, magNormAcc = 2, bandpassList = None, 
                 colors = None, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
-        This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
-        the observed frame and can correct for extinction from within the milky way as well if needed.
-        In order to make things faster it first calculates colors for all model SEDs at redshifts between
-        the minimum and maximum redshifts of the catalog objects provided with a grid spacing in redshift
-        defined by the parameter dzAcc.
+        This will find the SEDs that are the closest match to the magnitudes of a star catalog.
+        It can also correct for extinction from within the milky way
 
-        @param [in] sedList is the set of spectral objects from the models SEDs provided by loadBC03
-        or other custom loader routine.
+        @param [in] sedList is the set of spectral objects from the models SEDs provided by loaders in rgStar
+        in rgUtils.py or other custom loader routine.
         
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
@@ -50,9 +47,9 @@ class selectStarSED(rgStar):
         array holding the colors of those SED models (each row should be the colors for one model in the 
         same order as sedList) if you have already calculated the colors.
 
-        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) coefficients for the given filters
-        from bandpassList and need to be in the same order as bandpassList. The default given are the SDSS
-        [u,g,r,i,z] values.
+        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) (ApJ, 737, 103)  coefficients for the 
+        given filters from bandpassList and need to be in the same order as bandpassList. The default given
+        are the SDSS [u,g,r,i,z] values.
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.

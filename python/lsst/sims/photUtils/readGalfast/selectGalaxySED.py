@@ -11,6 +11,10 @@ __all__ = ["selectGalaxySED"]
 
 class selectGalaxySED(rgGalaxy):
 
+    """
+    This class provides methods to match galaxy catalog magnitudes to an SED.
+    """
+
     def matchToRestFrame(self, sedList, catMags, bandpassList = None, magNormAcc = 2):
 
         """
@@ -81,7 +85,7 @@ class selectGalaxySED(rgGalaxy):
         return sedMatches, magNormMatches
 
     def matchToObserved(self, sedList, catRA, catDec, catRedshifts, catMags, 
-                        bandpassList = None, dzAcc = 2, magNormAcc = 2, extinction = True,
+                        bandpassList = None, dzAcc = 2, magNormAcc = 2, reddening = True,
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
@@ -113,15 +117,15 @@ class selectGalaxySED(rgGalaxy):
         
         @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
-        @param [in] extinction is a boolean that determines whether to correct catalog magnitudes for 
+        @param [in] reddening is a boolean that determines whether to correct catalog magnitudes for 
         dust in the milky way. This uses calculateEBV from EBV.py to find an EBV value for the object's
         ra and dec coordinates and then uses the coefficients provided by extCoeffs which should come
         from Schlafly and Finkbeiner (2011) for the correct filters and in the same order as provided
         in bandpassList.
 
-        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) coefficients for the given filters
-        from bandpassList and need to be in the same order as bandpassList. The default given are the SDSS
-        [u,g,r,i,z] values.
+        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) (ApJ, 737, 103) coefficients for the
+        given filters from bandpassList and need to be in the same order as bandpassList. The default given
+        are the SDSS [u,g,r,i,z] values.
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
@@ -141,7 +145,7 @@ class selectGalaxySED(rgGalaxy):
         galPhot.setupPhiArray_dict()
         
         #Calculate ebv from ra, dec coordinates if needed
-        if extinction == True:
+        if reddening == True:
             calcEBV = ebv()
             raDec = np.array((catRA,catDec))
             #If only matching one object need to reshape for calculateEbv
@@ -177,9 +181,7 @@ class selectGalaxySED(rgGalaxy):
                 fileSED = Sed()
                 fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
                 fileSED.redshiftSED(redshift)
-                sEDMags = galPhot.manyMagCalc_list(fileSED)
-                for filtNum in range(0, len(galPhot.bandPassList)-1):
-                    sedColors.append(sEDMags[filtNum] - sEDMags[filtNum+1])
+                sedColors = self.calcBasicColors([fileSED], galPhot)
                 colorSet.append(sedColors)
             colorSet = np.transpose(colorSet)
             for currentIndex in redshiftIndex[numOn:]:

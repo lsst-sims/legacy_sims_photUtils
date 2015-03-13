@@ -21,26 +21,41 @@ from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
 class TestRGBase(unittest.TestCase):
 
-    def testCalcMagNorm(self):
-        
-        testUtils = rgBase()        
+    @classmethod
+    def setUpClass(cls):
 
+        specMap = SpecMap()
+        specFileStart = 'Exp'
+        for key, val in sorted(specMap.subdir_map.iteritems()):
+            if re.match(key, specFileStart):
+                galSpecDir = str(val)
+        cls.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir + '/')
+        cls.filterList = ('u', 'g', 'r', 'i', 'z')
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.galDir
+        del cls.filterList
+
+    def testCalcMagNorm(self):
+
+        """Tests the calculation of magnitude normalization for an SED with the given magnitudes
+        in the given bandpasses."""
+
+        testUtils = rgBase()        
         testPhot = phot()
-        filterList = ('u', 'g', 'r', 'i', 'z')
-        testPhot.loadBandPassesFromFiles(filterList, 
+        testPhot.loadBandPassesFromFiles(self.filterList, 
                                         bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                         bandPassRoot = 'sdss_')
         testPhot.setupPhiArray_dict()
 
-        testWavelen = np.arange(200,1400,1.0)
-        testFlambda = np.ones(len(testWavelen))
         unChangedSED = Sed()
-        unChangedSED.setSED(testWavelen, flambda = testFlambda)
-        
+        unChangedSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
+
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
         testSED = Sed()
-        testSED.setSED(testWavelen, flambda = testFlambda)
+        testSED.setSED(unChangedSED.wavelen, flambda = unChangedSED.flambda)
         magNorm = 20.0
         redVal = 0.1
         testSED.redshiftSED(redVal)
@@ -55,19 +70,20 @@ class TestRGBase(unittest.TestCase):
 
     def testCalcBasicColors(self):
 
+        """Tests the calculation of the colors of an SED in given bandpasses."""
+
         testUtils = rgBase()        
         testSED = Sed()
         testPhot = phot()
-        filterList = ('u', 'g', 'r', 'i', 'z')
-        testPhot.loadBandPassesFromFiles(filterList, 
+        testPhot.loadBandPassesFromFiles(self.filterList, 
                                         bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                         bandPassRoot = 'sdss_')
         testPhot.setupPhiArray_dict()
 
-        testSED.setFlatSED(wavelen_min = 280.0, wavelen_max = 1170.0)
+        testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
         testMags = testPhot.manyMagCalc_list(testSED)
         testColors = []
-        for filtNum in range(0, len(filterList)-1):
+        for filtNum in range(0, len(self.filterList)-1):
             testColors.append(testMags[filtNum] - testMags[filtNum+1])
 
         testOutput = testUtils.calcBasicColors([testSED], testPhot)
@@ -213,7 +229,7 @@ class TestRGStar(unittest.TestCase):
 
     def testLoadWD(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for and
-        values for each property have been calculated."""
+        that there are separate lists for H and HE."""
         #Test Matching to WD SEDs
         loadTestWD = rgStar(wdDir = self.testWDDir)
         testSEDsH, testSEDsHE = loadTestWD.loadwdSEDs()
@@ -356,14 +372,10 @@ class TestSelectGalaxySED(unittest.TestCase):
         for galFile in galList:
             shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
 
-        cls.filterList = ('u', 'g', 'r', 'i', 'z')
-
     def testMatchToRestFrame(self):
         """Test that Galaxies with no effects added into catalog mags are matched correctly."""
         galPhot = phot()
-        galPhot.loadBandPassesFromFiles(self.filterList, 
-                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
-                                        bandPassRoot = 'sdss_')
+        galPhot.loadBandPassesFromFiles()
         galPhot.setupPhiArray_dict()
         
         imSimBand = Bandpass()
@@ -388,24 +400,17 @@ class TestSelectGalaxySED(unittest.TestCase):
             getSEDMags.multiplyFluxNorm(fluxNorm)
             testMags.append(galPhot.manyMagCalc_list(getSEDMags))
 
-        #Since default bandPassList should be SDSS ugrizy shouldn't need to specify it
-        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, magNormAcc = magNormStep)
+        #Also testing to make sure passing in non-default bandpasses works
+        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, magNormAcc = magNormStep,
+                                                            bandpassList = galPhot.bandPassList)
 
         self.assertEqual(testSEDNames, testMatchingResults[0])
         np.testing.assert_almost_equal(testMagNormList, testMatchingResults[1], decimal = magNormStep)
 
-        #Now test what happens if we pass in a bandPassList
-        testMatchingResultsNoDefault = testMatching.matchToRestFrame(testSEDList, testMags,
-                                                                     galPhot.bandPassList)
-
-        self.assertEqual(testSEDNames, testMatchingResultsNoDefault[0])
-
     def testMatchToObserved(self):
         """Test that Galaxy SEDs with extinction or redshift are matched correctly"""
         galPhot = phot()
-        galPhot.loadBandPassesFromFiles(self.filterList, 
-                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
-                                        bandPassRoot = 'sdss_')
+        galPhot.loadBandPassesFromFiles()
         galPhot.setupPhiArray_dict()
         
         imSimBand = Bandpass()
@@ -420,7 +425,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         testRedshifts = []
         testMagNormList = []
         magNormStep = 1
-        extCoeffs = np.arange(1, 1.5, 0.1)
+        extCoeffs = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
         testMags = []
         testMagsRedshift = []
         testMagsExt = []
@@ -455,33 +460,28 @@ class TestSelectGalaxySED(unittest.TestCase):
             getRedshiftMags.multiplyFluxNorm(fluxNorm)
             testMagsRedshift.append(galPhot.manyMagCalc_list(getRedshiftMags))
             
+        #Will also test in passing of non-default bandpass
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMags, extinction = False)
-        testMatchingExtVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
+                                                           testMags, reddening = False,
+                                                           bandpassList = galPhot.bandPassList)
+        testMatchingEbvVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
                                                            testMagsExt,
-                                                           extinction = True, extCoeffs = extCoeffs)
+                                                           reddening = True, extCoeffs = extCoeffs,
+                                                           bandpassList = galPhot.bandPassList)
         testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
                                                             testMagsRedshift, dzAcc = 3,
-                                                            magNormAcc = magNormStep, extinction = False)
+                                                            magNormAcc = magNormStep, reddening = False,
+                                                            bandpassList = galPhot.bandPassList)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift[0])
-        self.assertEqual(testSEDNames, testMatchingExtVals[0])
+        self.assertEqual(testSEDNames, testMatchingEbvVals[0])
         self.assertEqual(testSEDNames, testMatchingRedshift[0])
         np.testing.assert_almost_equal(testMagNormList, testMatchingRedshift[1], 
                                        decimal = magNormStep)
 
-        #Now make sure if we are pass in a bandPassList it still works
-        testNoDefaultBandpass = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20),
-                                                             testMags, bandpassList = galPhot.bandPassList,
-                                                             extinction = False)
-
-        self.assertEqual(testSEDNames, testNoDefaultBandpass[0])
-
     @classmethod
     def tearDownClass(cls):
         del cls.galDir
-        del cls.filterList
-
         shutil.rmtree(cls.testSpecDir)
 
 class TestSelectStarSED(unittest.TestCase):
