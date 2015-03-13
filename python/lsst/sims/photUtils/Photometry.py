@@ -65,6 +65,7 @@ class PhotometryBase(object):
         sedobj = Sed()
         if self.bandpassDict is not None:
             self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
+            self.nBandpasses = len(self.bandpassDict)
 
     def loadBandpassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 filedir = os.path.join(eups.productDir('throughputs'), 'baseline'),
@@ -141,7 +142,6 @@ class PhotometryBase(object):
 
         self.phiArray = None
         self.waveLenStep = None
-        self.nBandpasses = len(self.bandpassDict)
         self.setupPhiArray_dict()
 
 
@@ -183,7 +183,6 @@ class PhotometryBase(object):
             bandpassDummy.readThroughput(os.path.join(bandpassDir,"%s.dat" % (bandpassRoot + w)))
             self.bandpassDict[w] = bandpassDummy
 
-        self.nBandpasses = len(self.bandpassDict)
         self.phiArray = None
         self.waveLenStep = None
         self.setupPhiArray_dict()

@@ -14,7 +14,7 @@ class selectStarSED(rgStar):
     This class provides a way to match star catalog magntiudes to those of the approriate SED.
     """
 
-    def findSED(self, sedList, catMags, catRA, catDec, reddening = True, magNormAcc = 2, bandpassList = None, 
+    def findSED(self, sedList, catMags, catRA, catDec, reddening = True, magNormAcc = 2, bandpassDict = None, 
                 colors = None, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
@@ -35,11 +35,11 @@ class selectStarSED(rgStar):
         dust in the milky way. This uses calculateEBV from EBV.py to find an EBV value for the object's
         ra and dec coordinates and then uses the coefficients provided by extCoeffs which should come
         from Schlafly and Finkbeiner (2011) for the correct filters and in the same order as provided
-        in bandpassList.
+        in bandpassDict.
         
         @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
-        @param [in] bandpassList is a list of bandpass objects with which to calculate magnitudes. If left
+        @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes. If left
         equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
         default extCoeffs.
         
@@ -48,7 +48,7 @@ class selectStarSED(rgStar):
         same order as sedList) if you have already calculated the colors.
 
         @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) (ApJ, 737, 103)  coefficients for the 
-        given filters from bandpassList and need to be in the same order as bandpassList. The default given
+        given filters from bandpassDict and need to be in the same order as bandpassDict. The default given
         are the SDSS [u,g,r,i,z] values.
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
@@ -59,13 +59,13 @@ class selectStarSED(rgStar):
         """
         
         starPhot = phot()
-        if bandpassList is None:
-            starPhot.loadBandPassesFromFiles(['u','g','r','i','z'], 
-                                            bandPassDir = os.path.join(eups.productDir('throughputs'),
+        if bandpassDict is None:
+            starPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'], 
+                                            bandpassDir = os.path.join(eups.productDir('throughputs'),
                                                                        'sdss'),
-                                            bandPassRoot = 'sdss_')
+                                            bandpassRoot = 'sdss_')
         else:
-            starPhot.bandPassList = bandpassList
+            starPhot.bandpassDict = bandpassDict
         starPhot.setupPhiArray_dict()
         
         if colors is None:
@@ -100,7 +100,7 @@ class selectStarSED(rgStar):
 
         for catObject in matchColors:
             distanceArray = np.zeros(len(sedList))
-            for filtNum in range(0, len(starPhot.bandPassList)-1):
+            for filtNum in range(0, len(starPhot.bandpassDict)-1):
                 distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
             matchedSEDNum = np.nanargmin(distanceArray)
             sedMatches.append(sedList[matchedSEDNum].name)

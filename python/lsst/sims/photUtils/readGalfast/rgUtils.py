@@ -110,7 +110,7 @@ class rgBase():
         for specObj in sedList:
             sEDMags = photObj.manyMagCalc_list(specObj)
             colorInfo = []
-            for filtNum in range(0, len(photObj.bandPassList)-1):
+            for filtNum in range(0, len(photObj.bandpassDict)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
             modelColors.append(colorInfo)
 

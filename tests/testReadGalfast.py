@@ -45,12 +45,13 @@ class TestRGBase(unittest.TestCase):
         testUtils = rgBase()        
         testPhot = phot()
         testPhot.loadTotalBandpassesFromFiles(self.filterList, 
-                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
-                                        bandPassRoot = 'sdss_')
+                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassRoot = 'sdss_')
         testPhot.setupPhiArray_dict()
 
         unChangedSED = Sed()
         unChangedSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
+
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
         testSED = Sed()
@@ -74,9 +75,9 @@ class TestRGBase(unittest.TestCase):
         testUtils = rgBase()        
         testSED = Sed()
         testPhot = phot()
-        testPhot.loadBandPassesFromFiles(self.filterList, 
-                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
-                                        bandPassRoot = 'sdss_')
+        testPhot.loadTotalBandpassesFromFiles(self.filterList, 
+                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassRoot = 'sdss_')
         testPhot.setupPhiArray_dict()
 
         testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
@@ -296,7 +297,7 @@ class TestRGGalaxy(unittest.TestCase):
 
         #Set up Test Spectra Directory
         cls.testSpecDir = 'testGalaxySEDSpectrum/'
-
+        
         if os.path.exists(cls.testSpecDir):
             shutil.rmtree(cls.testSpecDir)
 
@@ -389,7 +390,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         magNormStep = 1
 
         for testSED in testSEDList:
-
+            
             getSEDMags = Sed()
             testSEDNames.append(testSED.name)
             getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
@@ -401,8 +402,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
         #Also testing to make sure passing in non-default bandpasses works
         testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, magNormAcc = magNormStep,
-                                                            bandpassList = galPhot.bandPassList)
-
+                                                            bandpassDict = galPhot.bandpassDict)
 
         self.assertEqual(testSEDNames, testMatchingResults[0])
         np.testing.assert_almost_equal(testMagNormList, testMatchingResults[1], decimal = magNormStep)
@@ -463,15 +463,15 @@ class TestSelectGalaxySED(unittest.TestCase):
         #Will also test in passing of non-default bandpass
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
                                                            testMags, reddening = False,
-                                                           bandpassList = galPhot.bandpassDict.values())
+                                                           bandpassDict = galPhot.bandpassDict)
         testMatchingEbvVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
                                                            testMagsExt,
                                                            reddening = True, extCoeffs = extCoeffs,
-                                                           bandpassList = galPhot.bandPassList)
+                                                           bandpassDict = galPhot.bandpassDict)
         testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
                                                             testMagsRedshift, dzAcc = 3,
                                                             magNormAcc = magNormStep, reddening = False,
-                                                            bandpassList = galPhot.bandPassList)
+                                                            bandpassDict = galPhot.bandpassDict)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift[0])
         self.assertEqual(testSEDNames, testMatchingEbvVals[0])
@@ -528,19 +528,19 @@ class TestSelectStarSED(unittest.TestCase):
             shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
         #Load in extra kurucz to test Logz Readout
         if 'km01_7000.fits_g40_7140.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'),
+            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'), 
                             str(cls.testKDir + 'km01_7000.fits_g40_7140.gz'))
         if 'kp01_7000.fits_g40_7240.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'),
-                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))
+            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
+                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
 
     def testFindSED(self):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
         Includes testing with extinction and passing in only colors."""
         starPhot = phot()
-        starPhot.loadBandPassesFromFiles(('u','g','r','i','z'), 
-                                        bandPassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
-                                        bandPassRoot = 'sdss_')
+        starPhot.loadTotalBandpassesFromFiles(('u','g','r','i','z'), 
+                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassRoot = 'sdss_')
         starPhot.setupPhiArray_dict()
         
         imSimBand = Bandpass()
@@ -581,16 +581,16 @@ class TestSelectStarSED(unittest.TestCase):
         fakeRA = np.ones(len(testSEDList[0]))
         fakeDec = np.ones(len(testSEDList[0]))
 
-        #Since default bandPassList should be SDSS ugrizy shouldn't need to specify it
+        #Since default bandpassDict should be SDSS ugrizy shouldn't need to specify it
         for typeList, names, mags, magNorms in zip(testSEDList, testSEDNames, testMags, testMagNormList):
             testMatchingResults = testMatching.findSED(typeList, mags, fakeRA, fakeDec,
                                                        magNormAcc = magNormStep, reddening = False)
             self.assertEqual(names, testMatchingResults[0])
             np.testing.assert_almost_equal(magNorms, testMatchingResults[1], decimal = magNormStep)
 
-        #Now test what happens if we pass in a bandPassList
+        #Now test what happens if we pass in a bandpassDict
         testMatchingResultsNoDefault = testMatching.findSED(testSEDList[0], testMags[0], fakeRA, fakeDec,
-                                                            bandpassList = starPhot.bandPassList,
+                                                            bandpassDict = starPhot.bandpassDict,
                                                             reddening = False)
         self.assertEqual(testSEDNames[0], testMatchingResultsNoDefault[0])
         np.testing.assert_almost_equal(testMagNormList[0], testMatchingResultsNoDefault[1], 
@@ -616,7 +616,7 @@ class TestSelectStarSED(unittest.TestCase):
         testColors = []
         for testMagSet in testMags[0]:
             testColorSet = []
-            for filtNum in range(0, len(starPhot.bandPassList)-1):
+            for filtNum in range(0, len(starPhot.bandpassDict)-1):
                 testColorSet.append(testMagSet[filtNum] - testMagSet[filtNum+1])
             testColors.append(testColorSet)
         testMatchingColorsInput = testMatching.findSED(testSEDList[0], testMags[0], testRA, testDec,
@@ -675,8 +675,8 @@ class TestReadGalfast(unittest.TestCase):
         cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
         cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20],
-                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)],
+        for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20], 
+                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 
                                           np.array(os.listdir(cls.wdDir))[np.arange(-10,11)]):
             shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
             shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))
