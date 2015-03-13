@@ -1,8 +1,12 @@
 import numpy as np
 import warnings
 import unittest
+import os
+import eups
+import lsst.utils.tests as utilsTests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
+from lsst.sims.photUtils import setM5, calcM5
 
 class TestSedWavelenLimits(unittest.TestCase):
     def setUp(self):
@@ -111,11 +115,51 @@ class TestSedName(unittest.TestCase):
         testsed.name = newname
         self.assertEqual(testsed.name, newname)
 
-if __name__ == "__main__":
-    suitelist = []
-    suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedWavelenLimits))
-    suitelist.append(unittest.TestLoader().loadTestsFromTestCase(TestSedName))
-    suite = unittest.TestSuite(suitelist)
-    #unittest.TextTestRunner(verbosity=2).run(suite)
+class TestM5(unittest.TestCase):
 
-    unittest.main()
+    def testSettingM5(self):
+        """
+        Test that the setM5 method in Bandpass actually does set m5 to the
+        desired value
+        """
+        np.random.seed(32)
+        m5Targets = 15.0 + np.random.sample(10)*7.0
+        thrDir = eups.productDir('throughputs')
+        skysedName = os.path.join(thrDir,'baseline','darksky.dat')
+        components = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                      'lens1.dat', 'lens2.dat', 'lens3.dat']
+        bandpasses = ['u','g','r','i','z','y']
+        for b in bandpasses:
+            totalBandpass = Bandpass()
+            totalBandpass.readThroughput(os.path.join(thrDir,'baseline','total_%s.dat'%b))
+
+            bplist = []
+            for c in components:
+                bplist.append(os.path.join(thrDir,'baseline',c))
+            bplist += [os.path.join(thrDir,'baseline','filter_%s.dat'%b)]
+
+            hardwareBandpass = Bandpass()
+            hardwareBandpass.readThroughputList(bplist)
+
+            for m in m5Targets:
+                skysed = Sed()
+                skysed.readSED_flambda(skysedName)
+
+                normalizedSkySed = setM5(m, skysed, totalBandpass, hardwareBandpass)
+                m5Result = calcM5(normalizedSkySed, totalBandpass, hardwareBandpass)
+                self.assertAlmostEqual(m/m5Result, 1.0, 6)
+
+def suite():
+    utilsTests.init()
+    suites = []
+    suites += unittest.makeSuite(TestSedWavelenLimits)
+    suites += unittest.makeSuite(TestSedName)
+    suites += unittest.makeSuite(TestM5)
+    return unittest.TestSuite(suites)
+
+def run(shouldExit = False):
+    utilsTests.run(suite(),shouldExit)
+
+if __name__ == "__main__":
+    run(True)
+

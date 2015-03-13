@@ -52,7 +52,6 @@ Methods:
  multiplyThroughputs : multiply self.wavelen/sb by given wavelen/sb and return
                        new wavelen/sb arrays (gridded like self)
  calcZP_t : calculate instrumental zeropoint for this bandpass
- calcM5: calculate the m5 value for a flat SED for this bandpass
  calcEffWavelen: calculate the effective wavelength (using both Sb and Phi) for this bandpass
  writeThroughput : utility to write bandpass information to file
 
@@ -61,24 +60,11 @@ import os
 import warnings
 import numpy
 import gzip
+from lsst.sims.photUtils import PhotometricDefaults
 from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation.
 
 __all__ = ["Bandpass"]
 
-# The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
-MINWAVELEN = 300
-MAXWAVELEN = 1150
-WAVELENSTEP = 0.1
-
-EXPTIME = 15                      # Default exposure time. (option for method calls).
-NEXP = 2                          # Default number of exposures. (option for methods).
-EFFAREA = numpy.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
-GAIN = 2.3                        # Default gain. (option for method call).
-RDNOISE = 5                       # Default value - readnoise electrons or adu per pixel (per exposure)
-DARKCURRENT = 0.2                 # Default value - dark current electrons or adu per pixel per second
-OTHERNOISE = 4.69                 # Default value - other noise electrons or adu per pixel per exposure
-PLATESCALE = 0.2                  # Default value - "/pixel
-SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Default seeing values (in ")
 
 class Bandpass:
     """
@@ -97,17 +83,17 @@ class Bandpass:
         """
         if wavelen_min is None:
             if wavelen is None:
-                wavelen_min = MINWAVELEN
+                wavelen_min = PhotometricDefaults.minwavelen
             else:
                 wavelen_min = wavelen.min()
         if wavelen_max is None:
             if wavelen is None:
-                wavelen_max = MAXWAVELEN
+                wavelen_max = PhotometricDefaults.maxwavelen
             else:
                 wavelen_max = wavelen.max()
         if wavelen_step is None:
             if wavelen is None:
-                wavelen_step = WAVELENSTEP
+                wavelen_step = PhotometricDefaults.wavelenstep
             else:
                 wavelen_step = numpy.diff(wavelen).min()
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
@@ -415,7 +401,9 @@ class Bandpass:
         sb_new = self.sb * sb_other
         return wavelen_new, sb_new
 
-    def calcZP_t(self, expTime=EXPTIME, effarea=EFFAREA, gain=GAIN):
+    def calcZP_t(self, expTime=PhotometricDefaults.exptime,
+                 effarea=PhotometricDefaults.effarea,
+                 gain=PhotometricDefaults.gain):
         """
         Calculate the instrumental zeropoint for a bandpass.
         """
@@ -429,7 +417,7 @@ class Bandpass:
         dlambda = self.wavelen[1] - self.wavelen[0]
         # Set up flat source of arbitrary brightness,
         #   but where the units of fnu are Jansky (for AB mag zeropoint = -8.9).
-        flatsource = Sed.Sed()
+        flatsource = Sed()
         flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
                               wavelen_step=self.wavelen_step)
         adu = flatsource.calcADU(self, expTime=expTime, effarea=effarea, gain=gain)
@@ -441,10 +429,153 @@ class Bandpass:
         zp_t = flatsource.calcMag(self)
         return zp_t
 
-    def calcM5(self, skysed, hardware, expTime=EXPTIME, nexp=NEXP, readnoise=RDNOISE,
-               darkcurrent=DARKCURRENT, othernoise=OTHERNOISE,
-               seeing=SEEING['r'], platescale=PLATESCALE,
-               gain=GAIN, effarea=EFFAREA):
+    def calcGamma(self, m5,
+                  expTime=PhotometricDefaults.exptime,
+                  nexp=PhotometricDefaults.nexp,
+                  gain=PhotometricDefaults.gain,
+                  effarea=PhotometricDefaults.effarea):
+
+        """
+        Calculate the gamma parameter used for determining photometric
+        signal to noise in equation 5 of the LSST overview paper
+        (arXive:0805.2366)
+
+        @param [in] m5 is the magnitude at which a 5-sigma detection occurs
+        in this Bandpass
+
+        @param [in] expTime is the duration of a single exposure in seconds
+
+        @param [in] nexp is the number of exposures being combined
+
+        @param [in] gain is the number of electrons per ADU
+
+        @param [in] effarea is the effective area of the primary mirror
+        in square centimeters
+
+        @param [out] gamma
+        """
+        #This is based on the LSST SNR document (v1.2, May 2010)
+        #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+        #as well as equations 4-6 of the overview paper (arXiv:0805.2366)
+
+        #instantiate a flat SED
+        flatSed = Sed()
+        flatSed.setFlatSED()
+
+        #normalize the SED so that it has a magnitude equal to the desired m5
+        fNorm = flatSed.calcFluxNorm(m5, self)
+        flatSed.multiplyFluxNorm(fNorm)
+        counts = flatSed.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
+
+        #The expression for gamma below comes from:
+        #
+        #1) Take the approximation N^2 = N0^2 + alpha S from footnote 88 in the overview paper
+        #where N is the noise in flux of a source, N0 is the noise in flux due to sky brightness
+        #and instrumentation, S is the number of counts registered from the source and alpha
+        #is some constant
+        #
+        #2) Divide by S^2 and demand that N/S = 0.2 for a source detected at m5. Solve
+        #the resulting equation for alpha in terms of N0 and S5 (the number of counts from
+        #a source at m5)
+        #
+        #3) Substitute this expression for alpha back into the equation for (N/S)^2
+        #for a general source.  Re-factor the equation so that it looks like equation
+        #5 of the overview paper (note that x = S5/S).  This should give you gamma = (N0/S5)^2
+        #
+        #4) Solve equation 41 of the SNR document for the neff * sigma_total^2 term
+        #given snr=5 and counts as calculated above.  Note that neff * sigma_total^2
+        #is N0^2 in the equation above
+        #
+        #This should give you
+
+        gamma = 0.04 - 1.0/(counts*gain)
+
+        return gamma
+
+    def setM5(self, m5target, skysed, hardware,
+              expTime=PhotometricDefaults.exptime,
+              nexp=PhotometricDefaults.nexp,
+              readnoise=PhotometricDefaults.rdnoise,
+              darkcurrent=PhotometricDefaults.darkcurrent,
+              othernoise=PhotometricDefaults.othernoise,
+              seeing=PhotometricDefaults.seeing['r'],
+              platescale=PhotometricDefaults.platescale,
+              gain=PhotometricDefaults.gain,
+              effarea=PhotometricDefaults.effarea):
+        """
+        Take an SED representing the sky and normalize it so that
+        m5 (the magnitude at which an object is detected in this
+        bandpass at 5-sigma) is set to some specified value.
+
+        @param [in] the desired value of m5
+
+        @param [in] skysed is an instantiation of the Sed class representing
+        sky emission
+
+        @param [in] hardware is an instantiation of the Bandpass class representing
+        the throughput due solely to instrumentation.
+
+        @param [in] expTime is the duration of a single exposure in seconds
+
+        @param [in] nexp is the number of exposures being combined
+
+        @param [in] readnoise
+
+        @param [in] darkcurrent
+
+        @param [in] othernoise
+
+        @param [in] seeing in arcseconds
+
+        @param [in] platescale in arcseconds per pixel
+
+        @param [in] gain in electrons per ADU
+
+        @param [in] effarea is the effective area of the primary mirror in square centimeters
+
+        @param [out] returns an instantiation of the Sed class that is the skysed renormalized
+        so that m5 has the desired value
+        """
+
+        #This is based on the LSST SNR document (v1.2, May 2010)
+        #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+
+        #instantiate a flat SED
+        flatSed = Sed()
+        flatSed.setFlatSED()
+
+        skySedOut = Sed(wavelen=numpy.copy(skysed.wavelen),
+                        flambda=numpy.copy(skysed.flambda))
+
+        #normalize the SED so that it has a magnitude equal to the desired m5
+        fNorm = flatSed.calcFluxNorm(m5target, self)
+        flatSed.multiplyFluxNorm(fNorm)
+        counts = flatSed.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
+
+        #calculate the effective number of pixels for a double-Gaussian PSF
+        neff = flatSed.calcNeff(seeing, platescale)
+
+        #calculate the square of the noise due to the instrument
+        noise_instr_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+
+        #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
+        #given snr=5 and counts as calculated above
+        nSigmaSq = (counts*counts)/25.0 - counts/gain
+
+        skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
+        skyCountsTarget = skyNoiseTarget*gain
+        skyCounts = skySedOut.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain) \
+                    * platescale * platescale
+        skySedOut.multiplyFluxNorm(skyCountsTarget/skyCounts)
+
+        return skySedOut
+
+    def calcM5(self, skysed, hardware, expTime=PhotometricDefaults.exptime,
+               nexp=PhotometricDefaults.nexp, readnoise=PhotometricDefaults.rdnoise,
+               darkcurrent=PhotometricDefaults.darkcurrent,
+               othernoise=PhotometricDefaults.othernoise,
+               seeing=PhotometricDefaults.seeing['r'], platescale=PhotometricDefaults.platescale,
+               gain=PhotometricDefaults.gain, effarea=PhotometricDefaults.effarea):
         """
         Calculate the AB magnitude of a 5-sigma above sky background source.
 
@@ -452,22 +583,27 @@ class Bandpass:
         The exposure time, nexp, readnoise, darkcurrent, gain,
         seeing and platescale are also necessary.
         """
-        # This calculation comes from equation #42 in the SNR document.
-        snr = 5.0
-        noise_instr = numpy.sqrt(nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2)
-        neff = 2.436 * (seeing/platescale)**2
-        # Calculate the sky counts. Note that the atmosphere should not be included in sky counts.
-        skycounts = skysed.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain)
-        skycounts = skycounts * platescale * platescale
-        # Calculate the sky noise.
-        skynoise  = numpy.sqrt(skycounts/gain)
-        v_n = neff* (skynoise**2 + noise_instr**2)
-        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
-        # Create a flat fnu source that has the required counts (in electrons) in this bandpass.
-        flatsource = Sed.Sed()
+        #This comes from equation 45 of the SNR document (v1.2, May 2010)
+        #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+
+        #create a flat fnu source
+        flatsource = Sed()
         flatsource.setFlatSED()
+        snr = 5.0
+        v_n, noise_instr_sq, \
+        noise_sky_sq, noise_skymeasurement_sq, \
+        skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardware, readnoise,
+                                                          darkcurrent, othernoise, seeing,
+                                                          effarea, expTime, nexp, platescale,
+                                                          gain)
+
+        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
+
+        #renormalize flatsource so that it has the required counts to be a 5-sigma detection
+        #given the specified background
         counts_flat = flatsource.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
         flatsource.multiplyFluxNorm(counts_5sigma/counts_flat)
+
         # Calculate the AB magnitude of this source.
         mag_5sigma = flatsource.calcMag(self)
         return mag_5sigma

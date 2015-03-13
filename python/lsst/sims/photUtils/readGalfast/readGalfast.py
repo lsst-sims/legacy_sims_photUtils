@@ -103,7 +103,7 @@ class readGalfast():
                 raise RuntimeError, '*** Unknown field: %s' % (title)
         return galfastDict
 
-    def convDMtoKpc(self, DM): 
+    def convDMtoKpc(self, DM):
         """
         Change from distance modulus to distance in kiloparsecs
 
@@ -117,8 +117,8 @@ class readGalfast():
         distanceKpc = distancePc / 1000.
         return distanceKpc
 
-    def loadGalfast(self, filenameList, outFileList, sEDPath = None, kuruczPath = None, 
-                    mltPath = None, wdPath = None, kuruczSubset = None, 
+    def loadGalfast(self, filenameList, outFileList, sEDPath = None, kuruczPath = None,
+                    mltPath = None, wdPath = None, kuruczSubset = None,
                     mltSubset = None, wdSubset = None, magNormAcc = 1, chunkSize = 10000):
         """
         This is customized for the outputs we currently need for the purposes of consistent output
@@ -131,11 +131,11 @@ class readGalfast():
         output is desired simply write the filenames with .gz at the end.
 
         @param [in] kuruczPath is a place to specify a different path to kurucz SED files than the
-        files in the LSST sims_sed_library. If set to None it will default to the LSST library. 
+        files in the LSST sims_sed_library. If set to None it will default to the LSST library.
         Will probably be most useful for those who want to use loadGalfast without downloading the
         entire LSST sims_sed_library which contains much more than just the star SEDs.
 
-        @param [in] mltPath is the same as kuruczPath except that it specifies a directory for the 
+        @param [in] mltPath is the same as kuruczPath except that it specifies a directory for the
         mlt SEDs
 
         @param [in] wdPath is the same as the previous two except that it specifies a path to an
@@ -159,7 +159,7 @@ class readGalfast():
             #Make sure input file exists and is readable format before doing anything else
             if os.path.isfile(filename) == False:
                 raise RuntimeError, '*** File does not exist'
-            
+
             #Process various possible galfast outputs
             if filename.endswith(('.txt', '.gz', '.fits')):
                 continue
@@ -167,8 +167,8 @@ class readGalfast():
                 raise RuntimeError, str('*** Unsupported File Format in file: ' + str(filename))
 
         #If all files exist and are in proper formats then load seds
-        
-        selectStarSED0 = selectStarSED(sEDDir = sEDPath, kuruczDir = kuruczPath, 
+
+        selectStarSED0 = selectStarSED(sEDDir = sEDPath, kuruczDir = kuruczPath,
                                        mltDir = mltPath, wdDir = wdPath)
 
         if kuruczSubset is None:
@@ -180,7 +180,7 @@ class readGalfast():
         positionDict = {}
         for kNum, kuruczSED in enumerate(kuruczList):
             positionDict[kuruczSED.name] = kNum
-            
+
         if mltSubset is None:
             mltList = selectStarSED0.loadmltSEDs()
         else:
@@ -207,16 +207,16 @@ class readGalfast():
         lsstExtCoeffs = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
 
         sdssPhot = phot()
-        sdssPhot.loadBandPassesFromFiles(['u','g','r','i','z'], 
-                                         bandPassDir = os.path.join(eups.productDir('throughputs'),
+        sdssPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+                                         bandpassDir = os.path.join(eups.productDir('throughputs'),
                                                                     'sdss'),
-                                         bandPassRoot = 'sdss_')
+                                         bandpassRoot = 'sdss_')
         sdssPhot.setupPhiArray_dict()
-        
-        #Load Bandpasses for LSST colors to get colors from matched SEDs        
+
+        #Load Bandpasses for LSST colors to get colors from matched SEDs
         lsstPhot = phot()
         lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
-        lsstPhot.loadBandPassesFromFiles(lsstFilterList)
+        lsstPhot.loadTotalBandpassesFromFiles(lsstFilterList)
         lsstPhot.setupPhiArray_dict()
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
@@ -257,7 +257,7 @@ class readGalfast():
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
             header_length = 0
             numChunks = 0
-            if inFits == False:            
+            if inFits == False:
                 galfastDict = self.parseGalfast(galfastIn.readline())
                 header_length += 1
                 header_status = True
@@ -327,7 +327,7 @@ class readGalfast():
                     amInf = starData[galfastDict['AmInf']]
                     sDSS = np.transpose(starData[galfastDict['SDSSu']:galfastDict['SDSSz']+1])
                     sDSSPhotoFlags = starData[galfastDict['SDSSPhotoFlags']]
-                    
+
                 #End of input, now onto processing and output
                 sDSSunred = selectStarSED0.deReddenMags(am, sDSS, sdssExtCoeffs)
                 if readSize == 1:
@@ -337,7 +337,7 @@ class readGalfast():
                 Info about the following population cuts:
                 From Zeljko: "This color corresponds to the temperature (roughly spectral type M0) where
                 Kurucz models become increasingly bad, and thus we switch to empirical SEDs (the problem
-                is that for M and later stars, the effective surface temperature is low enough for 
+                is that for M and later stars, the effective surface temperature is low enough for
                 molecules to form, and their opacity is too complex to easily model, especially TiO)."
                 """
                 mIn = np.where(((pop < 10) | (pop >= 20)) & (sDSSunred[:,2] - sDSSunred[:,3] > 0.59))
@@ -345,25 +345,25 @@ class readGalfast():
                 hIn = np.where((pop >= 10) & (pop < 15))
                 heIn = np.where((pop >= 15) & (pop < 20))
 
-                sEDNameK, magNormK = selectStarSED0.findSED(listDict['kurucz'], 
+                sEDNameK, magNormK = selectStarSED0.findSED(listDict['kurucz'],
                                                             sDSSunred[kIn], ra[kIn], dec[kIn],
-                                                            reddening = False, 
-                                                            magNormAcc = magNormAcc, 
+                                                            reddening = False,
+                                                            magNormAcc = magNormAcc,
                                                             colors = colorDict['kurucz'])
-                sEDNameM, magNormM = selectStarSED0.findSED(listDict['mlt'], 
+                sEDNameM, magNormM = selectStarSED0.findSED(listDict['mlt'],
                                                             sDSSunred[mIn], ra[mIn], dec[mIn],
-                                                            reddening = False, 
-                                                            magNormAcc = magNormAcc, 
+                                                            reddening = False,
+                                                            magNormAcc = magNormAcc,
                                                             colors = colorDict['mlt'])
-                sEDNameH, magNormH = selectStarSED0.findSED(listDict['H'], 
+                sEDNameH, magNormH = selectStarSED0.findSED(listDict['H'],
                                                             sDSSunred[hIn], ra[hIn], dec[hIn],
-                                                            reddening = False, 
-                                                            magNormAcc = magNormAcc, 
+                                                            reddening = False,
+                                                            magNormAcc = magNormAcc,
                                                             colors = colorDict['H'])
-                sEDNameHE, magNormHE = selectStarSED0.findSED(listDict['HE'], 
+                sEDNameHE, magNormHE = selectStarSED0.findSED(listDict['HE'],
                                                               sDSSunred[heIn], ra[heIn], dec[heIn],
-                                                              reddening = False, 
-                                                              magNormAcc = magNormAcc, 
+                                                              reddening = False,
+                                                              magNormAcc = magNormAcc,
                                                               colors = colorDict['HE'])
                 chunkNames = np.empty(readSize, dtype = 'S32')
                 chunkTypes = np.empty(readSize, dtype = 'S8')
@@ -383,13 +383,13 @@ class readGalfast():
                 lsstMagsUnred = []
                 for sedName, sedType, magNorm in zip(chunkNames, chunkTypes, chunkMagNorms):
                     testSED = Sed()
-                    testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen, 
+                    testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen,
                                    flambda = listDict[sedType][positionDict[sedName]].flambda)
                     fluxNorm = testSED.calcFluxNorm(magNorm, imSimBand)
                     testSED.multiplyFluxNorm(fluxNorm)
                     lsstMagsUnred.append(lsstPhot.manyMagCalc_list(testSED))
                 #If the extinction value is negative then it will add the reddening back in
-                lsstMags = selectStarSED0.deReddenMags((-1.0*am), lsstMagsUnred, 
+                lsstMags = selectStarSED0.deReddenMags((-1.0*am), lsstMagsUnred,
                                                        lsstExtCoeffs)
                 distKpc = self.convDMtoKpc(DM)
                 ebv = am / 2.285 #From Schlafly and Finkbeiner 2011, (ApJ, 737, 103)  for sdssr
@@ -406,21 +406,21 @@ class readGalfast():
                     if readSize == 1:
                         if inFits == True:
                             sDSS = sDSS[0]
-                        outDat = (oID, ra[line], dec[line], gall, galb, coordX, 
+                        outDat = (oID, ra[line], dec[line], gall, galb, coordX,
                                   coordY, coordZ, chunkNames, chunkMagNorms,
-                                  lsstMags[line][0], lsstMags[line][1], lsstMags[line][2], 
-                                  lsstMags[line][3], lsstMags[line][4], lsstMags[line][5], 
-                                  sDSS[0], sDSS[1], sDSS[2], sDSS[3], 
-                                  sDSS[4], absSDSSr, pmRA, pmDec, vRad, 
+                                  lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
+                                  lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],
+                                  sDSS[0], sDSS[1], sDSS[2], sDSS[3],
+                                  sDSS[4], absSDSSr, pmRA, pmDec, vRad,
                                   pml, pmb, vRadlb, vR, vPhi, vZ,
                                   FeH, pop, distKpc, ebv, ebvInf)
                     else:
-                        outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line], 
+                        outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line],
                                   coordY[line], coordZ[line], chunkNames[line], chunkMagNorms[line],
-                                  lsstMags[line][0], lsstMags[line][1], lsstMags[line][2], 
-                                  lsstMags[line][3], lsstMags[line][4], lsstMags[line][5], 
-                                  sDSS[line][0], sDSS[line][1], sDSS[line][2], sDSS[line][3], 
-                                  sDSS[line][4], absSDSSr[line], pmRA[line], pmDec[line], vRad[line], 
+                                  lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
+                                  lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],
+                                  sDSS[line][0], sDSS[line][1], sDSS[line][2], sDSS[line][3],
+                                  sDSS[line][4], absSDSSr[line], pmRA[line], pmDec[line], vRad[line],
                                   pml[line], pmb[line], vRadlb[line], vR[line], vPhi[line], vZ[line],
                                   FeH[line], pop[line], distKpc[line], ebv[line], ebvInf[line])
                     fOut.write(outFmt % outDat)

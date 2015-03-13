@@ -12,8 +12,9 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 import os
 import numpy
-from lsst.sims.photUtils import Sed
-from lsst.sims.photUtils import Bandpass
+import eups
+from collections import OrderedDict
+from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -25,62 +26,162 @@ class PhotometryBase(object):
     It can read in SEDs and bandpasses, apply extinction and redshift, and, given
     an SED object it can calculate magnitudes.
 
-    In order to avoid duplication of work, the bandPasses, wavelength array, and phi array
-    are stored as instance variables once they are read in by self.loadBandPassesFromFiles()
+    In order to avoid duplication of work, the bandpasses, wavelength array, and phi array
+    are stored as instance variables once they are read in by self.loadTotalBandpassesFromFiles()
 
-    To initiailize a different set of bandPasses, call self.loadBandPassesFromFiles() with a different
+    To initiailize a different set of bandpasses, call self.loadBandPassesFromFiles() with a different
     set of arguments.
 
     Once self.loadBandPassesFromFiles() as been called, self.loadSeds() can be used to return an array
     of SED objects.  These objects can be passed to self.manyMagCalc_list() which will calculate
-    the magnitudes of the the SEDs, integrated over the loaded bandPasses, and return them as a
-    dict keeyed to the array of bandpass keys stored in self.bandPassKey
+    the magnitudes of the the SEDs, integrated over the loaded bandpasses, and return them as a
+    dict keeyed to the array of bandpass keys stored in self.bandpassKey
     """
 
-    bandPassList = None #bandpasses loaded in this particular catalog
+    bandpassDict = None #total (hardware plus atmosphere) bandpasses loaded in this particular catalog;
+                        #will be an OrderedDict
+    hardwareBandpassDict = None #bandpasses associated with just the telescope hardware
+    skyBandpass = None #bandpass of the atmosphere
+    nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
+
+    gammaDict = None #OrderedDict of gamma parameter (see equation 5 of arXive:0805.2366)
+                     #associated with each bandpass
+
+    sig2sys = None #square of systematic noise associated with this catalog
+
+    skySED = None #the emission spectrum of the atmosphere
 
     def setupPhiArray_dict(self):
         """
         Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
-        self.bandPasses
+        self.bandpasses
 
         The results from this calculation will be stored in the instance variables
         self.phiArray and self.waveLenStep for future use by self.manyMagCalc_list()
         """
 
         sedobj = Sed()
-        self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandPassList)
+        if self.bandpassDict is not None:
+            self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
+            self.nBandpasses = len(self.bandpassDict)
 
-    def loadBandPassesFromFiles(self,bandPassNames=['u', 'g', 'r', 'i', 'z', 'y'],
-                                bandPassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
-                                bandPassRoot = 'total_'):
+    def loadBandpassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+                                filedir = os.path.join(eups.productDir('throughputs'), 'baseline'),
+                                bandpassRoot = 'filter_',
+                                componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                                                 'lens1.dat', 'lens2.dat', 'lens3.dat'],
+                                skyBandpass='atmos.dat', skySED='darksky.dat'):
         """
-        This will take the list of band passes named by bandPassNames and use them to set up
-        self.bandPassList (which is being cached so that
+        Load bandpass information from files.  This method will separate the bandpasses
+        into contributions due to instrumentations and contributions due to the atmosphere.
+        It will also load an SED associated with sky emission.
+
+        @param [in] bandpassNames is a list of strings labeling the bandpasses
+        (e.g. ['u', 'g', 'r', 'i', 'z', 'y'])
+
+        @param [in] filedir is a string indicating the name of the directory containing the
+        bandpass files
+
+        @param [in] bandpassRoot is the root of the names of the files associated with the
+        bandpasses.  This method assumes that bandpasses are stored in
+        filedir/bandpassRoot_bandpassNames[i].dat
+
+        @param [in] componentList lists the files associated with bandpasses representing
+        hardware components shared by all filters
+        (defaults to ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat', 'lens1.dat',
+                      'lense2.dat', 'lenst3.dat']
+        for LSST).  These files are also expected to be stored in filedir
+
+        @param [in] skyBandpass is the name of the file representing the
+        throughput of the atmosphere (also assumed to be in filedir)
+
+        @param [in] skySED is the name of the file representing the emission
+        spectrum of the atmosphere (also assumed to be in filedir)
+
+        This method loads these files and stores:
+        total bandpasses in self.bandpassDict
+        hardware bandpasses in self.hardwareBandpassDict
+        throughput of the atmosphere in self.skyBandpass
+        emission spectrum of the atmosphere in self.skySED
+
+        This method will also setup the variables
+        self.phiArray
+        self.waveLenStep
+        for purposes of photometric calculations
+        """
+
+        #This method isn't really used now.
+        #It exists in anticipation of a time when we will will load
+        #a skySED and normalize it based on the sky brightness, rather
+        #than m5.
+
+        self.skySED = Sed()
+        self.skySED.readSED_flambda(os.path.join(filedir, skySED))
+
+        self.skyBandpass = Bandpass()
+        self.skyBandpass.readThroughput(os.path.join(filedir, skyBandpass))
+
+        commonComponents = []
+        for cc in componentList:
+            commonComponents.append(os.path.join(filedir,cc))
+
+        self.bandpassDict = OrderedDict()
+        self.hardwareBandpassDict = OrderedDict()
+        self.gammaDict = None
+        for w in bandpassNames:
+            components = commonComponents + [os.path.join(filedir,"%s.dat" % (bandpassRoot +w))]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            self.hardwareBandpassDict[w] = bandpassDummy
+            components += [os.path.join(filedir, skyBandpass)]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            self.bandpassDict[w] = bandpassDummy
+
+        self.phiArray = None
+        self.waveLenStep = None
+        self.setupPhiArray_dict()
+
+
+    def loadTotalBandpassesFromFiles(self,bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+                                bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
+                                bandpassRoot = 'total_'):
+        """
+        This will take the list of band passes named by bandpassNames and use them to set up
+        self.bandpassDict (which is being cached so that
         it does not have to be loaded again unless we change which bandpasses we want)
 
-        @param [in] bandPassNames is a list of names identifying each filter.
+        The bandpasses loaded this way are total bandpasses: they account for instrumental
+        and atmospheric transmission.
+
+        @param [in] bandpassNames is a list of names identifying each filter.
         Defaults to ['u', 'g', 'r', 'i', 'z', 'y']
 
-        @param [in] bandPassDir is the name of the directory where the bandpass files are stored
+        @param [in] bandpassDir is the name of the directory where the bandpass files are stored
 
-        @param [in] bandPassRoot contains the first part of the bandpass file name, i.e., it is assumed
-        that the bandPasses are stored in files of the type
+        @param [in] bandpassRoot contains the first part of the bandpass file name, i.e., it is assumed
+        that the bandpasses are stored in files of the type
 
-        bandPassDir/bandPassRoot_bandPassNames[i].dat
+        bandpassDir/bandpassRoot_bandpassNames[i].dat
 
         if we want to load bandpasses for a telescope other than LSST, we would do so
-        by altering bandPassDir and bandPassRoot
+        by altering bandpassDir and bandpassRoot
+
+        This method sets up the variables
+        self.phiArray
+        self.waveLenStep
+        for purposes of photometric calculations
         """
 
-        self.bandPassList = []
+        self.bandpassDict = OrderedDict()
+        self.gammaDict = None
 
-        for w in bandPassNames:
-            bandPassDummy = Bandpass()
-            bandPassDummy.readThroughput(os.path.join(bandPassDir,"%s.dat" % (bandPassRoot + w)))
-            self.bandPassList.append(bandPassDummy)
+        for w in bandpassNames:
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughput(os.path.join(bandpassDir,"%s.dat" % (bandpassRoot + w)))
+            self.bandpassDict[w] = bandpassDummy
 
         self.phiArray = None
         self.waveLenStep = None
@@ -205,25 +306,25 @@ class PhotometryBase(object):
                     #magnitude).
                     sedList[i].redshiftSED(redshift[i], dimming=False)
                     sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
-                    sedList[i].resampleSED(wavelen_match=self.bandPassList[0].wavelen)
+                    sedList[i].resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
 
     def manyMagCalc_list(self, sedobj):
         """
         Return a list of magnitudes for a single Sed object.
 
-        Bandpass information is taken from the instance variables self.bandPassList,
+        Bandpass information is taken from the instance variables self.bandpassDict,
         self.phiArray, and self.waveLenStep
 
         @param [in] sedobj is an Sed object
 
-        @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandPassList
+        @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
         """
         # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
         # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
 
         magList = []
         if sedobj.wavelen is not None:
-            sedobj.resampleSED(wavelen_match=self.bandPassList[0].wavelen)
+            sedobj.resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
 
             #for some reason, moving this call to flambdaTofnu()
             #to a point earlier in the
@@ -237,94 +338,101 @@ class PhotometryBase(object):
             sedobj.flambdaTofnu()
 
             magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
-            i = 0
-            for f in self.bandPassList:
+
+            for i in range(self.nBandpasses):
                 magList.append(magArray[i])
-                i = i + 1
         else:
-            for f in self.bandPassList:
+            for i in range(self.nBandpasses):
                 magList.append(None)
 
         return magList
 
-    def calculatePhotometricUncertaintyFromColumn(self, nameTag, columnNames):
+    def calculatePhotometricUncertainty(self, magnitudes, obs_metadata=None, sig2sys=None):
         """
-        This method reads in a dict of column names and passes out
-        the associated photometric uncertainties.  The output will be
-        a dict of lists.
+        Calculate photometric uncertainty using the model from equation (5) of arXiv:0805.2366
 
-        @param [in] nameTag is the name of the column used to identify each object
+        @param [in] magnitudes is a list of magnitudes associated with the bandpasses stored in
+        self.bandpassDict.  The magnitudes must be in the same order as the bandpasses
 
-        @param [in] columnNames is a dict associating filter names with column names,
-        e.g. columnName['u'] = 'lsst_u' if the u magnitude is stored in the column
-        'lsst_u'
+        @param [in] obs_metadata is the metadata of this observation (mostly desired because
+        it will contain information about m5, the magnitude at which objects are detected
+        at the 5-sigma limit in each bandpass)
 
-        @param [out] outputDict is a dict of lists such that outputDict['u'] is a list
-        of the u band photometric uncertainties for all of the objects queried
+        @param [in] sig2sys the square of the systematic noise associated with flux
 
+        @param [out] a list of magnitude uncertainties associated with the list of input magnitudes
         """
 
-        inputDict={}
+        if obs_metadata is None:
+            raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
 
-        idNames = self.column_by_name(nameTag)
+        if len(magnitudes) != self.nBandpasses:
+            raise RuntimeError("Passed %d magnitudes to " %len(magnitudes) + \
+                                " PhotometryBase.calculatePhotometricUncertainty; " + \
+                                "needed %d " % self.nBandpasses)
 
-        magnitudes = {}
+        if self.gammaDict is None or len(self.gammaDict) != self.nBandpasses:
+            #If self.gammaDict has not been set up yet, set it up, storing the values
+            #of the gamma parameter from equation(5) of arXiv:0805.2366 in an
+            #OrderedDict
 
-        for filterName in columnNames:
-            magnitudes[filterName] = self.column_by_name(columnNames[filterName])
+            self.gammaDict = OrderedDict()
+            for i in range(self.nBandpasses):
+                b = self.bandpassDict.keys()[i]
+                self.gammaDict[b] = self.bandpassDict[b].calcGamma(obs_metadata.m5(b),
+                                                                   expTime=PhotometricDefaults.exptime,
+                                                                   nexp=PhotometricDefaults.nexp,
+                                                                   gain=PhotometricDefaults.gain,
+                                                                   effarea=PhotometricDefaults.effarea)
 
-        outputDict = self.calculatePhotometricUncertainty(magnitudes)
+        sigma = numpy.zeros(self.nBandpasses, numpy.float64)
 
-        return outputDict
+        for i in range(self.nBandpasses):
+            gg = self.gammaDict.values()[i]
+            xx = numpy.power(10.0,0.4*(magnitudes[i] - obs_metadata.m5(self.bandpassDict.keys()[i])))
+            sigmaSq = (0.04-gg)*xx+gg*xx*xx
+            if sig2sys is None:
+                noiseOverSignal = numpy.sqrt(sigmaSq)
+            else:
+                noiseOverSignal = numpy.sqrt(sigmaSq + sig2sys)
 
-    def calculatePhotometricUncertainty(self, magnitudes):
+            #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
+            sigma[i] = 2.5*numpy.log10(1.0+noiseOverSignal)
+
+        return sigma
+
+    def calculatePhotometricUncertaintyFromColumnNames(self, magnitudeColumnNames):
         """
-        This method is based on equations 3.1, 3.2 and Table 3.2
-        of the LSST Science Book (version 2.0)
+        Calculate photometric uncertainties associated with InstanceCatalog columns containing magnitudes.
 
-        @param [in] magnitudes will be a dict of lists such that
-        magnitudes['A'] will be a list of all the magnitudes in filter A
+        @param [in] magnitudeColumnNames is a list of the names of InstanceCatalog columns containing
+        magnitudes.  Note these magnitude column names must be in the same order as the bandpasses in
+        self.bandpassDict.
 
-        @param [out] sigOut is a dict of lists such that sigOut['A'] is
-        a list of the photometric uncertainties in filter A
+        @param [out] an ndarray containing photometric uncertainties associated with those magnitudes,
+        suitable for inclusing in an instance catalog (output[i][j] will be the ith magnitude uncertainty
+        of object j).
         """
-        sigma2Sys = 0.003*0.003 #also taken from the Science Book
-                         #see the paragraph between equations 3.1 and 3.2
 
-        gamma = {}
+        magnitudes = []
+        for cc in magnitudeColumnNames:
+            magnitudes.append(self.column_by_name(cc));
 
-        gamma['u'] = 0.037
-        gamma['g'] = 0.038
-        gamma['r'] = 0.039
-        gamma['i'] = 0.039
-        gamma['z'] = 0.040
-        gamma['y'] = 0.040
+        rows = len(magnitudes[0])
+        cols = len(magnitudeColumnNames)
 
-        sigOut={}
+        output = numpy.zeros((cols, rows), numpy.float64)
+        for i in range(rows):
+            magDummy = []
 
-        for filterName in magnitudes:
+            for j in range(cols):
+                magDummy.append(magnitudes[j][i])
+            sigDummy = self.calculatePhotometricUncertainty(magDummy, obs_metadata=self.obs_metadata, sig2sys=self.sig2sys)
 
-            subList = []
+            for j in range(cols):
+                output[j][i] = sigDummy[j]
 
-            for i in range(len(magnitudes[filterName])):
-                mm = magnitudes[filterName][i]
-
-                if mm is not None:
-
-                    xx=10**(0.4*(mm - self.obs_metadata.m5(filterName)))
-                    ss = (0.04 - gamma[filterName])*xx + \
-                         gamma[filterName]*xx*xx
-
-                    sigmaSquared = ss + sigma2Sys
-
-                    subList.append(numpy.sqrt(sigmaSquared))
-
-                else:
-                    subList.append(None)
-
-            sigOut[filterName] = subList
-
-        return sigOut
+        return output
 
 class PhotometryGalaxies(PhotometryBase):
     """
@@ -386,7 +494,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         else:
             subList=[]
-            for b in self.bandPassList:
+            for i in range(self.nBandpasses):
                 subList.append(None)
             for i in range(len(objectNames)):
                 componentMags[objectNames[i]]=subList
@@ -430,14 +538,14 @@ class PhotometryGalaxies(PhotometryBase):
                              agnNames=None, agnMagNorm=None,
                              redshift=None, cosmologicalDistanceModulus=None, specFileMap=None):
         """
-        Take the array of bandpasses in self.bandPassList and the array of galaxy
+        Take the array of bandpasses in self.bandpassDict and the array of galaxy
         names idNames ane return a dict of dicts of lists of magnitudes
 
         the first level key is galid (the name of the galaxy)
 
         the second level key is "total", "bulge", "disk", or "agn"
 
-        this yields a list of magnitudes corresponding to the bandPasses in self.bandPassList
+        this yields a list of magnitudes corresponding to the bandpasses in self.bandpassDict
 
         We need to index the galaxies by some unique identifier, such as galid
         because it is possible for galaxies to have the same sed filenames but
@@ -477,7 +585,7 @@ class PhotometryGalaxies(PhotometryBase):
         If not provided, a default will be instantiated.
 
         @param [out] masterDict is a dict of magnitudes such that
-        masterDict['AAA']['BBB'][i] is the magnitude in the ith bandPass of component BBB of galaxy AAA
+        masterDict['AAA']['BBB'][i] is the magnitude in the ith bandpass of component BBB of galaxy AAA
 
 
         """
@@ -556,12 +664,10 @@ class PhotometryGalaxies(PhotometryBase):
 
         for i in range(len(idNames)):
             total_mags=[]
-            j=0
-            for ff in self.bandPassList:
+
+            for j in range(self.nBandpasses):
                 total_mags.append(self.sum_magnitudes(disk = diskMags[idNames[i]][j],
                                 bulge = bulgeMags[idNames[i]][j], agn = agnMags[idNames[i]][j]))
-
-                j += 1
 
             subDict={}
             subDict["total"] = total_mags
@@ -577,7 +683,7 @@ class PhotometryGalaxies(PhotometryBase):
 
     def meta_magnitudes_getter(self, idNames):
         """
-        This method will return the magnitudes for galaxies in the bandpasses stored in self.bandPassList
+        This method will return the magnitudes for galaxies in the bandpasses stored in self.bandpassDict
 
         @param [in] idNames is a list of object IDs
 
@@ -620,7 +726,7 @@ class PhotometryGalaxies(PhotometryBase):
         outputDisk = None
         outputAgn = None
 
-        for i in range(len(self.bandPassList)):
+        for i in range(self.nBandpasses):
             rowTotal = []
             rowDisk = []
             rowBulge = []
@@ -679,54 +785,19 @@ class PhotometryGalaxies(PhotometryBase):
         Getter for photometric uncertainties associated with galaxies
         """
 
-        columnNames = {}
-        columnNames['u'] = 'uRecalc'
-        columnNames['g'] = 'gRecalc'
-        columnNames['r'] = 'rRecalc'
-        columnNames['i'] = 'iRecalc'
-        columnNames['z'] = 'zRecalc'
-        columnNames['y'] = 'yRecalc'
+        columnNames = ['uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc']
+        output = self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
 
-        totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        columnNames = ['uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge']
+        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
-        columnNames = {}
-        columnNames['u'] = 'uDisk'
-        columnNames['g'] = 'gDisk'
-        columnNames['r'] = 'rDisk'
-        columnNames['i'] = 'iDisk'
-        columnNames['z'] = 'zDisk'
-        columnNames['y'] = 'yDisk'
+        columnNames = ['uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk']
+        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
-        diskDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        columnNames = ['uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn']
+        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
-        columnNames = {}
-        columnNames['u'] = 'uBulge'
-        columnNames['g'] = 'gBulge'
-        columnNames['r'] = 'rBulge'
-        columnNames['i'] = 'iBulge'
-        columnNames['z'] = 'zBulge'
-        columnNames['y'] = 'yBulge'
-
-        bulgeDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
-
-        columnNames = {}
-        columnNames['u'] = 'uAgn'
-        columnNames['g'] = 'gAgn'
-        columnNames['r'] = 'rAgn'
-        columnNames['i'] = 'iAgn'
-        columnNames['z'] = 'zAgn'
-        columnNames['y'] = 'yAgn'
-
-        agnDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
-
-        return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
-                            totalDict['i'],totalDict['z'],totalDict['y'],
-                            bulgeDict['u'],bulgeDict['g'],bulgeDict['r'],
-                            bulgeDict['i'],bulgeDict['z'],bulgeDict['y'],
-                            diskDict['u'],diskDict['g'],diskDict['r'],
-                            diskDict['i'],diskDict['z'],diskDict['y'],
-                            agnDict['u'],agnDict['g'],agnDict['r'],
-                            agnDict['i'],agnDict['z'],agnDict['y']])
+        return output
 
     @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
               'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
@@ -740,12 +811,12 @@ class PhotometryGalaxies(PhotometryBase):
         idNames = self.column_by_name('galid')
 
         """
-        Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList so that the bandPasses are available to the
+        Here is where we need some code to load a list of bandpass objects
+        into self.bandpassDict so that the bandpasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPassesFromFiles()
+        if self.bandpassDict is None or self.phiArray is None:
+            self.loadTotalBandpassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 
@@ -760,12 +831,12 @@ class PhotometryStars(PhotometryBase):
 
     def calculate_magnitudes(self, idNames, magNorm, sedNames, specFileMap=None):
         """
-        Take the array of bandpass keys bandPassList and the array of
+        Take the bandpasses in bandpassDict and the array of
         star names idNames and return a dict of lists of magnitudes
 
         The first level key will be the name of the star (idName)
 
-        This will give you a list of magnitudes corresponding to self.bandPassList
+        This will give you a list of magnitudes corresponding to self.bandpassDict
 
         As with galaxies, it is important that we identify stars by a unique
         identifier, rather than their sedFilename, because different stars
@@ -815,7 +886,7 @@ class PhotometryStars(PhotometryBase):
         @param [in] idNames is a list of object names
 
         @param [out] output is a 2d numpy array in which the rows are the bandpasses
-        from bandPassList and the columns are the objects from idNames
+        from bandpassDict and the columns are the objects from idNames
 
         """
 
@@ -824,7 +895,7 @@ class PhotometryStars(PhotometryBase):
         magDict = self.calculate_magnitudes(idNames, magNorm=magNorm, sedNames=sedNames)
         output = None
 
-        for i in range(len(self.bandPassList)):
+        for i in range(self.nBandpasses):
             row = []
             for name in idNames:
                 row.append(magDict[name][i])
@@ -844,19 +915,10 @@ class PhotometryStars(PhotometryBase):
         magnitudes
         """
 
-        columnNames = {}
-        columnNames['u'] = 'lsst_u'
-        columnNames['g'] = 'lsst_g'
-        columnNames['r'] = 'lsst_r'
-        columnNames['i'] = 'lsst_i'
-        columnNames['z'] = 'lsst_z'
-        columnNames['y'] = 'lsst_y'
+        magnitudeColumnNames = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i',
+                                'lsst_z', 'lsst_y']
 
-        outputDict = self.calculatePhotometricUncertaintyFromColumn('id',columnNames)
-
-
-        return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
-                            outputDict['i'],outputDict['z'],outputDict['y']])
+        return self.calculatePhotometricUncertaintyFromColumnNames(magnitudeColumnNames)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
@@ -868,12 +930,12 @@ class PhotometryStars(PhotometryBase):
         idNames = self.column_by_name('id')
 
         """
-        Here is where we need some code to load a list of bandPass objects
-        into self.bandPassList so that the bandPasses are available to the
+        Here is where we need some code to load a list of bandpass objects
+        into self.bandpassDict so that the bandpasses are available to the
         mixin.  Ideally, we would only do this once for the whole catalog
         """
-        if self.bandPassList is None or self.phiArray is None:
-            self.loadBandPassesFromFiles()
+        if self.bandpassDict is None or self.phiArray is None:
+            self.loadTotalBandpassesFromFiles()
 
         return self.meta_magnitudes_getter(idNames)
 

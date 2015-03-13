@@ -108,19 +108,10 @@ class Variability(PhotometryBase):
         stellar magnitudes
         """
 
-        columnNames={}
-        columnNames['u'] = 'lsst_u_var'
-        columnNames['g'] = 'lsst_g_var'
-        columnNames['r'] = 'lsst_r_var'
-        columnNames['i'] = 'lsst_i_var'
-        columnNames['z'] = 'lsst_z_var'
-        columnNames['y'] = 'lsst_y_var'
+        columnNames = ['lsst_u_var', 'lsst_g_var', 'lsst_r_var', 'lsst_i_var',
+                       'lsst_z_var', 'lsst_y_var']
 
-        outputDict = self.calculatePhotometricUncertaintyFromColumn('id',columnNames)
-
-        return numpy.array([outputDict['u'],outputDict['g'],outputDict['r'],
-                            outputDict['i'],outputDict['z'],outputDict['y']])
-
+        return self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
 
     @compound('uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
           'zRecalc_var', 'yRecalc_var',
@@ -257,31 +248,14 @@ class Variability(PhotometryBase):
         Getter for photometric uncertainties associated with AGN variability
         """
 
-        columnNames={}
-        columnNames['u'] = 'uRecalc_var'
-        columnNames['g'] = 'gRecalc_var'
-        columnNames['r'] = 'rRecalc_var'
-        columnNames['i'] = 'iRecalc_var'
-        columnNames['z'] = 'zRecalc_var'
-        columnNames['y'] = 'yRecalc_var'
+        columnNames = ['uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
+                       'zRecalc_var', 'yRecalc_var']
+        output = self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
 
-        totalDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
+        columnNames = ['uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var',
+                       'yAgn_var']
 
-        columnNames = {}
-        columnNames['u'] = 'uAgn_var'
-        columnNames['g'] = 'gAgn_var'
-        columnNames['r'] = 'rAgn_var'
-        columnNames['i'] = 'iAgn_var'
-        columnNames['z'] = 'zAgn_var'
-        columnNames['y'] = 'yAgn_var'
-
-        agnDict = self.calculatePhotometricUncertaintyFromColumn('galid',columnNames)
-
-        return numpy.array([totalDict['u'],totalDict['g'],totalDict['r'],
-                            totalDict['i'],totalDict['z'],totalDict['y'],
-                            agnDict['u'],agnDict['g'],agnDict['r'],
-                            agnDict['i'],agnDict['z'],agnDict['y']])
-
+        return numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
     def applyVariability(self, varParams):
         """

@@ -87,29 +87,9 @@ order as the bandpasses) of this SED in each of those bandpasses.
 import warnings
 import numpy
 import gzip
+from lsst.sims.photUtils import PhotometricDefaults
 
 __all__ = ["Sed"]
-
-# The following *wavelen* parameters are default values for gridding wavelen/sb/flambda.
-MINWAVELEN = 300
-MAXWAVELEN = 1150
-WAVELENSTEP = 0.1
-
-LIGHTSPEED = 299792458       # speed of light, = 2.9979e8 m/s
-PLANCK = 6.626068e-27        # planck's constant, = 6.626068e-27 ergs*seconds
-NM2M = 1.00e-9               # nanometers to meters conversion = 1e-9 m/nm
-ERGSETC2JANSKY = 1.00e23     # erg/cm2/s/Hz to Jansky units (fnu)
-
-EXPTIME = 15                      # Default exposure time. (option for method calls).
-NEXP = 2                          # Default number of exposures. (option for methods).
-EFFAREA = numpy.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
-GAIN = 2.3                        # Default gain. (option for method call).
-RDNOISE = 5                       # Default value - readnoise electrons per pixel (per exposure)
-DARKCURRENT = 0.2                 # Default value - dark current electrons per pixel per second
-OTHERNOISE = 4.69                 # Default value - other noise electrons or adu per pixel per exposure
-PLATESCALE = 0.2                  # Default value - "/pixel
-SEEING = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Default seeing values (in ")
-
 
 class Sed(object):
     """Class for holding and utilizing spectral energy distributions (SEDs)"""
@@ -167,7 +147,8 @@ class Sed(object):
         self.name = name
         return
 
-    def setFlatSED(self, wavelen_min=MINWAVELEN, wavelen_max=MAXWAVELEN, wavelen_step=WAVELENSTEP, name='Flat'):
+    def setFlatSED(self, wavelen_min=PhotometricDefaults.minwavelen, wavelen_max=PhotometricDefaults.maxwavelen,
+                   wavelen_step=PhotometricDefaults.wavelenstep, name='Flat'):
         """
         Populate the wavelength/flambda/fnu fields in sed according to a flat fnu source.
         """
@@ -435,8 +416,8 @@ class Sed(object):
             self.fnu = None
         # Now on with the calculation.
         # Calculate fnu.
-        fnu = flambda * wavelen * wavelen * NM2M / LIGHTSPEED
-        fnu = fnu * ERGSETC2JANSKY
+        fnu = flambda * wavelen * wavelen * PhotometricDefaults.nm2m / PhotometricDefaults.lightspeed
+        fnu = fnu * PhotometricDefaults.ergsetc2jansky
         # If are using/updating self, then *all* wavelen/flambda/fnu will be gridded.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -462,8 +443,8 @@ class Sed(object):
             fnu = self.fnu
         # On with the calculation.
         # Calculate flambda.
-        flambda = fnu / wavelen / wavelen * LIGHTSPEED / NM2M
-        flambda = flambda / ERGSETC2JANSKY
+        flambda = fnu / wavelen / wavelen * PhotometricDefaults.lightspeed / PhotometricDefaults.nm2m
+        flambda = flambda / PhotometricDefaults.ergsetc2jansky
         # If updating self, then *all of wavelen/fnu/flambda will be updated.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -620,7 +601,7 @@ class Sed(object):
         return wavelen, flambda
 
 
-    def multiplySED(self, other_sed, wavelen_step=WAVELENSTEP):
+    def multiplySED(self, other_sed, wavelen_step=PhotometricDefaults.wavelenstep):
         """
         Multiply two SEDs together - flambda * flambda - and return a new sed object.
 
@@ -655,7 +636,8 @@ class Sed(object):
     ## routines related to magnitudes and fluxes
 
     def calcADU(self, bandpass, wavelen=None, fnu=None,
-                expTime=EXPTIME, effarea=EFFAREA, gain=GAIN):
+                expTime=PhotometricDefaults.exptime, effarea=PhotometricDefaults.effarea,
+                gain=PhotometricDefaults.gain):
         """
         Calculate the number of adu from camera, using sb and fnu.
 
@@ -678,7 +660,9 @@ class Sed(object):
         dlambda = wavelen[1] - wavelen[0]
         # Nphoton in units of 10^-23 ergs/cm^s/nm.
         nphoton = (fnu / wavelen * bandpass.sb).sum()
-        adu = nphoton * (expTime * effarea/gain) * (1/ERGSETC2JANSKY) * (1/PLANCK) * dlambda
+        adu = nphoton * (expTime * effarea/gain) * \
+              (1/PhotometricDefaults.ergsetc2jansky) * \
+              (1/PhotometricDefaults.planck) * dlambda
         return adu
 
 
@@ -804,7 +788,7 @@ class Sed(object):
 
     def renormalizeSED(self, wavelen=None, flambda=None, fnu=None,
                        lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
-                       wavelen_step=WAVELENSTEP):
+                       wavelen_step=PhotometricDefaults.wavelenstep):
         """
         Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
 
@@ -932,11 +916,112 @@ class Sed(object):
         f.close()
         return
 
+    def calcNeff(self, seeing, platescale):
+        """
+        Calculate the effective number of pixels in a double Gaussian PSF
+
+        @param [in] seeing in arcseconds
+
+        @param [in] platescale in arcseconds per pixel
+
+        @param [out] the effective number of pixels contained by a double
+        Gaussian PSF
+
+        see equation 31 of the SNR document
+        http://www.astro.washington.edu/users/ivezic/Teaching/Astr511/LSST_SNRdoc.pdf
+        """
+        return 2.436*(seeing/platescale)**2
+
+    def calcInstrNoiseSq(self, readnoise, darkcurrent, expTime, nexp, othernoise):
+        """
+        Combine all of the noise due to intrumentation into one value
+
+        @param [in] readnoise
+
+        @param [in] darkcurrent
+
+        @param [in] expTime (length of a single exposure in seconds)
+
+        @param [in] nexp (number of exposures)
+
+        @param [in] othernoise (noise from sources not accounted for above)
+
+        @param [out] The noise due to all of these sources added in quadrature
+        """
+        return nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
+
+    def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, readnoise, darkcurrent,
+                           othernoise, seeing, effarea, expTime, nexp, platescale, gain):
+        """
+        Calculate the noise due to things that are not the source being observed
+        (i.e. intrumentation and sky background)
+
+        @param [in] skySed -- an instantiation of the Sed class representing the sky
+
+        @param [in] hardwarebandpass -- an instantiation of the Bandpass class representing
+        just the instrumentation throughputs
+
+        @param [in] readnoise
+
+        @param [in] darkcurrent
+
+        @param [in] othernoise
+
+        @param [in] seeing in arcseconds
+
+        @param [in] effarea -- effective area of the primary mirror in square centimeters
+
+        @param [in] expTime -- duration of one exposure in seconds
+
+        @param [in] nexp -- number of exposures being combined
+
+        @param [in] platescale in arcseconds per pixel
+
+        @param [in] gain in electrons per adu
+
+        @param [out] total noise squared (in ADU)
+
+        @param [out] noise squared due just to the instrument
+
+        @param [out] noise squared due to the sky
+
+        @param [out] noise squared due to sky measurement (presently set to zero)
+
+        @param [out] the effective number of pixels in a double Gaussian PSF
+        """
+
+        #This method outputs all of the parameters calculated along the way
+        #so that the verbose version of calcSNR_psf still works
+
+        #Calculate the effective number of pixels for double-Gaussian PSF
+        neff = self.calcNeff(seeing, platescale)
+
+        #Calculate the counts form the sky
+        skycounts = skySed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain) \
+                    * platescale * platescale
+
+        #Calculate the square of the noise due to instrumental effects.
+        #Include the readout noise as many times as there are exposures
+        noise_instr_sq = self.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+
+        #Calculate the square of the noise due to sky background poisson noise
+        noise_sky_sq = skycounts/gain
+
+        #Discount error in sky measurement for now
+        noise_skymeasurement_sq = 0
+
+        total_noise_sq = neff*(noise_sky_sq + noise_instr_sq + noise_skymeasurement_sq)
+        return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
+
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass,
-                    readnoise=RDNOISE, darkcurrent=DARKCURRENT,
-                    othernoise=OTHERNOISE, seeing=SEEING['r'],
-                    effarea=EFFAREA, expTime=EXPTIME, nexp=1,
-                    platescale=PLATESCALE, gain=1, verbose=False):
+                    readnoise=PhotometricDefaults.rdnoise,
+                    darkcurrent=PhotometricDefaults.darkcurrent,
+                    othernoise=PhotometricDefaults.othernoise,
+                    seeing=PhotometricDefaults.seeing['r'],
+                    effarea=PhotometricDefaults.effarea,
+                    expTime=PhotometricDefaults.exptime, nexp=PhotometricDefaults.nexp,
+                    platescale=PhotometricDefaults.platescale,
+                    gain=PhotometricDefaults.gain, verbose=False):
         """
         Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
 
@@ -948,22 +1033,18 @@ class Sed(object):
         """
         # Calculate the counts from the source.
         sourcecounts = self.calcADU(totalbandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
-        # Calculate the counts from the sky.
-        skycounts = (skysed.calcADU(hardwarebandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
-                     * platescale * platescale)
-        # Calculate the effective number of pixels for double-Gaussian PSF.
-        neff = 2.436*(seeing/platescale)**2
-        # Calculate the (square of the) noise due to instrumental effects.
-        # Include the readout noise twice because 30 seconds is two exposures.
-        noise_instr_sq = nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
-        # Calculate the (square of the) noise due to sky background poisson noise.
-        noise_sky_sq = skycounts/gain
-        # Discount error in sky measurement for now.
-        noise_skymeasurement_sq = 0
+
         # Calculate the (square of the) noise due to signal poisson noise.
         noise_source_sq = sourcecounts/gain
+
+        non_source_noise_sq, \
+        noise_instr_sq, \
+        noise_sky_sq, \
+        noise_skymeasurement_sq, \
+        skycounts, neff = self.calcNonSourceNoiseSq(skysed, hardwarebandpass, readnoise, darkcurrent, \
+                                                    othernoise, seeing, effarea, expTime, nexp, platescale, gain)
         # Calculate total noise
-        noise = numpy.sqrt(noise_source_sq + neff*(noise_sky_sq+noise_instr_sq+noise_skymeasurement_sq))
+        noise = numpy.sqrt(noise_source_sq + non_source_noise_sq)
         # Calculate the signal to noise ratio.
         snr = sourcecounts / noise
         if verbose:

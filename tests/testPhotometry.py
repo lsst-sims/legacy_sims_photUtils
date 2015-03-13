@@ -2,15 +2,18 @@ import numpy
 
 import os
 import unittest
+import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
 
+from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
-from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies
+from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase
+from lsst.sims.photUtils import PhotometricDefaults, setM5
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies
@@ -51,16 +54,22 @@ class variabilityUnitTest(unittest.TestCase):
         results = self.galaxy.query_columns(['varParamStr'], obs_metadata=self.obs_metadata,
                                              constraint='VarParamStr is not NULL')
         result = getOneChunk(results)
+        ct = 0
         for row in result:
             mags=galcat.applyVariability(row['varParamStr'])
+            ct += 1
+        self.assertTrue(ct>0) #to make sure that the test was actually performed
 
     def testStarVariability(self):
         starcat = testStars(self.star, obs_metadata=self.obs_metadata)
         results = self.star.query_columns(['varParamStr'], obs_metadata=self.obs_metadata,
                                          constraint='VarParamStr is not NULL')
         result = getOneChunk(results)
+        ct = 0
         for row in result:
+            ct += 1
             mags=starcat.applyVariability(row['varParamStr'])
+        self.assertTrue(ct>0) #to make sure that the test was actually performed
 
 class photometryUnitTest(unittest.TestCase):
 
@@ -95,16 +104,26 @@ class photometryUnitTest(unittest.TestCase):
     def testStars(self):
         test_cat=testStars(self.star, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testStarsOutput.txt")
+        cat = open("testStarsOutput.txt")
+        lines = cat.readlines()
+        self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
+        cat.close()
         results = self.star.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
+        self.assertTrue(len(result)>0) #to make sure some results are returned
         os.unlink("testStarsOutput.txt")
 
 
     def testGalaxies(self):
         test_cat=testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testGalaxiesOutput.txt")
+        cat = open("testGalaxiesOutput.txt")
+        lines = cat.readlines()
+        self.assertTrue(len(lines)>1) #to make sure we did not write an empty catalog
+        cat.close()
         results = self.galaxy.query_columns(obs_metadata=self.obs_metadata)
         result = getOneChunk(results)
+        self.assertTrue(len(result)>0) #to make sure some results are returned
         os.unlink("testGalaxiesOutput.txt")
 
     def testStandAloneStellarPhotometry(self):
@@ -120,10 +139,10 @@ class photometryUnitTest(unittest.TestCase):
         dummyId = ['1', '2']
         dummySed = ['km20_5750.fits_g40_5790','m2.0Full.dat']
         dummyMagNorm = [28.5, 23.0]
-        bandPassNames = ['u','g','r','i','z','y']
+        bandpassNames = ['u','g','r','i','z','y']
 
         phot = PhotometryStars()
-        phot.loadBandPassesFromFiles(bandPassNames)
+        phot.loadTotalBandpassesFromFiles(bandpassNames)
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes,
                           idNames=dummyId, sedNames=sedNames, magNorm=magNorm)
@@ -134,6 +153,8 @@ class photometryUnitTest(unittest.TestCase):
 
         magnitudes = phot.calculate_magnitudes(idNames=idNames, sedNames=sedNames,
                                                magNorm=magNorm)
+        for n in idNames:
+            self.assertTrue(len(magnitudes[n])==len(bandpassNames)) #to make sure we calculated all the magnitudes
 
     def testGalaxyPhotometryStandAlone(self):
         idNames = ['Alice', 'Bob', 'Charlie']
@@ -170,7 +191,7 @@ class photometryUnitTest(unittest.TestCase):
         cosmologicalDistanceModulusDummy = [3.0, 4.5]
 
         phot = PhotometryGalaxies()
-        phot.loadBandPassesFromFiles(bandPassNames=['u','g','r','i','z','y'])
+        phot.loadTotalBandpassesFromFiles(bandpassNames=['u','g','r','i','z','y'])
 
         self.assertRaises(RuntimeError, phot.calculate_magnitudes, idNames,
                           diskNames=diskSedsDummy, diskMagNorm=diskMagNorm, diskAv=diskAv,
@@ -244,7 +265,7 @@ class photometryUnitTest(unittest.TestCase):
                                                            agnNames=agnNames, agnMagNorm=agnMagNorm)
 
                     for name in idNames:
-                        for i in range(len(phot.bandPassList)):
+                        for i in range(len(phot.bandpassDict)):
                             flux=0.0
                             if bulgeNames is None:
                                 self.assertTrue(magnitudes[name]['bulge'][i] is None)
@@ -311,13 +332,15 @@ class photometryUnitTest(unittest.TestCase):
         i = 0
 
         #since all of the SEDs in the cartoon database are the same, just test on the first
-        #if we ever include more SEDs, this can be somethin like
+        #if we ever include more SEDs, this can be something like
         #for ss in test_cata.sedMasterList:
         #
         ss=test_cat.sedMasterList[0]
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
         mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+        self.assertTrue(len(mags)==len(test_cat.bandpassDict))
+        self.assertTrue(len(mags)>0)
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterList[i][j],10)
         i += 1
@@ -353,6 +376,7 @@ class photometryUnitTest(unittest.TestCase):
 
         components = ['Bulge', 'Disk', 'Agn']
 
+        ct = 0
         for cc in components:
             i = 0
 
@@ -362,9 +386,11 @@ class photometryUnitTest(unittest.TestCase):
                     ss.flambdaTofnu()
                     mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
                     for j in range(len(mags)):
+                        ct += 1
                         self.assertAlmostEqual(mags[j],test_cat.magnitudeMasterDict[cc][i][j],10)
                 i += 1
 
+        self.assertTrue(ct>0)
         os.unlink("testGalaxiesCartoon.txt")
 
     def testEBV(self):
@@ -395,11 +421,151 @@ class photometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=None, galacticCoordinates=None)
         self.assertRaises(RuntimeError, ebvObject.calculateEbv)
 
+class uncertaintyUnitTest(unittest.TestCase):
+    """
+    Test the calculation of photometric uncertainties
+    """
+
+    def setUp(self):
+        starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        self.starSED = Sed()
+        self.starSED.readSED_flambda(starName)
+        imsimband = Bandpass()
+        imsimband.imsimBandpass()
+        fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
+        self.starSED.multiplyFluxNorm(fNorm)
+
+        self.totalBandpasses = []
+        self.hardwareBandpasses = []
+
+        componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                         'lens1.dat', 'lens2.dat', 'lens3.dat']
+        hardwareComponents = []
+        for c in componentList:
+            hardwareComponents.append(os.path.join(eups.productDir('throughputs'),'baseline',c))
+
+        self.bandpasses = ['u', 'g', 'r', 'i', 'z', 'y']
+        for b in self.bandpasses:
+            filterName = os.path.join(eups.productDir('throughputs'),'baseline','filter_%s.dat' % b)
+            components = hardwareComponents + [filterName]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            self.hardwareBandpasses.append(bandpassDummy)
+            components = components + [os.path.join(eups.productDir('throughputs'),'baseline','atmos.dat')]
+            bandpassDummy = Bandpass()
+            bandpassDummy.readThroughputList(components)
+            self.totalBandpasses.append(bandpassDummy)
+
+
+
+    def tearDown(self):
+        del self.starSED
+        del self.bandpasses
+        del self.hardwareBandpasses
+        del self.totalBandpasses
+
+    def testUncertaintyExceptions(self):
+        """
+        Test the calculatePhotometricUncertainty raises exceptions when it needs to
+        """
+        phot = PhotometryBase()
+        phot.loadBandpassesFromFiles()
+        magnitudes = [22.0, 23.0, 24.0, 25.0, 26.0, 27.0]
+        shortMagnitudes = [22.0]
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, magnitudes)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5=23.0)
+        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, shortMagnitudes, obs_metadata=obs_metadata)
+
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g')
+        self.assertRaises(ValueError, phot.calculatePhotometricUncertainty, magnitudes, obs_metadata=obs_metadata)
+
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5={'u':22.0, 'g':24.0})
+        self.assertRaises(ValueError, phot.calculatePhotometricUncertainty, magnitudes, obs_metadata=obs_metadata)
+
+    def testRawUncertainty(self):
+        """
+        Test that values calculated by calculatePhotometricUncertainty agree
+        with values calculated by Sed.calcSNR_psf
+        """
+        for ii in range(2):
+            if ii == 0:
+                msgroot = "m5 is a float"
+                m5 = 25.0
+            else:
+                msgroot = "m5 is a dict"
+                m5 = {'u':23.0, 'g':21.0, 'r':24.6, 'i':23.6, 'z':22.5, 'y':20.0}
+
+            phot = PhotometryBase()
+            phot.loadTotalBandpassesFromFiles()
+            obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
+            magnitudes = phot.manyMagCalc_list(self.starSED)
+
+            skySeds = []
+
+            for i in range(len(self.bandpasses)):
+                skyDummy = Sed()
+                skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+                normalizedSkyDummy = setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
+                                                           self.totalBandpasses[i], self.hardwareBandpasses[i],
+                                                           seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                skySeds.append(normalizedSkyDummy)
+
+            sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata)
+            for i in range(len(self.bandpasses)):
+                snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+                                               seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                ss = 2.5*numpy.log10(1.0+1.0/snr)
+                msg = '%e is not %e; failed when ' % (ss, sigma[i]) + msgroot
+                self.assertAlmostEqual(ss, sigma[i], 10, msg=msg)
+
+    def testSystematicUncertainty(self):
+        """
+        Test that systematic uncertainty is added correctly.
+        """
+        sig2sys = 0.002
+        for ii in range(2):
+            if ii == 0:
+                msgroot = "m5 is a float"
+                m5 = 25.0
+            else:
+                msgroot = "m5 is a dict"
+                m5 = {'u':23.0, 'g':21.0, 'r':24.6, 'i':23.6, 'z':22.5, 'y':20.0}
+
+            phot = PhotometryBase()
+            phot.loadTotalBandpassesFromFiles()
+            obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5)
+            magnitudes = phot.manyMagCalc_list(self.starSED)
+
+            skySeds = []
+
+            for i in range(len(self.bandpasses)):
+                skyDummy = Sed()
+                skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+                normalizedSkyDummy = setM5(obs_metadata.m5(self.bandpasses[i]), skyDummy,
+                                                           self.totalBandpasses[i], self.hardwareBandpasses[i],
+                                                           seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+                skySeds.append(normalizedSkyDummy)
+
+            sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
+            for i in range(len(self.bandpasses)):
+                snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+                                               seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
+
+                control = 1.0/(snr*snr) + sig2sys
+                test = numpy.power(numpy.power(10.0, sigma[i]/2.5) -1.0, 2)
+
+                msg = '%e is not %e; failed when ' % (test, control) + msgroot
+
+                self.assertAlmostEqual(test, control, 10, msg=msg)
+
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(variabilityUnitTest)
     suites += unittest.makeSuite(photometryUnitTest)
+    suites += unittest.makeSuite(uncertaintyUnitTest)
     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 
