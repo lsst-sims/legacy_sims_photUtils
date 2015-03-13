@@ -121,7 +121,9 @@ class rgBase():
         modelColors = []
         
         for specObj in sedList:
-            sEDMags = photObj.manyMagCalc_list(specObj)
+            fileSED = Sed()
+            fileSED.setSED(wavelen = specObj.wavelen, flambda = specObj.flambda)
+            sEDMags = photObj.manyMagCalc_list(fileSED)
             colorInfo = []
             for filtNum in range(0, len(photObj.bandpassDict)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
