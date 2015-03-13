@@ -69,7 +69,6 @@ Method include:
   redshiftSED -- redshifts the SED, optionally adding dimmingx
   setupCCMab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS
 if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupCCMab).
-  addIGMattenuation -- attempt to generate intergalactic dust (but didn't really work)
   multiplySED -- multiply two SEDS together.
   calcADU / calcMag / calcFlux -- with a Bandpass, calculate the ADU/magnitude/flux of a SED.
   calcFluxNorm / multiplyFluxNorm -- handle fluxnorm parameters (from UW LSST database) properly.
@@ -509,80 +508,6 @@ class Sed(object):
         # Update self, if required - but just flambda (still no grid required).
         if update_self:
             self.wavelen = wavelen
-            self.flambda = flambda
-            return
-        return wavelen, flambda
-
-    def addIGMattenuation(self, redshift, rtau, wavelen=None, flambda=None):
-        """
-        Given a redshifted sed and its redshift, calculate and apply extinction due to IGM.
-
-        From P. Maddau ... polynomial form from Argun Dey (NOAO).
-        rtau is a parameter which scales the tau value at each wavelength.
-        Pass wavelen/flambda or attenuates & updates self.wavelen/flambda. Unsets fnu.
-        *** This is not approved for use yet - and actually seems incorrect.
-        """
-        # Catch case of z=0, where should not apply any IGM extinction.
-        if redshift == 0:
-            warnings.warn("IGM attenuation is not applied for redshift=0. No action taken.")
-            return
-        # Updating self or using passed arrays?
-        update_self = self._checkUseSelf(wavelen, flambda)
-        if update_self:
-            wavelen = self.wavelen
-            flambda = self.flambda
-            self.fnu = None
-        else:
-            wavelen = numpy.copy(wavelen)
-            flambda = numpy.copy(flambda)
-        # Now calculate magnitude of attenuation at each wavelength.
-        # Set up base information for Teff calculation.
-        wavelen_rest = wavelen / (1.0+redshift)
-        # Wavelength thresholds for tau must be in NM as those are the units for wavelength.
-        wavelen_thresholds = [91.20, 91.6429, 91.7181, 91.8129, 91.9352, 92.0963, 92.315, 92.6226, 93.0748,
-                              93.7803, 94.9743, 97.2537, 102.572, 121.567]
-        tau_coeff = [0.0036, 0.0017, 0.001185, 0.000941,
-                     0.000796, 0.000697,
-                     0.0006236, 0.0005665, 0.00052,
-                     0.000482, 0.0004487,
-                     0.00042, 0.0003947, 0.000372,
-                     0.000352, 0.00033336,
-                     0.0003165]
-        ext_power = 3.46
-        xc = wavelen / wavelen_thresholds[0]
-        # Calculate tau for each wavelength. Final attenuation is exp(-tau*rtau).
-        # Bigger tau values, more extinction. 0 -> no extinction. At wavelen>121.5nm, there is no extinction.
-        tau = numpy.zeros(len(wavelen), dtype='float')
-        # Start at the longest wavelengths where tau = 0.
-        idx_wavelen = len(wavelen_thresholds) - 1
-        idx_coeff = 0
-        # Intermediate wavelengths add a little more to tau.
-        while (idx_wavelen > 0):
-            condition = (wavelen_rest <= wavelen_thresholds[idx_wavelen])
-            # These are absorption LINES so appear as 'peaks' in absorption.
-            tau[condition] = tau[condition] + (tau_coeff[idx_coeff] *
-                                               numpy.power(wavelen[condition]/wavelen_thresholds[idx_wavelen],
-                                                       ext_power))
-            idx_coeff = idx_coeff + 1
-            idx_wavelen = idx_wavelen - 1
-        # Finally, wavelengths < 912 (very blue) in the rest frame have additional terms.
-        condition = (wavelen_rest <= wavelen_thresholds[0])
-        tau[condition] = (tau[condition] +
-                          0.25*numpy.power(xc[condition],3)*(numpy.power(redshift, 0.46)-numpy.power(xc[condition],0.46)) +
-                          9.4*numpy.power(xc[condition],1.5)*(numpy.power(redshift, 0.18)-numpy.power(xc[condition], 0.18)) +
-                          0.7*numpy.power(xc[condition], 3)*(numpy.power(redshift,-1.32)-numpy.power(xc[condition],-1.32)) +
-                          -0.023*(numpy.power(redshift, 1.68)-numpy.power(xc[condition], 1.68)) +
-                          # The next absorption lines are due to helium I think.
-                          0.000372*numpy.power(wavelen[condition]/91.5824, ext_power) +
-                          0.000352*numpy.power(wavelen[condition]/91.5329, ext_power) +
-                          0.00033336*numpy.power(wavelen[condition]/91.4919, ext_power) +
-                          0.0003165*numpy.power(wavelen[condition]/91.45760, ext_power))
-        # Calculate attenuation at all wavelengths
-        attenuation = numpy.exp(-tau*rtau)
-        attenuation = numpy.where(attenuation>1, 1.0, attenuation)
-        flambda = flambda * attenuation
-        # Update self if required.
-        if update_self:
             self.flambda = flambda
             return
         return wavelen, flambda
