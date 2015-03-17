@@ -22,6 +22,7 @@ from lsst.sims.photUtils.Variability import Variability
 
 __all__ = ["MyVariability", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
+           "cartoonStarsOnlyI", "cartoonStarsIZ",
            "cartoonGalaxies", "testStars", "testGalaxies",
            "comovingDistanceIntegrand", "cosmologicalOmega"]
 
@@ -247,7 +248,13 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
+class cartoonStarsOnlyI(cartoonStars):
+    catalog_type = 'cartoonStarsOnlyI'
+    column_outputs = ['id','raObserved','decObserved','cartoon_i']
 
+class cartoonStarsIZ(cartoonStars):
+    catalog_type = 'cartoonStarsIR'
+    column_outputs = ['id', 'raObserved', 'decObserved', 'cartoon_i', 'cartoon_z']
 
 class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
     """

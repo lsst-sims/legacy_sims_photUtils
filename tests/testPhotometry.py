@@ -16,7 +16,8 @@ from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryB
 from lsst.sims.photUtils import PhotometricDefaults, setM5
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
-                                      cartoonGalaxies, testStars, testGalaxies
+                                      cartoonGalaxies, testStars, testGalaxies, \
+                                      cartoonStarsOnlyI, cartoonStarsIZ
 
 class variabilityUnitTest(unittest.TestCase):
 
@@ -392,6 +393,68 @@ class photometryUnitTest(unittest.TestCase):
 
         self.assertTrue(ct>0)
         os.unlink("testGalaxiesCartoon.txt")
+
+    def testStellarPhotometryIndices(self):
+        """
+        A test to make sure that stellar photometry still calculates the right values
+        even when it is not calculating all of the magnitudes in the getter
+        """
+
+        baselineDtype = numpy.dtype([('id',int),
+                                     ('raObserved', float), ('decObserved', float),
+                                     ('magNorm', float),
+                                     ('cartoon_u', float), ('cartoon_g',float),
+                                     ('cartoon_r', float), ('cartoon_i', float),
+                                     ('cartoon_z', float)])
+
+        baselineCatName = 'baselineCatalog.txt'
+
+        testDtype = numpy.dtype([('id',int),
+                                 ('raObserved',float), ('decObserved',float),
+                                 ('cartoon_i',float)])
+
+        testCatName = 'testCatalog.txt'
+
+
+        obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
+                                                 boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                                 boundLength=1.0)
+        obs_metadata_pointed.metadata = {}
+        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+        baseline_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
+        baseline_cat.write_catalog(baselineCatName)
+        baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+
+        test_cat=cartoonStarsOnlyI(self.star, obs_metadata=obs_metadata_pointed)
+        test_cat.write_catalog(testCatName)
+        testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        ct = 0
+        for b, t in zip(baselineData, testData):
+            self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
+            ct+=1
+        self.assertTrue(ct>0)
+
+        testDtype = numpy.dtype([('id',int),
+                                 ('raObserved',float), ('decObserved',float),
+                                 ('cartoon_i',float), ('cartoon_z',float)])
+
+
+        test_cat=cartoonStarsIZ(self.star, obs_metadata=obs_metadata_pointed)
+        test_cat.write_catalog(testCatName)
+        testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        ct = 0
+        for b, t in zip(baselineData, testData):
+            self.assertAlmostEqual(b['cartoon_i'], t['cartoon_i'], 10)
+            self.assertAlmostEqual(b['cartoon_z'], t['cartoon_z'], 10)
+            ct+=1
+        self.assertTrue(ct>0)
+
+        if os.path.exists(testCatName):
+            os.unlink(testCatName)
+        if os.path.exists(baselineCatName):
+            os.unlink(baselineCatName)
+
+
 
     def testEBV(self):
 
