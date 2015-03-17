@@ -1142,7 +1142,7 @@ class Sed(object):
         return phiarray, wavelen_step
 
 
-    def manyFluxCalc(self, phiarray, wavelen_step):
+    def manyFluxCalc(self, phiarray, wavelen_step, observedBandPassInd=None):
         """
         Calculate fluxes of a single sed for which fnu has been evaluated in a 
         set of bandpasses for which phiarray has been set up to have the same 
