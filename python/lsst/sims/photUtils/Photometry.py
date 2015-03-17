@@ -308,7 +308,7 @@ class PhotometryBase(object):
                     sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
                     sedList[i].resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
 
-    def manyMagCalc_list(self, sedobj):
+    def manyMagCalc_list(self, sedobj, indices=None):
         """
         Return a list of magnitudes for a single Sed object.
 
@@ -316,6 +316,9 @@ class PhotometryBase(object):
         self.phiArray, and self.waveLenStep
 
         @param [in] sedobj is an Sed object
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for
 
         @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
         """
@@ -337,7 +340,7 @@ class PhotometryBase(object):
             #
             sedobj.flambdaTofnu()
 
-            magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
+            magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep, observedBandPassInd=indices)
 
             for i in range(self.nBandpasses):
                 magList.append(magArray[i])
@@ -829,7 +832,7 @@ class PhotometryStars(PhotometryBase):
     It assumes that we want LSST filters.
     """
 
-    def calculate_magnitudes(self, idNames, magNorm, sedNames, specFileMap=None):
+    def calculate_magnitudes(self, idNames, magNorm, sedNames, indices=None, specFileMap=None):
         """
         Take the bandpasses in bandpassDict and the array of
         star names idNames and return a dict of lists of magnitudes
@@ -847,6 +850,9 @@ class PhotometryStars(PhotometryBase):
         @param [in] magNorm is a list of magnitude normalizations
 
         @param [in] sedNames is a list of sed file names
+
+        @param [in] indices is an optional list of indices indicating which
+        bandpasses to actually calculate magnitudes for
 
         @param [in] specFileMap is a class which maps between sedNames and the absolute path to
         the SED files.  It is an instantiation of the class defined in
@@ -873,17 +879,20 @@ class PhotometryStars(PhotometryBase):
 
         magDict = {}
         for (name,sed) in zip(idNames,sedList):
-            subList = self.manyMagCalc_list(sed)
+            subList = self.manyMagCalc_list(sed, indices=indices)
             magDict[name] = subList
 
         return magDict
 
 
-    def meta_magnitudes_getter(self, idNames):
+    def meta_magnitudes_getter(self, idNames, indices=None):
         """
         This method does most of the work for stellar magnitude getters
 
         @param [in] idNames is a list of object names
+
+        @param [in] indices is an optional list indicating the indices of the
+        bandpasses to calculate magnitudes for
 
         @param [out] output is a 2d numpy array in which the rows are the bandpasses
         from bandpassDict and the columns are the objects from idNames
@@ -892,7 +901,7 @@ class PhotometryStars(PhotometryBase):
 
         magNorm = self.column_by_name('magNorm')
         sedNames = self.column_by_name('sedFilename')
-        magDict = self.calculate_magnitudes(idNames, magNorm=magNorm, sedNames=sedNames)
+        magDict = self.calculate_magnitudes(idNames, magNorm=magNorm, sedNames=sedNames, indices=indices)
         output = None
 
         for i in range(self.nBandpasses):
@@ -937,5 +946,11 @@ class PhotometryStars(PhotometryBase):
         if self.bandpassDict is None or self.phiArray is None:
             self.loadTotalBandpassesFromFiles()
 
-        return self.meta_magnitudes_getter(idNames)
+        indices = [ii for ii, name in enumerate(self.get_magnitudes._colnames) \
+                   if name in self.all_calculated_columns]
+
+        if len(indices) == 6:
+            indices = None
+
+        return self.meta_magnitudes_getter(idNames, indices=indices)
 
