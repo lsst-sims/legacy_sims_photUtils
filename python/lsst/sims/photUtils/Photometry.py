@@ -453,7 +453,8 @@ class PhotometryGalaxies(PhotometryBase):
 
     def calculate_component_magnitudes(self,objectNames, componentNames, \
                                        magNorm = None, internalAv = None, redshift = None,
-                                       cosmologicalDistanceModulus = None, specFileMap=None):
+                                       cosmologicalDistanceModulus = None, specFileMap=None,
+                                       indices=None):
 
         """
         Calculate the magnitudes for different components (disk, bulge, agn, etc) of galaxies.
@@ -481,6 +482,9 @@ class PhotometryGalaxies(PhotometryBase):
 
         If not provided, a default will be instantiated.
 
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for
+
         @param [out] componentMags is a dict of lists such that
         magnitude["objectname"][i] will return the magnitude in the ith
         for the associated component Sed
@@ -495,7 +499,7 @@ class PhotometryGalaxies(PhotometryBase):
             self.applyAvAndRedshift(componentSed, internalAv = internalAv, redshift = redshift)
 
             for i in range(len(objectNames)):
-                subList = self.manyMagCalc_list(componentSed[i])
+                subList = self.manyMagCalc_list(componentSed[i], indices=indices)
 
                 if isinstance(cosmologicalDistanceModulus, numpy.ndarray):
                     for j in range(len(subList)):
@@ -547,7 +551,8 @@ class PhotometryGalaxies(PhotometryBase):
     def calculate_magnitudes(self, idNames, diskNames=None, diskMagNorm=None, diskAv=None,
                              bulgeNames=None, bulgeMagNorm=None, bulgeAv=None,
                              agnNames=None, agnMagNorm=None,
-                             redshift=None, cosmologicalDistanceModulus=None, specFileMap=None):
+                             redshift=None, cosmologicalDistanceModulus=None, specFileMap=None,
+                             indices=None):
         """
         Take the array of bandpasses in self.bandpassDict and the array of galaxy
         names idNames ane return a dict of dicts of lists of magnitudes
@@ -594,6 +599,9 @@ class PhotometryGalaxies(PhotometryBase):
         sims_catalogs_measures/python/lsst/sims/catalogs/measures/instance/fileMaps.py
 
         If not provided, a default will be instantiated.
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for
 
         @param [out] masterDict is a dict of magnitudes such that
         masterDict['AAA']['BBB'][i] is the magnitude in the ith bandpass of component BBB of galaxy AAA
@@ -660,15 +668,15 @@ class PhotometryGalaxies(PhotometryBase):
 
         diskMags = self.calculate_component_magnitudes(idNames,diskNames,magNorm = diskMagNorm, \
                         internalAv = diskAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                        specFileMap=specFileMap)
+                        specFileMap=specFileMap, indices=indices)
 
         bulgeMags = self.calculate_component_magnitudes(idNames,bulgeNames,magNorm = bulgeMagNorm, \
                         internalAv = bulgeAv, redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                        specFileMap=specFileMap)
+                        specFileMap=specFileMap, indices=indices)
 
         agnMags = self.calculate_component_magnitudes(idNames,agnNames,magNorm = agnMagNorm, \
                         redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                        specFileMap=specFileMap)
+                        specFileMap=specFileMap, indices=indices)
 
         total_mags = []
         masterDict = {}
@@ -692,12 +700,14 @@ class PhotometryGalaxies(PhotometryBase):
         return masterDict
 
 
-    def meta_magnitudes_getter(self, idNames):
+    def meta_magnitudes_getter(self, idNames, indices=None):
         """
         This method will return the magnitudes for galaxies in the bandpasses stored in self.bandpassDict
 
         @param [in] idNames is a list of object IDs
 
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for
         """
 
         diskNames=self.column_by_name('sedFilenameDisk')
@@ -723,7 +733,7 @@ class PhotometryGalaxies(PhotometryBase):
                                           bulgeNames=bulgeNames, bulgeMagNorm=bulgemn, bulgeAv=bulgeAv,
                                           agnNames=agnNames, agnMagNorm=agnmn,
                                           redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
-                                          specFileMap=self.specFileMap)
+                                          specFileMap=self.specFileMap, indices=indices)
 
         firstRowTotal = []
         firstRowDisk = []
@@ -829,7 +839,13 @@ class PhotometryGalaxies(PhotometryBase):
         if self.bandpassDict is None or self.phiArray is None:
             self.loadTotalBandpassesFromFiles()
 
-        return self.meta_magnitudes_getter(idNames)
+        indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_all_mags._colnames) \
+                               if name in self.all_calculated_columns])
+
+        if len(indices)==6:
+            indices=None
+
+        return self.meta_magnitudes_getter(idNames, indices=indices)
 
 
 
