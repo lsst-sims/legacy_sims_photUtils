@@ -23,7 +23,7 @@ from lsst.sims.photUtils.Variability import Variability
 __all__ = ["MyVariability", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
            "cartoonStarsOnlyI", "cartoonStarsIZ",
-           "cartoonGalaxies", "testStars", "testGalaxies",
+           "cartoonGalaxies", "cartoonGalaxiesIG", "testStars", "testGalaxies",
            "comovingDistanceIntegrand", "cosmologicalOmega"]
 
 @register_class
@@ -314,6 +314,45 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
     magnitudeMasterDict["Disk"] = []
     magnitudeMasterDict["Agn"] = []
 
+
+class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies):
+
+    catalog_type = 'cartoonGalaxiesIG'
+    column_outputs=['galid','raObserved','decObserved','ctotal_i','ctotal_g']
+
+    #I need to give it the name of an actual SED file that spans the expected wavelength range
+    defSedName = "Inst.80E09.25Z.spec"
+    default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,
+                       ('sedFilenameAgn', defSedName, (str, len(defSedName))),
+                       ('sedFilenameBulge', defSedName, (str, len(defSedName))),
+                       ('sedFilenameDisk', defSedName, (str, len(defSedName))),
+                       ('glon', 210., float),
+                       ('glat', 70., float),
+                       ('internalAvBulge',3.1,float),
+                       ('internalAvDisk',3.1,float)]
+
+    def get_galid(self):
+        return self.column_by_name('id')
+
+    @compound('ctotal_u','ctotal_g','ctotal_r','ctotal_i','ctotal_z',
+              'cbulge_u','cbulge_g','cbulge_r','cbulge_i','cbulge_z',
+              'cdisk_u','cdisk_g','cdisk_r','cdisk_i','cdisk_z',
+              'cagn_u','cagn_g','cagn_r','cagn_i','cagn_z')
+    def get_magnitudes(self):
+        """
+        getter for photometry of galaxies using non-LSST bandpasses
+        """
+
+        idNames = self.column_by_name('galid')
+        bandpassNames=['u','g','r','i','z']
+        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+
+        if self.bandpassDict is None or self.phiArray is None:
+            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                      bandpassRoot = 'test_bandpass_')
+
+        output = self.meta_magnitudes_getter(idNames)
+        return output
 
 class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefaults):
     """

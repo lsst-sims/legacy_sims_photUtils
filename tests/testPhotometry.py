@@ -17,7 +17,8 @@ from lsst.sims.photUtils import PhotometricDefaults, setM5
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
-                                      cartoonStarsOnlyI, cartoonStarsIZ
+                                      cartoonStarsOnlyI, cartoonStarsIZ, \
+                                      cartoonGalaxiesIG
 
 class variabilityUnitTest(unittest.TestCase):
 
@@ -407,13 +408,13 @@ class photometryUnitTest(unittest.TestCase):
                                      ('cartoon_r', float), ('cartoon_i', float),
                                      ('cartoon_z', float)])
 
-        baselineCatName = 'baselineCatalog.txt'
+        baselineCatName = 'stellarBaselineCatalog.txt'
 
         testDtype = numpy.dtype([('id',int),
                                  ('raObserved',float), ('decObserved',float),
                                  ('cartoon_i',float)])
 
-        testCatName = 'testCatalog.txt'
+        testCatName = 'stellarTestCatalog.txt'
 
 
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
@@ -453,6 +454,42 @@ class photometryUnitTest(unittest.TestCase):
             os.unlink(testCatName)
         if os.path.exists(baselineCatName):
             os.unlink(baselineCatName)
+
+    def testGalaxyPhotometricIndices(self):
+        baselineCatName = 'galaxyBaselineCatalog.txt'
+        baselineDtype = numpy.dtype([('galid', int),
+                                     ('raObserved', float),
+                                     ('decObserved', float),
+                                     ('ctotal_u', float),
+                                     ('ctotal_g', float),
+                                     ('ctotal_r', float),
+                                     ('ctotal_i', float),
+                                     ('ctotal_z', float)])
+
+        obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
+                               boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                               boundLength=10.0)
+        obs_metadata_pointed.metadata = {}
+        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+        baseline_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
+        baseline_cat.write_catalog(baselineCatName)
+        baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
+
+        testCatName = 'galaxyTestCatalog.txt'
+        testDtype = numpy.dtype([('galid', int),
+                                 ('raObserved', float),
+                                 ('decObserved', float),
+                                 ('ctotal_i', float),
+                                 ('ctotal_g', float)])
+        test_cat = cartoonGalaxiesIG(self.galaxy, obs_metadata=obs_metadata_pointed)
+        test_cat.write_catalog(testCatName)
+        testData = numpy.genfromtxt(testCatName, dtype=testDtype, delimiter=',')
+        ct = 0
+        for b,t in zip(baselineData, testData):
+            self.assertAlmostEqual(b['ctotal_i'], t['ctotal_i'], 10)
+            self.assertAlmostEqual(b['ctotal_g'], t['ctotal_g'], 10)
+            ct += 1
+        self.assertTrue(ct>0)
 
     def testPhotometricIndicesRaw(self):
         """
