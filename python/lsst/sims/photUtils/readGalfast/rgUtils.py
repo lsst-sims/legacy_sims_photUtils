@@ -21,7 +21,8 @@ class rgBase():
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
     """
 
-    def calcMagNorm(self, objectMags, sedObj, photObj, redshift = None, stepSize = 0.01, initBand = 0):
+    def calcMagNorm(self, objectMags, sedObj, photObj, redshift = None, stepSize = 0.01, 
+                    initBand = 0, filtRange = None):
 
         """
         This will find the magNorm value that gives the closest match to the magnitudes of the object
@@ -44,6 +45,9 @@ class rgBase():
         the first naive match guess. Since imsimbandpass uses 500nm the best option is to use that closest
         or encompassing 500 nm. Be aware, this starts at 0, but is initialized to 1 meaning second in array.
 
+        @param [in] filtRange is a selected range of filters to match up against. Used when missing data
+        in some magnitude bands.
+
         @param [out] bestMagNorm is the magnitude normalization for the given magnitudes and SED
         """
 
@@ -54,13 +58,20 @@ class rgBase():
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
         #Use the object's magnitude in the first band as a naive estimate
-        testMagNorm = objectMags[initBand]
+        if filtRange is None:
+            testMagNorm = objectMags[initBand]
+        else:
+            testMagNorm = objectMags[filtRange[0]]
         testFluxNorm = sedTest.calcFluxNorm(testMagNorm, imSimBand)
         normedSED = Sed()
         norm_wavelen, norm_fnu = sedTest.multiplyFluxNorm(testFluxNorm, wavelen = sedTest.wavelen,
                                                           fnu = sedTest.fnu)
         normedSED.setSED(norm_wavelen, fnu = norm_fnu)
         sedMags = np.array(photObj.manyMagCalc_list(normedSED))
+        if filtRange is not None:
+            sedMags = sedMags[filtRange]
+            objectMags = objectMags[filtRange]
+        #print sedMags, objectMags
         diff = np.sort(objectMags - sedMags)
         diffSq = np.sum(diff**2, dtype=np.float64)
         diffSqPrev = np.sum(diff**2, dtype=np.float64)
@@ -81,6 +92,8 @@ class rgBase():
                                                               fnu = sedTest.fnu)
             normedSED.setSED(norm_wavelen, fnu = norm_fnu)
             sedMags = np.array(photObj.manyMagCalc_list(normedSED))
+            if filtRange is not None:
+                sedMags = sedMags[filtRange]
             diff = np.sort(objectMags - sedMags)
             diffSq = np.sum(diff**2, dtype=np.float64)
             if diffSq < bestDiffSq:

@@ -19,7 +19,8 @@ class selectGalaxySED(rgGalaxy):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
-        the rest frame.
+        the rest frame. Objects without magnitudes in at least two adjacent bandpasses will return as none
+        and print out a message.
 
         @param [in] sedList is the set of spectral objects from the models SEDs provided by loadBC03
         or other custom loader routine.
@@ -60,7 +61,9 @@ class selectGalaxySED(rgGalaxy):
         #Match the catalog colors to models
         numCatMags = len(catMags)
         numOn = 0
+        notMatched = 0
         matchColors = []
+        matchErrors = []
 
         for filtNum in range(0, len(galPhot.bandpassDict)-1):
             matchColors.append(np.transpose(catMags)[filtNum] - np.transpose(catMags)[filtNum+1])
@@ -68,32 +71,50 @@ class selectGalaxySED(rgGalaxy):
         matchColors = np.transpose(matchColors)
 
         for catObject in matchColors:
-            if numOn % 10000 == 0:
-                print 'Matched %i of %i catalog objects to SEDs' % (numOn, numCatMags)
-            distanceArray = np.zeros(len(sedList))
-            for filtNum in range(0, len(galPhot.bandpassDict)-1):
-                distanceArray += np.power((modelColors[filtNum] - catObject[filtNum]),2)
-            matchedSEDNum = np.nanargmin(distanceArray)
-            sedMatches.append(sedList[matchedSEDNum].name)
-            magNorm = self.calcMagNorm(catMags[numOn], sedList[matchedSEDNum],
-                                       galPhot, stepSize = np.power(10, -float(magNormAcc)))
-            magNormMatches.append(magNorm)
+            #This is done to handle objects with incomplete magnitude data
+            colorRange = np.arange(0, len(galPhot.bandpassDict)-1)
+            filtNums = np.arange(0, len(galPhot.bandpassDict))
+            if np.isnan(np.amin(catObject))==True:
+                colorRange = np.where(np.isnan(catObject)==False)[0]
+                filtNums = np.unique([colorRange, colorRange+1]) #To pick out right filters in calcMagNorm
+            if len(colorRange) == 0:
+                print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn)
+                notMatched += 1
+                sedMatches.append(None)
+                magNormMatches.append(None)
+                matchErrors.append(None)
+            else:
+                distanceArray = np.zeros(len(sedList))
+                for colorNum in colorRange:
+                    distanceArray += np.power((modelColors[colorNum] - catObject[colorNum]),2)
+                matchedSEDNum = np.nanargmin(distanceArray)
+                sedMatches.append(sedList[matchedSEDNum].name)
+                magNorm = self.calcMagNorm(np.array(catMags[numOn]), sedList[matchedSEDNum],
+                                           galPhot, stepSize = np.power(10, -float(magNormAcc)),
+                                           filtRange = filtNums)
+                magNormMatches.append(magNorm)
+                matchErrors.append(np.min(distanceArray)/len(colorRange))
             numOn += 1
+            if numOn % 10000 == 0:
+                print 'Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags)
 
-        print 'Done Matching. Matched %i catalog objects to SEDs' % (numCatMags)
+        print 'Done Matching. Matched %i of %i catalog objects to SEDs' % (numCatMags-notMatched, numCatMags)
+        if notMatched > 0:
+            print '%i objects did not get matched' % (notMatched)
 
-        return sedMatches, magNormMatches
+        return sedMatches, magNormMatches, matchErrors
 
-    def matchToObserved(self, sedList, catRA, catDec, catRedshifts, catMags,
+    def matchToObserved(self, sedList, catMags, catRedshifts, catRA = None, catDec = None,
                         bandpassDict = None, dzAcc = 2, magNormAcc = 2, reddening = True,
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
-        the observed frame and can correct for extinction from within the milky way as well if needed.
+        the observed frame and can correct for reddening from within the milky way as well if needed.
         In order to make things faster it first calculates colors for all model SEDs at redshifts between
         the minimum and maximum redshifts of the catalog objects provided with a grid spacing in redshift
-        defined by the parameter dzAcc.
+        defined by the parameter dzAcc. Objects without magnitudes in at least two adjacent bandpasses will
+        return as none and print out a message.
 
         @param [in] sedList is the set of spectral objects from the models SEDs provided by loadBC03
         or other custom loader routine.
@@ -107,8 +128,8 @@ class selectGalaxySED(rgGalaxy):
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
 
-        @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes. If left
-        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with
+        @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes.
+        If left equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with
         default extCoeffs.
 
         @param [in] dzAcc is the number of decimal places you want to use when building the redshift grid.
@@ -118,10 +139,12 @@ class selectGalaxySED(rgGalaxy):
         @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
         @param [in] reddening is a boolean that determines whether to correct catalog magnitudes for
-        dust in the milky way. This uses calculateEBV from EBV.py to find an EBV value for the object's
+        dust in the milky way. By default, it is True.
+        If true, this uses calculateEBV from EBV.py to find an EBV value for the object's
         ra and dec coordinates and then uses the coefficients provided by extCoeffs which should come
         from Schlafly and Finkbeiner (2011) for the correct filters and in the same order as provided
         in bandpassDict.
+        If false, this means it will not run the dereddening procedure.
 
         @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) (ApJ, 737, 103) coefficients for the
         given filters from bandpassDict and need to be in the same order as bandpassDict. The default given
@@ -164,9 +187,11 @@ class selectGalaxySED(rgGalaxy):
         numRedshifted = 0
         sedMatches = [None] * len(catRedshifts)
         magNormMatches = [None] * len(catRedshifts)
+        matchErrors = [None] * len(catRedshifts)
         redshiftIndex = np.argsort(catRedshifts)
 
         numOn = 0
+        notMatched = 0
         lastRedshift = -100
         print 'Starting Matching. Arranged by redshift value.'
         for redshift in redshiftRange:
@@ -187,20 +212,40 @@ class selectGalaxySED(rgGalaxy):
             for currentIndex in redshiftIndex[numOn:]:
                 matchMags = objMags[currentIndex]
                 if lastRedshift < np.round(catRedshifts[currentIndex],dzAcc) <= redshift:
-                    for filtNum in range(0, len(galPhot.bandpassDict)-1):
-                        matchColor = matchMags[filtNum] - matchMags[filtNum+1]
-                        distanceArray = np.power((colorSet[filtNum] - matchColor),2)
-                    matchedSEDNum = np.nanargmin(distanceArray)
-                    sedMatches[currentIndex] = sedList[matchedSEDNum].name
-                    magNormVal = self.calcMagNorm(matchMags, sedList[matchedSEDNum],galPhot,
-                                                  redshift = catRedshifts[currentIndex],
-                                                  stepSize = np.power(10, -float(magNormAcc)))
-                    magNormMatches[currentIndex] = magNormVal
+                    colorRange = np.arange(0, len(galPhot.bandpassDict)-1)
+                    matchColors = []
+                    for colorNum in colorRange:
+                        matchColors.append(matchMags[colorNum] - matchMags[colorNum+1])
+                    #This is done to handle objects with incomplete magnitude data
+                    filtNums = np.arange(0, len(galPhot.bandpassDict))
+                    if np.isnan(np.amin(matchColors))==True:
+                        colorRange = np.where(np.isnan(matchColors)==False)[0]
+                        filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm
+                    if len(colorRange) == 0:
+                        print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' \
+                              % (currentIndex)
+                        notMatched += 1
+                        #Don't need to assign 'None' here in result array, b/c 'None' is default value
+                    else:
+                        distanceArray = [np.zeros(len(sedList))]
+                        for colorNum in colorRange:
+                            distanceArray += np.power((colorSet[colorNum] - matchColors[colorNum]),2)
+                        matchedSEDNum = np.nanargmin(distanceArray)
+                        sedMatches[currentIndex] = sedList[matchedSEDNum].name
+                        magNormVal = self.calcMagNorm(np.array(matchMags), sedList[matchedSEDNum], 
+                                                      galPhot, redshift = catRedshifts[currentIndex],
+                                                      stepSize = np.power(10, -float(magNormAcc)),
+                                                      filtRange = filtNums)
+                        magNormMatches[currentIndex] = magNormVal
+                        matchErrors[currentIndex] = np.min(distanceArray)/len(colorRange)
                     numOn += 1
                 else:
                     break
             lastRedshift = redshift
 
-        print 'Done Matching. Matched %i catalog objects to SEDs' % (len(catMags))
+        print 'Done Matching. Matched %i of %i catalog objects to SEDs' % (len(catMags)-notMatched, 
+                                                                           len(catMags))
+        if notMatched > 0:
+            print '%i objects did not get matched.' % (notMatched)
 
-        return sedMatches, magNormMatches
+        return sedMatches, magNormMatches, matchErrors
