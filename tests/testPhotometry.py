@@ -454,6 +454,25 @@ class photometryUnitTest(unittest.TestCase):
         if os.path.exists(baselineCatName):
             os.unlink(baselineCatName)
 
+    def testPhotometricIndicesRaw(self):
+        """
+        Use manMagCalc_list with specified indices on an Sed.  Make sure
+        that the appropriate magnitudes are or are not 'None'
+        """
+        starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        starPhot = PhotometryStars()
+        starPhot.loadTotalBandpassesFromFiles()
+        testSed = Sed()
+        testSed.readSED_flambda(starName)
+        indices = [1,3]
+        mags = starPhot.manyMagCalc_list(testSed, indices=indices)
+        self.assertTrue(mags[0] is None)
+        self.assertTrue(mags[1] is not None)
+        self.assertTrue(mags[2] is None)
+        self.assertTrue(mags[3] is not None)
+        self.assertTrue(mags[4] is None)
+        self.assertTrue(mags[5] is None)
+        self.assertTrue(len(mags)==6)
 
 
     def testEBV(self):
