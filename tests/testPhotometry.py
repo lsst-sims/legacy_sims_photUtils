@@ -491,6 +491,12 @@ class photometryUnitTest(unittest.TestCase):
             ct += 1
         self.assertTrue(ct>0)
 
+        if os.path.exists(baselineCatName):
+            os.unlink(baselineCatName)
+
+        if os.path.exists(testCatName):
+            os.unlink(testCatName)
+
     def testPhotometricIndicesRaw(self):
         """
         Use manMagCalc_list with specified indices on an Sed.  Make sure
