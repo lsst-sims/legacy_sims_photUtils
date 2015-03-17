@@ -1179,7 +1179,7 @@ class Sed(object):
         """
 
         if observedBandPassInd is not None:
-            phiarray = phiarray(observedBandPassInd)
+            phiarray = phiarray[observedBandPassInd]
         flux = numpy.empty(len(phiarray), dtype='float')
         flux = numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step 
         return flux
