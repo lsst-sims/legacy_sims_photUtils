@@ -248,11 +248,27 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
-class cartoonStarsOnlyI(cartoonStars):
+class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, Variability, PhotometryStars):
     catalog_type = 'cartoonStarsOnlyI'
     column_outputs = ['id','raObserved','decObserved','cartoon_i']
 
-class cartoonStarsIZ(cartoonStars):
+    @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
+    def get_magnitudes(self):
+        """
+        Example photometry getter for alternative (i.e. non-LSST) bandpasses
+        """
+
+        idNames = self.column_by_name('id')
+        bandpassNames=['u','g','r','i','z']
+        bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
+
+        if self.bandpassDict is None or self.phiArray is None:
+            self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
+                    bandpassRoot = 'test_bandpass_')
+
+        output = self.meta_magnitudes_getter(idNames)
+
+class cartoonStarsIZ(cartoonStarsOnlyI):
     catalog_type = 'cartoonStarsIR'
     column_outputs = ['id', 'raObserved', 'decObserved', 'cartoon_i', 'cartoon_z']
 
