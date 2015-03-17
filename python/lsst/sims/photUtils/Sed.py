@@ -1160,6 +1160,10 @@ class Sed(object):
         wavelen_step: `float`, mandatory
             the uniform grid size of the SED
 
+        observedBandPassInd: list of integers, optional, defaults to None
+            list of indices of phiarray corresponding to observed bandpasses,
+            if None, the original phiarray is returned
+
 
         Returns
         -------
@@ -1174,12 +1178,14 @@ class Sed(object):
         method is used incorrectly.
         """
 
+        if observedBandPassInd is not None:
+            phiarray = phiarray(observedBandPassInd)
         flux = numpy.empty(len(phiarray), dtype='float')
         flux = numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step 
         return flux
 
 
-    def manyMagCalc(self, phiarray, wavelen_step):
+    def manyMagCalc(self, phiarray, wavelen_step, observedBandPassInd=None):
         """
         Calculate many magnitudes for many bandpasses using a single sed.
 
@@ -1190,7 +1196,20 @@ class Sed(object):
         already been calculated for Sed.
         These assumptions are to avoid error checking within this function (for
         speed), but could lead to errors if method is used incorrectly.
+        Parameters
+        ----------
+        phiarray: `np.ndarray`, mandatory
+            phiarray corresponding to the list of bandpasses in which the band
+            fluxes need to be calculated, in the same wavelength grid as the SED
+        
+        wavelen_step: `float`, mandatory
+            the uniform grid size of the SED
+
+        observedBandPassInd: list of integers, optional, defaults to None
+            list of indices of phiarray corresponding to observed bandpasses,
+            if None, the original phiarray is returned
+
         """
-        fluxes = self.manyFluxCalc(phiarray, wavelen_step) 
+        fluxes = self.manyFluxCalc(phiarray, wavelen_step, observedBandPassInd) 
         mags = -2.5*numpy.log10(fluxes) - self.zp
         return mags
