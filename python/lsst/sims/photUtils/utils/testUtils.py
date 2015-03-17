@@ -252,6 +252,11 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, Variability,
     catalog_type = 'cartoonStarsOnlyI'
     column_outputs = ['id','raObserved','decObserved','cartoon_i']
 
+    #I need to give it the name of an actual SED file that spans the expected wavelength range
+    defSedName = 'km30_5250.fits_g00_5370'
+    default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
+                       ('glat', 30., float)]
+
     @compound('cartoon_u','cartoon_g','cartoon_r','cartoon_i','cartoon_z')
     def get_magnitudes(self):
         """
@@ -267,6 +272,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, Variability,
                     bandpassRoot = 'test_bandpass_')
 
         output = self.meta_magnitudes_getter(idNames)
+        return output
 
 class cartoonStarsIZ(cartoonStarsOnlyI):
     catalog_type = 'cartoonStarsIR'

@@ -318,7 +318,9 @@ class PhotometryBase(object):
         @param [in] sedobj is an Sed object
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for
+        calculate magnitudes for.  Other magnitudes will be listed as 'None' (i.e. this method will
+        return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return nonsense for magnitudes you did not actually ask for)
 
         @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
         """
@@ -340,10 +342,16 @@ class PhotometryBase(object):
             #
             sedobj.flambdaTofnu()
 
-            magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep, observedBandPassInd=indices)
+            if indices is not None:
+                for i in range(self.nBandpasses):
+                    magList.append(None)
 
-            for i in range(self.nBandpasses):
-                magList.append(magArray[i])
+                magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep, observedBandPassInd=indices)
+                for i,ix in enumerate(indices):
+                    magList[ix] = magArray[i]
+            else:
+                magList = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
+
         else:
             for i in range(self.nBandpasses):
                 magList.append(None)
@@ -738,17 +746,17 @@ class PhotometryGalaxies(PhotometryBase):
             for name in idNames:
                 rowTotal.append(magDict[name]["total"][i])
 
-                if magDict[name]["bulge"]:
+                if magDict[name]["bulge"] is not None:
                     rowBulge.append(magDict[name]["bulge"][i])
                 else:
                     rowBulge.append(failure)
 
-                if magDict[name]["disk"]:
+                if magDict[name]["disk"] is not None:
                     rowDisk.append(magDict[name]["disk"][i])
                 else:
                     rowDisk.append(failure)
 
-                if magDict[name]["agn"]:
+                if magDict[name]["agn"] is not None:
                     rowAgn.append(magDict[name]["agn"][i])
                 else:
                     rowAgn.append(failure)
