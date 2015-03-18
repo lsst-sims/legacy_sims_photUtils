@@ -79,7 +79,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.assertTrue('lsst_g' in cat.iter_column_names())
         self.assertFalse('lsst_u' in cat.iter_column_names())
         self.assertFalse('lsst_r' in cat.iter_column_names())
-        self.assertFalse('ls;st_i' in cat.iter_column_names())
+        self.assertFalse('lsst_i' in cat.iter_column_names())
         self.assertFalse('lsst_z' in cat.iter_column_names())
         self.assertFalse('lsst_y' in cat.iter_column_names())
 
@@ -92,6 +92,9 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.assertFalse('lsst_z' in cat.iter_column_names())
         self.assertFalse('lsst_y' in cat.iter_column_names())
 
+
+    def testActualCatalog(self):
+        
 
 
 def suite():
