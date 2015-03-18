@@ -12,6 +12,12 @@ from lsst.sims.photUtils.utils import makeStarDatabase
 
 class testCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     column_outputs = ['raObserved', 'decObserved']
+    default_formats = {'f':'%e'}
+
+class baselineCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
+    column_outputs = ['raObserved', 'decObserved',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
+    default_formats = {'f':'e'}
 
 class testDBObject(CatalogDBObject):
     tableid = 'starsALL_forceseek'
@@ -48,6 +54,11 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                         radius=self.radius)
         self.dbObj = testDBObject(address='sqlite:///' + self.dbName)
 
+        self.obs_metadata = ObservationMetaData(unrefractedRA=self.unrefractedRA,
+                                                unrefractedDec=self.unrefractedRA,
+                                                boundType='circle', boundLength=self.radius,
+                                                bandpassName='g', mjd=57000.0)
+
     def tearDown(self):
         if os.path.exists(self.dbName):
             os.unlink(self.dbName)
@@ -57,23 +68,31 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         del self.unrefractedRA
         del self.unrefractedDec
         del self.radius
+        del self.obs_metadata
 
 
     def testSetupPhotometry(self):
-        obs_metadata = ObservationMetaData(unrefractedRA=self.unrefractedRA,
-                                           unrefractedDec=self.unrefractedRA,
-                                           boundType='circle', boundLength=self.radius,
-                                           bandpassName='g', mjd=57000.0)
 
-        cat = setupPhotometryCatalog(obs_metadata=obs_metadata, dbConnection=self.dbObj,
+        cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata, dbConnection=self.dbObj,
                                      catalogClass=testCatalog)
 
         self.assertTrue('lsst_g' in cat.iter_column_names())
         self.assertFalse('lsst_u' in cat.iter_column_names())
         self.assertFalse('lsst_r' in cat.iter_column_names())
+        self.assertFalse('ls;st_i' in cat.iter_column_names())
+        self.assertFalse('lsst_z' in cat.iter_column_names())
+        self.assertFalse('lsst_y' in cat.iter_column_names())
+
+        cat = testCatalog(self.dbObj, obs_metadata=self.obs_metadata)
+
+        self.assertFalse('lsst_u' in cat.iter_column_names())
+        self.assertFalse('lsst_g' in cat.iter_column_names())
+        self.assertFalse('lsst_r' in cat.iter_column_names())
         self.assertFalse('lsst_i' in cat.iter_column_names())
         self.assertFalse('lsst_z' in cat.iter_column_names())
         self.assertFalse('lsst_y' in cat.iter_column_names())
+
+
 
 def suite():
     utilsTests.init()
