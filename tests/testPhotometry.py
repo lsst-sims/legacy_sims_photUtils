@@ -500,7 +500,7 @@ class photometryUnitTest(unittest.TestCase):
     def testPhotometricIndicesRaw(self):
         """
         Use manMagCalc_list with specified indices on an Sed.  Make sure
-        that the appropriate magnitudes are or are not 'None'
+        that the appropriate magnitudes are or are not Nan
         """
         starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
         starPhot = PhotometryStars()
