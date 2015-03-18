@@ -57,6 +57,11 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                                 boundType='circle', boundLength=self.radius,
                                                 bandpassName='g', mjd=57000.0)
 
+        self.obs_metadata_compound = ObservationMetaData(unrefractedRA=self.unrefractedRA,
+                                                         unrefractedDec=self.unrefractedDec,
+                                                         boundType='circle', boundLength=self.radius,
+                                                         bandpassName=['g','i'], mjd=57000.0)
+
     def tearDown(self):
         if os.path.exists(self.dbName):
             os.unlink(self.dbName)
@@ -67,6 +72,22 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         del self.unrefractedDec
         del self.radius
         del self.obs_metadata
+
+    def testExceptions(self):
+
+        class dummyClass(object):
+            def __init__(self):
+                pass
+
+        xx = dummyClass()
+        self.assertRaises(RuntimeError, setupPhotometryCatalog, obs_metadata=xx,
+                          dbConnection=self.dbObj, catalogClass=testCatalog)
+
+        self.assertRaises(RuntimeError, setupPhotometryCatalog, obs_metadata=self.obs_metadata,
+                          dbConnection=xx, catalogClass=testCatalog)
+
+        self.assertRaises(RuntimeError, setupPhotometryCatalog, obs_metadata=self.obs_metadata,
+                          dbConnection=self.dbObj, catalogClass=dummyClass)
 
 
     def testSetupPhotometry(self):
@@ -81,6 +102,16 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.assertFalse('lsst_z' in cat.iter_column_names())
         self.assertFalse('lsst_y' in cat.iter_column_names())
 
+        cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
+                                     dbConnection=self.dbObj, catalogClass=testCatalog)
+
+        self.assertTrue('lsst_g' in cat.iter_column_names())
+        self.assertTrue('lsst_i' in cat.iter_column_names())
+        self.assertFalse('lsst_u' in cat.iter_column_names())
+        self.assertFalse('lsst_r' in cat.iter_column_names())
+        self.assertFalse('lsst_z' in cat.iter_column_names())
+        self.assertFalse('lsst_y' in cat.iter_column_names())
+
         cat = testCatalog(self.dbObj, obs_metadata=self.obs_metadata)
 
         self.assertFalse('lsst_u' in cat.iter_column_names())
@@ -91,15 +122,16 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.assertFalse('lsst_y' in cat.iter_column_names())
 
 
+
     def testActualCatalog(self):
-        
+
 
         testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata,
                                          dbConnection=self.dbObj,
                                          catalogClass=testCatalog)
-                                         
+
         baselineCat = baselineCatalog(self.dbObj, obs_metadata=self.obs_metadata)
-        
+
         testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                  ('lsst_g', numpy.float)])
 
@@ -112,21 +144,37 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         baseName = 'baseCat.txt'
         testCat.write_catalog(testName)
         baselineCat.write_catalog(baseName)
-        
+
         testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
         baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
-        
+
         ct = 0
         for b, t in zip(baseData, testData):
             self.assertAlmostEqual(b['lsst_g'], t['lsst_g'], 12)
             ct +=1
-        
+
         self.assertTrue(ct>0)
-        
-        #if os.path.exists(testName):
-        #    os.unlink(testName)
-        #if os.path.exists(baseName):
-        #    os.unlink(baseName)
+
+        testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
+                                 ('lsst_g', numpy.float), ('lsst_i', numpy.float)])
+
+        testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
+                                         dbConnection=self.dbObj,
+                                         catalogClass=testCatalog)
+        testCat.write_catalog(testName)
+        testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+        ct = 0
+        for b, t in zip(baseData, testData):
+            self.assertAlmostEqual(b['lsst_g'], t['lsst_g'], 12)
+            self.assertAlmostEqual(b['lsst_i'], t['lsst_i'], 12)
+            ct +=1
+
+        self.assertTrue(ct>0)
+
+        if os.path.exists(testName):
+            os.unlink(testName)
+        if os.path.exists(baseName):
+            os.unlink(baseName)
 
 def suite():
     utilsTests.init()
