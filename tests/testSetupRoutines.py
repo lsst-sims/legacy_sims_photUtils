@@ -11,15 +11,25 @@ from lsst.sims.photUtils import PhotometryStars, setupPhotometryCatalog
 from lsst.sims.photUtils.utils import makeStarDatabase
 
 class testCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
+    """
+    A class with no photometry columns.  Meant to be passed to setupPhotometryCatalog
+    where it will be given photometry columns
+    """
     column_outputs = ['raObserved', 'decObserved']
     default_formats = {'f':'%.12e'}
 
 class baselineCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
+    """
+    Baseline photometry catalog against which to compare testCatalog
+    """
     column_outputs = ['raObserved', 'decObserved',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
     default_formats = {'f':'%.12e'}
 
 class testDBObject(CatalogDBObject):
+    """
+    CatalogDBObject to map our test database of stars
+    """
     tableid = 'starsALL_forceseek'
     idColKey = 'id'
     raColName = 'ra'
@@ -74,6 +84,9 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         del self.obs_metadata
 
     def testExceptions(self):
+        """
+        Make sure that setupPhotometryCatalog throws errors when it is supposed to
+        """
 
         class dummyClass(object):
             def __init__(self):
@@ -91,7 +104,12 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
 
     def testSetupPhotometry(self):
+        """
+        Make sure that catalogs instantiated by setupPhotometryCatalog contain the
+        correct columns.
+        """
 
+        #test case with a single bandpass
         cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata, dbConnection=self.dbObj,
                                      catalogClass=testCatalog)
 
@@ -102,6 +120,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.assertFalse('lsst_z' in cat.iter_column_names())
         self.assertFalse('lsst_y' in cat.iter_column_names())
 
+        #test case with two bandpasses
         cat = setupPhotometryCatalog(obs_metadata=self.obs_metadata_compound,
                                      dbConnection=self.dbObj, catalogClass=testCatalog)
 
@@ -112,6 +131,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.assertFalse('lsst_z' in cat.iter_column_names())
         self.assertFalse('lsst_y' in cat.iter_column_names())
 
+        #make sure that class default columns did not get overwritten
         cat = testCatalog(self.dbObj, obs_metadata=self.obs_metadata)
 
         self.assertFalse('lsst_u' in cat.iter_column_names())
@@ -124,7 +144,10 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
 
 
     def testActualCatalog(self):
-
+        """
+        Make sure that the values written to catalogs that are instantiated using
+        setupPhotometryCatalog are correct
+        """
 
         testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata,
                                          dbConnection=self.dbObj,
