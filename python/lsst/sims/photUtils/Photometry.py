@@ -344,7 +344,7 @@ class PhotometryBase(object):
 
             if indices is not None:
                 for i in range(self.nBandpasses):
-                    magList.append(None)
+                    magList.append(numpy.NaN)
 
                 magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep, observedBandPassInd=indices)
                 for i,ix in enumerate(indices):

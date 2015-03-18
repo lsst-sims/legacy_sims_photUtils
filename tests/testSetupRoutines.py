@@ -12,12 +12,12 @@ from lsst.sims.photUtils.utils import makeStarDatabase
 
 class testCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     column_outputs = ['raObserved', 'decObserved']
-    default_formats = {'f':'%e'}
+    default_formats = {'f':'%.12e'}
 
 class baselineCatalog(InstanceCatalog, AstrometryStars, PhotometryStars):
     column_outputs = ['raObserved', 'decObserved',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y']
-    default_formats = {'f':'e'}
+    default_formats = {'f':'%.12e'}
 
 class testDBObject(CatalogDBObject):
     tableid = 'starsALL_forceseek'
@@ -27,16 +27,14 @@ class testDBObject(CatalogDBObject):
     columns = [('id','simobjid', int),
                ('raJ2000', 'ra*PI()/180.'),
                ('decJ2000', 'decl*PI()/180.'),
-               ('glon', 'gal_l*PI()/180.'),
-               ('glat', 'gal_b*PI()/180.'),
-               ('magNorm', '(-2.5*log(flux_scale)/log(10.)) - 18.402732642'),
+               ('magNorm', None),
                ('properMotionRa', '(mura/(1000.*3600.))*PI()/180.'),
                ('properMotionDec', '(mudecl/(1000.*3600.))*PI()/180.'),
                ('parallax', 'parallax*PI()/648000000.'),
                ('galacticAv', 'CONVERT(float, ebv*3.1)'),
                ('radialVelocity', 'vrad'),
                ('variabilityParameters', 'varParamStr', str, 256),
-               ('sedFilename', 'sedfilename', unicode, 40)]
+               ('sedFilename', 'sedfilename', str, 40)]
 
 class InstanceCatalogSetupUnittest(unittest.TestCase):
 
@@ -55,7 +53,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.dbObj = testDBObject(address='sqlite:///' + self.dbName)
 
         self.obs_metadata = ObservationMetaData(unrefractedRA=self.unrefractedRA,
-                                                unrefractedDec=self.unrefractedRA,
+                                                unrefractedDec=self.unrefractedDec,
                                                 boundType='circle', boundLength=self.radius,
                                                 bandpassName='g', mjd=57000.0)
 
@@ -96,6 +94,39 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
     def testActualCatalog(self):
         
 
+        testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata,
+                                         dbConnection=self.dbObj,
+                                         catalogClass=testCatalog)
+                                         
+        baselineCat = baselineCatalog(self.dbObj, obs_metadata=self.obs_metadata)
+        
+        testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
+                                 ('lsst_g', numpy.float)])
+
+        basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
+                                 ('lsst_u', numpy.float), ('lsst_g', numpy.float),
+                                 ('lsst_r', numpy.float), ('lsst_i', numpy.float),
+                                 ('lsst_z', numpy.float), ('lsst_y', numpy.float)])
+
+        testName = 'testCat.txt'
+        baseName = 'baseCat.txt'
+        testCat.write_catalog(testName)
+        baselineCat.write_catalog(baseName)
+        
+        testData = numpy.genfromtxt(testName, dtype=testdtype, delimiter=',')
+        baseData = numpy.genfromtxt(baseName, dtype=basedtype, delimiter=',')
+        
+        ct = 0
+        for b, t in zip(baseData, testData):
+            self.assertAlmostEqual(b['lsst_g'], t['lsst_g'], 12)
+            ct +=1
+        
+        self.assertTrue(ct>0)
+        
+        #if os.path.exists(testName):
+        #    os.unlink(testName)
+        #if os.path.exists(baseName):
+        #    os.unlink(baseName)
 
 def suite():
     utilsTests.init()

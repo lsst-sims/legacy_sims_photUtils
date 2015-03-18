@@ -509,12 +509,12 @@ class photometryUnitTest(unittest.TestCase):
         testSed.readSED_flambda(starName)
         indices = [1,3]
         mags = starPhot.manyMagCalc_list(testSed, indices=indices)
-        self.assertTrue(mags[0] is None)
-        self.assertTrue(mags[1] is not None)
-        self.assertTrue(mags[2] is None)
-        self.assertTrue(mags[3] is not None)
-        self.assertTrue(mags[4] is None)
-        self.assertTrue(mags[5] is None)
+        self.assertTrue(numpy.isnan(mags[0]))
+        self.assertFalse(numpy.isnan(mags[1]))
+        self.assertTrue(numpy.isnan(mags[2]))
+        self.assertFalse(numpy.isnan(mags[3]))
+        self.assertTrue(numpy.isnan(mags[4]))
+        self.assertTrue(numpy.isnan(mags[5]))
         self.assertTrue(len(mags)==6)
 
 

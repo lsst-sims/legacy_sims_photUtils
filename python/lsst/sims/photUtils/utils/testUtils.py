@@ -39,7 +39,7 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
 
     numpy.random.seed(seedVal)
 
-    rr = numpy.random.sample(size)*numpy.radians(radius)
+    rr = numpy.random.sample(size)*radius
     theta = numpy.random.sample(size)*2.0*numpy.pi
 
     try:
@@ -60,7 +60,6 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
     for i in range(size):
         raStar = unrefractedRA + rr[i]*numpy.cos(theta[i])
         decStar = unrefractedDec + rr[i]*numpy.sin(theta[i])
-
 
         cmd = '''INSERT INTO starsALL_forceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, %s, '%s', %f)''' %\
                   (i, raStar, decStar, magnormStar[i], mudecl[i], mura[i],
