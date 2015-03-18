@@ -6,6 +6,7 @@ To date (30 October 2014) testPhotometry.py and testCosmology.py import from thi
 
 import numpy
 import os
+import sqlite3
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
@@ -20,11 +21,55 @@ from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 
 from lsst.sims.photUtils.Variability import Variability
 
-__all__ = ["MyVariability", "testDefaults", "cartoonPhotometryStars",
+__all__ = ["makeStarDatabase", "MyVariability", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
            "cartoonStarsOnlyI", "cartoonStarsIZ",
            "cartoonGalaxies", "cartoonGalaxiesIG", "testStars", "testGalaxies",
            "comovingDistanceIntegrand", "cosmologicalOmega"]
+
+def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
+                     radius=1.0, unrefractedRA=50.0, unrefractedDec=-10.0):
+
+    star_seds = ['km20_5750.fits_g40_5790','m2.0Full.dat','bergeron_6500_85.dat_6700']
+
+    #Now begin building the database.
+    #First create the tables.
+    conn = sqlite3.connect(filename)
+    c = conn.cursor()
+
+    numpy.random.seed(seedVal)
+
+    rr = numpy.random.sample(size)*numpy.radians(radius)
+    theta = numpy.random.sample(size)*2.0*numpy.pi
+
+    try:
+        c.execute('''CREATE TABLE starsALL_forceseek
+                  (simobjid int, ra real, decl real, magNorm real,
+                  mudecl real, mura real, galacticAv real, vrad real, varParamStar text, sedFilename text, parallax real)''')
+    except:
+        raise RuntimeError("Error creating starsALL_forceseek table.")
+
+    magnormStar = numpy.random.sample(size)*5.0+17.0
+    magnormStar = numpy.random.sample(size)*4.0 + 17.0
+    mudecl = numpy.random.sample(size)*0.0001
+    mura = numpy.random.sample(size)*0.0001
+    galacticAv = numpy.random.sample(size)*0.05*3.1
+    vrad = numpy.random.sample(size)*1.0
+    parallax = 0.00045+numpy.random.sample(size)*0.00001
+
+    for i in range(size):
+        raStar = unrefractedRA + rr[i]*numpy.cos(theta[i])
+        decStar = unrefractedDec + rr[i]*numpy.sin(theta[i])
+
+
+        cmd = '''INSERT INTO starsALL_forceseek VALUES (%i, %f, %f, %f, %f, %f, %f, %f, %s, '%s', %f)''' %\
+                  (i, raStar, decStar, magnormStar[i], mudecl[i], mura[i],
+                  galacticAv[i], vrad[i], 'NULL', star_seds[i%len(star_seds)], parallax[i])
+
+        c.execute(cmd)
+
+    conn.commit()
+    conn.close()
 
 @register_class
 class MyVariability(Variability):
