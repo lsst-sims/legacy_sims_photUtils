@@ -60,6 +60,9 @@ class selectStarSED(rgStar):
 
         @param [out] magNormMatches are the magnitude normalizations for the given magnitudes and 
         matched SED.
+
+        @param [out] matchErrors contains the Mean Squared Error between the colors of each object and
+        the colors of the matched SED.
         """
         
         starPhot = phot()
