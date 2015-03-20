@@ -217,8 +217,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                  ('sigma_lsst_r', numpy.float), ('sigma_lsst_i', numpy.float),
                                  ('sigma_lsst_z', numpy.float), ('sigma_lsst_y', numpy.float)])
 
-        testName = 'testCat.txt'
-        baseName = 'baseCat.txt'
+        testName = 'testSetupCat.txt'
+        baseName = 'baseSetupCat.txt'
         testCat.write_catalog(testName)
         baselineCat.write_catalog(baseName)
 
