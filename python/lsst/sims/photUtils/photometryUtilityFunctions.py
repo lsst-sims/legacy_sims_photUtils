@@ -4,7 +4,7 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 __all__ = ["setupPhotometryCatalog"]
 
 def setupPhotometryCatalog(obs_metadata=None, dbConnection=None, catalogClass=None,
-                           photometryNameRoot='lsst'):
+                           photometryNameRoot='lsst', uncertainty=False):
     """
     This method will read in an InstanceCatalog class (not an instantiation of that class;
     a class itself), and instantiation of ObservationMetaData and an instantiation of
@@ -54,8 +54,13 @@ def setupPhotometryCatalog(obs_metadata=None, dbConnection=None, catalogClass=No
                     column_outputs = [photometryNameRoot+'_'+b]
                 else:
                     column_outputs.append(photometryNameRoot+'_'+b)
+
+                if uncertainty:
+                    column_outputs.append('sigma_'+photometryNameRoot+'_'+b)
         else:
             column_outputs = [photometryNameRoot+'_'+obs_metadata.bandpass]
+            if uncertainty:
+                column_outputs.append('sigma_'+photometryNameRoot+'_'+obs_metadata.bandpass)
 
     instantiation = catalogClass(dbConnection, obs_metadata=obs_metadata, column_outputs=column_outputs)
     return instantiation
