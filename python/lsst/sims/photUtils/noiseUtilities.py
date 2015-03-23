@@ -3,7 +3,7 @@ from .Sed import Sed
 from .Bandpass import Bandpass
 from lsst.sims.photUtils import PhotometricDefaults
 
-__all__ = ["calcM5", "setM5"]
+__all__ = ["calcM5", "setM5", "calcGamma"]
 
 def setM5(m5target, skysed, totalBandpass, hardware,
           expTime=PhotometricDefaults.exptime,
@@ -164,3 +164,70 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     # Calculate the AB magnitude of this source.
     mag_5sigma = flatsource.calcMag(totalBandpass)
     return mag_5sigma
+
+def calcGamma(bandpass, m5,
+              expTime=PhotometricDefaults.exptime,
+              nexp=PhotometricDefaults.nexp,
+              gain=PhotometricDefaults.gain,
+              effarea=PhotometricDefaults.effarea):
+
+    """
+    Calculate the gamma parameter used for determining photometric
+    signal to noise in equation 5 of the LSST overview paper
+    (arXiv:0805.2366)
+
+    @param [in] bandpass is an instantiation of the Bandpass class
+    representing the bandpass for which you desire to calculate the
+    gamma parameter
+
+    @param [in] m5 is the magnitude at which a 5-sigma detection occurs
+    in this Bandpass
+
+    @param [in] expTime is the duration of a single exposure in seconds
+
+    @param [in] nexp is the number of exposures being combined
+
+    @param [in] gain is the number of electrons per ADU
+
+    @param [in] effarea is the effective area of the primary mirror
+    in square centimeters
+
+    @param [out] gamma
+    """
+    #This is based on the LSST SNR document (v1.2, May 2010)
+    #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+    #as well as equations 4-6 of the overview paper (arXiv:0805.2366)
+
+    #instantiate a flat SED
+    flatSed = Sed()
+    flatSed.setFlatSED()
+
+    #normalize the SED so that it has a magnitude equal to the desired m5
+    fNorm = flatSed.calcFluxNorm(m5, bandpass)
+    flatSed.multiplyFluxNorm(fNorm)
+    counts = flatSed.calcADU(bandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
+
+    #The expression for gamma below comes from:
+    #
+    #1) Take the approximation N^2 = N0^2 + alpha S from footnote 88 in the overview paper
+    #where N is the noise in flux of a source, N0 is the noise in flux due to sky brightness
+    #and instrumentation, S is the number of counts registered from the source and alpha
+    #is some constant
+    #
+    #2) Divide by S^2 and demand that N/S = 0.2 for a source detected at m5. Solve
+    #the resulting equation for alpha in terms of N0 and S5 (the number of counts from
+    #a source at m5)
+    #
+    #3) Substitute this expression for alpha back into the equation for (N/S)^2
+    #for a general source.  Re-factor the equation so that it looks like equation
+    #5 of the overview paper (note that x = S5/S).  This should give you gamma = (N0/S5)^2
+    #
+    #4) Solve equation 41 of the SNR document for the neff * sigma_total^2 term
+    #given snr=5 and counts as calculated above.  Note that neff * sigma_total^2
+    #is N0^2 in the equation above
+    #
+    #This should give you
+
+    gamma = 0.04 - 1.0/(counts*gain)
+
+    return gamma

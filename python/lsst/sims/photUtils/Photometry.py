@@ -14,7 +14,7 @@ import os
 import numpy
 import eups
 from collections import OrderedDict
-from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults
+from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, calcGamma
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -52,6 +52,10 @@ class PhotometryBase(object):
     sig2sys = None #square of systematic noise associated with this catalog
 
     skySED = None #the emission spectrum of the atmosphere
+
+    #taken from table 2 of arxiv:0805.2366
+    _defaultM5 = {'u':23.68, 'g':24.89, 'r':24.43, 'i':24.00, 'z':24.45, 'y':22.60}
+    _defaultGamma = {'u':0.037, 'g':0.038, 'r':0.039, 'i':0.039, 'z':0.040, 'y':0.040}
 
     def setupPhiArray_dict(self):
         """
@@ -388,20 +392,31 @@ class PhotometryBase(object):
             #OrderedDict
 
             self.gammaDict = OrderedDict()
+            self.m5Dict = OrderedDict()
             for i in range(self.nBandpasses):
                 b = self.bandpassDict.keys()[i]
-                self.gammaDict[b] = self.bandpassDict[b].calcGamma(obs_metadata.m5(b),
-                                                                   expTime=PhotometricDefaults.exptime,
-                                                                   nexp=PhotometricDefaults.nexp,
-                                                                   gain=PhotometricDefaults.gain,
-                                                                   effarea=PhotometricDefaults.effarea)
+                if obs_metadata.m5 is not None and b in obs_metadata.m5:
+                    self.m5Dict[b] = obs_metadata.m5[b]
+                    self.gammaDict[b] = calcGamma(self.bandpassDict[b], obs_metadata.m5[b],
+                                                  expTime=PhotometricDefaults.exptime,
+                                                  nexp=PhotometricDefaults.nexp,
+                                                  gain=PhotometricDefaults.gain,
+                                                  effarea=PhotometricDefaults.effarea)
+                else:
+                    if b not in self._defaultGamma:
+                        raise RuntimeError("No way to calculate gamma or m5 for filter " % b)
+
+                    self.m5Dict[b] = self._defaultM5[b]
+                    self.gammaDict[b] = self._defaultGamma[b]
 
         sigma = numpy.zeros(self.nBandpasses, numpy.float64)
 
         for i in range(self.nBandpasses):
             gg = self.gammaDict.values()[i]
-            xx = numpy.power(10.0,0.4*(magnitudes[i] - obs_metadata.m5(self.bandpassDict.keys()[i])))
+            xx = numpy.power(10.0,0.4*(magnitudes[i] - self.m5Dict[self.bandpassDict.keys()[i]]))
             sigmaSq = (0.04-gg)*xx+gg*xx*xx
+            if sigmaSq<0.0:
+                print gg,xx,self.m5Dict[self.bandpassDict.keys()[i]]
             if sig2sys is None:
                 noiseOverSignal = numpy.sqrt(sigmaSq)
             else:

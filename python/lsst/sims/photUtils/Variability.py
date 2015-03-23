@@ -287,7 +287,9 @@ class Variability(PhotometryBase):
         expmjd=self.obs_metadata.mjd
         output = self._methodRegistry[method](self, params,expmjd)
 
-        if self.bandpass is not None:
+        if self.bandpass is not None and not isinstance(self.bandpass, list):
+            #if bandpass refers to multiple bandpasses, we are obviously
+            #not writing this catalog as PhoSim input
             deltaMagNorm = output[self.bandpass]
         else:
             deltaMagNorm = None
