@@ -111,13 +111,21 @@ class Variability(PhotometryBase):
         columnNames = ['lsst_u_var', 'lsst_g_var', 'lsst_r_var', 'lsst_i_var',
                        'lsst_z_var', 'lsst_y_var']
 
-        return self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
+        magnitudes = numpy.array([self.column_by_name('lsst_u_var'),
+                                  self.column_by_name('lsst_g_var'),
+                                  self.column_by_name('lsst_r_var'),
+                                  self.column_by_name('lsst_i_var'),
+                                  self.column_by_name('lsst_z_var'),
+                                  self.column_by_name('lsst_y_var')])
+
+        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                  sig2sys=self.sig2sys)
 
     @compound('uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
           'zRecalc_var', 'yRecalc_var',
           'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var',
           'magNorm_Recalc_var')
-    def get_galaxy_variability(self):
+    def get_galaxy_variability_total(self):
 
         """
         Getter for variable magnitudes associated with AGN
@@ -248,14 +256,26 @@ class Variability(PhotometryBase):
         Getter for photometric uncertainties associated with AGN variability
         """
 
-        columnNames = ['uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
-                       'zRecalc_var', 'yRecalc_var']
-        output = self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
+        magnitudes = numpy.array([self.column_by_name('uRecalc_var'),
+                                  self.column_by_name('gRecalc_var'),
+                                  self.column_by_name('rRecalc_var'),
+                                  self.column_by_name('iRecalc_var'),
+                                  self.column_by_name('zRecalc_var'),
+                                  self.column_by_name('yRecalc_var')])
 
-        columnNames = ['uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var',
-                       'yAgn_var']
+        output = self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                    sig2sys=self.sig2sys)
 
-        return numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
+        magnitudes = numpy.array([self.column_by_name('uAgn_var'),
+                                  self.column_by_name('gAgn_var'),
+                                  self.column_by_name('rAgn_var'),
+                                  self.column_by_name('iAgn_var'),
+                                  self.column_by_name('zAgn_var'),
+                                  self.column_by_name('yAgn_var')])
+
+        return numpy.vstack([output, self.calculateMagnitudeUncertainty(magnitudes,
+                                                                        obs_metadata=self.obs_metadata,
+                                                                        sig2sys=self.sig2sys)])
 
     def applyVariability(self, varParams):
         """

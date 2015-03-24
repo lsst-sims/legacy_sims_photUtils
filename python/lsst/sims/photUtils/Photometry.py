@@ -432,25 +432,6 @@ class PhotometryBase(object):
             #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
             return 2.5*numpy.log10(1.0+noiseOverSignal)
 
-    def calculatePhotometricUncertaintyFromColumnNames(self, magnitudeColumnNames):
-        """
-        Calculate photometric uncertainties associated with InstanceCatalog columns containing magnitudes.
-
-        @param [in] magnitudeColumnNames is a list of the names of InstanceCatalog columns containing
-        magnitudes.  Note these magnitude column names must be in the same order as the bandpasses in
-        self.bandpassDict.
-
-        @param [out] an ndarray containing photometric uncertainties associated with those magnitudes,
-        suitable for inclusing in an instance catalog (output[i][j] will be the ith magnitude uncertainty
-        of object j).
-        """
-
-        magnitudes = []
-        for cc in magnitudeColumnNames:
-            magnitudes.append(self.column_by_name(cc));
-
-        return self.calculateMagnitudeUncertainty(numpy.array(magnitudes), obs_metadata=self.obs_metadata, sig2sys=self.sig2sys)
-
 
 class PhotometryGalaxies(PhotometryBase):
     """
@@ -801,31 +782,68 @@ class PhotometryGalaxies(PhotometryBase):
 
 
     @compound('sigma_uRecalc','sigma_gRecalc','sigma_rRecalc',
-              'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc',
-              'sigma_uBulge','sigma_gBulge','sigma_rBulge',
-              'sigma_iBulge','sigma_zBulge','sigma_yBulge',
-              'sigma_uDisk','sigma_gDisk','sigma_rDisk',
-              'sigma_iDisk','sigma_zDisk','sigma_yDisk',
-              'sigma_uAgn','sigma_gAgn','sigma_rAgn',
-              'sigma_iAgn','sigma_zAgn','sigma_yAgn')
-    def get_photometric_uncertainties(self):
+              'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc')
+    def get_photometric_uncertainties_total(self):
         """
-        Getter for photometric uncertainties associated with galaxies
+        Getter for total photometric uncertainties associated with galaxies
         """
+        magnitudes = numpy.array([self.column_by_name('uRecalc'),
+                                  self.column_by_name('gRecalc'),
+                                  self.column_by_name('rRecalc'),
+                                  self.column_by_name('iRecalc'),
+                                  self.column_by_name('zRecalc'),
+                                  self.column_by_name('yRecalc')])
 
-        columnNames = ['uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc']
-        output = self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
+        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                    sig2sys=self.sig2sys)
 
-        columnNames = ['uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge']
-        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
+    @compound('sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge',
+              'sigma_iBulge', 'sigma_zBulge', 'sigma_yBulge')
+    def get_photometric_uncertainties_bulge(self):
+        """
+        Getter for photometric uncertainties associated with galaxy bulges
+        """
+        magnitudes = numpy.array([self.column_by_name('uBulge'),
+                                  self.column_by_name('gBulge'),
+                                  self.column_by_name('rBulge'),
+                                  self.column_by_name('iBulge'),
+                                  self.column_by_name('zBulge'),
+                                  self.column_by_name('yBulge')])
 
-        columnNames = ['uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk']
-        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
+        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                  sig2sys=self.sig2sys)
 
-        columnNames = ['uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn']
-        output = numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
+    @compound('sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk',
+              'sigma_iDisk', 'sigma_zDisk', 'sigma_yDisk')
+    def get_photometric_uncertainties_disk(self):
+        """
+        Getter for photometeric uncertainties associated with galaxy disks
+        """
+        magnitudes = numpy.array([self.column_by_name('uDisk'),
+                                  self.column_by_name('gDisk'),
+                                  self.column_by_name('rDisk'),
+                                  self.column_by_name('iDisk'),
+                                  self.column_by_name('zDisk'),
+                                  self.column_by_name('yDisk')])
 
-        return output
+        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                  sig2sys=self.sig2sys)
+
+    @compound('sigma_uAgn', 'sigma_gAgn', 'sigma_rAgn',
+              'sigma_iAgn', 'sigma_zAgn', 'sigma_yAgn')
+    def get_photometric_uncertainties_agn(self):
+        """
+        Getter for photometric uncertainties associated with Agn
+        """
+        magnitudes = numpy.array([self.column_by_name('uAgn'),
+                                  self.column_by_name('gAgn'),
+                                  self.column_by_name('rAgn'),
+                                  self.column_by_name('iAgn'),
+                                  self.column_by_name('zAgn'),
+                                  self.column_by_name('yAgn')])
+
+        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                  sig2sys=self.sig2sys)
 
     @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
               'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
@@ -955,10 +973,15 @@ class PhotometryStars(PhotometryBase):
         magnitudes
         """
 
-        magnitudeColumnNames = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i',
-                                'lsst_z', 'lsst_y']
+        magnitudes = numpy.array([self.column_by_name('lsst_u'),
+                                  self.column_by_name('lsst_g'),
+                                  self.column_by_name('lsst_r'),
+                                  self.column_by_name('lsst_i'),
+                                  self.column_by_name('lsst_z'),
+                                  self.column_by_name('lsst_y')])
 
-        return self.calculatePhotometricUncertaintyFromColumnNames(magnitudeColumnNames)
+        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                  sig2sys=self.sig2sys)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')
