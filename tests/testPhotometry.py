@@ -593,15 +593,15 @@ class uncertaintyUnitTest(unittest.TestCase):
 
     def testUncertaintyExceptions(self):
         """
-        Test the calculatePhotometricUncertainty raises exceptions when it needs to
+        Test the calculateMagnitudeUncertainty raises exceptions when it needs to
         """
         phot = PhotometryBase()
         phot.loadBandpassesFromFiles()
-        magnitudes = [22.0, 23.0, 24.0, 25.0, 26.0, 27.0]
-        shortMagnitudes = [22.0]
-        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, magnitudes)
+        magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
+        shortMagnitudes = numpy.array([22.0])
+        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes)
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5=23.0)
-        self.assertRaises(RuntimeError, phot.calculatePhotometricUncertainty, shortMagnitudes, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, obs_metadata=obs_metadata)
 
     def testRawUncertainty(self):
         """
@@ -626,7 +626,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                                        seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
             skySeds.append(normalizedSkyDummy)
 
-        sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata)
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata)
         for i in range(len(self.bandpasses)):
             snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                                            seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
@@ -657,7 +657,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                                                        seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
             skySeds.append(normalizedSkyDummy)
 
-        sigma = phot.calculatePhotometricUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
         for i in range(len(self.bandpasses)):
             snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                                            seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
