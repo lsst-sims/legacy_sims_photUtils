@@ -293,18 +293,20 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         testName = 'testSetupCat.txt'
         baseName = 'baseSetupCat.txt'
 
-        for (testCatClass, dbo, baselineCat, msgr) in zip(testCatClasses, testCatDBs, baselineCats, msgroot):
 
-            testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                 ('lsst_g', numpy.float)])
-
-            basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
+        basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                  ('lsst_u', numpy.float), ('lsst_g', numpy.float),
                                  ('lsst_r', numpy.float), ('lsst_i', numpy.float),
                                  ('lsst_z', numpy.float), ('lsst_y', numpy.float),
                                  ('sigma_lsst_u', numpy.float), ('sigma_lsst_g',numpy.float),
                                  ('sigma_lsst_r', numpy.float), ('sigma_lsst_i', numpy.float),
                                  ('sigma_lsst_z', numpy.float), ('sigma_lsst_y', numpy.float)])
+
+        for (testCatClass, dbo, baselineCat, msgr) in zip(testCatClasses, testCatDBs, baselineCats, msgroot):
+
+            testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
+                                 ('lsst_g', numpy.float)])
+
 
             testCat = setupPhotometryCatalog(obs_metadata=self.obs_metadata,
                                               dbConnection=dbo,
@@ -350,7 +352,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
     def testActualCatalogWithUncertainty(self):
         """
         Make sure that the values written to catalogs that are instantiated using
-        setupPhotometryCatalog are correct
+        setupPhotometryCatalog are correct (include photometric uncertainty)
         """
 
         msgroot = ['failed on stars; ', 'failed on galaxies; ']
@@ -358,11 +360,23 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         testCatClasses = [testStarCatalog, testGalaxyCatalog]
         testCatDBs = [self.starDBObj, self.galaxyDBObj]
         baselineCats = []
+
+        #need to set up the baseline catalogs with the compound obs_metadata so that they get the
+        #correct m5 values for both magnitudes (otherwise, they will use LSST defaults, which
+        #disagree with our cartoon test case)
         baselineCats.append(baselineStarCatalog(self.starDBObj, obs_metadata=self.obs_metadata_compound))
         baselineCats.append(baselineGalaxyCatalog(self.galaxyDBObj, obs_metadata=self.obs_metadata_compound))
 
         testName = 'testSetupCatUncertainty.txt'
         baseName = 'baseSetupCatUncertainty.txt'
+
+        basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
+                                 ('lsst_u', numpy.float), ('lsst_g', numpy.float),
+                                 ('lsst_r', numpy.float), ('lsst_i', numpy.float),
+                                 ('lsst_z', numpy.float), ('lsst_y', numpy.float),
+                                 ('sigma_lsst_u', numpy.float), ('sigma_lsst_g',numpy.float),
+                                 ('sigma_lsst_r', numpy.float), ('sigma_lsst_i', numpy.float),
+                                 ('sigma_lsst_z', numpy.float), ('sigma_lsst_y', numpy.float)])
 
         for (testCatClass, dbo, baselineCat, msgr) in zip(testCatClasses, testCatDBs, baselineCats, msgroot):
 
@@ -374,13 +388,6 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
             testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                      ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float)])
 
-            basedtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
-                                     ('lsst_u', numpy.float), ('lsst_g', numpy.float),
-                                     ('lsst_r', numpy.float), ('lsst_i', numpy.float),
-                                     ('lsst_z', numpy.float), ('lsst_y', numpy.float),
-                                     ('sigma_lsst_u', numpy.float), ('sigma_lsst_g',numpy.float),
-                                     ('sigma_lsst_r', numpy.float), ('sigma_lsst_i', numpy.float),
-                                     ('sigma_lsst_z', numpy.float), ('sigma_lsst_y', numpy.float)])
 
             testCat.write_catalog(testName)
             baselineCat.write_catalog(baseName)
