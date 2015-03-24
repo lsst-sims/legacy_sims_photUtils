@@ -65,18 +65,17 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
         self.dbObj = testDBObject(address='sqlite:///' + self.dbName)
 
 
-        m5={'u':23.5, 'g':24.5, 'r':22.5, 'i':17.5, 'z':19.0, 'y':20.0}
         self.obs_metadata = ObservationMetaData(unrefractedRA=self.unrefractedRA,
                                                 unrefractedDec=self.unrefractedDec,
                                                 boundType='circle', boundLength=self.radius,
                                                 bandpassName='g', mjd=57000.0,
-                                                m5=m5)
+                                                m5=24.5)
 
         self.obs_metadata_compound = ObservationMetaData(unrefractedRA=self.unrefractedRA,
                                                          unrefractedDec=self.unrefractedDec,
                                                          boundType='circle', boundLength=self.radius,
                                                          bandpassName=['g','i'], mjd=57000.0,
-                                                         m5=m5)
+                                                         m5=[24.5, 17.5])
 
     def tearDown(self):
         if os.path.exists(self.dbName):
@@ -264,7 +263,7 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                                          catalogClass=testCatalog,
                                          uncertainty=True)
 
-        baselineCat = baselineCatalog(self.dbObj, obs_metadata=self.obs_metadata)
+        baselineCat = baselineCatalog(self.dbObj, obs_metadata=self.obs_metadata_compound)
 
         testdtype = numpy.dtype([('raObserved', numpy.float), ('decObserved', numpy.float),
                                  ('lsst_g', numpy.float), ('sigma_lsst_g', numpy.float)])
