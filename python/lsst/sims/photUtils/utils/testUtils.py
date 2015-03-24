@@ -19,7 +19,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 
-from lsst.sims.photUtils.Variability import Variability
+from lsst.sims.photUtils.Variability import Variability, VariabilityStars, VariabilityGalaxies
 
 __all__ = ["makeStarDatabase", "MyVariability", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
@@ -264,7 +264,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
 
         return output
 
-class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
+class testCatalog(InstanceCatalog,AstrometryStars,VariabilityStars,testDefaults):
     catalog_type = 'MISC'
     default_columns=[('expmjd',5000.0,float)]
 
@@ -272,7 +272,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
         return ['raJ2000'],['varParamStr']
 
 
-class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonPhotometryStars,testDefaults):
+class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,VariabilityStars,cartoonPhotometryStars,testDefaults):
     """
     A catalog of stars relying on the cartoon photometry methods (which use non-LSST bandpasses
     and output extra data for use by unit tests)
@@ -292,7 +292,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
-class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, Variability, PhotometryStars):
+class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityStars, PhotometryStars):
     catalog_type = 'cartoonStarsOnlyI'
     column_outputs = ['id','raObserved','decObserved','cartoon_i']
 
@@ -322,7 +322,7 @@ class cartoonStarsIZ(cartoonStarsOnlyI):
     catalog_type = 'cartoonStarsIR'
     column_outputs = ['id', 'raObserved', 'decObserved', 'cartoon_i', 'cartoon_z']
 
-class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
+class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityGalaxies,cartoonPhotometryGalaxies,testDefaults):
     """
     A catalog of galaxies relying on the cartoon photometry methods (which use non-LSST bandpasses
     and output extra data for use by unit tests)
@@ -359,7 +359,7 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
     magnitudeMasterDict["Agn"] = []
 
 
-class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies):
+class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityGalaxies,PhotometryGalaxies):
 
     catalog_type = 'cartoonGalaxiesIG'
     column_outputs=['galid','raObserved','decObserved','ctotal_i','ctotal_g']
@@ -398,7 +398,7 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,
         output = self.meta_magnitudes_getter(idNames)
         return output
 
-class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefaults):
+class testStars(InstanceCatalog, EBVmixin, VariabilityStars, MyVariability, PhotometryStars,testDefaults):
     """
     A generic catalog of stars
     """
@@ -416,20 +416,20 @@ class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefa
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
-class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
+class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,MyVariability,PhotometryGalaxies,testDefaults):
     """
     A generic catalog of galaxies
     """
     catalog_type = 'test_galaxies'
     column_outputs=['galid','raJ2000','decJ2000',\
         'redshift',
-        'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
-        'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
-        'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\
-        'rRecalc', 'sigma_rRecalc', 'rRecalc_var', 'sigma_rRecalc_var',\
-         'iRecalc', 'sigma_iRecalc', 'iRecalc_var','sigma_iRecalc_var',\
-         'zRecalc', 'sigma_zRecalc', 'zRecalc_var', 'sigma_zRecalc_var',\
-         'yRecalc', 'sigma_yRecalc', 'yRecalc_var', 'sigma_yRecalc_var',\
+        'magNorm_total_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
+        'lsst_u', 'sigma_lsst_u', 'lsst_u_var','sigma_lsst_u_var',\
+        'lsst_g', 'sigma_lsst_g', 'lsst_g_var','sigma_lsst_g_var',\
+        'lsst_r', 'sigma_lsst_r', 'lsst_r_var', 'sigma_lsst_r_var',\
+         'lsst_i', 'sigma_lsst_i', 'lsst_i_var','sigma_lsst_i_var',\
+         'lsst_z', 'sigma_lsst_z', 'lsst_z_var', 'sigma_lsst_z_var',\
+         'lsst_y', 'sigma_lsst_y', 'lsst_y_var', 'sigma_lsst_y_var',\
         'sedFilenameBulge','uBulge', 'sigma_uBulge', 'gBulge', 'sigma_gBulge', \
         'rBulge', 'sigma_rBulge', 'iBulge', 'sigma_iBulge', 'zBulge', 'sigma_zBulge',\
          'yBulge', 'sigma_yBulge', \

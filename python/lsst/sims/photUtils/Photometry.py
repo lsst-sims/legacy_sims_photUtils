@@ -781,18 +781,18 @@ class PhotometryGalaxies(PhotometryBase):
 
 
 
-    @compound('sigma_uRecalc','sigma_gRecalc','sigma_rRecalc',
-              'sigma_iRecalc','sigma_zRecalc','sigma_yRecalc')
+    @compound('sigma_lsst_u','sigma_lsst_g','sigma_lsst_r',
+              'sigma_lsst_i','sigma_lsst_z','sigma_lsst_y')
     def get_photometric_uncertainties_total(self):
         """
         Getter for total photometric uncertainties associated with galaxies
         """
-        magnitudes = numpy.array([self.column_by_name('uRecalc'),
-                                  self.column_by_name('gRecalc'),
-                                  self.column_by_name('rRecalc'),
-                                  self.column_by_name('iRecalc'),
-                                  self.column_by_name('zRecalc'),
-                                  self.column_by_name('yRecalc')])
+        magnitudes = numpy.array([self.column_by_name('lsst_u'),
+                                  self.column_by_name('lsst_g'),
+                                  self.column_by_name('lsst_r'),
+                                  self.column_by_name('lsst_i'),
+                                  self.column_by_name('lsst_z'),
+                                  self.column_by_name('lsst_y')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
                                                     sig2sys=self.sig2sys)
@@ -845,7 +845,7 @@ class PhotometryGalaxies(PhotometryBase):
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
                                                   sig2sys=self.sig2sys)
 
-    @compound('uRecalc', 'gRecalc', 'rRecalc', 'iRecalc', 'zRecalc', 'yRecalc',
+    @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
               'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
               'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
               'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn')

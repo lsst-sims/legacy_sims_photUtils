@@ -9,7 +9,7 @@ import json
 from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.photUtils.Photometry import PhotometryStars, PhotometryGalaxies
-from lsst.sims.photUtils.Variability import Variability
+from lsst.sims.photUtils.Variability import VariabilityStars, VariabilityGalaxies
 
 def makeMflareTable(size=10, **kwargs):
     """
@@ -349,7 +349,7 @@ class agnDB(variabilityDB):
     objid = 'agnTest'
     tableid = 'agn'
 
-class StellarVariabilityCatalog(InstanceCatalog, PhotometryStars, Variability):
+class StellarVariabilityCatalog(InstanceCatalog, PhotometryStars, VariabilityStars):
     catalog_type = 'stellarVariabilityCatalog'
     column_outputs = ['varsimobjid', 'sedFilename', 'lsstUdiff']
     default_columns=[('magNorm', 14.0, float)]
@@ -364,7 +364,7 @@ class StellarVariabilityCatalog(InstanceCatalog, PhotometryStars, Variability):
             #a 2D numpy array instead of a 1D numpy array
             return numpy.array([vv - uu for (vv, uu) in zip(lsstUvar, lsstU)])
 
-class GalaxyVariabilityCatalog(InstanceCatalog, PhotometryGalaxies, Variability):
+class GalaxyVariabilityCatalog(InstanceCatalog, PhotometryGalaxies, VariabilityGalaxies):
     catalog_type = 'galaxyVariabilityCatalog'
     column_outputs = ['varsimobjid', 'sedFilenameAgn', 'lsstUdiff', 'agnUdiff']
     default_columns=[('magNormAgn', 14.0, float),
@@ -372,8 +372,8 @@ class GalaxyVariabilityCatalog(InstanceCatalog, PhotometryGalaxies, Variability)
                      ('magNormBulge', 14.0, float)]
 
     def get_lsstUdiff(self):
-        lsstU = self.column_by_name('uRecalc')
-        lsstUvar = self.column_by_name('uRecalc_var')
+        lsstU = self.column_by_name('lsst_u')
+        lsstUvar = self.column_by_name('lsst_u_var')
         return lsstUvar - lsstU
 
     def get_agnUdiff(self):
