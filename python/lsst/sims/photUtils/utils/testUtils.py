@@ -7,6 +7,7 @@ To date (30 October 2014) testPhotometry.py and testCosmology.py import from thi
 import numpy
 import os
 import sqlite3
+import json
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
@@ -21,7 +22,8 @@ from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 
 from lsst.sims.photUtils.Variability import Variability, VariabilityStars, VariabilityGalaxies
 
-__all__ = ["makeStarDatabase", "MyVariability", "testDefaults", "cartoonPhotometryStars",
+__all__ = ["makeStarDatabase", "makeGalaxyDatabase",
+           "MyVariability", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
            "cartoonStarsOnlyI", "cartoonStarsIZ",
            "cartoonGalaxies", "cartoonGalaxiesIG", "testStars", "testGalaxies",
@@ -65,6 +67,123 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
                   (i, raStar, decStar, magnormStar[i], mudecl[i], mura[i],
                   galacticAv[i], vrad[i], 'NULL', star_seds[i%len(star_seds)], parallax[i])
 
+        c.execute(cmd)
+
+    conn.commit()
+    conn.close()
+
+def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
+                       radius=1.0, unrefractedRA=50.0, unrefractedDec=-10.0):
+
+    galaxy_seds = ['Const.80E07.02Z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
+    agn_sed = 'agn.spec'
+
+    #Now begin building the database.
+    #First create the tables.
+    conn = sqlite3.connect(filename)
+    c = conn.cursor()
+
+    try:
+        c.execute('''CREATE TABLE galaxy
+                     (galtileid int, galid int, ra real, dec real,
+                      bra real, bdec real, dra real, ddec real,
+                      agnra real, agndec real,
+                      magnorm_bulge, magnorm_disk, magnorm_agn,
+                      sedname_bulge text, sedname_disk text, sedname_agn text,
+                      varParamStr text,
+                      a_b real, b_b real, pa_bulge real, bulge_n int,
+                      a_d real, b_d real, pa_disk real, disk_n int,
+                      ext_model_b text, av_b real, rv_b real,
+                      ext_model_d text, av_d real, rv_d real,
+                      u_ab real, g_ab real, r_ab real, i_ab real,
+                      z_ab real, y_ab real,
+                      redshift real, BulgeHalfLightRadius real, DiskHalfLightRadius real)''')
+
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating galaxy table.")
+
+    mjd = 52000.0
+
+    numpy.random.seed(seedVal)
+
+    rr = numpy.random.sample(size)*radius
+    theta = numpy.random.sample(size)*2.0*numpy.pi
+
+    ra = unrefractedRA + rr*numpy.cos(theta)
+    dec = unrefractedDec + rr*numpy.sin(theta)
+
+    bra = numpy.radians(ra+numpy.random.sample(size)*0.01*radius)
+    bdec = numpy.radians(dec+numpy.random.sample(size)*0.01*radius)
+    dra = numpy.radians(ra + numpy.random.sample(size)*0.01*radius)
+    ddec = numpy.radians(dec + numpy.random.sample(size)*0.01*radius)
+    agnra = numpy.radians(ra + numpy.random.sample(size)*0.01*radius)
+    agndec = numpy.radians(dec + numpy.random.sample(size)*0.01*radius)
+
+    magnorm_bulge = numpy.random.sample(size)*4.0 + 17.0
+    magnorm_disk = numpy.random.sample(size)*5.0 + 17.0
+    magnorm_agn = numpy.random.sample(size)*5.0 + 17.0
+    b_b = numpy.random.sample(size)*0.2
+    a_b = b_b+numpy.random.sample(size)*0.05
+    b_d = numpy.random.sample(size)*0.5
+    a_d = b_d+numpy.random.sample(size)*0.1
+
+    BulgeHalfLightRadius = numpy.random.sample(size)*0.2
+    DiskHalfLightRadius = numpy.random.sample(size)*0.5
+
+    pa_bulge = numpy.random.sample(size)*360.0
+    pa_disk = numpy.random.sample(size)*360.0
+
+    av_b = numpy.random.sample(size)*0.4
+    av_d = numpy.random.sample(size)*0.4
+    rv_b = numpy.random.sample(size)*0.1 + 3.0
+    rv_d = numpy.random.sample(size)*0.1 + 3.0
+
+    u_ab = numpy.random.sample(size)*4.0 + 17.0
+    g_ab = numpy.random.sample(size)*4.0 + 17.0
+    r_ab = numpy.random.sample(size)*4.0 + 17.0
+    i_ab = numpy.random.sample(size)*4.0 + 17.0
+    z_ab = numpy.random.sample(size)*4.0 + 17.0
+    y_ab = numpy.random.sample(size)*4.0 +17.0
+    redshift = numpy.random.sample(size)*2.0
+
+    t0_mjd = numpy.random.sample(size)*10.0+mjd
+    agn_tau = numpy.random.sample(size)*1000.0 + 1000.0
+    agnSeed = numpy.random.random_integers(low=2, high=4000, size=size)
+    agn_sfu = numpy.random.sample(size)
+    agn_sfg = numpy.random.sample(size)
+    agn_sfr = numpy.random.sample(size)
+    agn_sfi = numpy.random.sample(size)
+    agn_sfz = numpy.random.sample(size)
+    agn_sfy = numpy.random.sample(size)
+
+    for i in range(size):
+        varParam = {'varMethodName':'applyAgn',
+                    'pars':{'agn_tau':agn_tau[i], 't0_mjd':t0_mjd[i],
+                    'agn_sfu':agn_sfu[i], 'agn_sfg':agn_sfg[i], 'agn_sfr':agn_sfr[i],
+                    'agn_sfi':agn_sfi[i], 'agn_sfz':agn_sfz[i], 'agn_sfy':agn_sfy[i],
+                    'seed':int(agnSeed[i])}}
+
+        paramStr = json.dumps(varParam)
+
+        cmd = '''INSERT INTO galaxy VALUES (%i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f,
+                                            '%s', '%s', '%s', '%s',
+                                            %f, %f, %f, %i,
+                                            %f, %f, %f, %i,
+                                            '%s', %f, %f,
+                                            '%s', %f, %f,
+                                            %f, %f, %f, %f, %f, %f,
+                                            %f, %f, %f)''' %\
+                     (i, i, ra[i], dec[i], bra[i], bdec[i], dra[i], ddec[i], agnra[i], agndec[i],
+                     magnorm_bulge[i], magnorm_disk[i], magnorm_agn[i],
+                     galaxy_seds[(i+1)%len(galaxy_seds)], galaxy_seds[i%len(galaxy_seds)], agn_sed,
+                     paramStr,
+                     a_b[i], b_b[i], pa_bulge[i], 4,
+                     a_d[i], b_d[i], pa_disk[i], 1,
+                     'CCM', av_b[i], rv_b[i],
+                     'CCM', av_d[i], rv_d[i],
+                     u_ab[i], g_ab[i], r_ab[i], i_ab[i], z_ab[i], y_ab[i], redshift[i],
+                     BulgeHalfLightRadius[i], DiskHalfLightRadius[i])
         c.execute(cmd)
 
     conn.commit()

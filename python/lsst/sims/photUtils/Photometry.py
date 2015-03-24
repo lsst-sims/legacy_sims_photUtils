@@ -498,7 +498,7 @@ class PhotometryGalaxies(PhotometryBase):
         else:
             subList=[]
             for i in range(self.nBandpasses):
-                subList.append(None)
+                subList.append(numpy.NaN)
             for i in range(len(objectNames)):
                 componentMags[objectNames[i]]=subList
 
@@ -532,7 +532,7 @@ class PhotometryGalaxies(PhotometryBase):
         if nn>0.0:
             outMag = -2.5*numpy.log10(nn) + mm_o
         else:
-            outMag = None
+            outMag = numpy.NaN
 
         return outMag
 
