@@ -272,28 +272,28 @@ class photometryUnitTest(unittest.TestCase):
                         for i in range(len(phot.bandpassDict)):
                             flux=0.0
                             if bulgeNames is None:
-                                self.assertTrue(magnitudes[name]['bulge'][i] is None)
+                                self.assertTrue(numpy.isnan(magnitudes[name]['bulge'][i]))
                             else:
                                 self.assertTrue(magnitudes[name]['bulge'][i] is not None)
                                 self.assertFalse(numpy.isnan(magnitudes[name]['bulge'][i]))
                                 flux += numpy.power(10.0, -0.4*(magnitudes[name]['bulge'][i]-22.0))
 
                             if diskNames is None:
-                                self.assertTrue(magnitudes[name]['disk'][i] is None)
+                                self.assertTrue(numpy.isnan(magnitudes[name]['disk'][i]))
                             else:
                                 self.assertTrue(magnitudes[name]['disk'][i] is not None)
                                 self.assertFalse(numpy.isnan(magnitudes[name]['disk'][i]))
                                 flux += numpy.power(10.0, -0.4*(magnitudes[name]['disk'][i]-22.0))
 
                             if agnNames is None:
-                                self.assertTrue(magnitudes[name]['agn'][i] is None)
+                                self.assertTrue(numpy.isnan(magnitudes[name]['agn'][i]))
                             else:
                                 self.assertTrue(magnitudes[name]['agn'][i] is not None)
                                 self.assertFalse(numpy.isnan(magnitudes[name]['agn'][i]))
                                 flux += numpy.power(10.0, -0.4*(magnitudes[name]['agn'][i]-22.0))
 
                             if agnNames is None and diskNames is None and bulgeNames is None:
-                                self.assertTrue(magnitudes[name]['total'][i] is None)
+                                self.assertTrue(numpy.isnan(magnitudes[name]['total'][i]))
                             else:
                                 self.assertTrue(magnitudes[name]['total'][i] is not None)
                                 self.assertFalse(numpy.isnan(magnitudes[name]['total'][i]))
