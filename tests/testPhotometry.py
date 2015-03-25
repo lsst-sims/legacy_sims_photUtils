@@ -13,7 +13,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase
-from lsst.sims.photUtils import PhotometricDefaults, setM5
+from lsst.sims.photUtils import PhotometricDefaults, setM5, calcSNR_gamma, calcGamma
 from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
@@ -660,13 +660,18 @@ class uncertaintyUnitTest(unittest.TestCase):
             snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                                            seeing=PhotometricDefaults.seeing[self.bandpasses[i]])
 
+            testSNR, gamma = calcSNR_gamma(numpy.array([numpy.power(10.0,-0.4*magnitudes[i])]), [self.totalBandpasses[i]],
+                                           numpy.array([m5[i]]))
+
+            self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_gamma test %e != %e ' \
+                                                               % (snr, testSNR[0]))
+
             control = 1.0/(snr*snr) + sig2sys
             test = numpy.power(numpy.power(10.0, sigma[i]/2.5) -1.0, 2)
 
             msg = '%e is not %e; failed' % (test, control)
 
             self.assertAlmostEqual(test, control, 10, msg=msg)
-
 
 
 def suite():

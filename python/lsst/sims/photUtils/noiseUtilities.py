@@ -232,7 +232,7 @@ def calcGamma(bandpass, m5,
 
     return gamma
 
-def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=0.005,
+def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
                  expTime=PhotometricDefaults.exptime,
                  nexp=PhotometricDefaults.nexp,
                  gain=PhotometricDefaults.gain,
@@ -247,13 +247,12 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=0.005,
     @param [in] bandpasses is a list of Bandpass objects corresponding to the
     bandpasses in which fluxes have been calculated
 
-    @param [in] m5 is a list of 5-sigma limiting magnitudes, one for each bandpass.
+    @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
 
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
     @param [in] sig2sys is the square of the systematic signal to noise ratio.
-    Defaults ot 0.005
 
     @param [in] expTime (optional) is the duration of a single exposure in seconds
 
@@ -289,7 +288,7 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=0.005,
     if gamma is None:
         gg = []
         for b, m in zip(bandpasses, m5):
-            gg.append(calcGamma(b, m, expTime=expTime, nexp=nexp, gain=gain, effarea=efarrea))
+            gg.append(calcGamma(b, m, expTime=expTime, nexp=nexp, gain=gain, effarea=effarea))
 
         gamma = numpy.array(gg)
 
