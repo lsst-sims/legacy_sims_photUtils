@@ -362,18 +362,19 @@ class PhotometryBase(object):
 
     def calculateFluxSignalToNoise(self, fluxes, obs_metadata=None, sig2sys=None):
         """
-        Calculate photometric uncertainty using the model from equation (5) of arXiv:0805.2366
+        Calculate the signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
-        @param [in] fluxRatios is a list containing the ratio of object fluxes
-        to fluxes at SNR=0.2 (i.e. the m5 limiting magnitude)
+        @param [in] fluxes is a list containing the the object fluxes.  Every row corresponds to
+        a bandpass, which is to say that fluxes[i][j] is the magnitude of the jth object in the
+        bandpass characterized by self.bandpassDict.values()[i]
 
         @param [in] obs_metadata is the metadata of this observation (mostly desired because
         it will contain information about m5, the magnitude at which objects are detected
         at the 5-sigma limit in each bandpass)
 
-        @param [in] sig2sys the square of the systematic noise associated with flux
+        @param [in] sig2sys the square of the systematic noise in flux
 
-        @param [out] the noise-to-signal ratio of the flux
+        @param [out] the signal-to-noise in flux
         """
 
         if obs_metadata is None:
@@ -384,6 +385,8 @@ class PhotometryBase(object):
                                 " PhotometryBase.calculatePhotometricUncertainty; " + \
                                 "needed %d " % self.nBandpasses)
 
+        #if we have not run this method before, calculate and cache the m5 and gamma parameter
+        #values (see eqn 5 of arXiv:0805.2366) for future use
         if not hasattr(self, '_gammaList') or len(self._gammaList) != self.nBandpasses:
             mm = []
             gg = []
@@ -407,12 +410,24 @@ class PhotometryBase(object):
 
 
     def calculateMagnitudeUncertainty(self, magnitudes, obs_metadata=None, sig2sys=None):
+        """
+        Calculate the uncertainty in magnitude
 
-            snr = self.calculateFluxSignalToNoise(numpy.power(10.0, -0.4*magnitudes),
-                                                                obs_metadata=obs_metadata, sig2sys=sig2sys)
+        @param [in] magnitudes is a numpy array in which magnitude[i][j] is the magnitude
+        of the jth astronomical object in the bandpass self.bandpassDict.values()[i]
 
-            #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
-            return 2.5*numpy.log10(1.0+1.0/snr)
+        @param [in] obs_metadata is an instantiation of the ObservationMetaData class
+
+        @param [in] sig2sys is the square of the systematic signal to noise in flux
+
+        @param [out] an array of magnitude uncertainties corresponding to the input magnitudes
+        """
+
+        snr = self.calculateFluxSignalToNoise(numpy.power(10.0, -0.4*magnitudes),
+                                              obs_metadata=obs_metadata, sig2sys=sig2sys)
+
+        #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
+        return 2.5*numpy.log10(1.0+1.0/snr)
 
 
 class PhotometryGalaxies(PhotometryBase):

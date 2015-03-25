@@ -264,7 +264,7 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     in square centimeters
 
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
-    fluxes.
+    the input fluxes.
 
     @param [out] gamma is a numpy array of the calculated gamma parameters for the
     bandpasses used here (in case the user wants to call this method again.
