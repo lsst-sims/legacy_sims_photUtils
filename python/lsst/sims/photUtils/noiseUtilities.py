@@ -3,7 +3,7 @@ from .Sed import Sed
 from .Bandpass import Bandpass
 from lsst.sims.photUtils import PhotometricDefaults
 
-__all__ = ["calcM5", "setM5", "calcGamma"]
+__all__ = ["calcM5", "setM5", "calcGamma", "calcSNR_gamma"]
 
 def setM5(m5target, skysed, totalBandpass, hardware,
           expTime=PhotometricDefaults.exptime,
@@ -231,3 +231,79 @@ def calcGamma(bandpass, m5,
     gamma = 0.04 - 1.0/(counts*gain)
 
     return gamma
+
+def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=0.005,
+                 expTime=PhotometricDefaults.exptime,
+                 nexp=PhotometricDefaults.nexp,
+                 gain=PhotometricDefaults.gain,
+                 effarea=PhotometricDefaults.effarea):
+    """
+    Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
+
+    @param [in] fluxes is a numpy array of fluxes.  Each row is a different bandpass.
+    Each column is a different object, i.e. fluxes[i][j] is the flux of the jth object
+    in the ith bandpass.
+
+    @param [in] bandpasses is a list of Bandpass objects corresponding to the
+    bandpasses in which fluxes have been calculated
+
+    @param [in] m5 is a list of 5-sigma limiting magnitudes, one for each bandpass.
+
+    @param [in] gamma (optional) is the gamma parameter from equation(5) of
+    arXiv:0805.2366.  If not provided, this method will calculate it.
+
+    @param [in] sig2sys is the square of the systematic signal to noise ratio.
+    Defaults ot 0.005
+
+    @param [in] expTime (optional) is the duration of a single exposure in seconds
+
+    @param [in] nexp (optional) is the number of exposures being combined
+
+    @param [in] gain (optional) is the number of electrons per ADU
+
+    @param [in] effarea (optional) is the effective area of the primary mirror
+    in square centimeters
+
+    @param [out] snr is a numpy array of the signal to noise ratio corresponding to
+    fluxes.
+
+    @param [out] gamma is a numpy array of the calculated gamma parameters for the
+    bandpasses used here (in case the user wants to call this method again.
+    """
+
+    if fluxes.shape[0] != len(bandpasses):
+        raise RuntimeError("Passed %d magnitudes to " % fluxes.shape[0] + \
+                            " calcSNR_gamma; " + \
+                            "passed %d bandpasses" % len(bandpasses))
+
+    if gamma is not None and len(gamma) != len(bandpasses):
+        raise RuntimeError("Passed %d bandpasses to " % len(bandpasses) + \
+                           " calcSNR_gamma; " + \
+                           "passed %d gamma parameters" % len(gamma))
+
+    if len(m5) != len(bandpasses):
+        raise RuntimeError("Passed %d bandpasses to " % len(bandpasses) + \
+                           " calcSNR_gamma; " + \
+                           "passed %d m5 values" % len(m5))
+
+    if gamma is None:
+        gg = []
+        for b, m in zip(bandpasses, m5):
+            gg.append(calcGamma(b, m, expTime=expTime, nexp=nexp, gain=gain, effarea=efarrea))
+
+        gamma = numpy.array(gg)
+
+    m5Fluxes = numpy.array(numpy.power(10.0, -0.4*m5))
+
+    noise = []
+    for (gg, mf, ff) in zip(gamma, m5Fluxes, fluxes):
+        fluxRatio = mf/ff
+
+        if sig2sys is not None:
+            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio + sig2sys
+        else:
+            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
+
+        noise.append(numpy.sqrt(sigmaSq))
+
+    return 1.0/numpy.array(noise), gamma

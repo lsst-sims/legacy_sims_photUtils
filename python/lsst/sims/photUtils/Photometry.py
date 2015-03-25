@@ -14,7 +14,8 @@ import os
 import numpy
 import eups
 from collections import OrderedDict
-from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, calcGamma
+from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, calcGamma, \
+                                calcSNR_gamma
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -45,9 +46,6 @@ class PhotometryBase(object):
     nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
-
-    gammaDict = None #OrderedDict of gamma parameter (see equation 5 of arXive:0805.2366)
-                     #associated with each bandpass
 
     sig2sys = None #square of systematic noise associated with this catalog
 
@@ -362,7 +360,7 @@ class PhotometryBase(object):
 
         return magList
 
-    def calculateFluxNoiseOverSignal(self, fluxes, obs_metadata=None, sig2sys=None):
+    def calculateFluxSignalToNoise(self, fluxes, obs_metadata=None, sig2sys=None):
         """
         Calculate photometric uncertainty using the model from equation (5) of arXiv:0805.2366
 
@@ -386,51 +384,35 @@ class PhotometryBase(object):
                                 " PhotometryBase.calculatePhotometricUncertainty; " + \
                                 "needed %d " % self.nBandpasses)
 
-        if self.gammaDict is None or len(self.gammaDict) != self.nBandpasses:
-            #If self.gammaDict has not been set up yet, set it up, storing the values
-            #of the gamma parameter from equation(5) of arXiv:0805.2366 in an
-            #OrderedDict
-
-            self.gammaDict = OrderedDict()
-            self.m5FluxDict = OrderedDict()
-            for i in range(self.nBandpasses):
-                b = self.bandpassDict.keys()[i]
-                if obs_metadata.m5 is not None and b in obs_metadata.m5:
-                    self.m5FluxDict[b] = numpy.power(10.0,-0.4*obs_metadata.m5[b])
-                    self.gammaDict[b] = calcGamma(self.bandpassDict[b], obs_metadata.m5[b],
-                                                  expTime=PhotometricDefaults.exptime,
-                                                  nexp=PhotometricDefaults.nexp,
-                                                  gain=PhotometricDefaults.gain,
-                                                  effarea=PhotometricDefaults.effarea)
+        if not hasattr(self, '_gammaList') or len(self._gammaList) != self.nBandpasses:
+            mm = []
+            gg = []
+            for b in self.bandpassDict.keys():
+                if b in obs_metadata.m5:
+                    mm.append(obs_metadata.m5[b])
+                    gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b]))
                 else:
                     if b not in self._defaultGamma:
-                        raise RuntimeError("No way to calculate gamma or m5 for filter " % b)
+                        raise RuntimeError("No way to calculate gamma or m5 for filter %s " % b)
+                    mm.append(self._defaultM5[b])
+                    gg.append(self._defaultGamma[b])
 
-                    self.m5FluxDict[b] = numpy.power(10.0, -0.4*self._defaultM5[b])
-                    self.gammaDict[b] = self._defaultGamma[b]
+            self._m5List = numpy.array(mm)
+            self._gammaList = numpy.array(gg)
 
-        sigma = []
+        snr, gamma = calcSNR_gamma(fluxes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
+                                   sig2sys=sig2sys)
 
-        for (i,b) in enumerate(self.bandpassDict.keys()):
-            gg = self.gammaDict[b]
-            fluxRatio = self.m5FluxDict[b]/fluxes[i]
-            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
-            if sig2sys is None:
-                noiseOverSignal = numpy.sqrt(sigmaSq)
-            else:
-                noiseOverSignal = numpy.sqrt(sigmaSq + sig2sys)
+        return snr
 
-            sigma.append(noiseOverSignal)
-
-        return numpy.array(sigma)
 
     def calculateMagnitudeUncertainty(self, magnitudes, obs_metadata=None, sig2sys=None):
 
-            noiseOverSignal = self.calculateFluxNoiseOverSignal(numpy.power(10.0, -0.4*magnitudes),
+            snr = self.calculateFluxSignalToNoise(numpy.power(10.0, -0.4*magnitudes),
                                                                 obs_metadata=obs_metadata, sig2sys=sig2sys)
 
             #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
-            return 2.5*numpy.log10(1.0+noiseOverSignal)
+            return 2.5*numpy.log10(1.0+1.0/snr)
 
 
 class PhotometryGalaxies(PhotometryBase):
