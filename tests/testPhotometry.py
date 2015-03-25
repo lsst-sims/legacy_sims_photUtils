@@ -609,11 +609,10 @@ class uncertaintyUnitTest(unittest.TestCase):
         with values calculated by Sed.calcSNR_psf
         """
 
-        bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
         phot = PhotometryBase()
         phot.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=bandpassNames)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = phot.manyMagCalc_list(self.starSED)
 
         skySeds = []
@@ -639,12 +638,11 @@ class uncertaintyUnitTest(unittest.TestCase):
         Test that systematic uncertainty is added correctly.
         """
         sig2sys = 0.002
-        bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
 
         phot = PhotometryBase()
         phot.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=bandpassNames)
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = phot.manyMagCalc_list(self.starSED)
 
         skySeds = []
