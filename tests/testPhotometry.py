@@ -603,6 +603,13 @@ class uncertaintyUnitTest(unittest.TestCase):
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5=23.0)
         self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, obs_metadata=obs_metadata)
 
+        shortGamma = numpy.array([1.0, 1.0])
+        fluxes = numpy.power(10.0, -0.4*magnitudes)
+        shortFluxes = numpy.power(10.0, -0.4*shortMagnitudes)
+        self.assertRaises(RuntimeError, calcSNR_gamma, fluxes, phot.bandpassDict.values(), shortMagnitudes)
+        self.assertRaises(RuntimeError, calcSNR_gamma, shortFluxes, phot.bandpassDict.values(), magnitudes)
+        self.assertRaises(RuntimeError, calcSNR_gamma, fluxes, phot.bandpassDict.values(), magnitudes, gamma=shortGamma)
+
     def testRawUncertainty(self):
         """
         Test that values calculated by calculatePhotometricUncertainty agree
