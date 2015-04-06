@@ -364,7 +364,7 @@ class PhotometryBase(object):
         """
         Calculate the signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
-        @param [in] fluxes is a list containing the the object fluxes.  Every row corresponds to
+        @param [in] fluxes is a list containing the object fluxes.  Every row corresponds to
         a bandpass, which is to say that fluxes[i][j] is the magnitude of the jth object in the
         bandpass characterized by self.bandpassDict.values()[i]
 
