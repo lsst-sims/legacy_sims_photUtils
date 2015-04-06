@@ -374,7 +374,8 @@ class PhotometryBase(object):
 
         @param [in] sig2sys the square of the systematic noise in flux
 
-        @param [out] the signal-to-noise in flux
+        @param [out] snr is a 1-dimensional numpy array containing the signal-to-noise in flux
+        corresponding to the fluxes passed into this method.
         """
 
         if obs_metadata is None:
