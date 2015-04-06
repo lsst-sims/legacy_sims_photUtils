@@ -7,6 +7,7 @@ To date (30 October 2014) testPhotometry.py and testCosmology.py import from thi
 import numpy
 import os
 import sqlite3
+import json
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
@@ -19,9 +20,10 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 
-from lsst.sims.photUtils.Variability import Variability
+from lsst.sims.photUtils.Variability import Variability, VariabilityStars, VariabilityGalaxies
 
-__all__ = ["makeStarDatabase", "MyVariability", "testDefaults", "cartoonPhotometryStars",
+__all__ = ["makeStarDatabase", "makeGalaxyDatabase",
+           "MyVariability", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
            "cartoonStarsOnlyI", "cartoonStarsIZ",
            "cartoonGalaxies", "cartoonGalaxiesIG", "testStars", "testGalaxies",
@@ -65,6 +67,123 @@ def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
                   (i, raStar, decStar, magnormStar[i], mudecl[i], mura[i],
                   galacticAv[i], vrad[i], 'NULL', star_seds[i%len(star_seds)], parallax[i])
 
+        c.execute(cmd)
+
+    conn.commit()
+    conn.close()
+
+def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
+                       radius=1.0, unrefractedRA=50.0, unrefractedDec=-10.0):
+
+    galaxy_seds = ['Const.80E07.02Z.spec','Inst.80E07.002Z.spec','Burst.19E07.0005Z.spec']
+    agn_sed = 'agn.spec'
+
+    #Now begin building the database.
+    #First create the tables.
+    conn = sqlite3.connect(filename)
+    c = conn.cursor()
+
+    try:
+        c.execute('''CREATE TABLE galaxy
+                     (galtileid int, galid int, ra real, dec real,
+                      bra real, bdec real, dra real, ddec real,
+                      agnra real, agndec real,
+                      magnorm_bulge, magnorm_disk, magnorm_agn,
+                      sedname_bulge text, sedname_disk text, sedname_agn text,
+                      varParamStr text,
+                      a_b real, b_b real, pa_bulge real, bulge_n int,
+                      a_d real, b_d real, pa_disk real, disk_n int,
+                      ext_model_b text, av_b real, rv_b real,
+                      ext_model_d text, av_d real, rv_d real,
+                      u_ab real, g_ab real, r_ab real, i_ab real,
+                      z_ab real, y_ab real,
+                      redshift real, BulgeHalfLightRadius real, DiskHalfLightRadius real)''')
+
+        conn.commit()
+    except:
+        raise RuntimeError("Error creating galaxy table.")
+
+    mjd = 52000.0
+
+    numpy.random.seed(seedVal)
+
+    rr = numpy.random.sample(size)*radius
+    theta = numpy.random.sample(size)*2.0*numpy.pi
+
+    ra = unrefractedRA + rr*numpy.cos(theta)
+    dec = unrefractedDec + rr*numpy.sin(theta)
+
+    bra = numpy.radians(ra+numpy.random.sample(size)*0.01*radius)
+    bdec = numpy.radians(dec+numpy.random.sample(size)*0.01*radius)
+    dra = numpy.radians(ra + numpy.random.sample(size)*0.01*radius)
+    ddec = numpy.radians(dec + numpy.random.sample(size)*0.01*radius)
+    agnra = numpy.radians(ra + numpy.random.sample(size)*0.01*radius)
+    agndec = numpy.radians(dec + numpy.random.sample(size)*0.01*radius)
+
+    magnorm_bulge = numpy.random.sample(size)*4.0 + 17.0
+    magnorm_disk = numpy.random.sample(size)*5.0 + 17.0
+    magnorm_agn = numpy.random.sample(size)*5.0 + 17.0
+    b_b = numpy.random.sample(size)*0.2
+    a_b = b_b+numpy.random.sample(size)*0.05
+    b_d = numpy.random.sample(size)*0.5
+    a_d = b_d+numpy.random.sample(size)*0.1
+
+    BulgeHalfLightRadius = numpy.random.sample(size)*0.2
+    DiskHalfLightRadius = numpy.random.sample(size)*0.5
+
+    pa_bulge = numpy.random.sample(size)*360.0
+    pa_disk = numpy.random.sample(size)*360.0
+
+    av_b = numpy.random.sample(size)*0.4
+    av_d = numpy.random.sample(size)*0.4
+    rv_b = numpy.random.sample(size)*0.1 + 3.0
+    rv_d = numpy.random.sample(size)*0.1 + 3.0
+
+    u_ab = numpy.random.sample(size)*4.0 + 17.0
+    g_ab = numpy.random.sample(size)*4.0 + 17.0
+    r_ab = numpy.random.sample(size)*4.0 + 17.0
+    i_ab = numpy.random.sample(size)*4.0 + 17.0
+    z_ab = numpy.random.sample(size)*4.0 + 17.0
+    y_ab = numpy.random.sample(size)*4.0 +17.0
+    redshift = numpy.random.sample(size)*2.0
+
+    t0_mjd = numpy.random.sample(size)*10.0+mjd
+    agn_tau = numpy.random.sample(size)*1000.0 + 1000.0
+    agnSeed = numpy.random.random_integers(low=2, high=4000, size=size)
+    agn_sfu = numpy.random.sample(size)
+    agn_sfg = numpy.random.sample(size)
+    agn_sfr = numpy.random.sample(size)
+    agn_sfi = numpy.random.sample(size)
+    agn_sfz = numpy.random.sample(size)
+    agn_sfy = numpy.random.sample(size)
+
+    for i in range(size):
+        varParam = {'varMethodName':'applyAgn',
+                    'pars':{'agn_tau':agn_tau[i], 't0_mjd':t0_mjd[i],
+                    'agn_sfu':agn_sfu[i], 'agn_sfg':agn_sfg[i], 'agn_sfr':agn_sfr[i],
+                    'agn_sfi':agn_sfi[i], 'agn_sfz':agn_sfz[i], 'agn_sfy':agn_sfy[i],
+                    'seed':int(agnSeed[i])}}
+
+        paramStr = json.dumps(varParam)
+
+        cmd = '''INSERT INTO galaxy VALUES (%i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f,
+                                            '%s', '%s', '%s', '%s',
+                                            %f, %f, %f, %i,
+                                            %f, %f, %f, %i,
+                                            '%s', %f, %f,
+                                            '%s', %f, %f,
+                                            %f, %f, %f, %f, %f, %f,
+                                            %f, %f, %f)''' %\
+                     (i, i, ra[i], dec[i], bra[i], bdec[i], dra[i], ddec[i], agnra[i], agndec[i],
+                     magnorm_bulge[i], magnorm_disk[i], magnorm_agn[i],
+                     galaxy_seds[(i+1)%len(galaxy_seds)], galaxy_seds[i%len(galaxy_seds)], agn_sed,
+                     paramStr,
+                     a_b[i], b_b[i], pa_bulge[i], 4,
+                     a_d[i], b_d[i], pa_disk[i], 1,
+                     'CCM', av_b[i], rv_b[i],
+                     'CCM', av_d[i], rv_d[i],
+                     u_ab[i], g_ab[i], r_ab[i], i_ab[i], z_ab[i], y_ab[i], redshift[i],
+                     BulgeHalfLightRadius[i], DiskHalfLightRadius[i])
         c.execute(cmd)
 
     conn.commit()
@@ -264,7 +383,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
 
         return output
 
-class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
+class testCatalog(InstanceCatalog,AstrometryStars,VariabilityStars,testDefaults):
     catalog_type = 'MISC'
     default_columns=[('expmjd',5000.0,float)]
 
@@ -272,7 +391,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,Variability,testDefaults):
         return ['raJ2000'],['varParamStr']
 
 
-class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonPhotometryStars,testDefaults):
+class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,VariabilityStars,cartoonPhotometryStars,testDefaults):
     """
     A catalog of stars relying on the cartoon photometry methods (which use non-LSST bandpasses
     and output extra data for use by unit tests)
@@ -292,7 +411,7 @@ class cartoonStars(InstanceCatalog,AstrometryStars,EBVmixin,Variability,cartoonP
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
-class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, Variability, PhotometryStars):
+class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityStars, PhotometryStars):
     catalog_type = 'cartoonStarsOnlyI'
     column_outputs = ['id','raObserved','decObserved','cartoon_i']
 
@@ -322,7 +441,7 @@ class cartoonStarsIZ(cartoonStarsOnlyI):
     catalog_type = 'cartoonStarsIR'
     column_outputs = ['id', 'raObserved', 'decObserved', 'cartoon_i', 'cartoon_z']
 
-class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,cartoonPhotometryGalaxies,testDefaults):
+class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityGalaxies,cartoonPhotometryGalaxies,testDefaults):
     """
     A catalog of galaxies relying on the cartoon photometry methods (which use non-LSST bandpasses
     and output extra data for use by unit tests)
@@ -359,7 +478,7 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,ca
     magnitudeMasterDict["Agn"] = []
 
 
-class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,PhotometryGalaxies):
+class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityGalaxies,PhotometryGalaxies):
 
     catalog_type = 'cartoonGalaxiesIG'
     column_outputs=['galid','raObserved','decObserved','ctotal_i','ctotal_g']
@@ -398,7 +517,7 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,Variability,
         output = self.meta_magnitudes_getter(idNames)
         return output
 
-class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefaults):
+class testStars(InstanceCatalog, EBVmixin, VariabilityStars, MyVariability, PhotometryStars,testDefaults):
     """
     A generic catalog of stars
     """
@@ -416,20 +535,20 @@ class testStars(InstanceCatalog, EBVmixin,MyVariability,PhotometryStars,testDefa
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
-class testGalaxies(InstanceCatalog,EBVmixin,MyVariability,PhotometryGalaxies,testDefaults):
+class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,MyVariability,PhotometryGalaxies,testDefaults):
     """
     A generic catalog of galaxies
     """
     catalog_type = 'test_galaxies'
     column_outputs=['galid','raJ2000','decJ2000',\
         'redshift',
-        'magNorm_Recalc_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
-        'uRecalc', 'sigma_uRecalc', 'uRecalc_var','sigma_uRecalc_var',\
-        'gRecalc', 'sigma_gRecalc', 'gRecalc_var','sigma_gRecalc_var',\
-        'rRecalc', 'sigma_rRecalc', 'rRecalc_var', 'sigma_rRecalc_var',\
-         'iRecalc', 'sigma_iRecalc', 'iRecalc_var','sigma_iRecalc_var',\
-         'zRecalc', 'sigma_zRecalc', 'zRecalc_var', 'sigma_zRecalc_var',\
-         'yRecalc', 'sigma_yRecalc', 'yRecalc_var', 'sigma_yRecalc_var',\
+        'magNorm_total_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
+        'lsst_u', 'sigma_lsst_u', 'lsst_u_var','sigma_lsst_u_var',\
+        'lsst_g', 'sigma_lsst_g', 'lsst_g_var','sigma_lsst_g_var',\
+        'lsst_r', 'sigma_lsst_r', 'lsst_r_var', 'sigma_lsst_r_var',\
+         'lsst_i', 'sigma_lsst_i', 'lsst_i_var','sigma_lsst_i_var',\
+         'lsst_z', 'sigma_lsst_z', 'lsst_z_var', 'sigma_lsst_z_var',\
+         'lsst_y', 'sigma_lsst_y', 'lsst_y_var', 'sigma_lsst_y_var',\
         'sedFilenameBulge','uBulge', 'sigma_uBulge', 'gBulge', 'sigma_gBulge', \
         'rBulge', 'sigma_rBulge', 'iBulge', 'sigma_iBulge', 'zBulge', 'sigma_zBulge',\
          'yBulge', 'sigma_yBulge', \

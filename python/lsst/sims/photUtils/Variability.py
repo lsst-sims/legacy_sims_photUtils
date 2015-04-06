@@ -9,7 +9,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
 from .Photometry import PhotometryBase
 
-__all__ = ["Variability"]
+__all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies"]
 
 @register_class
 class Variability(PhotometryBase):
@@ -42,220 +42,6 @@ class Variability(PhotometryBase):
                                " the lightcurves")
 
 
-    @compound('lsst_u_var','lsst_g_var','lsst_r_var','lsst_i_var',
-    'lsst_z_var','lsst_y_var','stellar_magNorm_var')
-    def get_stellar_variability(self):
-        """
-        Getter for variable stellar magnitudes
-        """
-
-        uu = self.column_by_name('lsst_u')
-        gg = self.column_by_name('lsst_g')
-        rr = self.column_by_name('lsst_r')
-        ii = self.column_by_name('lsst_i')
-        zz = self.column_by_name('lsst_z')
-        yy = self.column_by_name('lsst_y')
-
-        magNorm = self.column_by_name('magNorm')
-
-
-        varParams = self.column_by_name('varParamStr')
-
-        uuout = []
-        ggout = []
-        rrout = []
-        iiout = []
-        zzout = []
-        yyout = []
-        magNormVarOut = []
-
-        i=0
-        for vv in varParams:
-            if vv != numpy.unicode_("None"):
-                deltaMag, deltaMagNorm = self.applyVariability(vv)
-                uuout.append(uu[i]+deltaMag['u'])
-                ggout.append(gg[i]+deltaMag['g'])
-                rrout.append(rr[i]+deltaMag['r'])
-                iiout.append(ii[i]+deltaMag['i'])
-                zzout.append(zz[i]+deltaMag['z'])
-                yyout.append(yy[i]+deltaMag['y'])
-
-                if deltaMagNorm != None and (not numpy.isnan(magNorm[i])):
-                    magNormVarOut.append(magNorm[i]+deltaMagNorm)
-                else:
-                    magNormVarOut.append(-999.0)
-            else:
-                uuout.append(uu[i])
-                ggout.append(gg[i])
-                rrout.append(rr[i])
-                iiout.append(ii[i])
-                zzout.append(zz[i])
-                yyout.append(yy[i])
-
-                if self.obs_metadata.bandpass:
-                    magNormVarOut.append(magNorm[i])
-                else:
-                    magNormVarOut.append(-999.0)
-            i+=1
-
-        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])
-
-    @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
-              'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
-    def get_variable_uncertainties(self):
-        """
-        Getter for photometric uncertainties associated with variable
-        stellar magnitudes
-        """
-
-        columnNames = ['lsst_u_var', 'lsst_g_var', 'lsst_r_var', 'lsst_i_var',
-                       'lsst_z_var', 'lsst_y_var']
-
-        return self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
-
-    @compound('uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
-          'zRecalc_var', 'yRecalc_var',
-          'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var',
-          'magNorm_Recalc_var')
-    def get_galaxy_variability(self):
-
-        """
-        Getter for variable magnitudes associated with AGN
-        """
-
-        uTotal = self.column_by_name("uRecalc")
-        gTotal = self.column_by_name("gRecalc")
-        rTotal = self.column_by_name("rRecalc")
-        iTotal = self.column_by_name("iRecalc")
-        zTotal = self.column_by_name("zRecalc")
-        yTotal = self.column_by_name("yRecalc")
-
-        uBulge = self.column_by_name("uBulge")
-        gBulge = self.column_by_name("gBulge")
-        rBulge = self.column_by_name("rBulge")
-        iBulge = self.column_by_name("iBulge")
-        zBulge = self.column_by_name("zBulge")
-        yBulge = self.column_by_name("yBulge")
-
-        uDisk = self.column_by_name("uDisk")
-        gDisk = self.column_by_name("gDisk")
-        rDisk = self.column_by_name("rDisk")
-        iDisk = self.column_by_name("iDisk")
-        zDisk = self.column_by_name("zDisk")
-        yDisk = self.column_by_name("yDisk")
-
-        uAgn = self.column_by_name("uAgn")
-        gAgn = self.column_by_name("gAgn")
-        rAgn = self.column_by_name("rAgn")
-        iAgn = self.column_by_name("iAgn")
-        zAgn = self.column_by_name("zAgn")
-        yAgn = self.column_by_name("yAgn")
-
-        magNormAgn = self.column_by_name('magNormAgn')
-        magNormDisk = self.column_by_name('magNormDisk')
-        magNormBulge = self.column_by_name('magNormBulge')
-
-
-        varParams = self.column_by_name("varParamStr")
-
-        uTotalOut = []
-        gTotalOut = []
-        rTotalOut = []
-        iTotalOut = []
-        zTotalOut = []
-        yTotalOut = []
-
-        uAgnOut = []
-        gAgnOut = []
-        rAgnOut = []
-        iAgnOut = []
-        zAgnOut = []
-        yAgnOut = []
-
-        magNormVarOut = []
-
-        i=0
-        for vv in varParams:
-            if vv != numpy.unicode_("None"):
-                deltaMag, deltaMagNorm=self.applyVariability(vv)
-                uAgnOut.append(uAgn[i]+deltaMag['u'])
-                gAgnOut.append(gAgn[i]+deltaMag['g'])
-                rAgnOut.append(rAgn[i]+deltaMag['r'])
-                iAgnOut.append(iAgn[i]+deltaMag['i'])
-                zAgnOut.append(zAgn[i]+deltaMag['z'])
-                yAgnOut.append(yAgn[i]+deltaMag['y'])
-
-                uTotalOut.append(self.sum_magnitudes(disk = uDisk[i], bulge = uBulge[i],
-                        agn = uAgnOut[i]))
-
-                gTotalOut.append(self.sum_magnitudes(disk = gDisk[i], bulge = gBulge[i],
-                        agn = gAgnOut[i]))
-
-                rTotalOut.append(self.sum_magnitudes(disk = rDisk[i], bulge = rBulge[i],
-                        agn = rAgnOut[i]))
-
-                iTotalOut.append(self.sum_magnitudes(disk = iDisk[i], bulge = iBulge[i],
-                        agn = iAgnOut[i]))
-
-                zTotalOut.append(self.sum_magnitudes(disk = zDisk[i], bulge = zBulge[i],
-                        agn = zAgnOut[i]))
-
-                yTotalOut.append(self.sum_magnitudes(disk = yDisk[i], bulge = yBulge[i],
-                        agn = yAgnOut[i]))
-
-                if deltaMagNorm != None and (not numpy.isnan(magNormAgn[i])):
-                    magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
-                            agn = magNormAgn[i] + deltaMagNorm))
-                else:
-                    magNormVarOut.append(-999.0)
-
-
-            else:
-                uTotalOut.append(uTotal[i])
-                gTotalOut.append(gTotal[i])
-                rTotalOut.append(rTotal[i])
-                iTotalOut.append(iTotal[i])
-                zTotalOut.append(zTotal[i])
-                yTotalOut.append(yTotal[i])
-
-                uAgnOut.append(uAgn[i])
-                gAgnOut.append(gAgn[i])
-                rAgnOut.append(rAgn[i])
-                iAgnOut.append(iAgn[i])
-                zAgnOut.append(zAgn[i])
-                yAgnOut.append(yAgn[i])
-
-                if self.bandpass is not None and (not numpy.isnan(magNormAgn[i])):
-
-                    magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
-                        agn = magNormAgn[i]))
-                else:
-                    magNormVarOut.append(-999.0)
-
-            i+=1
-
-        return numpy.array([uTotalOut,gTotalOut,rTotalOut,iTotalOut,zTotalOut,yTotalOut,\
-                           uAgnOut,gAgnOut,rAgnOut,iAgnOut,zAgnOut,yAgnOut,magNormVarOut])
-
-
-    @compound('sigma_uRecalc_var','sigma_gRecalc_var','sigma_rRecalc_var',
-              'sigma_iRecalc_var','sigma_zRecalc_var','sigma_yRecalc_var',
-              'sigma_uAgn_var','sigma_gAgn_var','sigma_rAgn_var',
-              'sigma_iAgn_var','sigma_zAgn_var','sigma_yAgn_var')
-    def get_galaxy_variability_uncertainties(self):
-
-        """
-        Getter for photometric uncertainties associated with AGN variability
-        """
-
-        columnNames = ['uRecalc_var', 'gRecalc_var', 'rRecalc_var', 'iRecalc_var',
-                       'zRecalc_var', 'yRecalc_var']
-        output = self.calculatePhotometricUncertaintyFromColumnNames(columnNames)
-
-        columnNames = ['uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var',
-                       'yAgn_var']
-
-        return numpy.vstack([output, self.calculatePhotometricUncertaintyFromColumnNames(columnNames)])
 
     def applyVariability(self, varParams):
         """
@@ -287,7 +73,9 @@ class Variability(PhotometryBase):
         expmjd=self.obs_metadata.mjd
         output = self._methodRegistry[method](self, params,expmjd)
 
-        if self.bandpass is not None:
+        if self.bandpass is not None and not isinstance(self.bandpass, list):
+            #if bandpass refers to multiple bandpasses, we are obviously
+            #not writing this catalog as PhoSim input
             deltaMagNorm = output[self.bandpass]
         else:
             deltaMagNorm = None
@@ -562,3 +350,247 @@ class Variability(PhotometryBase):
         for k in ['u','g','r','i','z','y']:
             magoff[k] = -2.5*numpy.log(moff)
         return magoff
+
+
+
+class VariabilityStars(Variability):
+
+    @compound('lsst_u_var','lsst_g_var','lsst_r_var','lsst_i_var',
+    'lsst_z_var','lsst_y_var','stellar_magNorm_var')
+    def get_stellar_variability(self):
+        """
+        Getter for variable stellar magnitudes
+        """
+
+        uu = self.column_by_name('lsst_u')
+        gg = self.column_by_name('lsst_g')
+        rr = self.column_by_name('lsst_r')
+        ii = self.column_by_name('lsst_i')
+        zz = self.column_by_name('lsst_z')
+        yy = self.column_by_name('lsst_y')
+
+        magNorm = self.column_by_name('magNorm')
+
+
+        varParams = self.column_by_name('varParamStr')
+
+        uuout = []
+        ggout = []
+        rrout = []
+        iiout = []
+        zzout = []
+        yyout = []
+        magNormVarOut = []
+
+        i=0
+        for vv in varParams:
+            if vv != numpy.unicode_("None"):
+                deltaMag, deltaMagNorm = self.applyVariability(vv)
+                uuout.append(uu[i]+deltaMag['u'])
+                ggout.append(gg[i]+deltaMag['g'])
+                rrout.append(rr[i]+deltaMag['r'])
+                iiout.append(ii[i]+deltaMag['i'])
+                zzout.append(zz[i]+deltaMag['z'])
+                yyout.append(yy[i]+deltaMag['y'])
+
+                if deltaMagNorm != None and (not numpy.isnan(magNorm[i])):
+                    magNormVarOut.append(magNorm[i]+deltaMagNorm)
+                else:
+                    magNormVarOut.append(-999.0)
+            else:
+                uuout.append(uu[i])
+                ggout.append(gg[i])
+                rrout.append(rr[i])
+                iiout.append(ii[i])
+                zzout.append(zz[i])
+                yyout.append(yy[i])
+
+                if self.obs_metadata.bandpass:
+                    magNormVarOut.append(magNorm[i])
+                else:
+                    magNormVarOut.append(-999.0)
+            i+=1
+
+        return numpy.array([uuout,ggout,rrout,iiout,zzout,yyout,magNormVarOut])
+
+    @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
+              'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var')
+    def get_variable_uncertainties(self):
+        """
+        Getter for photometric uncertainties associated with variable
+        stellar magnitudes
+        """
+
+        columnNames = ['lsst_u_var', 'lsst_g_var', 'lsst_r_var', 'lsst_i_var',
+                       'lsst_z_var', 'lsst_y_var']
+
+        magnitudes = numpy.array([self.column_by_name('lsst_u_var'),
+                                  self.column_by_name('lsst_g_var'),
+                                  self.column_by_name('lsst_r_var'),
+                                  self.column_by_name('lsst_i_var'),
+                                  self.column_by_name('lsst_z_var'),
+                                  self.column_by_name('lsst_y_var')])
+
+        return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                  sig2sys=self.sig2sys)
+
+
+
+class VariabilityGalaxies(Variability):
+
+    @compound('lsst_u_var', 'lsst_g_var', 'lsst_r_var', 'lsst_i_var',
+          'lsst_z_var', 'lsst_y_var',
+          'uAgn_var', 'gAgn_var', 'rAgn_var', 'iAgn_var', 'zAgn_var', 'yAgn_var',
+          'magNorm_total_var')
+    def get_galaxy_variability_total(self):
+
+        """
+        Getter for variable magnitudes associated with AGN
+        """
+
+        uTotal = self.column_by_name("lsst_u")
+        gTotal = self.column_by_name("lsst_g")
+        rTotal = self.column_by_name("lsst_r")
+        iTotal = self.column_by_name("lsst_i")
+        zTotal = self.column_by_name("lsst_z")
+        yTotal = self.column_by_name("lsst_y")
+
+        uBulge = self.column_by_name("uBulge")
+        gBulge = self.column_by_name("gBulge")
+        rBulge = self.column_by_name("rBulge")
+        iBulge = self.column_by_name("iBulge")
+        zBulge = self.column_by_name("zBulge")
+        yBulge = self.column_by_name("yBulge")
+
+        uDisk = self.column_by_name("uDisk")
+        gDisk = self.column_by_name("gDisk")
+        rDisk = self.column_by_name("rDisk")
+        iDisk = self.column_by_name("iDisk")
+        zDisk = self.column_by_name("zDisk")
+        yDisk = self.column_by_name("yDisk")
+
+        uAgn = self.column_by_name("uAgn")
+        gAgn = self.column_by_name("gAgn")
+        rAgn = self.column_by_name("rAgn")
+        iAgn = self.column_by_name("iAgn")
+        zAgn = self.column_by_name("zAgn")
+        yAgn = self.column_by_name("yAgn")
+
+        magNormAgn = self.column_by_name('magNormAgn')
+        magNormDisk = self.column_by_name('magNormDisk')
+        magNormBulge = self.column_by_name('magNormBulge')
+
+
+        varParams = self.column_by_name("varParamStr")
+
+        uTotalOut = []
+        gTotalOut = []
+        rTotalOut = []
+        iTotalOut = []
+        zTotalOut = []
+        yTotalOut = []
+
+        uAgnOut = []
+        gAgnOut = []
+        rAgnOut = []
+        iAgnOut = []
+        zAgnOut = []
+        yAgnOut = []
+
+        magNormVarOut = []
+
+        i=0
+        for vv in varParams:
+            if vv != numpy.unicode_("None"):
+                deltaMag, deltaMagNorm=self.applyVariability(vv)
+                uAgnOut.append(uAgn[i]+deltaMag['u'])
+                gAgnOut.append(gAgn[i]+deltaMag['g'])
+                rAgnOut.append(rAgn[i]+deltaMag['r'])
+                iAgnOut.append(iAgn[i]+deltaMag['i'])
+                zAgnOut.append(zAgn[i]+deltaMag['z'])
+                yAgnOut.append(yAgn[i]+deltaMag['y'])
+
+                uTotalOut.append(self.sum_magnitudes(disk = uDisk[i], bulge = uBulge[i],
+                        agn = uAgnOut[i]))
+
+                gTotalOut.append(self.sum_magnitudes(disk = gDisk[i], bulge = gBulge[i],
+                        agn = gAgnOut[i]))
+
+                rTotalOut.append(self.sum_magnitudes(disk = rDisk[i], bulge = rBulge[i],
+                        agn = rAgnOut[i]))
+
+                iTotalOut.append(self.sum_magnitudes(disk = iDisk[i], bulge = iBulge[i],
+                        agn = iAgnOut[i]))
+
+                zTotalOut.append(self.sum_magnitudes(disk = zDisk[i], bulge = zBulge[i],
+                        agn = zAgnOut[i]))
+
+                yTotalOut.append(self.sum_magnitudes(disk = yDisk[i], bulge = yBulge[i],
+                        agn = yAgnOut[i]))
+
+                if deltaMagNorm != None and (not numpy.isnan(magNormAgn[i])):
+                    magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
+                            agn = magNormAgn[i] + deltaMagNorm))
+                else:
+                    magNormVarOut.append(-999.0)
+
+
+            else:
+                uTotalOut.append(uTotal[i])
+                gTotalOut.append(gTotal[i])
+                rTotalOut.append(rTotal[i])
+                iTotalOut.append(iTotal[i])
+                zTotalOut.append(zTotal[i])
+                yTotalOut.append(yTotal[i])
+
+                uAgnOut.append(uAgn[i])
+                gAgnOut.append(gAgn[i])
+                rAgnOut.append(rAgn[i])
+                iAgnOut.append(iAgn[i])
+                zAgnOut.append(zAgn[i])
+                yAgnOut.append(yAgn[i])
+
+                if self.bandpass is not None and (not numpy.isnan(magNormAgn[i])):
+
+                    magNormVarOut.append(self.sum_magnitudes(disk = magNormDisk[i], bulge = magNormBulge[i],
+                        agn = magNormAgn[i]))
+                else:
+                    magNormVarOut.append(-999.0)
+
+            i+=1
+
+        return numpy.array([uTotalOut,gTotalOut,rTotalOut,iTotalOut,zTotalOut,yTotalOut,\
+                           uAgnOut,gAgnOut,rAgnOut,iAgnOut,zAgnOut,yAgnOut,magNormVarOut])
+
+
+    @compound('sigma_lsst_u_var','sigma_lsst_g_var','sigma_lsst_r_var',
+              'sigma_lsst_i_var','sigma_lsst_z_var','sigma_lsst_y_var',
+              'sigma_uAgn_var','sigma_gAgn_var','sigma_rAgn_var',
+              'sigma_iAgn_var','sigma_zAgn_var','sigma_yAgn_var')
+    def get_galaxy_variability_uncertainties(self):
+
+        """
+        Getter for photometric uncertainties associated with AGN variability
+        """
+
+        magnitudes = numpy.array([self.column_by_name('lsst_u_var'),
+                                  self.column_by_name('lsst_g_var'),
+                                  self.column_by_name('lsst_r_var'),
+                                  self.column_by_name('lsst_i_var'),
+                                  self.column_by_name('lsst_z_var'),
+                                  self.column_by_name('lsst_y_var')])
+
+        output = self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
+                                                    sig2sys=self.sig2sys)
+
+        magnitudes = numpy.array([self.column_by_name('uAgn_var'),
+                                  self.column_by_name('gAgn_var'),
+                                  self.column_by_name('rAgn_var'),
+                                  self.column_by_name('iAgn_var'),
+                                  self.column_by_name('zAgn_var'),
+                                  self.column_by_name('yAgn_var')])
+
+        return numpy.vstack([output, self.calculateMagnitudeUncertainty(magnitudes,
+                                                                        obs_metadata=self.obs_metadata,
+                                                                        sig2sys=self.sig2sys)])
+
