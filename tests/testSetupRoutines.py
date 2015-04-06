@@ -38,7 +38,7 @@ class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies)
 
 class baselineGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, PhotometryGalaxies):
     """
-    Baseline photometry catalog against which to compare testStarCatalog
+    Baseline photometry catalog against which to compare testGalaxyCatalog
     """
     column_outputs = ['raObserved', 'decObserved',
                       'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
