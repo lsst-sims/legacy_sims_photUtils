@@ -175,6 +175,9 @@ class selectGalaxySED(rgGalaxy):
 
         #Calculate ebv from ra, dec coordinates if needed
         if reddening == True:
+            #Check that catRA and catDec are included
+            if catRA is None or catDec is None:
+                raise RuntimeError("Reddening is True, but catRA and catDec are not included.")
             calcEBV = ebv()
             raDec = np.array((catRA,catDec))
             #If only matching one object need to reshape for calculateEbv

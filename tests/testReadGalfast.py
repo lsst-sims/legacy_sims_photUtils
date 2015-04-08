@@ -427,6 +427,15 @@ class TestSelectGalaxySED(unittest.TestCase):
                                        decimal = 3)
         self.assertEqual(None, testMatchingResultsErrors[2][3])
 
+    def testReddeningException(self):
+        """Test that if reddening=True in matchToObserved CatRA & CatDec are defined or exception is raised"""
+        testException = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDList = testException.loadBC03()
+        magnitudes = [[1.0, 2.0, 3.0, 4.0, 5.0], [1.0, 2.0, 3.0, 4.0, 5.0]]
+        redshifts = [1.0, 1.0]
+        self.assertRaises(RuntimeError, testException.matchToObserved, testSEDList, magnitudes, redshifts,
+                          reddening = True)
+
     def testMatchToObserved(self):
         """Test that Galaxy SEDs with extinction or redshift are matched correctly"""
         galPhot = phot()
@@ -578,6 +587,15 @@ class TestSelectStarSED(unittest.TestCase):
         if 'kp01_7000.fits_g40_7240.gz' not in kList:
             shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
                             str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
+
+    def testReddeningException(self):
+        """Test that if reddening=True in matchToObserved CatRA & CatDec are defined or exception is raised"""
+        testException = selectStarSED(sEDDir = self.testSpecDir, kuruczDir = self.testKDir,
+                                      mltDir = self.testMLTDir, wdDir = self.testWDDir)
+        testSEDList = testException.loadKuruczSEDs()
+        magnitudes = [[1.0, 2.0, 3.0, 4.0, 5.0], [1.0, 2.0, 3.0, 4.0, 5.0]]
+        self.assertRaises(RuntimeError, testException.findSED, testSEDList, magnitudes,
+                          reddening = True)
 
     def testFindSED(self):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
