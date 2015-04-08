@@ -345,43 +345,50 @@ class readGalfast():
                 hIn = np.where((pop >= 10) & (pop < 15))
                 heIn = np.where((pop >= 15) & (pop < 20))
 
-                sEDNameK, magNormK = selectStarSED0.findSED(listDict['kurucz'],
-                                                            sDSSunred[kIn], ra[kIn], dec[kIn],
-                                                            reddening = False,
-                                                            magNormAcc = magNormAcc,
-                                                            colors = colorDict['kurucz'])
-                sEDNameM, magNormM = selectStarSED0.findSED(listDict['mlt'],
-                                                            sDSSunred[mIn], ra[mIn], dec[mIn],
-                                                            reddening = False,
-                                                            magNormAcc = magNormAcc,
-                                                            colors = colorDict['mlt'])
-                sEDNameH, magNormH = selectStarSED0.findSED(listDict['H'],
-                                                            sDSSunred[hIn], ra[hIn], dec[hIn],
-                                                            reddening = False,
-                                                            magNormAcc = magNormAcc,
-                                                            colors = colorDict['H'])
-                sEDNameHE, magNormHE = selectStarSED0.findSED(listDict['HE'],
-                                                              sDSSunred[heIn], ra[heIn], dec[heIn],
-                                                              reddening = False,
-                                                              magNormAcc = magNormAcc,
-                                                              colors = colorDict['HE'])
+                sEDNameK, magNormK, matchErrorK = selectStarSED0.findSED(listDict['kurucz'],
+                                                                         sDSSunred[kIn], ra[kIn], dec[kIn],
+                                                                         reddening = False,
+                                                                         magNormAcc = magNormAcc,
+                                                                         colors = colorDict['kurucz'])
+                sEDNameM, magNormM, matchErrorM = selectStarSED0.findSED(listDict['mlt'],
+                                                                         sDSSunred[mIn], ra[mIn], dec[mIn],
+                                                                         reddening = False,
+                                                                         magNormAcc = magNormAcc,
+                                                                         colors = colorDict['mlt'])
+                sEDNameH, magNormH, matchErrorH = selectStarSED0.findSED(listDict['H'],
+                                                                         sDSSunred[hIn], ra[hIn], dec[hIn],
+                                                                         reddening = False,
+                                                                         magNormAcc = magNormAcc,
+                                                                         colors = colorDict['H'])
+                sEDNameHE, magNormHE, matchErrorHE = selectStarSED0.findSED(listDict['HE'],
+                                                                            sDSSunred[heIn], 
+                                                                            ra[heIn], dec[heIn],
+                                                                            reddening = False,
+                                                                            magNormAcc = magNormAcc,
+                                                                            colors = colorDict['HE'])
                 chunkNames = np.empty(readSize, dtype = 'S32')
                 chunkTypes = np.empty(readSize, dtype = 'S8')
                 chunkMagNorms = np.zeros(readSize)
+                chunkMatchErrors = np.zeros(readSize)
                 chunkNames[kIn] = sEDNameK
                 chunkTypes[kIn] = 'kurucz'
                 chunkMagNorms[kIn] = magNormK
+                chunkMatchErrors[kIn] = matchErrorK
                 chunkNames[mIn] = sEDNameM
                 chunkTypes[mIn] = 'mlt'
                 chunkMagNorms[mIn] = magNormM
+                chunkMatchErrors[mIn] = matchErrorM
                 chunkNames[hIn] = sEDNameH
                 chunkTypes[hIn] = 'H'
                 chunkMagNorms[hIn] = magNormH
+                chunkMatchErrors[hIn] = matchErrorH
                 chunkNames[heIn] = sEDNameHE
                 chunkTypes[heIn] = 'HE'
                 chunkMagNorms[heIn] = magNormHE
+                chunkMatchErrors[heIn] = matchErrorHE
                 lsstMagsUnred = []
-                for sedName, sedType, magNorm in zip(chunkNames, chunkTypes, chunkMagNorms):
+                for sedName, sedType, magNorm, matchError in zip(chunkNames, chunkTypes, chunkMagNorms, 
+                                                                 chunkMatchErrors):
                     testSED = Sed()
                     testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen,
                                    flambda = listDict[sedType][positionDict[sedName]].flambda)
@@ -396,7 +403,8 @@ class readGalfast():
                 ebvInf = amInf / 2.285
                 for line in range(0, readSize):
                     outFmt = '%i,%3.7f,%3.7f,%3.7f,%3.7f,%3.7f,' +\
-                             '%3.7f,%3.7f,%s,%3.7f,' +\
+                             '%3.7f,%3.7f,%s,' +\
+                             '%3.7f,%3.7f,' +\
                              '%3.7f,%3.7f,%3.7f,' +\
                              '%3.7f,%3.7f,%3.7f,' +\
                              '%3.7f,%3.7f,%3.7f,%3.7f,' +\
@@ -407,7 +415,8 @@ class readGalfast():
                         if inFits == True:
                             sDSS = sDSS[0]
                         outDat = (oID, ra[line], dec[line], gall, galb, coordX,
-                                  coordY, coordZ, chunkNames, chunkMagNorms,
+                                  coordY, coordZ, chunkNames, 
+                                  chunkMagNorms, chunkMatchErrors,
                                   lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
                                   lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],
                                   sDSS[0], sDSS[1], sDSS[2], sDSS[3],
@@ -416,7 +425,8 @@ class readGalfast():
                                   FeH, pop, distKpc, ebv, ebvInf)
                     else:
                         outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line],
-                                  coordY[line], coordZ[line], chunkNames[line], chunkMagNorms[line],
+                                  coordY[line], coordZ[line], chunkNames[line], 
+                                  chunkMagNorms[line], chunkMatchErrors[line],
                                   lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
                                   lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],
                                   sDSS[line][0], sDSS[line][1], sDSS[line][2], sDSS[line][3],

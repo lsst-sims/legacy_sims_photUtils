@@ -21,7 +21,8 @@ class rgBase():
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
     """
 
-    def calcMagNorm(self, objectMags, sedObj, photObj, redshift = None, stepSize = 0.01, initBand = 0):
+    def calcMagNorm(self, objectMags, sedObj, photObj, redshift = None, stepSize = 0.01, 
+                    initBand = 0, filtRange = None):
 
         """
         This will find the magNorm value that gives the closest match to the magnitudes of the object
@@ -41,8 +42,12 @@ class rgBase():
         @param [in] stepSize is the accuracy you want to match your magNorm within
 
         @param [in] initBand is the number of the bandpass in the magnitude array that you will use for
-        the first naive match guess. Since imsimbandpass uses 500nm the best option is to use that closest
-        or encompassing 500 nm. Be aware, this starts at 0, but is initialized to 1 meaning second in array.
+        the first naive match guess. Since imsimbandpass uses 500nm the best option is to use that closest to
+        or encompassing 500 nm. If filtRange below is not None, then this is ignored and filtRange[0] is
+        used in its place.
+
+        @param [in] filtRange is a selected range of filters specified by their indices in the bandpassList
+        to match up against. Used when missing data in some magnitude bands.
 
         @param [out] bestMagNorm is the magnitude normalization for the given magnitudes and SED
         """
@@ -53,14 +58,20 @@ class rgBase():
             sedTest.redshiftSED(redshift)
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
-        #Use the object's magnitude in the first band as a naive estimate
-        testMagNorm = objectMags[initBand]
+        #Use the object's magnitude in the index marked by initband as a naive estimate
+        if filtRange is None:
+            testMagNorm = objectMags[initBand]
+        else:
+            testMagNorm = objectMags[filtRange[0]]
         testFluxNorm = sedTest.calcFluxNorm(testMagNorm, imSimBand)
         normedSED = Sed()
         norm_wavelen, norm_fnu = sedTest.multiplyFluxNorm(testFluxNorm, wavelen = sedTest.wavelen,
                                                           fnu = sedTest.fnu)
         normedSED.setSED(norm_wavelen, fnu = norm_fnu)
         sedMags = np.array(photObj.manyMagCalc_list(normedSED))
+        if filtRange is not None:
+            sedMags = sedMags[filtRange]
+            objectMags = objectMags[filtRange]
         diff = np.sort(objectMags - sedMags)
         diffSq = np.sum(diff**2, dtype=np.float64)
         diffSqPrev = np.sum(diff**2, dtype=np.float64)
@@ -81,6 +92,8 @@ class rgBase():
                                                               fnu = sedTest.fnu)
             normedSED.setSED(norm_wavelen, fnu = norm_fnu)
             sedMags = np.array(photObj.manyMagCalc_list(normedSED))
+            if filtRange is not None:
+                sedMags = sedMags[filtRange]
             diff = np.sort(objectMags - sedMags)
             diffSq = np.sum(diff**2, dtype=np.float64)
             if diffSq < bestDiffSq:

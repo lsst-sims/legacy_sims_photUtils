@@ -401,11 +401,40 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMags.append(galPhot.manyMagCalc_list(getSEDMags))
 
         #Also testing to make sure passing in non-default bandpasses works
+        #Substitute in nan values to simulate incomplete data.
+        testMags[0][1] = np.nan
+        testMags[0][2] = np.nan
+        testMags[0][4] = np.nan
+        testMags[1][1] = np.nan
         testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, magNormAcc = magNormStep,
                                                             bandpassDict = galPhot.bandpassDict)
+        self.assertEqual(None, testMatchingResults[0][0])
+        self.assertEqual(testSEDNames[1:], testMatchingResults[0][1:])
+        self.assertEqual(None, testMatchingResults[1][0])
+        np.testing.assert_almost_equal(testMagNormList[1:], testMatchingResults[1][1:], decimal = magNormStep)
 
-        self.assertEqual(testSEDNames, testMatchingResults[0])
-        np.testing.assert_almost_equal(testMagNormList, testMatchingResults[1], decimal = magNormStep)
+        #Test Match Errors
+        errMags = np.array((testMags[2], testMags[2], testMags[2], testMags[2]))
+        errMags[1,1] += 1. #Total MSE will be 2/(5 colors) = 0.4
+        errMags[2, 0:2] = np.nan
+        errMags[2, 3] += 1. #Total MSE will be 2/(3 colors) = 0.667
+        errMags[3, :] = None
+        errSED = testSEDList[2]
+        testMatchingResultsErrors = testMatching.matchToRestFrame([errSED], errMags,
+                                                                  magNormAcc = magNormStep,
+                                                                  bandpassDict = galPhot.bandpassDict)
+        np.testing.assert_almost_equal(np.array((0.0, 0.4, 2./3.)), testMatchingResultsErrors[2][0:3],
+                                       decimal = 3)
+        self.assertEqual(None, testMatchingResultsErrors[2][3])
+
+    def testReddeningException(self):
+        """Test that if reddening=True in matchToObserved CatRA & CatDec are defined or exception is raised"""
+        testException = selectGalaxySED(galDir = self.testSpecDir)
+        testSEDList = testException.loadBC03()
+        magnitudes = [[1.0, 2.0, 3.0, 4.0, 5.0], [1.0, 2.0, 3.0, 4.0, 5.0]]
+        redshifts = [1.0, 1.0]
+        self.assertRaises(RuntimeError, testException.matchToObserved, testSEDList, magnitudes, redshifts,
+                          reddening = True)
 
     def testMatchToObserved(self):
         """Test that Galaxy SEDs with extinction or redshift are matched correctly"""
@@ -461,23 +490,48 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMagsRedshift.append(galPhot.manyMagCalc_list(getRedshiftMags))
             
         #Will also test in passing of non-default bandpass
-        testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMags, reddening = False,
+        testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testMags, np.zeros(20), 
+                                                           reddening = False,
                                                            bandpassDict = galPhot.bandpassDict)
-        testMatchingEbvVals = testMatching.matchToObserved(testSEDList, testRA, testDec, np.zeros(20), 
-                                                           testMagsExt,
+        testMatchingEbvVals = testMatching.matchToObserved(testSEDList, testMagsExt, np.zeros(20), 
+                                                           catRA = testRA, catDec = testDec,
                                                            reddening = True, extCoeffs = extCoeffs,
                                                            bandpassDict = galPhot.bandpassDict)
-        testMatchingRedshift = testMatching.matchToObserved(testSEDList, testRA, testDec, testRedshifts,
-                                                            testMagsRedshift, dzAcc = 3,
-                                                            magNormAcc = magNormStep, reddening = False,
+        #Substitute in nan values to simulate incomplete data and make sure magnorm works too.
+        testMagsRedshift[0][1] = np.nan
+        testMagsRedshift[0][3] = np.nan
+        testMagsRedshift[0][4] = np.nan
+        testMagsRedshift[1][1] = np.nan
+        testMatchingRedshift = testMatching.matchToObserved(testSEDList, testMagsRedshift, testRedshifts,
+                                                            dzAcc = 3, magNormAcc = magNormStep,
+                                                            reddening = False,
                                                             bandpassDict = galPhot.bandpassDict)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift[0])
         self.assertEqual(testSEDNames, testMatchingEbvVals[0])
-        self.assertEqual(testSEDNames, testMatchingRedshift[0])
-        np.testing.assert_almost_equal(testMagNormList, testMatchingRedshift[1], 
+        self.assertEqual(None, testMatchingRedshift[0][0])
+        self.assertEqual(testSEDNames[1:], testMatchingRedshift[0][1:])
+        self.assertEqual(None, testMatchingRedshift[1][0])
+        np.testing.assert_almost_equal(testMagNormList[1:], testMatchingRedshift[1][1:],
                                        decimal = magNormStep)
+
+        #Test Match Errors
+        errMag = testMagsRedshift[2]
+        errRedshift = testRedshifts[2]
+        errMags = np.array((errMag, errMag, errMag, errMag))
+        errRedshifts = np.array((errRedshift, errRedshift, errRedshift, errRedshift))
+        errMags[1,1] += 1. #Total MSE will be 2/(5 colors) = 0.4
+        errMags[2, 0:2] = np.nan
+        errMags[2, 3] += 1. #Total MSE will be 2/(3 colors) = 0.667
+        errMags[3, :] = None
+        errSED = testSEDList[2]
+        testMatchingResultsErrors = testMatching.matchToObserved([errSED], errMags, errRedshifts,
+                                                                 magNormAcc = magNormStep,
+                                                                 reddening = False,
+                                                                 bandpassDict = galPhot.bandpassDict)
+        np.testing.assert_almost_equal(np.array((0.0, 0.4, 2./3.)), testMatchingResultsErrors[2][0:3],
+                                       decimal = 2) #Give a little more leeway due to redshifting effects
+        self.assertEqual(None, testMatchingResultsErrors[2][3])
 
     @classmethod
     def tearDownClass(cls):
@@ -534,6 +588,15 @@ class TestSelectStarSED(unittest.TestCase):
             shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'), 
                             str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))        
 
+    def testReddeningException(self):
+        """Test that if reddening=True in matchToObserved CatRA & CatDec are defined or exception is raised"""
+        testException = selectStarSED(sEDDir = self.testSpecDir, kuruczDir = self.testKDir,
+                                      mltDir = self.testMLTDir, wdDir = self.testWDDir)
+        testSEDList = testException.loadKuruczSEDs()
+        magnitudes = [[1.0, 2.0, 3.0, 4.0, 5.0], [1.0, 2.0, 3.0, 4.0, 5.0]]
+        self.assertRaises(RuntimeError, testException.findSED, testSEDList, magnitudes,
+                          reddening = True)
+
     def testFindSED(self):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
         Includes testing with extinction and passing in only colors."""
@@ -582,14 +645,42 @@ class TestSelectStarSED(unittest.TestCase):
         fakeDec = np.ones(len(testSEDList[0]))
 
         #Since default bandpassDict should be SDSS ugrizy shouldn't need to specify it
+        #Substitute in nan values to simulate incomplete data.
         for typeList, names, mags, magNorms in zip(testSEDList, testSEDNames, testMags, testMagNormList):
-            testMatchingResults = testMatching.findSED(typeList, mags, fakeRA, fakeDec,
-                                                       magNormAcc = magNormStep, reddening = False)
-            self.assertEqual(names, testMatchingResults[0])
-            np.testing.assert_almost_equal(magNorms, testMatchingResults[1], decimal = magNormStep)
+            if len(typeList) > 2:
+                nanMags = np.array(mags)
+                nanMags[0][0] = np.nan
+                nanMags[0][2] = np.nan
+                nanMags[0][3] = np.nan
+                nanMags[1][1] = np.nan
+                testMatchingResults = testMatching.findSED(typeList, nanMags,
+                                                           magNormAcc = magNormStep, reddening = False)
+                self.assertEqual(None, testMatchingResults[0][0])
+                self.assertEqual(names[1:], testMatchingResults[0][1:])
+                self.assertEqual(None, testMatchingResults[1][0])
+                np.testing.assert_almost_equal(magNorms[1:], testMatchingResults[1][1:], 
+                                               decimal = magNormStep)
+            else:
+                testMatchingResults = testMatching.findSED(typeList, mags,
+                                                           magNormAcc = magNormStep, reddening = False)
+                self.assertEqual(names, testMatchingResults[0])
+                np.testing.assert_almost_equal(magNorms, testMatchingResults[1], decimal = magNormStep)
+
+        #Test Error Output
+        errMags = np.array((testMags[0][0], testMags[0][0], testMags[0][0], testMags[0][0]))
+        errMags[1,1] += 1. #Total MSE will be 2/(4 colors) = 0.5
+        errMags[2, 0:2] = np.nan
+        errMags[2, 3] += 1. #Total MSE will be 2/(2 colors) = 1.0
+        errMags[3, :] = None
+        errSED = testSEDList[0][0]
+        testMatchingResultsErrors = testMatching.findSED([errSED], errMags, magNormAcc = magNormStep,
+                                                         reddening = False)
+        np.testing.assert_almost_equal(np.array((0.0, 0.5, 1.0)), testMatchingResultsErrors[2][0:3], 
+                                       decimal = 3)
+        self.assertEqual(None, testMatchingResultsErrors[2][3])
 
         #Now test what happens if we pass in a bandpassDict
-        testMatchingResultsNoDefault = testMatching.findSED(testSEDList[0], testMags[0], fakeRA, fakeDec,
+        testMatchingResultsNoDefault = testMatching.findSED(testSEDList[0], testMags[0],
                                                             bandpassDict = starPhot.bandpassDict,
                                                             reddening = False)
         self.assertEqual(testSEDNames[0], testMatchingResultsNoDefault[0])
@@ -606,7 +697,8 @@ class TestSelectStarSED(unittest.TestCase):
         testRedMags = []
         for extVal, testMagSet in zip(extVals, testMags[0]):
             testRedMags.append(testMagSet + extVal)
-        testMatchingResultsRed = testMatching.findSED(testSEDList[0], testRedMags, testRA, testDec,
+        testMatchingResultsRed = testMatching.findSED(testSEDList[0], testRedMags, catRA = testRA, 
+                                                      catDec = testDec, reddening = True,
                                                       extCoeffs = np.ones(5)*extFactor)
         self.assertEqual(testSEDNames[0], testMatchingResultsRed[0])
         np.testing.assert_almost_equal(testMagNormList[0], testMatchingResultsRed[1], 
@@ -619,7 +711,7 @@ class TestSelectStarSED(unittest.TestCase):
             for filtNum in range(0, len(starPhot.bandpassDict)-1):
                 testColorSet.append(testMagSet[filtNum] - testMagSet[filtNum+1])
             testColors.append(testColorSet)
-        testMatchingColorsInput = testMatching.findSED(testSEDList[0], testMags[0], testRA, testDec,
+        testMatchingColorsInput = testMatching.findSED(testSEDList[0], testMags[0],
                                                        reddening = False, colors = testColors)
         self.assertEqual(testSEDNames[0], testMatchingColorsInput[0])
         np.testing.assert_almost_equal(testMagNormList[0], testMatchingColorsInput[1], 
