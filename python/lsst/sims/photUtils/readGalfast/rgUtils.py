@@ -42,11 +42,12 @@ class rgBase():
         @param [in] stepSize is the accuracy you want to match your magNorm within
 
         @param [in] initBand is the number of the bandpass in the magnitude array that you will use for
-        the first naive match guess. Since imsimbandpass uses 500nm the best option is to use that closest
-        or encompassing 500 nm. Be aware, this starts at 0, but is initialized to 1 meaning second in array.
+        the first naive match guess. Since imsimbandpass uses 500nm the best option is to use that closest to
+        or encompassing 500 nm. If filtRange below is not None, then this is ignored and filtRange[0] is
+        used in its place.
 
-        @param [in] filtRange is a selected range of filters to match up against. Used when missing data
-        in some magnitude bands.
+        @param [in] filtRange is a selected range of filters specified by their indices in the bandpassList
+        to match up against. Used when missing data in some magnitude bands.
 
         @param [out] bestMagNorm is the magnitude normalization for the given magnitudes and SED
         """
@@ -57,7 +58,7 @@ class rgBase():
             sedTest.redshiftSED(redshift)
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
-        #Use the object's magnitude in the first band as a naive estimate
+        #Use the object's magnitude in the index marked by initband as a naive estimate
         if filtRange is None:
             testMagNorm = objectMags[initBand]
         else:
@@ -71,7 +72,6 @@ class rgBase():
         if filtRange is not None:
             sedMags = sedMags[filtRange]
             objectMags = objectMags[filtRange]
-        #print sedMags, objectMags
         diff = np.sort(objectMags - sedMags)
         diffSq = np.sum(diff**2, dtype=np.float64)
         diffSqPrev = np.sum(diff**2, dtype=np.float64)
