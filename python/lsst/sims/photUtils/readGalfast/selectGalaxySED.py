@@ -96,7 +96,7 @@ class selectGalaxySED(rgGalaxy):
                                            galPhot, stepSize = np.power(10, -float(magNormAcc)),
                                            filtRange = filtNums)
                 magNormMatches.append(magNorm)
-                matchErrors.append(np.min(distanceArray)/len(colorRange))
+                matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange))
             numOn += 1
             if numOn % 10000 == 0:
                 print 'Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags)
@@ -246,7 +246,7 @@ class selectGalaxySED(rgGalaxy):
                                                       stepSize = np.power(10, -float(magNormAcc)),
                                                       filtRange = filtNums)
                         magNormMatches[currentIndex] = magNormVal
-                        matchErrors[currentIndex] = np.min(distanceArray)/len(colorRange)
+                        matchErrors[currentIndex] = (distanceArray[0,matchedSEDNum]/len(colorRange))
                     numOn += 1
                 else:
                     break

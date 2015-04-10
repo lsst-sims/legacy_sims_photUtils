@@ -134,7 +134,7 @@ class selectStarSED(rgStar):
                                            starPhot, stepSize = np.power(10, -float(magNormAcc)),
                                            filtRange = filtNums)
                 magNormMatches.append(magNorm)
-                matchErrors.append(np.min(distanceArray)/len(colorRange)) #Mean Squared Error
+                matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange)) #Mean Squared Error
             numOn += 1
             if numOn % 10000 == 0:
                 print 'Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags)
