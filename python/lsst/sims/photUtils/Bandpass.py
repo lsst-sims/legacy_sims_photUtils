@@ -257,7 +257,7 @@ class Bandpass:
         # Set wavelen limits for this object, if any updates have been given.
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
         # Set up wavelen/sb on grid.
-        self.wavelen = numpy.arange(self.wavelen_min, self.wavelen_max+self.wavelen_step, self.wavelen_step,
+        self.wavelen = numpy.arange(self.wavelen_min, self.wavelen_max+self.wavelen_step/2., self.wavelen_step,
                                     dtype='float')
         self.phi = None
         self.sb = numpy.ones(len(self.wavelen), dtype='float')
@@ -352,7 +352,7 @@ class Bandpass:
         if (wavelen.min() > wavelen_max) or (wavelen.max() < wavelen_min):
             raise Exception("No overlap between known wavelength range and desired wavelength range.")
         # Set up gridded wavelength.
-        wavelen_grid = numpy.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
+        wavelen_grid = numpy.arange(wavelen_min, wavelen_max+wavelen_step/2.0, wavelen_step, dtype='float')
         sb_grid = numpy.empty(len(wavelen), dtype='float')
         # Do the interpolation of wavelen/sb onto the grid. (note wavelen/sb type failures will die here).
         sb_grid = numpy.interp(wavelen_grid, wavelen, sb, left=0.0, right=0.0)
@@ -447,7 +447,8 @@ class Bandpass:
 
         #create a flat fnu source
         flatsource = Sed()
-        flatsource.setFlatSED()
+        flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
+                              wavelen_step=self.wavelen_step)
         snr = 5.0
         v_n, noise_instr_sq, \
         noise_sky_sq, noise_skymeasurement_sq, \
