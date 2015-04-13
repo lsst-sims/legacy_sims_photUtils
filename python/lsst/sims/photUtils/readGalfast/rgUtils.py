@@ -119,7 +119,7 @@ class rgBase():
         """
 
         modelColors = []
-        
+
         for specObj in sedList:
             fileSED = Sed()
             fileSED.setSED(wavelen = specObj.wavelen, flambda = specObj.flambda)
