@@ -59,7 +59,11 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     @param [in] effarea is the effective area of the primary mirror in square centimeters
 
     @param [out] returns an instantiation of the Sed class that is the skysed renormalized
-    so that m5 has the desired value
+    so that m5 has the desired value.
+
+    Note that the returned SED will be renormalized such that calling the method
+    self.calcADU(hardwareBandpass) on it will yield the number of counts per square
+    arcsecond in a given bandpass.
     """
 
     #This is based on the LSST SNR document (v1.2, May 2010)
