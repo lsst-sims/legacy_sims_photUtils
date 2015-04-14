@@ -19,16 +19,11 @@ from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, calcGamma, \
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
-__all__ = ["PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
+__all__ = ["PhotometryHardware", "PhotometryBase", "PhotometryGalaxies", "PhotometryStars"]
 
-class PhotometryBase(object):
+class PhotometryHardware(object):
     """
-    This mixin provides the basic infrastructure for photometry.
-    It can read in SEDs and bandpasses, apply extinction and redshift, and, given
-    an SED object it can calculate magnitudes.
-
-    In order to avoid duplication of work, the bandpasses, wavelength array, and phi array
-    are stored as instance variables once they are read in by self.loadTotalBandpassesFromFiles()
+    This mixin provides the basic infrastructure for reading in bandpasses.
 
     To initiailize a different set of bandpasses, call self.loadBandPassesFromFiles() with a different
     set of arguments.
@@ -44,30 +39,16 @@ class PhotometryBase(object):
     hardwareBandpassDict = None #bandpasses associated with just the telescope hardware
     skyBandpass = None #bandpass of the atmosphere
     nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
-    phiArray = None #the response curves for the bandpasses
-    waveLenStep = None
-
-    sig2sys = None #square of systematic noise associated with this catalog
 
     skySED = None #the emission spectrum of the atmosphere
+
+    phiArray = None #the response curves for the bandpasses
+    waveLenStep = None
 
     #taken from table 2 of arxiv:0805.2366
     _defaultM5 = {'u':23.68, 'g':24.89, 'r':24.43, 'i':24.00, 'z':24.45, 'y':22.60}
     _defaultGamma = {'u':0.037, 'g':0.038, 'r':0.039, 'i':0.039, 'z':0.040, 'y':0.040}
 
-    def setupPhiArray_dict(self):
-        """
-        Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
-        self.bandpasses
-
-        The results from this calculation will be stored in the instance variables
-        self.phiArray and self.waveLenStep for future use by self.manyMagCalc_list()
-        """
-
-        sedobj = Sed()
-        if self.bandpassDict is not None:
-            self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
-            self.nBandpasses = len(self.bandpassDict)
 
     def loadBandpassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 filedir = os.path.join(eups.productDir('throughputs'), 'baseline'),
@@ -188,6 +169,41 @@ class PhotometryBase(object):
         self.phiArray = None
         self.waveLenStep = None
         self.setupPhiArray_dict()
+
+    def setupPhiArray_dict(self):
+        """
+        Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
+        self.bandpasses
+
+        The results from this calculation will be stored in the instance variables
+        self.phiArray and self.waveLenStep for future use by self.manyMagCalc_list()
+        """
+
+        sedobj = Sed()
+        if self.bandpassDict is not None:
+            self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
+            self.nBandpasses = len(self.bandpassDict)
+
+
+class PhotometryBase(PhotometryHardware):
+    """
+    This mixin provides the basic infrastructure for photometry.
+    It can read in SEDs and bandpasses, apply extinction and redshift, and, given
+    an SED object it can calculate magnitudes.
+
+    In order to avoid duplication of work, the bandpasses, wavelength array, and phi array
+    are stored as instance variables once they are read in by self.loadTotalBandpassesFromFiles()
+
+    To initiailize a different set of bandpasses, call self.loadBandPassesFromFiles() with a different
+    set of arguments.
+
+    Once self.loadBandPassesFromFiles() as been called, self.loadSeds() can be used to return an array
+    of SED objects.  These objects can be passed to self.manyMagCalc_list() which will calculate
+    the magnitudes of the the SEDs, integrated over the loaded bandpasses, and return them as a
+    dict keeyed to the array of bandpass keys stored in self.bandpassKey
+    """
+
+    sig2sys = None #square of systematic noise associated with this catalog
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self, sedList, magNorm=None, resample_same=False, specFileMap=None):
