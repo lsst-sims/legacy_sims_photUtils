@@ -19,7 +19,7 @@ class PhotometricDefaults(object):
     nm2m = 1.00e-9               # nanometers to meters conversion = 1e-9 m/nm
     ergsetc2jansky = 1.00e23     # erg/cm2/s/Hz to Jansky units (fnu)
 
-    exptime = 15                      # Default exposure time. (option for method calls).
+    exptime = 15.0                    # Default exposure time. (option for method calls).
     nexp = 2                          # Default number of exposures. (option for methods).
     effarea = numpy.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
     gain = 2.3                        # Default gain. (option for method call).
