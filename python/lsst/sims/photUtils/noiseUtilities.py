@@ -17,7 +17,7 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
                       effarea=PhotometricDefaults.effarea):
 
     """
-    Calculate the number of sky counts expected for a given
+    Calculate the number of sky counts per pixel expected for a given
     value of the 5-sigma limiting magnitude (m5)
 
     The 5-sigma limiting magnitude (m5) for an observation is
@@ -52,8 +52,7 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
 
     @param [in] effarea is the effective area of the primary mirror in square centimeters
 
-    @param [out] returns an instantiation of the Sed class that is the skysed renormalized
-    so that m5 has the desired value.
+    @param [out] returns the expected number of sky counts per pixel
     """
 
     #instantiate a flat SED
