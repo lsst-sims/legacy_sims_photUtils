@@ -3,7 +3,83 @@ from .Sed import Sed
 from .Bandpass import Bandpass
 from lsst.sims.photUtils import PhotometricDefaults
 
-__all__ = ["calcM5", "setM5", "calcGamma", "calcSNR_gamma"]
+__all__ = ["calcM5", "expectedSkyCountsForM5", "setM5", "calcGamma", "calcSNR_gamma"]
+
+def expectedSkyCountsForM5(m5target, totalBandpass,
+                      expTime=PhotometricDefaults.exptime,
+                      nexp=PhotometricDefaults.nexp,
+                      readnoise=PhotometricDefaults.rdnoise,
+                      darkcurrent=PhotometricDefaults.darkcurrent,
+                      othernoise=PhotometricDefaults.othernoise,
+                      seeing=PhotometricDefaults.seeing['r'],
+                      platescale=PhotometricDefaults.platescale,
+                      gain=PhotometricDefaults.gain,
+                      effarea=PhotometricDefaults.effarea):
+
+    """
+    Calculate the number of sky counts expected for a given
+    value of the 5-sigma limiting magnitude (m5)
+
+    The 5-sigma limiting magnitude (m5) for an observation is
+    determined by a combination of the telescope and camera parameters
+    (such as diameter of the mirrors and the readnoise) together with the
+    sky background. This method (setM5) scales a provided sky background
+    Sed so that an observation would have a target m5 value, for the
+    provided hardware parameters. Using the resulting Sed in the
+    'calcM5' method will return this target value for m5.
+
+    @param [in] the desired value of m5
+
+    @param [in] totalBandpass is an instantiation of the Bandpass class
+    representing the total throughput of the telescope (instrumentation
+    plus atmosphere)
+
+    @param [in] expTime is the duration of a single exposure in seconds
+
+    @param [in] nexp is the number of exposures being combined
+
+    @param [in] readnoise
+
+    @param [in] darkcurrent
+
+    @param [in] othernoise
+
+    @param [in] seeing in arcseconds
+
+    @param [in] platescale in arcseconds per pixel
+
+    @param [in] gain in electrons per ADU
+
+    @param [in] effarea is the effective area of the primary mirror in square centimeters
+
+    @param [out] returns an instantiation of the Sed class that is the skysed renormalized
+    so that m5 has the desired value.
+    """
+
+    #instantiate a flat SED
+    flatSed = Sed()
+    flatSed.setFlatSED()
+
+    #normalize the SED so that it has a magnitude equal to the desired m5
+    fNorm = flatSed.calcFluxNorm(m5target, totalBandpass)
+    flatSed.multiplyFluxNorm(fNorm)
+    counts = flatSed.calcADU(totalBandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
+
+    #calculate the effective number of pixels for a double-Gaussian PSF
+    neff = flatSed.calcNeff(seeing, platescale)
+
+    #calculate the square of the noise due to the instrument
+    noise_instr_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+
+    #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
+    #given snr=5 and counts as calculated above
+    nSigmaSq = (counts*counts)/25.0 - counts/gain
+
+    skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
+    skyCountsTarget = skyNoiseTarget*gain
+
+    return skyCountsTarget
+
 
 def setM5(m5target, skysed, totalBandpass, hardware,
           expTime=PhotometricDefaults.exptime,
@@ -69,30 +145,21 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     #This is based on the LSST SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
 
-    #instantiate a flat SED
-    flatSed = Sed()
-    flatSed.setFlatSED()
+
+    skyCountsTarget = expectedSkyCountsForM5(m5target, totalBandpass,
+                                             expTime=expTime,
+                                             nexp=nexp,
+                                             readnoise=readnoise,
+                                             darkcurrent=darkcurrent,
+                                             othernoise=othernoise,
+                                             seeing=seeing,
+                                             platescale=platescale,
+                                             gain=gain,
+                                             effarea=effarea)
 
     skySedOut = Sed(wavelen=numpy.copy(skysed.wavelen),
                     flambda=numpy.copy(skysed.flambda))
 
-    #normalize the SED so that it has a magnitude equal to the desired m5
-    fNorm = flatSed.calcFluxNorm(m5target, totalBandpass)
-    flatSed.multiplyFluxNorm(fNorm)
-    counts = flatSed.calcADU(totalBandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
-
-    #calculate the effective number of pixels for a double-Gaussian PSF
-    neff = flatSed.calcNeff(seeing, platescale)
-
-    #calculate the square of the noise due to the instrument
-    noise_instr_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
-
-    #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
-    #given snr=5 and counts as calculated above
-    nSigmaSq = (counts*counts)/25.0 - counts/gain
-
-    skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
-    skyCountsTarget = skyNoiseTarget*gain
     skyCounts = skySedOut.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain) \
                     * platescale * platescale
     skySedOut.multiplyFluxNorm(skyCountsTarget/skyCounts)
