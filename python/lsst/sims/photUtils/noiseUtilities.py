@@ -77,6 +77,13 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
     skyCountsTarget = skyNoiseTarget*gain
 
+    #TODO:
+    #This method should throw an error if skyCountsTarget is negative
+    #unfortunately, that currently happens for default values of
+    #m5 as taken from arXiv:0805.2366, table 2.  Adding the error
+    #should probably wait for a later issue in which we hash out what
+    #the units are for all of the parameters stored in PhotometricDefaults.
+
     return skyCountsTarget
 
 
