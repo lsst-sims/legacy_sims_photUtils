@@ -102,7 +102,7 @@ class rgBase():
 
         return bestMagNorm
 
-    def calcBasicColors(self, sedList, photObj):
+    def calcBasicColors(self, sedList, photObj, makeCopy = False):
         
         """
         This will calculate a set of colors from a list of SED objects when there is no need to redshift
@@ -114,6 +114,9 @@ class rgBase():
         
         @param [in] photObj is a PhotometryBase class instance with the Bandpasses set to those
         for the magnitudes given for the catalog object
+
+        @param [in] makeCopy indicates whether or not to operate on copies of the SED objects in sedList 
+        since this method will change the wavelength grid.
         
         @param [out] modelColors is the set of colors in the Bandpasses provided for the given sedList.
         """
@@ -121,9 +124,12 @@ class rgBase():
         modelColors = []
 
         for specObj in sedList:
-            fileSED = Sed()
-            fileSED.setSED(wavelen = specObj.wavelen, flambda = specObj.flambda)
-            sEDMags = photObj.manyMagCalc_list(fileSED)
+            if makeCopy==True:
+                fileSED = Sed()
+                fileSED.setSED(wavelen = specObj.wavelen, flambda = specObj.flambda)
+                sEDMags = photObj.manyMagCalc_list(fileSED)
+            else:
+                sEDMags = photObj.manyMagCalc_list(specObj)
             colorInfo = []
             for filtNum in range(0, len(photObj.bandpassDict)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
