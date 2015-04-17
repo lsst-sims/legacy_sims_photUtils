@@ -45,11 +45,6 @@ class PhotometryHardware(object):
     phiArray = None #the response curves for the bandpasses
     waveLenStep = None
 
-    #taken from table 2 of arxiv:0805.2366
-    _defaultM5 = {'u':23.68, 'g':24.89, 'r':24.43, 'i':24.00, 'z':24.45, 'y':22.60}
-    _defaultGamma = {'u':0.037, 'g':0.038, 'r':0.039, 'i':0.039, 'z':0.040, 'y':0.040}
-
-
     def loadBandpassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 filedir = os.path.join(eups.productDir('throughputs'), 'baseline'),
                                 bandpassRoot = 'filter_',
@@ -412,10 +407,10 @@ class PhotometryBase(PhotometryHardware):
                     mm.append(obs_metadata.m5[b])
                     gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b]))
                 else:
-                    if b not in self._defaultGamma:
+                    if b not in PhotometricDefaults.m5:
                         raise RuntimeError("No way to calculate gamma or m5 for filter %s " % b)
-                    mm.append(self._defaultM5[b])
-                    gg.append(self._defaultGamma[b])
+                    mm.append(PhotometricDefaults.m5[b])
+                    gg.append(PhotometricDefaults.gamma[b])
 
             self._m5List = numpy.array(mm)
             self._gammaList = numpy.array(gg)
