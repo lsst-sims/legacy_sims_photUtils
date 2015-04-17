@@ -16,7 +16,8 @@ class selectStarSED(rgStar):
     """
 
     def findSED(self, sedList, catMags, catRA = None, catDec = None, reddening = True, magNormAcc = 2,
-                bandpassDict = None, colors = None, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
+                bandpassDict = None, colors = None, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263),
+                makeCopy = False):
 
         """
         This will find the SEDs that are the closest match to the magnitudes of a star catalog.
@@ -55,6 +56,9 @@ class selectStarSED(rgStar):
         given filters from bandpassDict and need to be in the same order as bandpassDict. The default given
         are the SDSS [u,g,r,i,z] values.
 
+        @param [in] makeCopy indicates whether or not to operate on copies of the SED objects in sedList
+        since this method will change the wavelength grid.
+
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
 
@@ -76,7 +80,7 @@ class selectStarSED(rgStar):
         starPhot.setupPhiArray_dict()
         
         if colors is None:
-            modelColors = self.calcBasicColors(sedList, starPhot)
+            modelColors = self.calcBasicColors(sedList, starPhot, makeCopy=makeCopy)
         else:
             modelColors = colors
         #Transpose so that all values for one color are in one row as needed for the matching loop below
