@@ -102,7 +102,6 @@ class TestRGBase(unittest.TestCase):
         testPhot.loadTotalBandpassesFromFiles(self.filterList, 
                                         bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
-        testPhot.setupPhiArray_dict()
         testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
         copyTest.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
         testLambda = copyTest.wavelen[0]
