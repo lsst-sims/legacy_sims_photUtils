@@ -89,6 +89,31 @@ class TestRGBase(unittest.TestCase):
         testOutput = testUtils.calcBasicColors([testSED], testPhot)
         np.testing.assert_equal([testColors], testOutput)
 
+    def testSEDCopyBasicColors(self):
+
+        """Tests that when makeCopy=True in calcBasicColors the SED object is unchanged after calling
+        and that colors are still accurately calculated"""
+
+        testUtils = rgBase()
+        testSED = Sed()
+        copyTest = Sed()
+        testPhot = phot()
+
+        testPhot.loadTotalBandpassesFromFiles(self.filterList, 
+                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassRoot = 'sdss_')
+        testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
+        copyTest.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
+        testLambda = copyTest.wavelen[0]
+        testMags = testPhot.manyMagCalc_list(testSED)
+        testColors = []
+        for filtNum in range(0, len(self.filterList)-1):
+            testColors.append(testMags[filtNum] - testMags[filtNum+1])
+        testOutput = testUtils.calcBasicColors([copyTest], testPhot, makeCopy=True)
+
+        self.assertEqual(testLambda, copyTest.wavelen[0])
+        np.testing.assert_equal([testColors], testOutput)
+
     def testDeReddenMags(self):
 
         """Test that consistent numbers come out of deReddening procedure"""

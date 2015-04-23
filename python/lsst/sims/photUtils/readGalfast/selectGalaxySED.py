@@ -15,7 +15,7 @@ class selectGalaxySED(rgGalaxy):
     This class provides methods to match galaxy catalog magnitudes to an SED.
     """
 
-    def matchToRestFrame(self, sedList, catMags, bandpassDict = None, magNormAcc = 2):
+    def matchToRestFrame(self, sedList, catMags, bandpassDict = None, magNormAcc = 2, makeCopy = False):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
@@ -32,6 +32,9 @@ class selectGalaxySED(rgGalaxy):
         equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses.
 
         @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
+
+        @param [in] makeCopy indicates whether or not to operate on copies of the SED objects in sedList
+        since this method will change the wavelength grid.
 
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
@@ -58,7 +61,7 @@ class selectGalaxySED(rgGalaxy):
         magNormMatches = []
 
         #Find the colors for all model SEDs
-        modelColors = self.calcBasicColors(sedList, galPhot)
+        modelColors = self.calcBasicColors(sedList, galPhot, makeCopy = makeCopy)
         modelColors = np.transpose(modelColors)
 
         #Match the catalog colors to models
@@ -96,7 +99,7 @@ class selectGalaxySED(rgGalaxy):
                                            galPhot, stepSize = np.power(10, -float(magNormAcc)),
                                            filtRange = filtNums)
                 magNormMatches.append(magNorm)
-                matchErrors.append(np.min(distanceArray)/len(colorRange))
+                matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange))
             numOn += 1
             if numOn % 10000 == 0:
                 print 'Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags)
@@ -215,7 +218,7 @@ class selectGalaxySED(rgGalaxy):
                 fileSED = Sed()
                 fileSED.setSED(wavelen = galSpec.wavelen, flambda = galSpec.flambda)
                 fileSED.redshiftSED(redshift)
-                sedColors = self.calcBasicColors([fileSED], galPhot)
+                sedColors = self.calcBasicColors([fileSED], galPhot, makeCopy = True)
                 colorSet.append(sedColors)
             colorSet = np.transpose(colorSet)
             for currentIndex in redshiftIndex[numOn:]:
@@ -246,7 +249,7 @@ class selectGalaxySED(rgGalaxy):
                                                       stepSize = np.power(10, -float(magNormAcc)),
                                                       filtRange = filtNums)
                         magNormMatches[currentIndex] = magNormVal
-                        matchErrors[currentIndex] = np.min(distanceArray)/len(colorRange)
+                        matchErrors[currentIndex] = (distanceArray[0,matchedSEDNum]/len(colorRange))
                     numOn += 1
                 else:
                     break
