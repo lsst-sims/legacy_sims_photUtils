@@ -64,8 +64,18 @@ class TestRGBase(unittest.TestCase):
         sedMags = testPhot.manyMagCalc_list(testSED)
         stepSize = 0.001
         testMagNorm = testUtils.calcMagNorm(sedMags, unChangedSED, testPhot, redshift = redVal)
-        
+        #Test adding in mag_errors. If an array of np.ones is passed in we should get same result
+        testMagNormWithErr = testUtils.calcMagNorm(sedMags, unChangedSED, testPhot, 
+                                                   mag_error = np.ones(len(sedMags)), redshift = redVal)
+        #Also need to add in test for filtRange
+        sedMagsIncomp = sedMags
+        sedMagsIncomp[1] = None
+        filtRangeTest = [0, 2, 3, 4]
+        testMagNormFiltRange = testUtils.calcMagNorm(sedMagsIncomp, unChangedSED, testPhot,
+                                                     redshift = redVal, filtRange = filtRangeTest)
         self.assertAlmostEqual(magNorm, testMagNorm, delta = stepSize)
+        self.assertAlmostEqual(magNorm, testMagNormWithErr, delta = stepSize)
+        self.assertAlmostEqual(magNorm, testMagNormFiltRange, delta = stepSize)
 
     def testCalcBasicColors(self):
 
