@@ -136,8 +136,7 @@ class selectStarSED(rgStar):
                 matchedSEDNum = np.nanargmin(distanceArray)
                 sedMatches.append(sedList[matchedSEDNum].name)
                 magNorm = self.calcMagNorm(objMags[numOn], sedList[matchedSEDNum], 
-                                           starPhot, stepSize = np.power(10, -float(magNormAcc)),
-                                           filtRange = filtNums)
+                                           starPhot, filtRange = filtNums)
                 magNormMatches.append(magNorm)
                 matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange)) #Mean Squared Error
             numOn += 1

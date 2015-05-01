@@ -63,8 +63,7 @@ class TestRGBase(unittest.TestCase):
         testSED.multiplyFluxNorm(fluxNorm)
         sedMags = testPhot.manyMagCalc_list(testSED)
         stepSize = 0.001
-        testMagNorm = testUtils.calcMagNorm(sedMags, unChangedSED, testPhot, 
-                                            redshift = redVal, stepSize = stepSize)
+        testMagNorm = testUtils.calcMagNorm(sedMags, unChangedSED, testPhot, redshift = redVal)
         
         self.assertAlmostEqual(magNorm, testMagNorm, delta = stepSize)
 
@@ -431,7 +430,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         testMags[0][2] = np.nan
         testMags[0][4] = np.nan
         testMags[1][1] = np.nan
-        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, magNormAcc = magNormStep,
+        testMatchingResults = testMatching.matchToRestFrame(testSEDList, testMags, 
                                                             bandpassDict = galPhot.bandpassDict)
         self.assertEqual(None, testMatchingResults[0][0])
         self.assertEqual(testSEDNames[1:], testMatchingResults[0][1:])
@@ -446,7 +445,6 @@ class TestSelectGalaxySED(unittest.TestCase):
         errMags[3, :] = None
         errSED = testSEDList[2]
         testMatchingResultsErrors = testMatching.matchToRestFrame([errSED], errMags,
-                                                                  magNormAcc = magNormStep,
                                                                   bandpassDict = galPhot.bandpassDict)
         np.testing.assert_almost_equal(np.array((0.0, 0.4, 2./3.)), testMatchingResultsErrors[2][0:3],
                                        decimal = 3)
@@ -528,8 +526,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         testMagsRedshift[0][4] = np.nan
         testMagsRedshift[1][1] = np.nan
         testMatchingRedshift = testMatching.matchToObserved(testSEDList, testMagsRedshift, testRedshifts,
-                                                            dzAcc = 3, magNormAcc = magNormStep,
-                                                            reddening = False,
+                                                            dzAcc = 3, reddening = False,
                                                             bandpassDict = galPhot.bandpassDict)
 
         self.assertEqual(testSEDNames, testNoExtNoRedshift[0])
@@ -551,7 +548,6 @@ class TestSelectGalaxySED(unittest.TestCase):
         errMags[3, :] = None
         errSED = testSEDList[2]
         testMatchingResultsErrors = testMatching.matchToObserved([errSED], errMags, errRedshifts,
-                                                                 magNormAcc = magNormStep,
                                                                  reddening = False,
                                                                  bandpassDict = galPhot.bandpassDict)
         np.testing.assert_almost_equal(np.array((0.0, 0.4, 2./3.)), testMatchingResultsErrors[2][0:3],
@@ -678,16 +674,14 @@ class TestSelectStarSED(unittest.TestCase):
                 nanMags[0][2] = np.nan
                 nanMags[0][3] = np.nan
                 nanMags[1][1] = np.nan
-                testMatchingResults = testMatching.findSED(typeList, nanMags,
-                                                           magNormAcc = magNormStep, reddening = False)
+                testMatchingResults = testMatching.findSED(typeList, nanMags, reddening = False)
                 self.assertEqual(None, testMatchingResults[0][0])
                 self.assertEqual(names[1:], testMatchingResults[0][1:])
                 self.assertEqual(None, testMatchingResults[1][0])
                 np.testing.assert_almost_equal(magNorms[1:], testMatchingResults[1][1:], 
                                                decimal = magNormStep)
             else:
-                testMatchingResults = testMatching.findSED(typeList, mags,
-                                                           magNormAcc = magNormStep, reddening = False)
+                testMatchingResults = testMatching.findSED(typeList, mags, reddening = False)
                 self.assertEqual(names, testMatchingResults[0])
                 np.testing.assert_almost_equal(magNorms, testMatchingResults[1], decimal = magNormStep)
 
@@ -698,8 +692,7 @@ class TestSelectStarSED(unittest.TestCase):
         errMags[2, 3] += 1. #Total MSE will be 2/(2 colors) = 1.0
         errMags[3, :] = None
         errSED = testSEDList[0][0]
-        testMatchingResultsErrors = testMatching.findSED([errSED], errMags, magNormAcc = magNormStep,
-                                                         reddening = False)
+        testMatchingResultsErrors = testMatching.findSED([errSED], errMags, reddening = False)
         np.testing.assert_almost_equal(np.array((0.0, 0.5, 1.0)), testMatchingResultsErrors[2][0:3], 
                                        decimal = 3)
         self.assertEqual(None, testMatchingResultsErrors[2][3])
