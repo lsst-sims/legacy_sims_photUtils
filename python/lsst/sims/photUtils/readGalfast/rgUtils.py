@@ -26,7 +26,8 @@ class rgBase():
 
         """
         This will find the magNorm value that gives the closest match to the magnitudes of the object
-        using the matched SED.
+        using the matched SED. Uses scipy.optimize.leastsq to find the values of fluxNorm that minimizes
+        the function: ((flux_obs - (fluxNorm*flux_model))/flux_error)**2.
 
         @param [in] objectMags are the magnitude values for the object with extinction matching that of
         the SED object. In the normal case using the selectSED routines above it will be dereddened mags.
