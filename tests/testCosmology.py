@@ -495,8 +495,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         """
         Does a catalog get written?
         """
-        address = 'sqlite:///' + self.dbName
-        dbObj = myTestGals(address=address)
+        dbObj = myTestGals(database=self.dbName)
         cat = cosmologicalGalaxyCatalog(dbObj)
         cat.write_catalog(self.catName)
 
@@ -504,8 +503,7 @@ class CosmologyMixinUnitTest(unittest.TestCase):
         """
         Does cosmologicalDistanceModulus get properly applied
         """
-        address = 'sqlite:///' + self.dbName
-        dbObj = myTestGals(address=address)
+        dbObj = myTestGals(database=self.dbName)
         cosmoCat = cosmologicalGalaxyCatalog(dbObj)
         controlCat = absoluteGalaxyCatalog(dbObj)
         cosmoIter = cosmoCat.iter_catalog(chunk_size=self.dbSize)

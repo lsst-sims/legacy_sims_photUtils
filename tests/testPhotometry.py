@@ -44,8 +44,8 @@ class variabilityUnitTest(unittest.TestCase):
                             m5=[23.9, 25.0, 24.7, 24.0, 23.3, 22.1],
                             bandpassName=['u', 'g', 'r', 'i', 'z', 'y'])
 
-        self.galaxy = myTestGals(address='sqlite:///PhotometryTestDatabase.db')
-        self.star = myTestStars(address='sqlite:///PhotometryTestDatabase.db')
+        self.galaxy = myTestGals(database='PhotometryTestDatabase.db')
+        self.star = myTestStars(database='PhotometryTestDatabase.db')
 
     def tearDown(self):
         del self.galaxy
@@ -97,8 +97,8 @@ class photometryUnitTest(unittest.TestCase):
                             boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                             boundLength=1.0, m5 = 25.0)
 
-        self.galaxy = myTestGals(address='sqlite:///PhotometryTestDatabase.db')
-        self.star = myTestStars(address='sqlite:///PhotometryTestDatabase.db')
+        self.galaxy = myTestGals(database='PhotometryTestDatabase.db')
+        self.star = myTestStars(database='PhotometryTestDatabase.db')
 
     def tearDown(self):
         del self.galaxy
