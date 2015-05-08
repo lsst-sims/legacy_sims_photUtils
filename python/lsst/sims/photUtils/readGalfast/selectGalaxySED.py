@@ -15,7 +15,7 @@ class selectGalaxySED(rgGalaxy):
     This class provides methods to match galaxy catalog magnitudes to an SED.
     """
 
-    def matchToRestFrame(self, sedList, catMags, bandpassDict = None, magNormAcc = 2, makeCopy = False):
+    def matchToRestFrame(self, sedList, catMags, mag_error = None, bandpassDict = None, makeCopy = False):
 
         """
         This will find the closest match to the magnitudes of a galaxy catalog if those magnitudes are in
@@ -28,10 +28,11 @@ class selectGalaxySED(rgGalaxy):
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
 
-        @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes. If left
-        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses.
+        @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
+        then this defaults to 1.0. This should be an array of the same size as catMags.
 
-        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
+        @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes. 
+        If left equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses.
 
         @param [in] makeCopy indicates whether or not to operate on copies of the SED objects in sedList
         since this method will change the wavelength grid.
@@ -96,8 +97,7 @@ class selectGalaxySED(rgGalaxy):
                 matchedSEDNum = np.nanargmin(distanceArray)
                 sedMatches.append(sedList[matchedSEDNum].name)
                 magNorm = self.calcMagNorm(np.array(catMags[numOn]), sedList[matchedSEDNum],
-                                           galPhot, stepSize = np.power(10, -float(magNormAcc)),
-                                           filtRange = filtNums)
+                                           galPhot, mag_error = mag_error, filtRange = filtNums)
                 magNormMatches.append(magNorm)
                 matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange))
             numOn += 1
@@ -111,7 +111,7 @@ class selectGalaxySED(rgGalaxy):
         return sedMatches, magNormMatches, matchErrors
 
     def matchToObserved(self, sedList, catMags, catRedshifts, catRA = None, catDec = None,
-                        bandpassDict = None, dzAcc = 2, magNormAcc = 2, reddening = True,
+                        mag_error = None, bandpassDict = None, dzAcc = 2, reddening = True,
                         extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263)):
 
         """
@@ -125,14 +125,17 @@ class selectGalaxySED(rgGalaxy):
         @param [in] sedList is the set of spectral objects from the models SEDs provided by loadBC03
         or other custom loader routine.
 
+        @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
+        It should be organized so that there is one object's magnitudes along each row.
+
+        @param [in] catRedshifts is an array of the redshifts of each catalog object.
+
         @param [in] catRA is an array of the RA positions for each catalog object.
 
         @param [in] catDec is an array of the Dec position for each catalog object.
 
-        @param [in] catRedshifts is an array of the redshifts of each catalog object.
-
-        @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
-        It should be organized so that there is one object's magnitudes along each row.
+        @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
+        then this defaults to 1.0. This should be an array of the same size as catMags.
 
         @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes.
         If left equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with
@@ -141,8 +144,6 @@ class selectGalaxySED(rgGalaxy):
         @param [in] dzAcc is the number of decimal places you want to use when building the redshift grid.
         For example, dzAcc = 2 will create a grid between the minimum and maximum redshifts with colors
         calculated at every 0.01 change in redshift.
-
-        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
         @param [in] reddening is a boolean that determines whether to correct catalog magnitudes for
         dust in the milky way. By default, it is True.
@@ -245,8 +246,8 @@ class selectGalaxySED(rgGalaxy):
                         matchedSEDNum = np.nanargmin(distanceArray)
                         sedMatches[currentIndex] = sedList[matchedSEDNum].name
                         magNormVal = self.calcMagNorm(np.array(matchMags), sedList[matchedSEDNum], 
-                                                      galPhot, redshift = catRedshifts[currentIndex],
-                                                      stepSize = np.power(10, -float(magNormAcc)),
+                                                      galPhot, mag_error = mag_error,
+                                                      redshift = catRedshifts[currentIndex],
                                                       filtRange = filtNums)
                         magNormMatches[currentIndex] = magNormVal
                         matchErrors[currentIndex] = (distanceArray[0,matchedSEDNum]/len(colorRange))

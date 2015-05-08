@@ -119,7 +119,7 @@ class readGalfast():
 
     def loadGalfast(self, filenameList, outFileList, sEDPath = None, kuruczPath = None,
                     mltPath = None, wdPath = None, kuruczSubset = None,
-                    mltSubset = None, wdSubset = None, magNormAcc = 1, chunkSize = 10000):
+                    mltSubset = None, wdSubset = None, chunkSize = 10000):
         """
         This is customized for the outputs we currently need for the purposes of consistent output
         It will read in a galfast output file and output desired values for database input into a file
@@ -149,8 +149,6 @@ class readGalfast():
 
         @param [in] wdSubset is a list which provides a subset of the wd files within the
         wd folder that one wants to use
-
-        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
 
         @param [in] chunkSize is the size of chunks of lines to be read from the catalog at one time.
         """
@@ -348,23 +346,19 @@ class readGalfast():
                 sEDNameK, magNormK, matchErrorK = selectStarSED0.findSED(listDict['kurucz'],
                                                                          sDSSunred[kIn], ra[kIn], dec[kIn],
                                                                          reddening = False,
-                                                                         magNormAcc = magNormAcc,
                                                                          colors = colorDict['kurucz'])
                 sEDNameM, magNormM, matchErrorM = selectStarSED0.findSED(listDict['mlt'],
                                                                          sDSSunred[mIn], ra[mIn], dec[mIn],
                                                                          reddening = False,
-                                                                         magNormAcc = magNormAcc,
                                                                          colors = colorDict['mlt'])
                 sEDNameH, magNormH, matchErrorH = selectStarSED0.findSED(listDict['H'],
                                                                          sDSSunred[hIn], ra[hIn], dec[hIn],
                                                                          reddening = False,
-                                                                         magNormAcc = magNormAcc,
                                                                          colors = colorDict['H'])
                 sEDNameHE, magNormHE, matchErrorHE = selectStarSED0.findSED(listDict['HE'],
                                                                             sDSSunred[heIn], 
                                                                             ra[heIn], dec[heIn],
                                                                             reddening = False,
-                                                                            magNormAcc = magNormAcc,
                                                                             colors = colorDict['HE'])
                 chunkNames = np.empty(readSize, dtype = 'S32')
                 chunkTypes = np.empty(readSize, dtype = 'S8')

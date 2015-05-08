@@ -15,9 +15,9 @@ class selectStarSED(rgStar):
     This class provides a way to match star catalog magntiudes to those of the approriate SED.
     """
 
-    def findSED(self, sedList, catMags, catRA = None, catDec = None, reddening = True, magNormAcc = 2,
-                bandpassDict = None, colors = None, extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263),
-                makeCopy = False):
+    def findSED(self, sedList, catMags, catRA = None, catDec = None, mag_error = None,
+                reddening = True, bandpassDict = None, colors = None, 
+                extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263), makeCopy = False):
 
         """
         This will find the SEDs that are the closest match to the magnitudes of a star catalog.
@@ -34,6 +34,9 @@ class selectStarSED(rgStar):
 
         @param [in] catDec is an array of the Dec position for each catalog object.
 
+        @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
+        then this defaults to 1.0. This should be an array of the same length as objectMags.
+
         @param [in] reddening is a boolean that determines whether to correct catalog magnitudes for 
         dust in the milky way. By default, it is True.
         If true, this uses calculateEBV from EBV.py to find an EBV value for the object's
@@ -42,8 +45,6 @@ class selectStarSED(rgStar):
         in bandpassDict.
         If false, this means it will not run the dereddening procedure.
         
-        @param [in] magNormAcc is the number of decimal places within the magNorm result will be accurate.
-
         @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes. If left
         equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
         default extCoeffs.
@@ -135,8 +136,7 @@ class selectStarSED(rgStar):
                 matchedSEDNum = np.nanargmin(distanceArray)
                 sedMatches.append(sedList[matchedSEDNum].name)
                 magNorm = self.calcMagNorm(objMags[numOn], sedList[matchedSEDNum], 
-                                           starPhot, stepSize = np.power(10, -float(magNormAcc)),
-                                           filtRange = filtNums)
+                                           starPhot, filtRange = filtNums)
                 magNormMatches.append(magNorm)
                 matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange)) #Mean Squared Error
             numOn += 1
