@@ -74,6 +74,7 @@ class Variability(object):
         return output
 
 
+
     def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
             inDays=True, interpFactory=None):
 
