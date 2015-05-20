@@ -19,7 +19,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
-class TestRGBase(unittest.TestCase):
+class TestMatchBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -42,7 +42,7 @@ class TestRGBase(unittest.TestCase):
         """Tests the calculation of magnitude normalization for an SED with the given magnitudes
         in the given bandpasses."""
 
-        testUtils = rgBase()        
+        testUtils = matchBase()        
         testPhot = phot()
         testPhot.loadTotalBandpassesFromFiles(self.filterList, 
                                         bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
@@ -81,7 +81,7 @@ class TestRGBase(unittest.TestCase):
 
         """Tests the calculation of the colors of an SED in given bandpasses."""
 
-        testUtils = rgBase()        
+        testUtils = matchBase()        
         testSED = Sed()
         testPhot = phot()
         testPhot.loadTotalBandpassesFromFiles(self.filterList, 
@@ -103,7 +103,7 @@ class TestRGBase(unittest.TestCase):
         """Tests that when makeCopy=True in calcBasicColors the SED object is unchanged after calling
         and that colors are still accurately calculated"""
 
-        testUtils = rgBase()
+        testUtils = matchBase()
         testSED = Sed()
         copyTest = Sed()
         testPhot = phot()
@@ -131,12 +131,12 @@ class TestRGBase(unittest.TestCase):
         coeffs = np.ones(5)
         mags = np.arange(2,-3,-1)
 
-        testDeRed = rgBase().deReddenMags(am, mags, coeffs)
+        testDeRed = matchBase().deReddenMags(am, mags, coeffs)
 
         #Test Output
         np.testing.assert_equal(testDeRed,[ mags-(am*coeffs)])
 
-class TestRGStar(unittest.TestCase):
+class TestMatchStar(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -188,7 +188,7 @@ class TestRGStar(unittest.TestCase):
 
     def testDefaults(self):
         """Make sure that if there are Nones for the init that they load the correct dirs"""
-        loadTest = rgStar()
+        loadTest = matchStar()
         self.assertEqual(loadTest.kuruczDir, self.kDir)
         self.assertEqual(loadTest.mltDir, self.mltDir)
         self.assertEqual(loadTest.wdDir, self.wdDir)
@@ -196,7 +196,7 @@ class TestRGStar(unittest.TestCase):
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
         #Test Matching to Kurucz SEDs
-        loadTestKurucz = rgStar(kuruczDir = self.testKDir)
+        loadTestKurucz = matchStar(kuruczDir = self.testKDir)
         testSEDs = loadTestKurucz.loadKuruczSEDs()
 
         #Read in a list of the SEDs in the kurucz test sed directory
@@ -237,7 +237,7 @@ class TestRGStar(unittest.TestCase):
     def testLoadMLT(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for"""
         #Test Matching to mlt SEDs
-        loadTestMLT = rgStar(mltDir = self.testMLTDir)
+        loadTestMLT = matchStar(mltDir = self.testMLTDir)
         testSEDs = loadTestMLT.loadmltSEDs()
 
         #Read in a list of the SEDs in the mlt test sed directory
@@ -265,7 +265,7 @@ class TestRGStar(unittest.TestCase):
         """Test SED loading algorithm by making sure SEDs are all accounted for and
         that there are separate lists for H and HE."""
         #Test Matching to WD SEDs
-        loadTestWD = rgStar(wdDir = self.testWDDir)
+        loadTestWD = matchStar(wdDir = self.testWDDir)
         testSEDsH, testSEDsHE = loadTestWD.loadwdSEDs()
 
         #Add extra step because WD SEDs are separated into helium and hydrogen
@@ -317,7 +317,7 @@ class TestRGStar(unittest.TestCase):
 
         shutil.rmtree(cls.testSpecDir)
 
-class TestRGGalaxy(unittest.TestCase):
+class TestMatchGalaxy(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
@@ -346,7 +346,7 @@ class TestRGGalaxy(unittest.TestCase):
 
     def testLoadBC03(self):
         """Test Loader for Bruzual and Charlot Galaxies"""
-        loadTestBC03 = rgGalaxy(galDir = self.testSpecDir)
+        loadTestBC03 = matchGalaxy(galDir = self.testSpecDir)
         testSEDs = loadTestBC03.loadBC03()
 
         #Read in a list of the SEDs in the test galaxy sed directory
@@ -935,9 +935,9 @@ class TestReadGalfast(unittest.TestCase):
 def suite():
     utilsTests.init()
     suites = []
-    suites += unittest.makeSuite(TestRGBase)
-    suites += unittest.makeSuite(TestRGStar)
-    suites += unittest.makeSuite(TestRGGalaxy)
+    suites += unittest.makeSuite(TestMatchBase)
+    suites += unittest.makeSuite(TestMatchStar)
+    suites += unittest.makeSuite(TestMatchGalaxy)
     suites += unittest.makeSuite(TestSelectGalaxySED)
     suites += unittest.makeSuite(TestSelectStarSED)
     suites += unittest.makeSuite(TestReadGalfast)
