@@ -13,9 +13,9 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
 
-__all__ = ["rgBase", "rgStar", "rgGalaxy"]
+__all__ = ["matchBase", "matchStar", "matchGalaxy"]
 
-class rgBase():
+class matchBase():
 
     """
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
@@ -130,7 +130,7 @@ class rgBase():
 
         return deRedMags
 
-class rgStar(rgBase):
+class matchStar(matchBase):
 
     """
     This class provides loading routines for the star SEDs currently in sims_sed_library. 
@@ -338,7 +338,7 @@ class rgStar(rgBase):
 
         return sedListH, sedListHE
 
-class rgGalaxy(rgBase):
+class matchGalaxy(matchBase):
 
     """
     This class provides loading routines for the galaxy SEDs currently in sims_sed_library. 

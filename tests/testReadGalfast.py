@@ -7,12 +7,12 @@ import pyfits
 import re
 import eups
 import lsst.utils.tests as utilsTests
-from lsst.sims.photUtils.readGalfast.selectStarSED import selectStarSED
+from lsst.sims.photUtils.selectStarSED import selectStarSED
+from lsst.sims.photUtils.selectGalaxySED import selectGalaxySED
+from lsst.sims.photUtils.matchUtils import matchBase
+from lsst.sims.photUtils.matchUtils import matchStar
+from lsst.sims.photUtils.matchUtils import matchGalaxy
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
-from lsst.sims.photUtils.readGalfast.selectGalaxySED import selectGalaxySED
-from lsst.sims.photUtils.readGalfast.rgUtils import rgBase
-from lsst.sims.photUtils.readGalfast.rgUtils import rgStar
-from lsst.sims.photUtils.readGalfast.rgUtils import rgGalaxy
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass

@@ -8,3 +8,6 @@ from .applyIGM import *
 from .EBV import *
 from .CosmologyObject import *
 from .photometryUtilityFunctions import *
+from .matchUtils import *
+from .selectStarSED import *
+from .selectGalaxySED import *
