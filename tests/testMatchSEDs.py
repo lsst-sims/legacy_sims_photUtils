@@ -139,7 +139,7 @@ class TestMatchStar(unittest.TestCase):
     def setUpClass(cls):
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
-        #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
+        #sims_sed_library changes in a way that affects testMatchSEDs we can detect it.
         specMap = SpecMap()
         cls._specMapDict = {}
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
@@ -153,7 +153,7 @@ class TestMatchStar(unittest.TestCase):
         cls.mTestName = 'm99.99Full.dat'
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'testReadGalfastSpectra'
+        cls.testSpecDir = 'testMatchingSpectra'
         cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
         cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
         cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
@@ -572,7 +572,7 @@ class TestSelectStarSED(unittest.TestCase):
     def setUpClass(cls):
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
-        #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
+        #sims_sed_library changes in a way that affects testMatchSEDs we can detect it.
         specMap = SpecMap()
         cls._specMapDict = {}
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
@@ -586,7 +586,7 @@ class TestSelectStarSED(unittest.TestCase):
         cls.mTestName = 'm99.99Full.dat'
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'testReadGalfastSpectra'
+        cls.testSpecDir = 'testMatchingSpectra'
         cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
         cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
         cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
