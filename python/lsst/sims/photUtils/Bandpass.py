@@ -441,6 +441,39 @@ class Bandpass:
         Pass into this function the bandpass, hardware only of bandpass, and sky sed objects.
         The exposure time, nexp, readnoise, darkcurrent, gain,
         seeing and platescale are also necessary.
+
+        @param [in] skysed is an instantiation of the Sed class representing
+        the emission spectrum of the sky
+
+        @param [in] hardware is an instantiation of the Bandpass class
+        representing the throughput of the system hardware
+
+        @param [in] expTime is the duration of each exposure in seconds
+        (default 15)
+
+        @param [in] nexp is the total number of exposures
+        (default 2)
+
+        @param [in] readnoise in electrons per pixel per exposure
+        (default 5)
+
+        @param [in] darkcurrent in electrons per pixel per second
+        (default 0.2)
+
+        @param [in] othernoise in electrons per pixel per second
+        (default 4.69)
+
+        @param [in] seeing in arcseconds
+        (default 0.7)
+
+        @param [in] plateScale in arcseconds per pixel
+        (default 0.2)
+
+        @param [in] gain in electrons per ADU
+        (default 2.3)
+
+        @param [in] eff area is the effective area of the telescope in cm^2
+        (default is for 6.5 meter diameter)
         """
         #This comes from equation 45 of the SNR document (v1.2, May 2010)
         #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf

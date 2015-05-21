@@ -932,21 +932,23 @@ class Sed(object):
         """
         return 2.436*(seeing/platescale)**2
 
-    def calcInstrNoiseSq(self, readnoise, darkcurrent, expTime, nexp, othernoise):
+    def calcInstrNoiseSqElectrons(self, readnoise, darkcurrent, expTime, nexp, othernoise):
         """
         Combine all of the noise due to intrumentation into one value
 
-        @param [in] readnoise
+        @param [in] readnoise in electrons per pixel per exposure
 
-        @param [in] darkcurrent
+        @param [in] darkcurrent in electrons per pixel per second
 
         @param [in] expTime (length of a single exposure in seconds)
 
         @param [in] nexp (number of exposures)
 
         @param [in] othernoise (noise from sources not accounted for above)
+        in electrons per pixel per exposure
 
         @param [out] The noise due to all of these sources added in quadrature
+        in electrons
         """
         return nexp*readnoise**2 + darkcurrent*expTime*nexp + nexp*othernoise**2
 
@@ -961,11 +963,11 @@ class Sed(object):
         @param [in] hardwarebandpass -- an instantiation of the Bandpass class representing
         just the instrumentation throughputs
 
-        @param [in] readnoise
+        @param [in] readnoise in electrons per pixel per exposure
 
-        @param [in] darkcurrent
+        @param [in] darkcurrent in electrons per pixel per second
 
-        @param [in] othernoise
+        @param [in] othernoise in electrons per pixel per exposure
 
         @param [in] seeing in arcseconds
 
@@ -981,11 +983,11 @@ class Sed(object):
 
         @param [out] total noise squared (in ADU)
 
-        @param [out] noise squared due just to the instrument
+        @param [out] noise squared due just to the instrument (in ADU)
 
-        @param [out] noise squared due to the sky
+        @param [out] noise squared due to the sky (in ADU)
 
-        @param [out] noise squared due to sky measurement (presently set to zero)
+        @param [out] noise squared due to sky measurement (in ADU, presently set to zero)
 
         @param [out] the effective number of pixels in a double Gaussian PSF
         """
@@ -1002,7 +1004,11 @@ class Sed(object):
 
         #Calculate the square of the noise due to instrumental effects.
         #Include the readout noise as many times as there are exposures
-        noise_instr_sq = self.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+        noise_instr_sq_electrons = self.calcInstrNoiseSqElectrons(readnoise, darkcurrent,
+                                                                  expTime, nexp, othernoise)
+
+        #convert to counts
+        noise_instr_sq = noise_instr_sq_electrons/(gain*gain)
 
         #Calculate the square of the noise due to sky background poisson noise
         noise_sky_sq = skycounts/gain
@@ -1027,9 +1033,47 @@ class Sed(object):
 
         For a given source, sky sed, total bandpass and hardware bandpass, as well as
         seeing / expTime, calculates the SNR with optimal PSF extraction
-        assuming a double-gaussian PSF. Assumes that all values (readnoise/othernoise
-        /darkcurrent) are given in appropriate units for gain. (gain=1 -> values are in electrons,
-        while if gain!=1 then values given should be in adu, including readnoise/darkcurrent).
+        assuming a double-gaussian PSF.
+
+        @param [in] totalbandpass is an instantiation of the Bandpass class
+        representing the total throughput (system + atmosphere)
+
+        @param [in] skysed is an instantiation of the Sed class representing
+        the sky emission per square arcsecond.
+
+        @param [in] hardwarebandpass is an instantiation of the Bandpass class
+        representing just the throughput of the system hardware.
+
+        @param [in] readnoise in electrons per pixel per exposure
+        (default 5)
+
+        @param [in] darkcurrent in electrons per pixel per second
+        (default 0.2)
+
+        @param [in] othernoise in electrons per pixel per exposure
+        (default 4.69)
+
+        @param [in] seeing in arcseconds
+        (default 0.7)
+
+        @param [in] effarea is effective area of the telescope in cm^2
+        (default is for 6.5 meter diameter)
+
+        @param [in] expTime is exposure time in seconds
+        (default 15)
+
+        @param [in] nexp is number of exposures
+        (default 2)
+
+        @param [in] plateScale in arcseconds per pixel
+        (default 0.2)
+
+        @param [in] gain in electrons per ADU
+        (default 2.3)
+
+        @param [in] verbose is a boolean
+
+        @param [out] signal to noise ratio
         """
         # Calculate the counts from the source.
         sourcecounts = self.calcADU(totalbandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)

@@ -35,22 +35,31 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     plus atmosphere)
 
     @param [in] expTime is the duration of a single exposure in seconds
+    (default 15)
 
     @param [in] nexp is the number of exposures being combined
+    (default 2)
 
-    @param [in] readnoise
+    @param [in] readnoise in electrons per pixel per exposure
+    (default 5)
 
-    @param [in] darkcurrent
+    @param [in] darkcurrent in electrons per pixel per second
+    (default 0.2)
 
-    @param [in] othernoise
+    @param [in] othernoise in electrons per pixel per exposure
+    (default 4.69)
 
     @param [in] seeing in arcseconds
+    (default 0.7)
 
     @param [in] platescale in arcseconds per pixel
+    (default 0.2)
 
     @param [in] gain in electrons per ADU
+    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror in square centimeters
+    (default is for a 6.5 meter diameter)
 
     @param [out] returns the expected number of sky counts per pixel
     """
@@ -68,7 +77,10 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     neff = flatSed.calcNeff(seeing, platescale)
 
     #calculate the square of the noise due to the instrument
-    noise_instr_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+    noise_instr_sq_electrons = flatSed.calcInstrNoiseSqElectrons(readnoise, darkcurrent, expTime, nexp, othernoise)
+
+    #convert to counts
+    noise_instr_sq = noise_instr_sq_electrons/(gain*gain)
 
     #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
     #given snr=5 and counts as calculated above
@@ -123,22 +135,31 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     the throughput due solely to instrumentation.
 
     @param [in] expTime is the duration of a single exposure in seconds
+    (default 15)
 
     @param [in] nexp is the number of exposures being combined
+    (default 2)
 
-    @param [in] readnoise
+    @param [in] readnoise in electrons per pixel per exposure
+    (default 5)
 
-    @param [in] darkcurrent
+    @param [in] darkcurrent in electrons per pixel per second
+    (default 2)
 
-    @param [in] othernoise
+    @param [in] othernoise in electrons per pixel per exposure
+    (default 4.69)
 
     @param [in] seeing in arcseconds
+    (default 0.7)
 
     @param [in] platescale in arcseconds per pixel
+    (default 0.2)
 
     @param [in] gain in electrons per ADU
+    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror in square centimeters
+    (default is for a 6.5 meter diameter)
 
     @param [out] returns an instantiation of the Sed class that is the skysed renormalized
     so that m5 has the desired value.
@@ -198,22 +219,31 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     the throughput due solely to instrumentation.
 
     @param [in] expTime is the duration of a single exposure in seconds
+    (default 15)
 
     @param [in] nexp is the number of exposures being combined
+    (default 2)
 
-    @param [in] readnoise
+    @param [in] readnoise in electrons per pixel per exposure
+    (default 5)
 
-    @param [in] darkcurrent
+    @param [in] darkcurrent in electrons per pixel per second
+    (default 0.2)
 
-    @param [in] othernoise
+    @param [in] othernoise in electrons per pixel per exposure
+    (default 4.69)
 
     @param [in] seeing in arcseconds
+    (default 0.7)
 
     @param [in] platescale in arcseconds per pixel
+    (default 0.2)
 
     @param [in] gain in electrons per ADU
+    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror in square centimeters
+    (default is for a 6.5 meter diameter)
 
     @param [out] returns the value of m5 for the given bandpass and sky SED
     """
@@ -261,13 +291,16 @@ def calcGamma(bandpass, m5,
     in this Bandpass
 
     @param [in] expTime is the duration of a single exposure in seconds
+    (default 15)
 
     @param [in] nexp is the number of exposures being combined
+    (default 2)
 
     @param [in] gain is the number of electrons per ADU
+    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror
-    in square centimeters
+    in square centimeters (default is for 6.5 meter diameter)
 
     @param [out] gamma
     """
@@ -332,13 +365,16 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     @param [in] sig2sys is the square of the systematic signal to noise ratio.
 
     @param [in] expTime (optional) is the duration of a single exposure in seconds
+    (default 15)
 
     @param [in] nexp (optional) is the number of exposures being combined
+    (default 2)
 
     @param [in] gain (optional) is the number of electrons per ADU
+    (default 2.3)
 
     @param [in] effarea (optional) is the effective area of the primary mirror
-    in square centimeters
+    in square centimeters (default is for 6.5 meter diameter)
 
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
     the input fluxes.
