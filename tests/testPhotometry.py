@@ -292,12 +292,6 @@ class photometryUnitTest(unittest.TestCase):
                                 self.assertFalse(numpy.isnan(magnitudes[name]['agn'][i]))
                                 flux += numpy.power(10.0, -0.4*(magnitudes[name]['agn'][i]-22.0))
 
-                            if agnNames is None and diskNames is None and bulgeNames is None:
-                                self.assertTrue(numpy.isnan(magnitudes[name]['total'][i]))
-                            else:
-                                self.assertTrue(magnitudes[name]['total'][i] is not None)
-                                self.assertFalse(numpy.isnan(magnitudes[name]['total'][i]))
-                                self.assertAlmostEqual(magnitudes[name]['total'][i], -2.5*numpy.log10(flux)+22.0, 10)
 
     def testAlternateBandpassesStars(self):
         """

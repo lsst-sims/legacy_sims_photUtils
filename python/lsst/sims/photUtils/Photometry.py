@@ -517,33 +517,72 @@ class PhotometryGalaxies(PhotometryBase):
         """
         Sum the component magnitudes of a galaxy and return the answer
 
-        @param [in] disk is the disk magnitude
+        @param [in] disk is the disk magnitude must be a numpy array or a float
 
-        @param [in] bulge is the bulge magnitude
+        @param [in] bulge is the bulge magnitude must be a numpy array or a float
 
-        @param [in] agn is the agn magnitude
+        @param [in] agn is the agn magnitude must be a numpy array or a float
 
         @param [out] outMag is the total magnitude of the galaxy
         """
 
+        baselineType = type(None)
+        if not isinstance(disk, type(None)):
+            baselineType = type(disk)
+            if baselineType == numpy.ndarray:
+                elements=len(disk)
+
+        if not isinstance(bulge, type(None)):
+            if baselineType == type(None):
+                baselineType = type(bulge)
+                if baselineType == numpy.ndarray:
+                    elements = len(bulge)
+            elif not isinstance(bulge, baselineType):
+                raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
+                                   "of the same time (float or numpy array)")
+
+        elif not isinstance(agn, type(None)):
+            if baseLineType == type(None):
+                baselineType = type(agn)
+                if baselineType == numpy.ndarray:
+                    elements = len(agn)
+            elif not isinstance(agn, baselineType):
+                raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
+                                   "of the same time (float or numpy array)")
+
+        if baselineType is not float and \
+           baselineType is not numpy.ndarray and \
+           baselineType is not numpy.float and \
+           baselineType is not numpy.float64:
+
+            raise RuntimeError("Arguments of sum_magnitudes need to be " +
+                               "either floats or numpy arrays; you appear to have passed %s " % baselineType)
+
         mm_o = 22.
 
-        nn=0.0
-        if disk is not None and (not numpy.isnan(disk)):
+        if baselineType == numpy.ndarray:
+            nn = numpy.zeros(elements)
+        else:
+            nn = 0.0
+
+        if disk is not None:
             nn+=numpy.power(10, (disk - mm_o)/-2.5)
 
-        if bulge is not None and (not numpy.isnan(bulge)):
+        if bulge is not None:
             nn+=numpy.power(10, (bulge - mm_o)/-2.5)
 
-        if agn is not None and (not numpy.isnan(agn)):
+        if agn is not None:
             nn+=numpy.power(10, (agn - mm_o)/-2.5)
 
-        if nn>0.0:
-            outMag = -2.5*numpy.log10(nn) + mm_o
+        if baselineType == numpy.ndarray:
+            return numpy.array([-2.5*numpy.log10(nnval) + mm_o if nnval>0.0 else numpy.NaN for nnval in nn])
         else:
-            outMag = numpy.NaN
+            if nn>0.0:
+                return -2.5*numpy.log10(nn) + mm_o
+            else:
+                return numpy.NaN
 
-        return outMag
+
 
     def calculate_magnitudes(self, objectID, diskNames=None, diskMagNorm=None, diskAv=None,
                              bulgeNames=None, bulgeMagNorm=None, bulgeAv=None,
@@ -556,7 +595,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         the first level key is galid (the name of the galaxy)
 
-        the second level key is "total", "bulge", "disk", or "agn"
+        the second level key is "bulge", "disk", or "agn"
 
         this yields a list of magnitudes corresponding to the bandpasses in self.bandpassDict
 
@@ -675,18 +714,12 @@ class PhotometryGalaxies(PhotometryBase):
                         redshift = redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
                         specFileMap=specFileMap, indices=indices)
 
-        total_mags = []
         masterDict = {}
 
         for i in range(len(objectID)):
             total_mags=[]
 
-            for j in range(self.nBandpasses):
-                total_mags.append(self.sum_magnitudes(disk = diskMags[objectID[i]][j],
-                                bulge = bulgeMags[objectID[i]][j], agn = agnMags[objectID[i]][j]))
-
             subDict={}
-            subDict["total"] = total_mags
             subDict["bulge"] = bulgeMags[objectID[i]]
             subDict["disk"] = diskMags[objectID[i]]
             subDict["agn"] = agnMags[objectID[i]]
@@ -737,26 +770,18 @@ class PhotometryGalaxies(PhotometryBase):
                                           redshift=redshift, cosmologicalDistanceModulus=cosmologicalDistanceModulus,
                                           specFileMap=self.specFileMap, indices=indices)
 
-        firstRowTotal = []
-        firstRowDisk = []
-        firstRowBulge = []
-        firstRowAgn = []
-
         failure = None
 
-        outputTotal = None
         outputBulge = None
         outputDisk = None
         outputAgn = None
 
         for i in range(self.nBandpasses):
-            rowTotal = []
             rowDisk = []
             rowBulge = []
             rowAgn = []
 
             for name in objectID:
-                rowTotal.append(magDict[name]["total"][i])
 
                 if magDict[name]["bulge"] is not None:
                     rowBulge.append(magDict[name]["bulge"][i])
@@ -773,22 +798,20 @@ class PhotometryGalaxies(PhotometryBase):
                 else:
                     rowAgn.append(failure)
 
-            if outputTotal is None:
-                outputTotal = numpy.array(rowTotal)
+            if outputBulge is None:
                 outputBulge = numpy.array(rowBulge)
                 outputDisk = numpy.array(rowDisk)
                 outputAgn = numpy.array(rowAgn)
             else:
-                outputTotal = numpy.vstack([outputTotal,rowTotal])
                 outputBulge = numpy.vstack([outputBulge,rowBulge])
                 outputDisk = numpy.vstack([outputDisk,rowDisk])
                 outputAgn = numpy.vstack([outputAgn,rowAgn])
 
-        outputTotal = numpy.vstack([outputTotal,outputBulge])
-        outputTotal = numpy.vstack([outputTotal,outputDisk])
-        outputTotal = numpy.vstack([outputTotal,outputAgn])
 
-        for ix, (columnName, columnData) in enumerate(zip(columnNameList, outputTotal)):
+        #Add variability to the bulge components (if any)
+        for ix, (columnName, columnData) in \
+        enumerate(zip(columnNameList[self.nBandpasses:2*self.nBandpasses], outputBulge)):
+
             bandpassDex = ix % self.nBandpasses
             if indices is None or bandpassDex in indices:
                 variabilityName = 'delta_' + columnName
@@ -796,7 +819,64 @@ class PhotometryGalaxies(PhotometryBase):
                     delta = self.column_by_name(variabilityName)
                     columnData += delta
 
-        return outputTotal
+        #Add variability to the disk components (if any)
+        for ix, (columnName, columnData) in \
+        enumerate(zip(columnNameList[2*self.nBandpasses:3*self.nBandpasses], outputDisk)):
+
+            bandpassDex = ix % self.nBandpasses
+            if indices is None or bandpassDex in indices:
+                variabilityName = 'delta_' + columnName
+                if variabilityName in self._all_available_columns:
+                    delta = self.column_by_name(variabilityName)
+                    columnData += delta
+
+        #Add variability to the agn components (if any)
+        for ix, (columnName, columnData) in \
+        enumerate(zip(columnNameList[3*self.nBandpasses:4*self.nBandpasses], outputAgn)):
+
+            bandpassDex = ix % self.nBandpasses
+            if indices is None or bandpassDex in indices:
+                variabilityName = 'delta_' + columnName
+                if variabilityName in self._all_available_columns:
+                    delta = self.column_by_name(variabilityName)
+                    columnData += delta
+
+
+        #Calculate the total magnitude of the galaxy.
+        #We do this here so that the variability models added above
+        #have an influence on the total magnitude.
+        outputTotal = None
+        for ib in range(self.nBandpasses):
+            if outputTotal is None:
+                outputTotal = self.sum_magnitudes(bulge=outputBulge[ib],
+                                                  disk=outputDisk[ib],
+                                                  agn=outputAgn[ib])
+            else:
+                outputTotal = numpy.vstack([outputTotal,
+                                            self.sum_magnitudes(bulge=outputBulge[ib],
+                                                                disk=outputDisk[ib],
+                                                                agn=outputAgn[ib])])
+
+
+        #Add variability to the total components (if any).
+        #This would be in the case that the catalog class is
+        #only worried about total galaxy fluxes and thus only
+        #adds variability to the whole galaxy, without worrying about
+        #dividing it among the galaxy's components.
+        #Adding variability to the components above and then adding variability
+        #here is probably unphysical.
+        for ix, (columnName, columnData) in \
+        enumerate(zip(columnNameList[:self.nBandpasses], outputTotal)):
+
+            bandpassDex = ix % self.nBandpasses
+            if indices is None or bandpassDex in indices:
+                variabilityName = 'delta_' + columnName
+                if variabilityName in self._all_available_columns:
+                    delta = self.column_by_name(variabilityName)
+                    columnData += delta
+
+        return numpy.vstack([outputTotal, outputBulge, outputDisk, outputAgn])
+
 
 
 
