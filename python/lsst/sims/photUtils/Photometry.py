@@ -697,14 +697,19 @@ class PhotometryGalaxies(PhotometryBase):
         return masterDict
 
 
-    def meta_magnitudes_getter(self, objectID, indices=None):
+    def meta_magnitudes_getter(self, objectID, columnNameList, indices=None):
         """
         This method will return the magnitudes for galaxies in the bandpasses stored in self.bandpassDict
 
         @param [in] objectID is a list of object IDs
 
+        @param [in] columnNameList is a list of the name of the columns this method will ultimately
+        be returning.  It exists so that it knows how to search for variability methods associated
+        with those magnitudes.
+
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for
+        calculate magnitudes for.  Note: even columns associated with bandpasses not included
+        in indices should appear in columnNames above.
         """
 
         diskNames=self.column_by_name('sedFilenameDisk')
@@ -779,11 +784,17 @@ class PhotometryGalaxies(PhotometryBase):
                 outputDisk = numpy.vstack([outputDisk,rowDisk])
                 outputAgn = numpy.vstack([outputAgn,rowAgn])
 
-
-
         outputTotal = numpy.vstack([outputTotal,outputBulge])
         outputTotal = numpy.vstack([outputTotal,outputDisk])
         outputTotal = numpy.vstack([outputTotal,outputAgn])
+
+        for ix, (columnName, columnData) in enumerate(zip(columnNameList, outputTotal)):
+            bandpassDex = ix % self.nBandpasses
+            if indices is None or bandpassDex in indices:
+                variabilityName = 'delta_' + columnName
+                if variabilityName in self._all_available_columns:
+                    delta = self.column_by_name(variabilityName)
+                    columnData += delta
 
         return outputTotal
 
@@ -865,6 +876,8 @@ class PhotometryGalaxies(PhotometryBase):
         """
         objectID = self.column_by_name('galid')
 
+        columnNames = [name for name in self.get_all_mags._colnames]
+
         """
         Here is where we need some code to load a list of bandpass objects
         into self.bandpassDict so that the bandpasses are available to the
@@ -879,7 +892,7 @@ class PhotometryGalaxies(PhotometryBase):
         if len(indices)==6:
             indices=None
 
-        return self.meta_magnitudes_getter(objectID, indices=indices)
+        return self.meta_magnitudes_getter(objectID, columnNames, indices=indices)
 
 
 
@@ -943,14 +956,18 @@ class PhotometryStars(PhotometryBase):
         return magDict
 
 
-    def meta_magnitudes_getter(self, objectID, indices=None):
+    def meta_magnitudes_getter(self, objectID, columnNameList, indices=None):
         """
         This method does most of the work for stellar magnitude getters
 
         @param [in] objectID is a list of object names
 
+        @param [in] columnNameList is a list of the names of the columns
+        this method will ultimately be returning.
+
         @param [in] indices is an optional list indicating the indices of the
-        bandpasses to calculate magnitudes for
+        bandpasses to calculate magnitudes for.  Note: even if a bandpass does
+        not appear in indices, its columns should be listed in columnNames.
 
         @param [out] output is a 2d numpy array in which the rows are the bandpasses
         from bandpassDict and the columns are the objects from objectID
@@ -971,6 +988,13 @@ class PhotometryStars(PhotometryBase):
                 output = numpy.array(row)
             else:
                 output=numpy.vstack([output,row])
+
+        for ix, (columnName, columnData) in enumerate(zip(columnNameList, output)):
+            if indices is None or ix%self.nBandpasses in indices:
+                deltaName = 'delta_' + columnName
+                if deltaName in self._all_available_columns:
+                    delta = self.column_by_name(deltaName)
+                    columnData += delta
 
         return output
 
@@ -1001,6 +1025,8 @@ class PhotometryStars(PhotometryBase):
         """
         objectID = self.column_by_name('id')
 
+        columnNames = [name for name in self.get_magnitudes._colnames]
+
         """
         Here is where we need some code to load a list of bandpass objects
         into self.bandpassDict so that the bandpasses are available to the
@@ -1015,5 +1041,5 @@ class PhotometryStars(PhotometryBase):
         if len(indices) == 6:
             indices = None
 
-        return self.meta_magnitudes_getter(objectID, indices=indices)
+        return self.meta_magnitudes_getter(objectID, columnNames, indices=indices)
 

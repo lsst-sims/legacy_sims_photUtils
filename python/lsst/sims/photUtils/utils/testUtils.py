@@ -261,6 +261,7 @@ class cartoonPhotometryStars(PhotometryStars):
         """
 
         idNames = self.column_by_name('id')
+        columnNames = [name for name in self.get_magnitudes._colnames]
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -268,7 +269,7 @@ class cartoonPhotometryStars(PhotometryStars):
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                     bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
 
         #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
@@ -320,6 +321,9 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         """
 
         idNames = self.column_by_name('galid')
+
+        columnNames = [name for name in self.get_magnitudes._colnames]
+
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -327,7 +331,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                       bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
 
         ##########################################################################
         #Everything below this comment exists only for the purposes of the unittest.
@@ -427,6 +431,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
         """
 
         idNames = self.column_by_name('id')
+        columnNames = [name for name in self.get_magnitudes._colnames]
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -434,7 +439,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                     bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
 
 class cartoonStarsIZ(cartoonStarsOnlyI):
@@ -507,6 +512,8 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
         """
 
         idNames = self.column_by_name('galid')
+        columnNames = [name for name in self.get_magnitudes._colnames]
+
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -514,7 +521,7 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                       bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
 
 class testStars(InstanceCatalog, EBVmixin, VariabilityStars, MyVariability, PhotometryStars,testDefaults):
