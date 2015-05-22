@@ -7,12 +7,11 @@ from lsst.sims.catalogs.measures.instance import register_class, register_method
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import interp1d
-from .Photometry import PhotometryBase
 
 __all__ = ["Variability", "VariabilityStars", "VariabilityGalaxies"]
 
 @register_class
-class Variability(PhotometryBase):
+class Variability(object):
     """
     Variability class for adding temporal variation to the magnitudes of
     objects in the base catalog.  All methods should return a dictionary of
