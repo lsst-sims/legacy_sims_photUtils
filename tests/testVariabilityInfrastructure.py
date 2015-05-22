@@ -51,19 +51,19 @@ class VariabilitySetupTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dbName = 'VariabilityInfrastructureTestDB.db'
-        if os.path.exists(cls.dbName):
-            os.unlink(cls.dbName)
+        cls.starDbName = 'VariabilityInfrastructureTestDB.db'
+        if os.path.exists(cls.starDbName):
+            os.unlink(cls.starDbName)
 
-        makeStarTestDB(filename=cls.dbName)
+        makeStarTestDB(filename=cls.starDbName)
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.dbName):
-            os.unlink(cls.dbName)
+        if os.path.exists(cls.starDbName):
+            os.unlink(cls.starDbName)
 
     def setUp(self):
-        self.starDB = myTestStars(address='sqlite:///'+self.dbName)
+        self.starDB = myTestStars(address='sqlite:///'+self.starDbName)
 
     def tearDown(self):
         del self.starDB
