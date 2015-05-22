@@ -349,7 +349,9 @@ class VariabilityStars(Variability):
              'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y')
     def get_stellar_variability(self):
         """
-        Getter for variable stellar magnitudes
+        Getter for the change in magnitudes due to stellar
+        variability.  The PhotometryStars mixin is clever enough
+        to automatically add this to the baseline magnitude.
         """
 
         varParams = self.column_by_name('varParamStr')
@@ -384,7 +386,10 @@ class VariabilityGalaxies(Variability):
     def get_galaxy_variability_total(self):
 
         """
-        Getter for variable magnitudes associated with AGN
+        Getter for the change in magnitude due to AGN
+        variability.  The PhotometryGalaxies mixin is
+        clever enough to automatically add this to
+        the baseline magnitude.
         """
         varParams = self.column_by_name("varParamStr")
 
