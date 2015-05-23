@@ -359,7 +359,10 @@ class VariabilityStars(Variability):
         output = numpy.empty((6,len(varParams)))
 
         for ii, vv in enumerate(varParams):
-            if vv != numpy.unicode_("None"):
+            if vv != numpy.unicode_("None") and \
+               self.obs_metadata is not None and \
+               self.obs_metadata.mjd is not None:
+
                 deltaMag = self.applyVariability(vv)
 
                 output[0][ii] = deltaMag['u']
@@ -396,7 +399,10 @@ class VariabilityGalaxies(Variability):
         output = numpy.empty((6, len(varParams)))
 
         for ii, vv in enumerate(varParams):
-            if vv != numpy.unicode_("None"):
+            if vv != numpy.unicode_("None") and \
+               self.obs_metadata is not None and \
+               self.obs_metadata.mjd is not None:
+
                 deltaMag = self.applyVariability(vv)
 
                 output[0][ii] = deltaMag['u']
