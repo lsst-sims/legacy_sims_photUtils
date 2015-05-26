@@ -14,7 +14,7 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase
 from lsst.sims.photUtils import PhotometricDefaults, setM5, calcSNR_gamma, calcGamma
-from lsst.sims.photUtils.utils import MyVariability, testDefaults, cartoonPhotometryStars, \
+from lsst.sims.photUtils.utils import testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
                                       cartoonStarsOnlyI, cartoonStarsIZ, \

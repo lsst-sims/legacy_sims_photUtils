@@ -23,7 +23,7 @@ from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 from lsst.sims.photUtils.Variability import Variability, VariabilityStars, VariabilityGalaxies
 
 __all__ = ["makeStarDatabase", "makeGalaxyDatabase",
-           "MyVariability", "testDefaults", "cartoonPhotometryStars",
+           "TestVariabilityMixin", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
            "cartoonStarsOnlyI", "cartoonStarsIZ",
            "cartoonGalaxies", "cartoonGalaxiesIG", "testStars", "testGalaxies",
@@ -190,7 +190,7 @@ def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
     conn.close()
 
 @register_class
-class MyVariability(Variability):
+class TestVariabilityMixin(Variability):
     """
     This is a mixin which provides a dummy variability method for use in unit tests
     """
@@ -524,7 +524,7 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
         output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
 
-class testStars(InstanceCatalog, EBVmixin, VariabilityStars, MyVariability, PhotometryStars,testDefaults):
+class testStars(InstanceCatalog, EBVmixin, VariabilityStars, TestVariabilityMixin, PhotometryStars,testDefaults):
     """
     A generic catalog of stars
     """
@@ -541,7 +541,7 @@ class testStars(InstanceCatalog, EBVmixin, VariabilityStars, MyVariability, Phot
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
-class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,MyVariability,PhotometryGalaxies,testDefaults):
+class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,TestVariabilityMixin,PhotometryGalaxies,testDefaults):
     """
     A generic catalog of galaxies
     """
