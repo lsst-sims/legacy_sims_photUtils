@@ -65,6 +65,7 @@ class Variability(object):
             self.initializeVariability(doCache=True)
 
         varCmd = json.loads(varParams)
+
         method = varCmd['varMethodName']
         params = varCmd['pars']
         expmjd=self.obs_metadata.mjd
@@ -233,7 +234,11 @@ class Variability(object):
         tau = params['agn_tau']
         epochs = expmjd - toff
         if epochs.min() < 0:
-            raise("WARNING: Time offset greater than minimum epoch.  Not applying variability")
+            raise RuntimeError("WARNING: Time offset greater than minimum epoch.  " +
+                               "Not applying variability. "+
+                               "expmjd: %e should be > toff: %e  " % (expmjd, toff) +
+                               "in applyAgn variability method")
+
         endepoch = epochs.max()
 
         dt = tau/100.
