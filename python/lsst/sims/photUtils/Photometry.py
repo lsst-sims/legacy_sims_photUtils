@@ -367,7 +367,7 @@ class PhotometryBase(PhotometryHardware):
 
         else:
             for i in range(self.nBandpasses):
-                magList.append(None)
+                magList.append(numpy.NaN)
 
         return magList
 
