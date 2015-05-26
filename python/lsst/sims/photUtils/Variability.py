@@ -349,6 +349,22 @@ class Variability(object):
 
 
 class VariabilityStars(Variability):
+    """
+    This is a mixin which wraps the methods from the class Variability
+    into getters for InstanceCatalogs (specifically, InstanceCatalogs
+    of stars).  Getters in this method should define columns named like
+
+    delta_columnName
+
+    where columnName is the name of the baseline (non-varying) magnitude
+    column to which delta_columnName will be added.  The getters in the
+    photometry mixins will know to find these columns and add them to
+    columnName, provided that the columns here follow this naming convention.
+
+    Thus: merely including VariabilityStars in the inheritance tree of
+    an InstanceCatalog daughter class will activate variability for any column
+    for which delta_columnName is defined.
+    """
 
     @compound('delta_lsst_u', 'delta_lsst_g', 'delta_lsst_r',
              'delta_lsst_i', 'delta_lsst_z', 'delta_lsst_y')
@@ -388,6 +404,23 @@ class VariabilityStars(Variability):
 
 
 class VariabilityGalaxies(Variability):
+    """
+    This is a mixin which wraps the methods from the class Variability
+    into getters for InstanceCatalogs (specifically, InstanceCatalogs
+    of galaxies).  Getters in this method should define columns named like
+
+    delta_columnName
+
+    where columnName is the name of the baseline (non-varying) magnitude
+    column to which delta_columnName will be added.  The getters in the
+    photometry mixins will know to find these columns and add them to
+    columnName, provided that the columns here follow this naming convention.
+
+    Thus: merely including VariabilityStars in the inheritance tree of
+    an InstanceCatalog daughter class will activate variability for any column
+    for which delta_columnName is defined.
+    """
+
 
     @compound('delta_uAgn', 'delta_gAgn', 'delta_rAgn',
               'delta_iAgn', 'delta_zAgn', 'delta_yAgn')
