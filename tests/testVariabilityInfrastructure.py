@@ -39,7 +39,7 @@ class StellarBaselineCatalogClass(InstanceCatalog, PhotometryStars):
             self.loadTotalBandpassesFromFiles()
 
         indices = [ii for ii, name in enumerate(self.get_test_mags._colnames) \
-                   if name in self.all_calculated_columns]
+                   if name in self._actually_calculated_columns]
 
         if len(indices) == 6:
             indices = None
@@ -112,7 +112,7 @@ class GalaxyBaselineCatalogClass(InstanceCatalog, PhotometryGalaxies):
             self.loadTotalBandpassesFromFiles()
 
         indices = numpy.unique([ii % 6 for ii, name in enumerate(self.get_test_mags._colnames) \
-                               if name in self.all_calculated_columns])
+                               if name in self._actually_calculated_columns])
 
         if len(indices)==6:
             indices=None
