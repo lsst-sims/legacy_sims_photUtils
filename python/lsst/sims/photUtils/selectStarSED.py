@@ -3,13 +3,13 @@ import numpy as np
 import eups
 import warnings
 
-from lsst.sims.photUtils.readGalfast.rgUtils import rgStar
+from lsst.sims.photUtils.matchUtils import matchStar
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 
 __all__ = ["selectStarSED"]
 
-class selectStarSED(rgStar):
+class selectStarSED(matchStar):
 
     """
     This class provides a way to match star catalog magntiudes to those of the approriate SED.

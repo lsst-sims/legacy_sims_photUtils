@@ -3,13 +3,13 @@ import numpy as np
 import eups
 
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.readGalfast.rgUtils import rgGalaxy
+from lsst.sims.photUtils.matchUtils import matchGalaxy
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 
 __all__ = ["selectGalaxySED"]
 
-class selectGalaxySED(rgGalaxy):
+class selectGalaxySED(matchGalaxy):
 
     """
     This class provides methods to match galaxy catalog magnitudes to an SED.
