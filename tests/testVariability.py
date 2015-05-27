@@ -311,7 +311,8 @@ def makeAgnTable(size=100, **kwargs):
     conn.close()
 
 class variabilityDB(CatalogDBObject):
-    dbAddress = 'sqlite:///VariabilityTestDatabase.db'
+    driver = 'sqlite'
+    database = 'VariabilityTestDatabase.db'
     idColKey = 'varsimobjid'
     columns = [('id', 'varsimobjid', int),
                ('sedFilename', 'sedfilename', str, 40),

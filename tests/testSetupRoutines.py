@@ -68,10 +68,6 @@ class testStarDBObject(CatalogDBObject):
 
 class testGalaxyDBObject(CatalogDBObject):
 
-    #: This is the default address.  Simply change this in the class definition for other
-    #: endpoints.
-    dbAddress = "mssql+pymssql://LSST-2:L$$TUser@fatboy.npl.washington.edu:1433/LSST"
-
     #: This is the base table for the galaxies
     #tableid = 'final_clone_db'
     tableid = 'galaxy'
@@ -119,6 +115,7 @@ class testGalaxyDBObject(CatalogDBObject):
 class InstanceCatalogSetupUnittest(unittest.TestCase):
 
     def setUp(self):
+        self.driver = 'sqlite'
         self.StarDBName = 'setupTestStars.db'
         self.GalaxyDBName = 'setupTestGalaxies.db'
         if os.path.exists(self.StarDBName):
@@ -141,8 +138,8 @@ class InstanceCatalogSetupUnittest(unittest.TestCase):
                            unrefractedDec=self.unrefractedDec,
                            radius=self.radius)
 
-        self.starDBObj = testStarDBObject(address='sqlite:///' + self.StarDBName)
-        self.galaxyDBObj = testGalaxyDBObject(address='sqlite:///' + self.GalaxyDBName)
+        self.starDBObj = testStarDBObject(driver=self.driver, database= self.StarDBName)
+        self.galaxyDBObj = testGalaxyDBObject(driver=self.driver, database=self.GalaxyDBName)
 
         self.obs_metadata = ObservationMetaData(unrefractedRA=self.unrefractedRA,
                                                 unrefractedDec=self.unrefractedDec,
