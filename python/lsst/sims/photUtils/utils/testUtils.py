@@ -23,7 +23,7 @@ from lsst.sims.photUtils.EBV import EBVbase, EBVmixin
 from lsst.sims.photUtils.Variability import Variability, VariabilityStars, VariabilityGalaxies
 
 __all__ = ["makeStarDatabase", "makeGalaxyDatabase",
-           "MyVariability", "testDefaults", "cartoonPhotometryStars",
+           "TestVariabilityMixin", "testDefaults", "cartoonPhotometryStars",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
            "cartoonStarsOnlyI", "cartoonStarsIZ",
            "cartoonGalaxies", "cartoonGalaxiesIG", "testStars", "testGalaxies",
@@ -190,7 +190,7 @@ def makeGalaxyDatabase(filename='GalaxyPhotometryDB.db', size=1000, seedVal=32,
     conn.close()
 
 @register_class
-class MyVariability(Variability):
+class TestVariabilityMixin(Variability):
     """
     This is a mixin which provides a dummy variability method for use in unit tests
     """
@@ -261,6 +261,7 @@ class cartoonPhotometryStars(PhotometryStars):
         """
 
         idNames = self.column_by_name('id')
+        columnNames = [name for name in self.get_magnitudes._colnames]
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -268,7 +269,7 @@ class cartoonPhotometryStars(PhotometryStars):
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                     bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
 
         #############################################################################
         #Everything below this comment exists solely for the purposes of the unit test
@@ -320,6 +321,9 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
         """
 
         idNames = self.column_by_name('galid')
+
+        columnNames = [name for name in self.get_magnitudes._colnames]
+
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -327,7 +331,7 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                       bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
 
         ##########################################################################
         #Everything below this comment exists only for the purposes of the unittest.
@@ -427,6 +431,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
         """
 
         idNames = self.column_by_name('id')
+        columnNames = [name for name in self.get_magnitudes._colnames]
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -434,7 +439,7 @@ class cartoonStarsOnlyI(InstanceCatalog, AstrometryStars ,EBVmixin, VariabilityS
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                     bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
 
 class cartoonStarsIZ(cartoonStarsOnlyI):
@@ -507,6 +512,8 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
         """
 
         idNames = self.column_by_name('galid')
+        columnNames = [name for name in self.get_magnitudes._colnames]
+
         bandpassNames=['u','g','r','i','z']
         bandpassDir=os.getenv('SIMS_PHOTUTILS_DIR')+'/tests/cartoonSedTestData/'
 
@@ -514,53 +521,52 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
             self.loadTotalBandpassesFromFiles(bandpassNames,bandpassDir = bandpassDir,
                       bandpassRoot = 'test_bandpass_')
 
-        output = self.meta_magnitudes_getter(idNames)
+        output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
 
-class testStars(InstanceCatalog, EBVmixin, VariabilityStars, MyVariability, PhotometryStars,testDefaults):
+class testStars(InstanceCatalog, EBVmixin, VariabilityStars, TestVariabilityMixin, PhotometryStars,testDefaults):
     """
     A generic catalog of stars
     """
     catalog_type = 'test_stars'
     column_outputs=['id','raJ2000','decJ2000','magNorm',\
-    'stellar_magNorm_var', \
-    'lsst_u','sigma_lsst_u','lsst_u_var','sigma_lsst_u_var',
-    'lsst_g','sigma_lsst_g','lsst_g_var','sigma_lsst_g_var',\
-    'lsst_r','sigma_lsst_r','lsst_r_var','sigma_lsst_r_var',\
-    'lsst_i','sigma_lsst_i','lsst_i_var','sigma_lsst_i_var',\
-    'lsst_z','sigma_lsst_z','lsst_z_var','sigma_lsst_z_var',\
-    'lsst_y','sigma_lsst_y','lsst_y_var','sigma_lsst_y_var',\
+    'lsst_u','sigma_lsst_u',
+    'lsst_g','sigma_lsst_g',\
+    'lsst_r','sigma_lsst_r',\
+    'lsst_i','sigma_lsst_i',\
+    'lsst_z','sigma_lsst_z',\
+    'lsst_y','sigma_lsst_y',\
     'EBV','varParamStr']
     defSedName = 'sed_flat.txt'
     default_columns = [('sedFilename', defSedName, (str,len(defSedName))), ('glon', 180., float),
                        ('glat', 30., float)]
 
-class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,MyVariability,PhotometryGalaxies,testDefaults):
+class testGalaxies(InstanceCatalog,EBVmixin,VariabilityGalaxies,TestVariabilityMixin,PhotometryGalaxies,testDefaults):
     """
     A generic catalog of galaxies
     """
     catalog_type = 'test_galaxies'
     column_outputs=['galid','raJ2000','decJ2000',\
         'redshift',
-        'magNorm_total_var', 'magNormAgn', 'magNormBulge', 'magNormDisk', \
-        'lsst_u', 'sigma_lsst_u', 'lsst_u_var','sigma_lsst_u_var',\
-        'lsst_g', 'sigma_lsst_g', 'lsst_g_var','sigma_lsst_g_var',\
-        'lsst_r', 'sigma_lsst_r', 'lsst_r_var', 'sigma_lsst_r_var',\
-         'lsst_i', 'sigma_lsst_i', 'lsst_i_var','sigma_lsst_i_var',\
-         'lsst_z', 'sigma_lsst_z', 'lsst_z_var', 'sigma_lsst_z_var',\
-         'lsst_y', 'sigma_lsst_y', 'lsst_y_var', 'sigma_lsst_y_var',\
+        'magNormAgn', 'magNormBulge', 'magNormDisk', \
+        'lsst_u', 'sigma_lsst_u',\
+        'lsst_g', 'sigma_lsst_g',\
+        'lsst_r', 'sigma_lsst_r',\
+         'lsst_i', 'sigma_lsst_i',\
+         'lsst_z', 'sigma_lsst_z',\
+         'lsst_y', 'sigma_lsst_y',\
         'sedFilenameBulge','uBulge', 'sigma_uBulge', 'gBulge', 'sigma_gBulge', \
         'rBulge', 'sigma_rBulge', 'iBulge', 'sigma_iBulge', 'zBulge', 'sigma_zBulge',\
          'yBulge', 'sigma_yBulge', \
         'sedFilenameDisk','uDisk', 'sigma_uDisk', 'gDisk', 'sigma_gDisk', 'rDisk', 'sigma_rDisk', \
         'iDisk', 'sigma_iDisk', 'zDisk', 'sigma_zDisk', 'yDisk', 'sigma_yDisk', \
         'sedFilenameAgn',\
-        'uAgn', 'sigma_uAgn', 'uAgn_var', 'sigma_uAgn_var',\
-        'gAgn', 'sigma_gAgn', 'gAgn_var', 'sigma_gAgn_var',\
-        'rAgn', 'sigma_rAgn', 'rAgn_var', 'sigma_rAgn_var',\
-        'iAgn', 'sigma_iAgn', 'iAgn_var', 'sigma_iAgn_var',\
-        'zAgn', 'sigma_zAgn', 'zAgn_var', 'sigma_zAgn_var',\
-        'yAgn', 'sigma_yAgn', 'yAgn_var', 'sigma_yAgn_var', 'varParamStr']
+        'uAgn', 'sigma_uAgn',\
+        'gAgn', 'sigma_gAgn',\
+        'rAgn', 'sigma_rAgn',\
+        'iAgn', 'sigma_iAgn',\
+        'zAgn', 'sigma_zAgn',\
+        'yAgn', 'sigma_yAgn', 'varParamStr']
     defSedName = "sed_flat.txt"
     default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,
                        ('sedFilenameAgn', defSedName, (str, len(defSedName))),
