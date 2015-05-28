@@ -156,8 +156,8 @@ class VariabilityDesignTest(unittest.TestCase):
             os.unlink(cls.galaxyDbName)
 
     def setUp(self):
-        self.starDB = myTestStars(address='sqlite:///'+self.starDbName)
-        self.galaxyDB = myTestGals(address='sqlite:///'+self.galaxyDbName)
+        self.starDB = myTestStars(database=self.starDbName)
+        self.galaxyDB = myTestGals(database=self.galaxyDbName)
 
     def tearDown(self):
         del self.starDB
