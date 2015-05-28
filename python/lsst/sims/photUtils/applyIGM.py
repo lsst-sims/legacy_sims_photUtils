@@ -73,7 +73,7 @@ class ApplyIGM(object):
                     self.varLookups[str(zValue)] = np.genfromtxt(str(filesDir + '/VarLookupTable_zSource' + 
                                                                      str(zValue) + '.tbl'))
                 except IOError:
-                    print "Cannot find variance tables."
+                    raise IOError("Cannot find variance tables.")
 
         self.tablesPresent = True
 
