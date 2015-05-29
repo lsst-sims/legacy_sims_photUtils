@@ -73,6 +73,7 @@ class Variability(object):
 
         return output
 
+
     def applyStdPeriodic(self, params, keymap, expmjd, inPeriod=None,
             inDays=True, interpFactory=None):
 
@@ -451,12 +452,12 @@ class VariabilityGalaxies(Variability):
                 output[5][ii] = deltaMag['y']
 
             else:
+
                 output[0][ii] = 0.0
                 output[1][ii] = 0.0
                 output[2][ii] = 0.0
                 output[3][ii] = 0.0
                 output[4][ii] = 0.0
                 output[5][ii] = 0.0
-
 
         return output
