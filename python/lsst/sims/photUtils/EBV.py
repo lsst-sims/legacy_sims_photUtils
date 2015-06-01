@@ -4,7 +4,7 @@ import numpy
 import os
 
 from lsst.sims.catalogs.measures.instance import cached
-from lsst.sims.utils import equatorialToGalactic
+from lsst.sims.utils import galacticFromEquatorial
 
 __all__ = ["EBVmap", "EBVbase", "EBVmixin"]
 
@@ -48,7 +48,7 @@ class EBVmap(object):
         self.scale = self.header['LAM_SCAL']
         self.lonpole = self.header['LONPOLE']
 
-    def skyToXY(self, gLon, gLat):
+    def xyFromSky(self, gLon, gLat):
         """ convert long, lat angles to pixel x y
 
         input angles are in radians but the conversion assumes radians
@@ -108,7 +108,7 @@ class EBVmap(object):
         """
 
         # calculate pixel values
-        x,y = self.skyToXY(glon, glat)
+        x,y = self.xyFromSky(glon, glat)
         
         ix=(x+0.5).astype(int)
         iy=(y+0.5).astype(int)
@@ -143,8 +143,8 @@ class EBVmap(object):
 
         return ebvVal    
                         
-    def skyToXYInt(self, gLong, gLat):
-        x,y = self.skyToXY(gLong, gLat)
+    def xyIntFromSky(self, gLong, gLat):
+        x,y = self.xyFromSky(gLong, gLat)
         ix = int(x+0.5)
         iy = int(y+0.5)
 
@@ -255,7 +255,7 @@ class EBVbase(object):
             if equatorialCoordinates is None:
                raise RuntimeError("Must specify coordinates in calculateEbv")
 
-            galacticCoordinates = numpy.array(equatorialToGalactic(equatorialCoordinates[0,:],equatorialCoordinates[1,:]))
+            galacticCoordinates = numpy.array(galacticFromEquatorial(equatorialCoordinates[0,:],equatorialCoordinates[1,:]))
             
         if northMap is None:
             if self.ebvMapNorth is None:
