@@ -401,11 +401,13 @@ class Bandpass:
         sb_new = self.sb * sb_other
         return wavelen_new, sb_new
 
-    def calcZP_t(self, expTime=PhotometricDefaults.exptime,
-                 effarea=PhotometricDefaults.effarea,
-                 gain=PhotometricDefaults.gain):
+    def calcZP_t(self, photometricParameters):
         """
         Calculate the instrumental zeropoint for a bandpass.
+
+        @param [in] photometricParameters is an instantiation of the
+        PhotometricParameters class that carries details about the
+        photometric response of the telescope.  Defaults to LSST values.
         """
         # ZP_t is the magnitude of a (F_nu flat) source which produced 1 count per second.
         # This is often also known as the 'instrumental zeropoint'.
@@ -420,7 +422,7 @@ class Bandpass:
         flatsource = Sed()
         flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
                               wavelen_step=self.wavelen_step)
-        adu = flatsource.calcADU(self, expTime=expTime, effarea=effarea, gain=gain)
+        adu = flatsource.calcADU(self, photometricParameters=photometricParameters)
         # Scale fnu so that adu is 1 count/expTime.
         flatsource.fnu = flatsource.fnu * (1/adu)
         # Now need to calculate AB magnitude of the source with this fnu.
@@ -441,6 +443,7 @@ class Bandpass:
         effwavelenphi = (self.wavelen*self.phi).sum()/self.phi.sum()
         effwavelensb = (self.wavelen*self.sb).sum()/self.sb.sum()
         return effwavelenphi, effwavelensb
+
 
     def writeThroughput(self, filename, print_header=None, write_phi=False):
         """

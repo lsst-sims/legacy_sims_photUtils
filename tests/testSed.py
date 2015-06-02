@@ -147,7 +147,7 @@ class TestM5(unittest.TestCase):
 
                 normalizedSkySed = setM5(m, skysed, totalBandpass, hardwareBandpass)
                 m5Result = calcM5(normalizedSkySed, totalBandpass, hardwareBandpass)
-                self.assertAlmostEqual(m/m5Result, 1.0, 6)
+                self.assertAlmostEqual(m/m5Result, 1.0, 5)
 
 def suite():
     utilsTests.init()

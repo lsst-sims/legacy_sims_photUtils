@@ -19,21 +19,6 @@ class PhotometricDefaults(object):
     nm2m = 1.00e-9               # nanometers to meters conversion = 1e-9 m/nm
     ergsetc2jansky = 1.00e23     # erg/cm2/s/Hz to Jansky units (fnu)
 
-    exptime = 15.0                    # Default exposure time. (option for method calls).
-    nexp = 2                          # Default number of exposures. (option for methods).
-    effarea = numpy.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. (option for methods).
-    gain = 2.3                        # Default gain. (option for method call).
-
-    #The quantities below are measured in electrons.
-    #This is taken from the specifications document LSE-30 on Docushare
-    #Section 3.4.2.3 states that the total noise per pixel shall be 12.7 electrons
-    #which these numbers sum to (remember to multply darkcurrent by the number
-    #of seconds in an exposure=15).
-    rdnoise = 5                       # Default value - readnoise electrons per pixel (per exposure)
-    darkcurrent = 0.2                 # Default value - dark current electrons per pixel per second
-    othernoise = 4.69                 # Default value - other noise electrons per pixel per exposure
-
-    platescale = 0.2                  # Default value - "/pixel
     seeing = {'u': 0.77, 'g':0.73, 'r':0.70, 'i':0.67, 'z':0.65, 'y':0.63}  # Default seeing values (in ")
 
    #taken from table 2 of arxiv:0805.2366 (note that m5 is for 2 15 second exposures)
