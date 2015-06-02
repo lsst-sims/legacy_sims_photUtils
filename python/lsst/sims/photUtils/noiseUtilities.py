@@ -71,8 +71,6 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     #should probably wait for a later issue in which we hash out what
     #the units are for all of the parameters stored in PhotometricDefaults.
 
-    print nSigmaSq, neff, noise_instr_sq, counts
-
     return skyCountsTarget
 
 
