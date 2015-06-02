@@ -690,7 +690,7 @@ class Sed(object):
         dlambda = wavelen[1] - wavelen[0]
         # Nphoton in units of 10^-23 ergs/cm^s/nm.
         nphoton = (fnu / wavelen * bandpass.sb).sum()
-        adu = nphoton * (photParams.exptime * photParams.effarea/photParams.gain) * \
+        adu = nphoton * (photParams.exptime * photParams.nexp * photParams.effarea/photParams.gain) * \
               (1/self._physParams.ergsetc2jansky) * \
               (1/self._physParams.planck) * dlambda
         return adu
