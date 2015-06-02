@@ -7,6 +7,7 @@ class PhysicalParameters(object):
     used by the sims_photUtils code
     """
 
+    #the quantities below are in nanometers
     minwavelen = 300.0
     maxwavelen = 1150.0
     wavelenstep = 0.1
