@@ -3,9 +3,10 @@ import unittest
 import eups
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.photUtils import Bandpass, Sed, PhotometricParameters
+from lsst.sims.photUtils import Bandpass, Sed, PhotometricParameters, \
+                                PhysicalParameters
 
-class ParametersUnitTest(unittest.TestCase):
+class PhotometricParametersUnitTest(unittest.TestCase):
 
     def testAssignment(self):
         """
@@ -57,11 +58,74 @@ class ParametersUnitTest(unittest.TestCase):
         self.assertEqual(control, 0.5*test)
 
 
+class PhysicalParametersUnitTest(unittest.TestCase):
+
+    def testAssignment(self):
+        """
+        Make sure it is impossible to change the values stored in
+        PhysicalParameters
+        """
+
+        pp = PhysicalParameters()
+        success = 0
+        msg = ''
+
+        try:
+            pp.minwavelen = 2.0
+            success += 1
+            msg += 'was able to assign minwavelen; '
+        except:
+            pass
+
+        try:
+            pp.maxwavelen = 2.0
+            success += 1
+            msg += 'was able to assign maxwavelen; '
+        except:
+            pass
+
+        try:
+            pp.wavelenstep = 2.0
+            success += 1
+            msg += 'was able to assign wavelenstep; '
+        except:
+            pass
+
+        try:
+            pp.lightspeed = 2.0
+            success += 1
+            msg += 'was able to assign lightspeed; '
+        except:
+            pass
+
+        try:
+            pp.planck = 2.0
+            success += 1
+            msg += 'was able to assign planck; '
+        except:
+            pass
+
+        try:
+            pp.nm2m = 2.0
+            success += 1
+            msg += 'was able to assign nm2m; '
+        except:
+            pass
+
+        try:
+            pp.ergsetc2jansky = 2.0
+            msg += 'was able to assign ergsetc2jansky; '
+            success += 1
+        except:
+            pass
+
+        self.assertEqual(success, 0, msg=msg)
 
 def suite():
     utilsTests.init()
     suites = []
-    suites += unittest.makeSuite(ParametersUnitTest)
+    suites += unittest.makeSuite(PhotometricParametersUnitTest)
+    suites += unittest.makeSuite(PhysicalParametersUnitTest)
     return unittest.TestSuite(suites)
 
 def run(shouldExit = False):

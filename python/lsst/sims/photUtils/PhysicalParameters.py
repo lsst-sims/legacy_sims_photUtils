@@ -98,6 +98,6 @@ class PhysicalParameters(object):
         """
         return self._planck
 
-tttt    @planck.setter
+    @planck.setter
     def planck(self, value):
         raise RuntimeError('Cannot change the value of planck')
