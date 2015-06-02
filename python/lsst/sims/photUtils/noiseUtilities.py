@@ -21,10 +21,6 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
-
     @param [in] the desired value of m5
 
     @param [in] totalBandpass is an instantiation of the Bandpass class
@@ -91,10 +87,6 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
-
     @param [in] the desired value of m5
 
     @param [in] skysed is an instantiation of the Sed class representing
@@ -148,10 +140,6 @@ def calcM5(skysed, totalBandpass, hardware, seeing=PhotometricDefaults.seeing['r
     method (calcM5) calculates the expected m5 value for an observation given
     a sky background Sed and hardware parameters.
 
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
-
     @param [in] skysed is an instantiation of the Sed class representing
     sky emission
 
@@ -201,10 +189,6 @@ def calcGamma(bandpass, m5,
     Calculate the gamma parameter used for determining photometric
     signal to noise in equation 5 of the LSST overview paper
     (arXiv:0805.2366)
-
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
 
     @param [in] bandpass is an instantiation of the Bandpass class
     representing the bandpass for which you desire to calculate the
@@ -261,10 +245,6 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
                   photParams=PhotometricParameters()):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
-
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
 
     @param [in] fluxes is a numpy array of fluxes.  Each row is a different bandpass.
     Each column is a different object, i.e. fluxes[i][j] is the flux of the jth object
