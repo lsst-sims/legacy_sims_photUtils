@@ -28,6 +28,10 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] the desired value of m5
 
     @param [in] totalBandpass is an instantiation of the Bandpass class
@@ -35,31 +39,22 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     plus atmosphere)
 
     @param [in] expTime is the duration of a single exposure in seconds
-    (default 15)
 
     @param [in] nexp is the number of exposures being combined
-    (default 2)
 
     @param [in] readnoise in electrons per pixel per exposure
-    (default 5)
 
     @param [in] darkcurrent in electrons per pixel per second
-    (default 0.2)
 
     @param [in] othernoise in electrons per pixel per exposure
-    (default 4.69)
 
     @param [in] seeing in arcseconds
-    (default 0.7)
 
     @param [in] platescale in arcseconds per pixel
-    (default 0.2)
 
     @param [in] gain in electrons per ADU
-    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror in square centimeters
-    (default is for a 6.5 meter diameter)
 
     @param [out] returns the expected number of sky counts per pixel
     """
@@ -122,6 +117,10 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] the desired value of m5
 
     @param [in] skysed is an instantiation of the Sed class representing
@@ -135,31 +134,22 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     the throughput due solely to instrumentation.
 
     @param [in] expTime is the duration of a single exposure in seconds
-    (default 15)
 
     @param [in] nexp is the number of exposures being combined
-    (default 2)
 
     @param [in] readnoise in electrons per pixel per exposure
-    (default 5)
 
     @param [in] darkcurrent in electrons per pixel per second
-    (default 2)
 
     @param [in] othernoise in electrons per pixel per exposure
-    (default 4.69)
 
     @param [in] seeing in arcseconds
-    (default 0.7)
 
     @param [in] platescale in arcseconds per pixel
-    (default 0.2)
 
     @param [in] gain in electrons per ADU
-    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror in square centimeters
-    (default is for a 6.5 meter diameter)
 
     @param [out] returns an instantiation of the Sed class that is the skysed renormalized
     so that m5 has the desired value.
@@ -208,6 +198,10 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     method (calcM5) calculates the expected m5 value for an observation given
     a sky background Sed and hardware parameters.
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] skysed is an instantiation of the Sed class representing
     sky emission
 
@@ -219,31 +213,22 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     the throughput due solely to instrumentation.
 
     @param [in] expTime is the duration of a single exposure in seconds
-    (default 15)
 
     @param [in] nexp is the number of exposures being combined
-    (default 2)
 
     @param [in] readnoise in electrons per pixel per exposure
-    (default 5)
 
     @param [in] darkcurrent in electrons per pixel per second
-    (default 0.2)
 
     @param [in] othernoise in electrons per pixel per exposure
-    (default 4.69)
 
     @param [in] seeing in arcseconds
-    (default 0.7)
 
     @param [in] platescale in arcseconds per pixel
-    (default 0.2)
 
     @param [in] gain in electrons per ADU
-    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror in square centimeters
-    (default is for a 6.5 meter diameter)
 
     @param [out] returns the value of m5 for the given bandpass and sky SED
     """
@@ -283,6 +268,10 @@ def calcGamma(bandpass, m5,
     signal to noise in equation 5 of the LSST overview paper
     (arXiv:0805.2366)
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] bandpass is an instantiation of the Bandpass class
     representing the bandpass for which you desire to calculate the
     gamma parameter
@@ -291,13 +280,10 @@ def calcGamma(bandpass, m5,
     in this Bandpass
 
     @param [in] expTime is the duration of a single exposure in seconds
-    (default 15)
 
     @param [in] nexp is the number of exposures being combined
-    (default 2)
 
     @param [in] gain is the number of electrons per ADU
-    (default 2.3)
 
     @param [in] effarea is the effective area of the primary mirror
     in square centimeters (default is for 6.5 meter diameter)
@@ -350,6 +336,10 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] fluxes is a numpy array of fluxes.  Each row is a different bandpass.
     Each column is a different object, i.e. fluxes[i][j] is the flux of the jth object
     in the ith bandpass.
@@ -365,13 +355,10 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     @param [in] sig2sys is the square of the systematic signal to noise ratio.
 
     @param [in] expTime (optional) is the duration of a single exposure in seconds
-    (default 15)
 
     @param [in] nexp (optional) is the number of exposures being combined
-    (default 2)
 
     @param [in] gain (optional) is the number of electrons per ADU
-    (default 2.3)
 
     @param [in] effarea (optional) is the effective area of the primary mirror
     in square centimeters (default is for 6.5 meter diameter)

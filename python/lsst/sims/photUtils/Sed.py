@@ -1035,6 +1035,10 @@ class Sed(object):
         seeing / expTime, calculates the SNR with optimal PSF extraction
         assuming a double-gaussian PSF.
 
+        Note: default parameters are defined in
+
+        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
         @param [in] totalbandpass is an instantiation of the Bandpass class
         representing the total throughput (system + atmosphere)
 
@@ -1045,31 +1049,22 @@ class Sed(object):
         representing just the throughput of the system hardware.
 
         @param [in] readnoise in electrons per pixel per exposure
-        (default 5)
 
         @param [in] darkcurrent in electrons per pixel per second
-        (default 0.2)
 
         @param [in] othernoise in electrons per pixel per exposure
-        (default 4.69)
 
         @param [in] seeing in arcseconds
-        (default 0.7)
 
         @param [in] effarea is effective area of the telescope in cm^2
-        (default is for 6.5 meter diameter)
 
         @param [in] expTime is exposure time in seconds
-        (default 15)
 
         @param [in] nexp is number of exposures
-        (default 2)
 
         @param [in] plateScale in arcseconds per pixel
-        (default 0.2)
 
         @param [in] gain in electrons per ADU
-        (default 2.3)
 
         @param [in] verbose is a boolean
 
