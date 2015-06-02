@@ -106,6 +106,9 @@ class Sed(object):
         self.zp = -2.5*numpy.log10(3631)
         self.name = name
         self.badval = badval
+
+        self._physParams = PhysicalParameters()
+
         # If init was given data to initialize class, use it.
         if (wavelen is not None) and ((flambda is not None) or (fnu is not None)):
             if name is None:
@@ -147,12 +150,21 @@ class Sed(object):
         self.name = name
         return
 
-    def setFlatSED(self, wavelen_min=PhysicalParameters.minwavelen,
-                   wavelen_max=PhysicalParameters.maxwavelen,
-                   wavelen_step=PhysicalParameters.wavelenstep, name='Flat'):
+    def setFlatSED(self, wavelen_min=None,
+                   wavelen_max=None,
+                   wavelen_step=None, name='Flat'):
         """
         Populate the wavelength/flambda/fnu fields in sed according to a flat fnu source.
         """
+        if wavelen_min is None:
+            wavelen_min = self._physParams.minwavelen
+
+        if wavelen_max is None:
+            wavelen_max = self._physParams.maxwavelen
+
+        if wavelen_step is None:
+            wavelen_step = self._physParams.wavelenstep
+
         self.wavelen = numpy.arange(wavelen_min, wavelen_max+wavelen_step, wavelen_step, dtype='float')
         self.fnu = numpy.ones(len(self.wavelen), dtype='float') * 3631 #jansky
         self.fnuToflambda()
@@ -417,8 +429,8 @@ class Sed(object):
             self.fnu = None
         # Now on with the calculation.
         # Calculate fnu.
-        fnu = flambda * wavelen * wavelen * PhysicalParameters.nm2m / PhysicalParameters.lightspeed
-        fnu = fnu * PhysicalParameters.ergsetc2jansky
+        fnu = flambda * wavelen * wavelen * self._physParams.nm2m / self._physParams.lightspeed
+        fnu = fnu * self._physParams.ergsetc2jansky
         # If are using/updating self, then *all* wavelen/flambda/fnu will be gridded.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -444,8 +456,8 @@ class Sed(object):
             fnu = self.fnu
         # On with the calculation.
         # Calculate flambda.
-        flambda = fnu / wavelen / wavelen * PhysicalParameters.lightspeed / PhysicalParameters.nm2m
-        flambda = flambda / PhysicalParameters.ergsetc2jansky
+        flambda = fnu / wavelen / wavelen * self._physParams.lightspeed / self._physParams.nm2m
+        flambda = flambda / self._physParams.ergsetc2jansky
         # If updating self, then *all of wavelen/fnu/flambda will be updated.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -602,13 +614,17 @@ class Sed(object):
         return wavelen, flambda
 
 
-    def multiplySED(self, other_sed, wavelen_step=PhysicalParameters.wavelenstep):
+    def multiplySED(self, other_sed, wavelen_step=None):
         """
         Multiply two SEDs together - flambda * flambda - and return a new sed object.
 
         Unless the two wavelength arrays are equal, returns a SED gridded with stepsize wavelen_step
         over intersecting wavelength region. Does not alter self or other_sed.
         """
+
+        if wavelen_step is None:
+            wavelen_step=self._physParams.wavelenstep
+
         # Check if the wavelength arrays are equal (in which case do not resample)
         if (numpy.all(self.wavelen==other_sed.wavelen)):
             flambda = self.flambda * other_sed.flambda
@@ -674,8 +690,8 @@ class Sed(object):
         # Nphoton in units of 10^-23 ergs/cm^s/nm.
         nphoton = (fnu / wavelen * bandpass.sb).sum()
         adu = nphoton * (photParams.exptime * photParams.effarea/photParams.gain) * \
-              (1/PhysicalParameters.ergsetc2jansky) * \
-              (1/PhysicalParameters.planck) * dlambda
+              (1/self._physParams.ergsetc2jansky) * \
+              (1/self._physParams.planck) * dlambda
         return adu
 
 
@@ -801,7 +817,7 @@ class Sed(object):
 
     def renormalizeSED(self, wavelen=None, flambda=None, fnu=None,
                        lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
-                       wavelen_step=PhysicalParameters.wavelenstep):
+                       wavelen_step=None):
         """
         Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
 
@@ -812,6 +828,10 @@ class Sed(object):
         # This is useful for generating SED catalogs, mostly, to make them match schema.
         # Do not use this for calculating specific magnitudes -- use calcfluxNorm and multiplyFluxNorm.
         # Start normalizing wavelen/flambda.
+
+        if wavelen_step is None:
+            wavelen_step = self._physParams.wavelenstep
+
         if normflux=='flambda':
             update_self = self._checkUseSelf(wavelen, flambda)
             if update_self:

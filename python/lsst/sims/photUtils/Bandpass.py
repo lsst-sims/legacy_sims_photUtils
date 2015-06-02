@@ -81,19 +81,22 @@ class Bandpass:
         Otherwise all set to None and user should call readThroughput, readThroughputList,
         or imsimBandpass to populate bandpass data.
         """
+
+        self._physParams = PhysicalParameters()
+
         if wavelen_min is None:
             if wavelen is None:
-                wavelen_min = PhysicalParameters.minwavelen
+                wavelen_min = self._physParams.minwavelen
             else:
                 wavelen_min = wavelen.min()
         if wavelen_max is None:
             if wavelen is None:
-                wavelen_max = PhysicalParameters.maxwavelen
+                wavelen_max = self._physParams.maxwavelen
             else:
                 wavelen_max = wavelen.max()
         if wavelen_step is None:
             if wavelen is None:
-                wavelen_step = PhysicalParameters.wavelenstep
+                wavelen_step = self._physParams.wavelenstep
             else:
                 wavelen_step = numpy.diff(wavelen).min()
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
