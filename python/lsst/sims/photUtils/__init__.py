@@ -1,4 +1,4 @@
-from .photometricDefaults import *
+from .LSSTdefaults import *
 from .PhysicalParameters import *
 from .PhotometricParameters import *
 from .Bandpass import * 

@@ -87,7 +87,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 import warnings
 import numpy
 import gzip
-from lsst.sims.photUtils import PhotometricDefaults, PhysicalParameters, PhotometricParameters
+from lsst.sims.photUtils import LSSTdefaults, PhysicalParameters, PhotometricParameters
 
 __all__ = ["Sed"]
 
@@ -108,6 +108,7 @@ class Sed(object):
         self.badval = badval
 
         self._physParams = PhysicalParameters()
+        self._seedingDefaults = LSSTdefaults()
 
         # If init was given data to initialize class, use it.
         if (wavelen is not None) and ((flambda is not None) or (fnu is not None)):
@@ -1035,7 +1036,7 @@ class Sed(object):
         return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
 
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass,
-                    seeing=PhotometricDefaults.seeing['r'],
+                    seeing=None,
                     photParams=PhotometricParameters(),
                     verbose=False):
         """
@@ -1064,6 +1065,10 @@ class Sed(object):
 
         @param [out] signal to noise ratio
         """
+
+        if seeing is None:
+            seeing = _seeingDefaults.seeing('r')
+
         # Calculate the counts from the source.
         sourcecounts = self.calcADU(totalbandpass, photParams=photParams)
 

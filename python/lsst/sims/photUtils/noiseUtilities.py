@@ -1,12 +1,12 @@
 import numpy
 from .Sed import Sed
 from .Bandpass import Bandpass
-from lsst.sims.photUtils import PhotometricParameters, PhotometricDefaults
+from lsst.sims.photUtils import PhotometricParameters, LSSTdefaults
 
 __all__ = ["calcM5", "expectedSkyCountsForM5", "setM5", "calcGamma", "calcSNR_gamma"]
 
 def expectedSkyCountsForM5(m5target, totalBandpass,
-                           seeing = PhotometricDefaults.seeing['r'],
+                           seeing = None,
                            photParams=PhotometricParameters()):
 
     """
@@ -35,6 +35,9 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
 
     @param [out] returns the expected number of sky counts per pixel
     """
+
+    if seeing is None:
+        seeing = LSSTdefaults().seeing('r')
 
     #instantiate a flat SED
     flatSed = Sed()
@@ -72,7 +75,7 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
 
 
 def setM5(m5target, skysed, totalBandpass, hardware,
-          seeing = PhotometricDefaults.seeing['r'],
+          seeing = None,
           photParams=PhotometricParameters()):
     """
     Take an SED representing the sky and normalize it so that
@@ -116,6 +119,8 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     #This is based on the LSST SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
 
+    if seeing is None:
+        seeing = LSSTdefaults().seeing('r')
 
     skyCountsTarget = expectedSkyCountsForM5(m5target, totalBandpass, seeing=seeing,
                                              photParams=photParams)
@@ -129,7 +134,7 @@ def setM5(m5target, skysed, totalBandpass, hardware,
 
     return skySedOut
 
-def calcM5(skysed, totalBandpass, hardware, seeing=PhotometricDefaults.seeing['r'],
+def calcM5(skysed, totalBandpass, hardware, seeing=None,
            photParams=PhotometricParameters()):
     """
     Calculate the AB magnitude of a 5-sigma above sky background source.
@@ -160,6 +165,9 @@ def calcM5(skysed, totalBandpass, hardware, seeing=PhotometricDefaults.seeing['r
     """
     #This comes from equation 45 of the SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+
+    if seeing is None:
+        seeing = LSSTdefaults().seeing('r')
 
     #create a flat fnu source
     flatsource = Sed()

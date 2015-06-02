@@ -14,7 +14,7 @@ import os
 import numpy
 import eups
 from collections import OrderedDict
-from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, calcGamma, \
+from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcSNR_gamma
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
@@ -399,6 +399,8 @@ class PhotometryBase(PhotometryHardware):
 
         #if we have not run this method before, calculate and cache the m5 and gamma parameter
         #values (see eqn 5 of arXiv:0805.2366) for future use
+        m5Defaults = None
+
         if not hasattr(self, '_gammaList') or len(self._gammaList) != self.nBandpasses:
             mm = []
             gg = []
@@ -407,10 +409,14 @@ class PhotometryBase(PhotometryHardware):
                     mm.append(obs_metadata.m5[b])
                     gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b]))
                 else:
-                    if b not in PhotometricDefaults.m5:
+                    if m5Defaults is None:
+                        m5Defaults = LSSTdefaults()
+
+                    try:
+                        mm.append(m5Defaults.m5(b))
+                        gg.append(m5Defaults.gamma(b))
+                    except:
                         raise RuntimeError("No way to calculate gamma or m5 for filter %s " % b)
-                    mm.append(PhotometricDefaults.m5[b])
-                    gg.append(PhotometricDefaults.gamma[b])
 
             self._m5List = numpy.array(mm)
             self._gammaList = numpy.array(gg)
