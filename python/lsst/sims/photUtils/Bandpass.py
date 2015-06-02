@@ -441,6 +441,34 @@ class Bandpass:
         Pass into this function the bandpass, hardware only of bandpass, and sky sed objects.
         The exposure time, nexp, readnoise, darkcurrent, gain,
         seeing and platescale are also necessary.
+
+        Note: default parameters are defined in
+
+        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
+        @param [in] skysed is an instantiation of the Sed class representing
+        the emission spectrum of the sky
+
+        @param [in] hardware is an instantiation of the Bandpass class
+        representing the throughput of the system hardware
+
+        @param [in] expTime is the duration of each exposure in seconds
+
+        @param [in] nexp is the total number of exposures
+
+        @param [in] readnoise in electrons per pixel per exposure
+
+        @param [in] darkcurrent in electrons per pixel per second
+
+        @param [in] othernoise in electrons per pixel per second
+
+        @param [in] seeing in arcseconds
+
+        @param [in] plateScale in arcseconds per pixel
+
+        @param [in] gain in electrons per ADU
+
+        @param [in] eff area is the effective area of the telescope in cm^2
         """
         #This comes from equation 45 of the SNR document (v1.2, May 2010)
         #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf

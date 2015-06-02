@@ -28,6 +28,10 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] the desired value of m5
 
     @param [in] totalBandpass is an instantiation of the Bandpass class
@@ -38,11 +42,11 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
 
     @param [in] nexp is the number of exposures being combined
 
-    @param [in] readnoise
+    @param [in] readnoise in electrons per pixel per exposure
 
-    @param [in] darkcurrent
+    @param [in] darkcurrent in electrons per pixel per second
 
-    @param [in] othernoise
+    @param [in] othernoise in electrons per pixel per exposure
 
     @param [in] seeing in arcseconds
 
@@ -68,7 +72,10 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     neff = flatSed.calcNeff(seeing, platescale)
 
     #calculate the square of the noise due to the instrument
-    noise_instr_sq = flatSed.calcInstrNoiseSq(readnoise, darkcurrent, expTime, nexp, othernoise)
+    noise_instr_sq_electrons = flatSed.calcInstrNoiseSqElectrons(readnoise, darkcurrent, expTime, nexp, othernoise)
+
+    #convert to counts
+    noise_instr_sq = noise_instr_sq_electrons/(gain*gain)
 
     #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
     #given snr=5 and counts as calculated above
@@ -110,6 +117,10 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] the desired value of m5
 
     @param [in] skysed is an instantiation of the Sed class representing
@@ -126,11 +137,11 @@ def setM5(m5target, skysed, totalBandpass, hardware,
 
     @param [in] nexp is the number of exposures being combined
 
-    @param [in] readnoise
+    @param [in] readnoise in electrons per pixel per exposure
 
-    @param [in] darkcurrent
+    @param [in] darkcurrent in electrons per pixel per second
 
-    @param [in] othernoise
+    @param [in] othernoise in electrons per pixel per exposure
 
     @param [in] seeing in arcseconds
 
@@ -187,6 +198,10 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     method (calcM5) calculates the expected m5 value for an observation given
     a sky background Sed and hardware parameters.
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] skysed is an instantiation of the Sed class representing
     sky emission
 
@@ -201,11 +216,11 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
 
     @param [in] nexp is the number of exposures being combined
 
-    @param [in] readnoise
+    @param [in] readnoise in electrons per pixel per exposure
 
-    @param [in] darkcurrent
+    @param [in] darkcurrent in electrons per pixel per second
 
-    @param [in] othernoise
+    @param [in] othernoise in electrons per pixel per exposure
 
     @param [in] seeing in arcseconds
 
@@ -253,6 +268,10 @@ def calcGamma(bandpass, m5,
     signal to noise in equation 5 of the LSST overview paper
     (arXiv:0805.2366)
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] bandpass is an instantiation of the Bandpass class
     representing the bandpass for which you desire to calculate the
     gamma parameter
@@ -267,7 +286,7 @@ def calcGamma(bandpass, m5,
     @param [in] gain is the number of electrons per ADU
 
     @param [in] effarea is the effective area of the primary mirror
-    in square centimeters
+    in square centimeters (default is for 6.5 meter diameter)
 
     @param [out] gamma
     """
@@ -317,6 +336,10 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
+    Note: default parameters are defined in
+
+    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
+
     @param [in] fluxes is a numpy array of fluxes.  Each row is a different bandpass.
     Each column is a different object, i.e. fluxes[i][j] is the flux of the jth object
     in the ith bandpass.
@@ -338,7 +361,7 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     @param [in] gain (optional) is the number of electrons per ADU
 
     @param [in] effarea (optional) is the effective area of the primary mirror
-    in square centimeters
+    in square centimeters (default is for 6.5 meter diameter)
 
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
     the input fluxes.
