@@ -1,4 +1,5 @@
 from .photometricDefaults import *
+from .PhysicalParameters import *
 from .PhotometricParameters import *
 from .Bandpass import * 
 from .noiseUtilities import *

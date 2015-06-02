@@ -87,7 +87,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 import warnings
 import numpy
 import gzip
-from lsst.sims.photUtils import PhotometricDefaults, PhotometricParameters
+from lsst.sims.photUtils import PhotometricDefaults, PhysicalParameters, PhotometricParameters
 
 __all__ = ["Sed"]
 
@@ -147,9 +147,9 @@ class Sed(object):
         self.name = name
         return
 
-    def setFlatSED(self, wavelen_min=PhotometricDefaults.minwavelen,
-                   wavelen_max=PhotometricDefaults.maxwavelen,
-                   wavelen_step=PhotometricDefaults.wavelenstep, name='Flat'):
+    def setFlatSED(self, wavelen_min=PhysicalParameters.minwavelen,
+                   wavelen_max=PhysicalParameters.maxwavelen,
+                   wavelen_step=PhysicalParameters.wavelenstep, name='Flat'):
         """
         Populate the wavelength/flambda/fnu fields in sed according to a flat fnu source.
         """
@@ -417,8 +417,8 @@ class Sed(object):
             self.fnu = None
         # Now on with the calculation.
         # Calculate fnu.
-        fnu = flambda * wavelen * wavelen * PhotometricDefaults.nm2m / PhotometricDefaults.lightspeed
-        fnu = fnu * PhotometricDefaults.ergsetc2jansky
+        fnu = flambda * wavelen * wavelen * PhysicalParameters.nm2m / PhysicalParameters.lightspeed
+        fnu = fnu * PhysicalParameters.ergsetc2jansky
         # If are using/updating self, then *all* wavelen/flambda/fnu will be gridded.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -444,8 +444,8 @@ class Sed(object):
             fnu = self.fnu
         # On with the calculation.
         # Calculate flambda.
-        flambda = fnu / wavelen / wavelen * PhotometricDefaults.lightspeed / PhotometricDefaults.nm2m
-        flambda = flambda / PhotometricDefaults.ergsetc2jansky
+        flambda = fnu / wavelen / wavelen * PhysicalParameters.lightspeed / PhysicalParameters.nm2m
+        flambda = flambda / PhysicalParameters.ergsetc2jansky
         # If updating self, then *all of wavelen/fnu/flambda will be updated.
         # This is so wavelen/fnu AND wavelen/flambda can be kept in sync.
         if update_self:
@@ -602,7 +602,7 @@ class Sed(object):
         return wavelen, flambda
 
 
-    def multiplySED(self, other_sed, wavelen_step=PhotometricDefaults.wavelenstep):
+    def multiplySED(self, other_sed, wavelen_step=PhysicalParameters.wavelenstep):
         """
         Multiply two SEDs together - flambda * flambda - and return a new sed object.
 
@@ -674,8 +674,8 @@ class Sed(object):
         # Nphoton in units of 10^-23 ergs/cm^s/nm.
         nphoton = (fnu / wavelen * bandpass.sb).sum()
         adu = nphoton * (photParams.exptime * photParams.effarea/photParams.gain) * \
-              (1/PhotometricDefaults.ergsetc2jansky) * \
-              (1/PhotometricDefaults.planck) * dlambda
+              (1/PhysicalParameters.ergsetc2jansky) * \
+              (1/PhysicalParameters.planck) * dlambda
         return adu
 
 
@@ -801,7 +801,7 @@ class Sed(object):
 
     def renormalizeSED(self, wavelen=None, flambda=None, fnu=None,
                        lambdanorm=500, normvalue=1, gap=0, normflux='flambda',
-                       wavelen_step=PhotometricDefaults.wavelenstep):
+                       wavelen_step=PhysicalParameters.wavelenstep):
         """
         Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
 

@@ -60,7 +60,7 @@ import os
 import warnings
 import numpy
 import gzip
-from lsst.sims.photUtils import PhotometricDefaults
+from lsst.sims.photUtils import PhysicalParameters
 from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation.
 
 __all__ = ["Bandpass"]
@@ -83,17 +83,17 @@ class Bandpass:
         """
         if wavelen_min is None:
             if wavelen is None:
-                wavelen_min = PhotometricDefaults.minwavelen
+                wavelen_min = PhysicalParameters.minwavelen
             else:
                 wavelen_min = wavelen.min()
         if wavelen_max is None:
             if wavelen is None:
-                wavelen_max = PhotometricDefaults.maxwavelen
+                wavelen_max = PhysicalParameters.maxwavelen
             else:
                 wavelen_max = wavelen.max()
         if wavelen_step is None:
             if wavelen is None:
-                wavelen_step = PhotometricDefaults.wavelenstep
+                wavelen_step = PhysicalParameters.wavelenstep
             else:
                 wavelen_step = numpy.diff(wavelen).min()
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
