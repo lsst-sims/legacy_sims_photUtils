@@ -8,9 +8,9 @@ from lsst.sims.photUtils import Bandpass, Sed, PhotometricParameters, \
 
 class PhotometricParametersUnitTest(unittest.TestCase):
 
-    def testAssignment(self):
+    def testInit(self):
         """
-        Test that the getters and setters of PhotometricParameters work
+        Test that the init and getters of PhotometricParameters work
         properly
         """
         defaults = PhotometricParameters()
@@ -32,6 +32,74 @@ class PhotometricParametersUnitTest(unittest.TestCase):
                                         testCase.__getattribute__(pp))
 
                     self.assertEqual(testCase.__getattribute__(pp), -100.0)
+
+
+    def testAssignment(self):
+        """
+        Test that it is impossible to set PhotometricParameters on the fly
+        """
+        testCase = PhotometricParameters()
+        controlCase = PhotometricParameters()
+        success = 0
+
+        msg = ''
+        try:
+            testCase.exptime = -1.0
+            success += 1
+            msg += 'was able to assign exptime; '
+        except:
+            self.assertEqual(testCase.exptime, controlCase.exptime)
+
+        try:
+            testCase.nexp = -1.0
+            success += 1
+            msg += 'was able to assign nexp; '
+        except:
+            self.assertEqual(testCase.nexp, controlCase.nexp)
+
+        try:
+            testCase.effarea = -1.0
+            success += 1
+            msg += 'was able to assign effarea; '
+        except:
+            self.assertEqual(testCase.effarea, controlCase.effarea)
+
+        try:
+            testCase.gain = -1.0
+            success += 1
+            msg += 'was able to assign gain; '
+        except:
+            self.assertEqual(testCase.gain, controlCase.gain)
+
+        try:
+            testCase.readnoise = -1.0
+            success += 1
+            msg += 'was able to assign readnoise; '
+        except:
+            self.assertEqual(testCase.readnoise, controlCase.readnoise)
+
+        try:
+            testCase.darkcurrent = -1.0
+            success += 1
+            msg += 'was able to assign darkcurrent; '
+        except:
+            self.assertEqual(testCase.darkcurrent, controlCase.darkcurrent)
+
+        try:
+            testCase.othernoise = -1.0
+            success += 1
+            msg += 'was able to assign othernoise; '
+        except:
+            self.assertEqual(testCase.othernoise, controlCase.othernoise)
+
+        try:
+            testCase.platescale = -1.0
+            success += 1
+            msg += 'was able to assign platescale; '
+        except:
+            self.assertEqual(testCase.platescale, controlCase.platescale)
+
+        self.assertEqual(success,0)
 
 
     def testApplication(self):
