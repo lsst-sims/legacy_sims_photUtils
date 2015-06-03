@@ -99,7 +99,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
         except:
             self.assertEqual(testCase.platescale, controlCase.platescale)
 
-        self.assertEqual(success,0)
+        self.assertEqual(success, 0, msg=msg)
 
 
     def testApplication(self):
