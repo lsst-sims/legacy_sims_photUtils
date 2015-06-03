@@ -87,7 +87,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 import warnings
 import numpy
 import gzip
-from lsst.sims.photUtils import LSSTdefaults, PhysicalParameters, PhotometricParameters
+from lsst.sims.photUtils import LSSTdefaults, PhysicalParameters
 
 __all__ = ["Sed"]
 
@@ -654,7 +654,7 @@ class Sed(object):
     ## routines related to magnitudes and fluxes
 
     def calcADU(self, bandpass, wavelen=None, fnu=None,
-                photParams=PhotometricParameters()):
+                photParams=None):
         """
         Calculate the number of adu from camera, using sb and fnu.
 
@@ -673,8 +673,13 @@ class Sed(object):
 
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        photometric response of the telescope.
         """
+
+        if photParams is None:
+            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
+                               "calcADU")
+
         use_self = self._checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function.
         if use_self:
@@ -966,23 +971,28 @@ class Sed(object):
         """
         return 2.436*(seeing/platescale)**2
 
-    def calcInstrNoiseSqElectrons(self, photParams=PhotometricParameters()):
+    def calcInstrNoiseSqElectrons(self, photParams=None):
         """
         Combine all of the noise due to intrumentation into one value
 
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        photometric response of the telescope.
 
         @param [out] The noise due to all of these sources added in quadrature
         in electrons
         """
+
+        if photParams is None:
+            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
+                               "calcInstrNoiseSqElectrons")
+
         return photParams.nexp*photParams.readnoise**2 + \
                photParams.darkcurrent*photParams.exptime*photParams.nexp + \
                photParams.nexp*photParams.othernoise**2
 
     def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, seeing,
-                             photParams=PhotometricParameters()):
+                             photParams=None):
         """
         Calculate the noise due to things that are not the source being observed
         (i.e. intrumentation and sky background)
@@ -996,7 +1006,7 @@ class Sed(object):
 
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        photometric response of the telescope.
 
         @param [out] total noise squared (in ADU)
 
@@ -1011,6 +1021,10 @@ class Sed(object):
 
         #This method outputs all of the parameters calculated along the way
         #so that the verbose version of calcSNR_psf still works
+
+        if photParams is None:
+            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
+                               "calcNonSourceNoiseSq")
 
         #Calculate the effective number of pixels for double-Gaussian PSF
         neff = self.calcNeff(seeing, photParams.platescale)
@@ -1037,7 +1051,7 @@ class Sed(object):
 
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass,
                     seeing=None,
-                    photParams=PhotometricParameters(),
+                    photParams=None,
                     verbose=False):
         """
         Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
@@ -1059,12 +1073,16 @@ class Sed(object):
 
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
-        photometric response of the telescope.  Defaults to LSST values.
+        photometric response of the telescope.
 
         @param [in] verbose is a boolean
 
         @param [out] signal to noise ratio
         """
+
+        if photParams is None:
+            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
+                               "calcSNR_psf")
 
         if seeing is None:
             seeing = _seeingDefaults.seeing('r')

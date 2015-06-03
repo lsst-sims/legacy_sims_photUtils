@@ -48,7 +48,8 @@ class PhotometricParametersUnitTest(unittest.TestCase):
         testBandpass.readThroughput(os.path.join(eups.productDir('throughputs'),
                                                  'baseline','total_g.dat'))
 
-        control = testSed.calcADU(testBandpass)
+        control = testSed.calcADU(testBandpass,
+                                  photParams=PhotometricParameters())
 
         testCase = PhotometricParameters(exptime=30.0)
 

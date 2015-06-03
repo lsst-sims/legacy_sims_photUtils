@@ -13,7 +13,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase
-from lsst.sims.photUtils import LSSTdefaults, setM5, calcSNR_gamma, calcGamma
+from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, setM5, calcSNR_gamma, calcGamma
 from lsst.sims.photUtils.utils import testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
@@ -623,13 +623,16 @@ class uncertaintyUnitTest(unittest.TestCase):
             skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
-                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]))
+                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                       photParams=PhotometricParameters())
+
             skySeds.append(normalizedSkyDummy)
 
         sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata)
         for i in range(len(self.bandpasses)):
             snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
-                                           seeing=LSSTdefaults().seeing(self.bandpasses[i]))
+                                           seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                           photParams=PhotometricParameters())
 
             ss = 2.5*numpy.log10(1.0+1.0/snr)
             msg = '%e is not %e; failed' % (ss, sigma[i])
@@ -654,17 +657,19 @@ class uncertaintyUnitTest(unittest.TestCase):
             skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
-                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]))
+                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                                       photParams=PhotometricParameters())
 
             skySeds.append(normalizedSkyDummy)
 
         sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
         for i in range(len(self.bandpasses)):
             snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
-                                           seeing=LSSTdefaults().seeing(self.bandpasses[i]))
+                                           seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                           photParams=PhotometricParameters())
 
             testSNR, gamma = calcSNR_gamma(numpy.array([numpy.power(10.0,-0.4*magnitudes[i])]), [self.totalBandpasses[i]],
-                                           numpy.array([m5[i]]))
+                                           numpy.array([m5[i]]), photParams=PhotometricParameters())
 
             self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_gamma test %e != %e ' \
                                                                % (snr, testSNR[0]))

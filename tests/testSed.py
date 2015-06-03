@@ -6,7 +6,7 @@ import eups
 import lsst.utils.tests as utilsTests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
-from lsst.sims.photUtils import setM5, calcM5
+from lsst.sims.photUtils import setM5, calcM5, PhotometricParameters
 
 class TestSedWavelenLimits(unittest.TestCase):
     def setUp(self):
@@ -77,7 +77,8 @@ class TestSedWavelenLimits(unittest.TestCase):
         self.assertTrue(np.isnan(mag))
         # Test handling in calcADU
         with warnings.catch_warnings(record=True) as w:
-            adu = testsed.calcADU(self.testbandpass)
+            adu = testsed.calcADU(self.testbandpass,
+                                  photParams=PhotometricParameters())
             self.assertEqual(len(w), 1)
             self.assertTrue("non-overlap" in str(w[-1].message))
         self.assertTrue(np.isnan(adu))
@@ -145,8 +146,10 @@ class TestM5(unittest.TestCase):
                 skysed = Sed()
                 skysed.readSED_flambda(skysedName)
 
-                normalizedSkySed = setM5(m, skysed, totalBandpass, hardwareBandpass)
-                m5Result = calcM5(normalizedSkySed, totalBandpass, hardwareBandpass)
+                normalizedSkySed = setM5(m, skysed, totalBandpass, hardwareBandpass,
+                                         photParams=PhotometricParameters())
+                m5Result = calcM5(normalizedSkySed, totalBandpass, hardwareBandpass,
+                                  photParams=PhotometricParameters())
                 self.assertAlmostEqual(m/m5Result, 1.0, 5)
 
 def suite():
