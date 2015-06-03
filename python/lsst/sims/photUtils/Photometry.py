@@ -15,7 +15,7 @@ import numpy
 import eups
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
-                                calcSNR_gamma
+                                calcSNR_gamma, PhotometricParameters
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -199,6 +199,10 @@ class PhotometryBase(PhotometryHardware):
     """
 
     sig2sys = None #square of systematic noise associated with this catalog
+
+    #an object carrying around photometric parameters like readnoise, effective area, plate scale, etc.
+    #defaults to LSST values
+    photParams = PhotometricParameters()
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self, sedList, magNorm=None, resample_same=False, specFileMap=None):
@@ -407,7 +411,8 @@ class PhotometryBase(PhotometryHardware):
             for b in self.bandpassDict.keys():
                 if b in obs_metadata.m5:
                     mm.append(obs_metadata.m5[b])
-                    gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b]))
+                    gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b],
+                              photParams=self.photParams))
                 else:
                     if m5Defaults is None:
                         m5Defaults = LSSTdefaults()
@@ -422,7 +427,7 @@ class PhotometryBase(PhotometryHardware):
             self._gammaList = numpy.array(gg)
 
         snr, gamma = calcSNR_gamma(fluxes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
-                                   sig2sys=sig2sys)
+                                   sig2sys=sig2sys, photParams=self.photParams)
 
         return snr
 
