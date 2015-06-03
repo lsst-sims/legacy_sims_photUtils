@@ -136,6 +136,7 @@ class PhysicalParametersUnitTest(unittest.TestCase):
         """
 
         pp = PhysicalParameters()
+        control = PhysicalParameters()
         success = 0
         msg = ''
 
@@ -144,49 +145,49 @@ class PhysicalParametersUnitTest(unittest.TestCase):
             success += 1
             msg += 'was able to assign minwavelen; '
         except:
-            pass
+            self.assertEqual(pp.minwavelen, control.minwavelen)
 
         try:
             pp.maxwavelen = 2.0
             success += 1
             msg += 'was able to assign maxwavelen; '
         except:
-            pass
+            self.assertEqual(pp.maxwavelen, control.maxwavelen)
 
         try:
             pp.wavelenstep = 2.0
             success += 1
             msg += 'was able to assign wavelenstep; '
         except:
-            pass
+            self.assertEqual(pp.wavelenstep, control.wavelenstep)
 
         try:
             pp.lightspeed = 2.0
             success += 1
             msg += 'was able to assign lightspeed; '
         except:
-            pass
+            self.assertEqual(pp.lightspeed, control.lightspeed)
 
         try:
             pp.planck = 2.0
             success += 1
             msg += 'was able to assign planck; '
         except:
-            pass
+            self.assertEqual(pp.planck, control.planck)
 
         try:
             pp.nm2m = 2.0
             success += 1
             msg += 'was able to assign nm2m; '
         except:
-            pass
+            self.assertEqual(pp.nm2m, control.nm2m)
 
         try:
             pp.ergsetc2jansky = 2.0
             msg += 'was able to assign ergsetc2jansky; '
             success += 1
         except:
-            pass
+            self.assertEqual(pp.ergsetc2jansky, control.ergsetc2jansky)
 
         self.assertEqual(success, 0, msg=msg)
 
