@@ -56,7 +56,8 @@ class PhotometricParameters(object):
 
     @exptime.setter
     def exptime(self, value):
-        self._exptime=value
+        raise RuntimeError("You should not be setting exptime on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
 
     @property
@@ -68,7 +69,8 @@ class PhotometricParameters(object):
 
     @nexp.setter
     def nexp(self, value):
-        self._nexp=value
+        raise RuntimeError("You should not be setting nexp on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
 
     @property
@@ -80,7 +82,8 @@ class PhotometricParameters(object):
 
     @effarea.setter
     def effarea(self, value):
-        self._effarea=value
+        raise RuntimeError("You should not be setting effarea on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
 
     @property
@@ -92,7 +95,8 @@ class PhotometricParameters(object):
 
     @gain.setter
     def gain(self, value):
-        self._gain=value
+        raise RuntimeError("You should not be setting gain on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
 
     @property
@@ -104,7 +108,8 @@ class PhotometricParameters(object):
 
     @platescale.setter
     def platescale(self, value):
-        self._platescale=value
+        raise RuntimeError("You should not be setting platescale on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
 
     @property
@@ -116,7 +121,8 @@ class PhotometricParameters(object):
 
     @readnoise.setter
     def readnoise(self, value):
-        self._readnoise=value
+        raise RuntimeError("You should not be setting readnoise on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
 
     @property
@@ -128,7 +134,8 @@ class PhotometricParameters(object):
 
     @darkcurrent.setter
     def darkcurrent(self, value):
-        self._darkcurrent=value
+        raise RuntimeError("You should not be setting darkcurrent on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
 
     @property
@@ -140,5 +147,6 @@ class PhotometricParameters(object):
 
     @othernoise.setter
     def othernoise(self,value):
-        self._othernoise=value
+        raise RuntimeError("You should not be setting othernoise on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
