@@ -108,7 +108,10 @@ class Sed(object):
         self.badval = badval
 
         self._physParams = PhysicalParameters()
-        self._seedingDefaults = LSSTdefaults()
+
+        #LSSTdefaults carries default values of several photometric parameters.
+        #The one we are using here is the seeing in the LSST bands
+        self._seeingDefaults = LSSTdefaults()._seeing
 
         # If init was given data to initialize class, use it.
         if (wavelen is not None) and ((flambda is not None) or (fnu is not None)):
@@ -1085,7 +1088,7 @@ class Sed(object):
                                "calcSNR_psf")
 
         if seeing is None:
-            seeing = _seeingDefaults.seeing('r')
+            seeing = _seeingDefaults['r']
 
         # Calculate the counts from the source.
         sourcecounts = self.calcADU(totalbandpass, photParams=photParams)
