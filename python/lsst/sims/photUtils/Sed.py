@@ -695,6 +695,23 @@ class Sed(object):
               (1/self._physParams.planck) * dlambda
         return adu
 
+    def fluxFromMag(self, mag):
+        """
+        Convert a magnitude back into a flux (implies knowledge of the zeropoint, which is
+        stored in this class)
+        """
+
+        return numpy.power(10.0, -0.4*(mag + self.zp))
+
+
+    def magFromFlux(self, flux):
+        """
+        Convert a flux into a magnitude (implies knowledge of the zeropoint, which is stored
+        in this class)
+        """
+
+        return -2.5*numpy.log10(flux) - self.zp
+
 
     def calcMag(self, bandpass, wavelen=None, fnu=None):
         """
@@ -731,7 +748,7 @@ class Sed(object):
         flux = (fnu*bandpass.phi).sum() * dlambda
         if flux < 1e-300:
             raise Exception("This SED has no flux within this bandpass.")
-        mag = -2.5 * numpy.log10(flux) - self.zp
+        mag = self.magFromFlux(flux)
         return mag
 
     def calcFlux(self, bandpass, wavelen=None, fnu=None):

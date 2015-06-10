@@ -297,7 +297,7 @@ def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=Non
 
         gamma = numpy.array(gg)
 
-    m5Fluxes = numpy.array(numpy.power(10.0, -0.4*m5))
+    m5Fluxes = Sed().fluxFromMag(m5)
 
     noise = []
     for (gg, mf, ff) in zip(gamma, m5Fluxes, fluxes):

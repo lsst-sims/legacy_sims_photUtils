@@ -446,7 +446,7 @@ class PhotometryBase(PhotometryHardware):
         @param [out] an array of magnitude uncertainties corresponding to the input magnitudes
         """
 
-        snr = self.calculateFluxSignalToNoise(numpy.power(10.0, -0.4*magnitudes),
+        snr = self.calculateFluxSignalToNoise(Sed().fluxFromMag(magnitudes),
                                               obs_metadata=obs_metadata, sigmaSysSq=sigmaSysSq)
 
         #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1

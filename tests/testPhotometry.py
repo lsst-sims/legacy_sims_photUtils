@@ -671,7 +671,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                                            seeing=LSSTdefaults().seeing(self.bandpasses[i]),
                                            photParams=PhotometricParameters())
 
-            testSNR, gamma = calcSNR_gamma(numpy.array([numpy.power(10.0,-0.4*magnitudes[i])]), [self.totalBandpasses[i]],
+            testSNR, gamma = calcSNR_gamma(numpy.array([Sed().fluxFromMag(magnitudes[i])]), [self.totalBandpasses[i]],
                                            numpy.array([m5[i]]), photParams=PhotometricParameters())
 
             self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_gamma test %e != %e ' \
