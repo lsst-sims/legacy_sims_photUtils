@@ -656,8 +656,7 @@ class Sed(object):
 
     ## routines related to magnitudes and fluxes
 
-    def calcADU(self, bandpass, wavelen=None, fnu=None,
-                photParams=None):
+    def calcADU(self, bandpass, photParams, wavelen=None, fnu=None):
         """
         Calculate the number of adu from camera, using sb and fnu.
 
@@ -667,6 +666,10 @@ class Sed(object):
 
         @param [in] bandpass is an instantiation of the Bandpass class
 
+        @param [in] photParams is an instantiation of the
+        PhotometricParameters class that carries details about the
+        photometric response of the telescope.
+
         @param [in] wavelen (optional) is the wavelength grid in nm
 
         @param [in] fnu (optional) is the flux in Janskys
@@ -674,14 +677,7 @@ class Sed(object):
         If wavelen and fnu are not specified, this will just use self.wavelen and
         self.fnu
 
-        @param [in] photParams is an instantiation of the
-        PhotometricParameters class that carries details about the
-        photometric response of the telescope.
         """
-
-        if photParams is None:
-            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                               "calcADU")
 
         use_self = self._checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function.
@@ -974,7 +970,7 @@ class Sed(object):
         """
         return 2.436*(seeing/platescale)**2
 
-    def calcInstrNoiseSqElectrons(self, photParams=None):
+    def calcInstrNoiseSqElectrons(self, photParams):
         """
         Combine all of the noise due to intrumentation into one value
 
@@ -986,16 +982,12 @@ class Sed(object):
         in electrons
         """
 
-        if photParams is None:
-            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                               "calcInstrNoiseSqElectrons")
-
         return photParams.nexp*photParams.readnoise**2 + \
                photParams.darkcurrent*photParams.exptime*photParams.nexp + \
                photParams.nexp*photParams.othernoise**2
 
     def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, seeing,
-                             photParams=None):
+                             photParams):
         """
         Calculate the noise due to things that are not the source being observed
         (i.e. intrumentation and sky background)
@@ -1025,10 +1017,6 @@ class Sed(object):
         #This method outputs all of the parameters calculated along the way
         #so that the verbose version of calcSNR_psf still works
 
-        if photParams is None:
-            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                               "calcNonSourceNoiseSq")
-
         #Calculate the effective number of pixels for double-Gaussian PSF
         neff = self.calcNeff(seeing, photParams.platescale)
 
@@ -1053,8 +1041,8 @@ class Sed(object):
         return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
 
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass,
+                    photParams,
                     seeing=None,
-                    photParams=None,
                     verbose=False):
         """
         Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
@@ -1072,20 +1060,16 @@ class Sed(object):
         @param [in] hardwarebandpass is an instantiation of the Bandpass class
         representing just the throughput of the system hardware.
 
-        @param [in] seeing in arcseconds
-
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
         photometric response of the telescope.
+
+        @param [in] seeing in arcseconds
 
         @param [in] verbose is a boolean
 
         @param [out] signal to noise ratio
         """
-
-        if photParams is None:
-            raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                               "calcSNR_psf")
 
         if seeing is None:
             seeing = _seeingDefaults['r']

@@ -5,9 +5,8 @@ from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcM5", "expectedSkyCountsForM5", "setM5", "calcGamma", "calcSNR_gamma"]
 
-def expectedSkyCountsForM5(m5target, totalBandpass,
-                           seeing = None,
-                           photParams=None):
+def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
+                           seeing = None):
 
     """
     Calculate the number of sky counts per pixel expected for a given
@@ -27,18 +26,14 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     representing the total throughput of the telescope (instrumentation
     plus atmosphere)
 
-    @param [in] seeing in arcseconds
-
     @param [in] photParams is an instantiation of the
     PhotometricParameters class that carries details about the
     photometric response of the telescope.
 
+    @param [in] seeing in arcseconds
+
     @param [out] returns the expected number of sky counts per pixel
     """
-
-    if photParams is None:
-        raise RuntimeError("need to pass an instantiation of PhotometricParameters " +
-                           "to expectedCountsFromM5")
 
     if seeing is None:
         seeing = LSSTdefaults().seeing('r')
@@ -79,8 +74,8 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
 
 
 def setM5(m5target, skysed, totalBandpass, hardware,
-          seeing = None,
-          photParams=None):
+          photParams,
+          seeing = None):
     """
     Take an SED representing the sky and normalize it so that
     m5 (the magnitude at which an object is detected in this
@@ -106,11 +101,11 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     @param [in] hardware is an instantiation of the Bandpass class representing
     the throughput due solely to instrumentation.
 
-    @param [in] seeing in arcseconds
-
     @param [in] photParams is an instantiation of the
     PhotometricParameters class that carries details about the
     photometric response of the telescope.
+
+    @param [in] seeing in arcseconds
 
     @param [out] returns an instantiation of the Sed class that is the skysed renormalized
     so that m5 has the desired value.
@@ -122,10 +117,6 @@ def setM5(m5target, skysed, totalBandpass, hardware,
 
     #This is based on the LSST SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
-
-    if photParams is None:
-        raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                           "setM5")
 
     if seeing is None:
         seeing = LSSTdefaults().seeing('r')
@@ -142,8 +133,7 @@ def setM5(m5target, skysed, totalBandpass, hardware,
 
     return skySedOut
 
-def calcM5(skysed, totalBandpass, hardware, seeing=None,
-           photParams=None):
+def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     """
     Calculate the AB magnitude of a 5-sigma above sky background source.
 
@@ -163,20 +153,16 @@ def calcM5(skysed, totalBandpass, hardware, seeing=None,
     @param [in] hardware is an instantiation of the Bandpass class representing
     the throughput due solely to instrumentation.
 
-    @param [in] seeing in arcseconds
-
     @param [in] photParams is an instantiation of the
     PhotometricParameters class that carries details about the
     photometric response of the telescope.
+
+    @param [in] seeing in arcseconds
 
     @param [out] returns the value of m5 for the given bandpass and sky SED
     """
     #This comes from equation 45 of the SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
-
-    if photParams is None:
-        raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                           "calcM5")
 
     if seeing is None:
         seeing = LSSTdefaults().seeing('r')
@@ -202,8 +188,7 @@ def calcM5(skysed, totalBandpass, hardware, seeing=None,
     mag_5sigma = flatsource.calcMag(totalBandpass)
     return mag_5sigma
 
-def calcGamma(bandpass, m5,
-              photParams=None):
+def calcGamma(bandpass, m5, photParams):
 
     """
     Calculate the gamma parameter used for determining photometric
@@ -226,10 +211,6 @@ def calcGamma(bandpass, m5,
     #This is based on the LSST SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
     #as well as equations 4-6 of the overview paper (arXiv:0805.2366)
-
-    if photParams is None:
-        raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                           "calcGamma")
 
     #instantiate a flat SED
     flatSed = Sed()
@@ -265,8 +246,7 @@ def calcGamma(bandpass, m5,
 
     return gamma
 
-def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
-                  photParams=None):
+def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sig2sys=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
@@ -279,14 +259,14 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
 
     @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
 
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
     @param [in] sig2sys is the square of the systematic signal to noise ratio.
-
-    @param [in] photParams is an instantiation of the
-    PhotometricParameters class that carries details about the
-    photometric response of the telescope.
 
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
     the input fluxes.
@@ -294,10 +274,6 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     @param [out] gamma is a numpy array of the calculated gamma parameters for the
     bandpasses used here (in case the user wants to call this method again.
     """
-
-    if photParams is None:
-        raise RuntimeError("Need to pass an instantiation of PhotometricParameters to " +
-                           "calcSNR_gamma")
 
     if fluxes.shape[0] != len(bandpasses):
         raise RuntimeError("Passed %d magnitudes to " % fluxes.shape[0] + \
