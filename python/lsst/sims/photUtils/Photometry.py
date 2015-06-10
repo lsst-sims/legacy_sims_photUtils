@@ -198,7 +198,7 @@ class PhotometryBase(PhotometryHardware):
     dict keeyed to the array of bandpass keys stored in self.bandpassKey
     """
 
-    sig2sys = None #square of systematic noise associated with this catalog
+    sigmaSysSq = None #square of systematic noise associated with this catalog
 
     #an object carrying around photometric parameters like readnoise, effective area, plate scale, etc.
     #defaults to LSST values
@@ -375,7 +375,7 @@ class PhotometryBase(PhotometryHardware):
 
         return magList
 
-    def calculateFluxSignalToNoise(self, fluxes, obs_metadata=None, sig2sys=None):
+    def calculateFluxSignalToNoise(self, fluxes, obs_metadata=None, sigmaSysSq=None):
         """
         Calculate the signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
@@ -387,7 +387,7 @@ class PhotometryBase(PhotometryHardware):
         it will contain information about m5, the magnitude at which objects are detected
         at the 5-sigma limit in each bandpass)
 
-        @param [in] sig2sys the square of the systematic noise in flux
+        @param [in] sigmaSysSq the square of the systematic noise in flux
 
         @param [out] snr is a 1-dimensional numpy array containing the signal-to-noise in flux
         corresponding to the fluxes passed into this method.
@@ -427,12 +427,12 @@ class PhotometryBase(PhotometryHardware):
             self._gammaList = numpy.array(gg)
 
         snr, gamma = calcSNR_gamma(fluxes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
-                                   sig2sys=sig2sys, photParams=self.photParams)
+                                   sigmaSysSq=sigmaSysSq, photParams=self.photParams)
 
         return snr
 
 
-    def calculateMagnitudeUncertainty(self, magnitudes, obs_metadata=None, sig2sys=None):
+    def calculateMagnitudeUncertainty(self, magnitudes, obs_metadata=None, sigmaSysSq=None):
         """
         Calculate the uncertainty in magnitude
 
@@ -441,13 +441,13 @@ class PhotometryBase(PhotometryHardware):
 
         @param [in] obs_metadata is an instantiation of the ObservationMetaData class
 
-        @param [in] sig2sys is the square of the systematic signal to noise in flux
+        @param [in] sigmaSysSq is the square of the systematic signal to noise in flux
 
         @param [out] an array of magnitude uncertainties corresponding to the input magnitudes
         """
 
         snr = self.calculateFluxSignalToNoise(numpy.power(10.0, -0.4*magnitudes),
-                                              obs_metadata=obs_metadata, sig2sys=sig2sys)
+                                              obs_metadata=obs_metadata, sigmaSysSq=sigmaSysSq)
 
         #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
         return 2.5*numpy.log10(1.0+1.0/snr)
@@ -906,7 +906,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('lsst_y')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                    sig2sys=self.sig2sys)
+                                                    sigmaSysSq=self.sigmaSysSq)
 
     @compound('sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge',
               'sigma_iBulge', 'sigma_zBulge', 'sigma_yBulge')
@@ -922,7 +922,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('yBulge')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
     @compound('sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk',
               'sigma_iDisk', 'sigma_zDisk', 'sigma_yDisk')
@@ -938,7 +938,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('yDisk')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
     @compound('sigma_uAgn', 'sigma_gAgn', 'sigma_rAgn',
               'sigma_iAgn', 'sigma_zAgn', 'sigma_yAgn')
@@ -954,7 +954,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('yAgn')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
     @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
               'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
@@ -1105,7 +1105,7 @@ class PhotometryStars(PhotometryBase):
                                   self.column_by_name('lsst_y')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')

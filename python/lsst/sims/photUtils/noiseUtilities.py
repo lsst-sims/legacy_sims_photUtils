@@ -246,7 +246,7 @@ def calcGamma(bandpass, m5, photParams):
 
     return gamma
 
-def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sig2sys=None):
+def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
@@ -266,7 +266,7 @@ def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sig2sys=None):
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
-    @param [in] sig2sys is the square of the systematic signal to noise ratio.
+    @param [in] sigmaSysSq is the square of the systematic signal to noise ratio.
 
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
     the input fluxes.
@@ -303,8 +303,8 @@ def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sig2sys=None):
     for (gg, mf, ff) in zip(gamma, m5Fluxes, fluxes):
         fluxRatio = mf/ff
 
-        if sig2sys is not None:
-            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio + sig2sys
+        if sigmaSysSq is not None:
+            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio + sigmaSysSq
         else:
             sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
 

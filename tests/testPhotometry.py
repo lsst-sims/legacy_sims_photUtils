@@ -645,7 +645,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         """
         Test that systematic uncertainty is added correctly.
         """
-        sig2sys = 0.002
+        sigmaSysSq = 0.002
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
 
         phot = PhotometryBase()
@@ -665,7 +665,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
             skySeds.append(normalizedSkyDummy)
 
-        sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata, sig2sys=sig2sys)
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata, sigmaSysSq=sigmaSysSq)
         for i in range(len(self.bandpasses)):
             snr = self.starSED.calcSNR_psf(self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                                            seeing=LSSTdefaults().seeing(self.bandpasses[i]),
@@ -677,7 +677,7 @@ class uncertaintyUnitTest(unittest.TestCase):
             self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_gamma test %e != %e ' \
                                                                % (snr, testSNR[0]))
 
-            control = 1.0/(snr*snr) + sig2sys
+            control = 1.0/(snr*snr) + sigmaSysSq
             test = numpy.power(numpy.power(10.0, sigma[i]/2.5) -1.0, 2)
 
             msg = '%e is not %e; failed' % (test, control)
