@@ -109,10 +109,6 @@ class Sed(object):
 
         self._physParams = PhysicalParameters()
 
-        #LSSTdefaults carries default values of several photometric parameters.
-        #The one we are using here is the seeing in the LSST bands
-        self._seeingDefaults = LSSTdefaults()._seeing
-
         # If init was given data to initialize class, use it.
         if (wavelen is not None) and ((flambda is not None) or (fnu is not None)):
             if name is None:
@@ -1041,9 +1037,7 @@ class Sed(object):
         return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
 
     def calcSNR_psf(self, totalbandpass, skysed, hardwarebandpass,
-                    photParams,
-                    seeing=None,
-                    verbose=False):
+                    photParams, seeing, verbose=False):
         """
         Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
 
@@ -1070,9 +1064,6 @@ class Sed(object):
 
         @param [out] signal to noise ratio
         """
-
-        if seeing is None:
-            seeing = _seeingDefaults['r']
 
         # Calculate the counts from the source.
         sourcecounts = self.calcADU(totalbandpass, photParams=photParams)
