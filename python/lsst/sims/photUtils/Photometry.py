@@ -37,7 +37,7 @@ class PhotometryHardware(object):
     bandpassDict = None #total (hardware plus atmosphere) bandpasses loaded in this particular catalog;
                         #will be an OrderedDict
     hardwareBandpassDict = None #bandpasses associated with just the telescope hardware
-    skyBandpass = None #bandpass of the atmosphere
+    atmoTransmission = None #atmospheric transmissivity (will be an instantiation of the Bandpass class)
     nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
 
     skySED = None #the emission spectrum of the atmosphere
@@ -50,7 +50,7 @@ class PhotometryHardware(object):
                                 bandpassRoot = 'filter_',
                                 componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                                                  'lens1.dat', 'lens2.dat', 'lens3.dat'],
-                                skyBandpass='atmos.dat', skySED='darksky.dat'):
+                                atmoTransmission='atmos.dat', skySED='darksky.dat'):
         """
         Load bandpass information from files.  This method will separate the bandpasses
         into contributions due to instrumentations and contributions due to the atmosphere.
@@ -72,8 +72,8 @@ class PhotometryHardware(object):
                       'lense2.dat', 'lenst3.dat']
         for LSST).  These files are also expected to be stored in filedir
 
-        @param [in] skyBandpass is the name of the file representing the
-        throughput of the atmosphere (also assumed to be in filedir)
+        @param [in] atmoTransmission is the name of the file representing the
+        transmissivity of the atmosphere (also assumed to be in filedir)
 
         @param [in] skySED is the name of the file representing the emission
         spectrum of the atmosphere (also assumed to be in filedir)
@@ -81,7 +81,7 @@ class PhotometryHardware(object):
         This method loads these files and stores:
         total bandpasses in self.bandpassDict
         hardware bandpasses in self.hardwareBandpassDict
-        throughput of the atmosphere in self.skyBandpass
+        transmissivity of the atmosphere in self.atmoTransmission
         emission spectrum of the atmosphere in self.skySED
 
         This method will also setup the variables
@@ -98,8 +98,8 @@ class PhotometryHardware(object):
         self.skySED = Sed()
         self.skySED.readSED_flambda(os.path.join(filedir, skySED))
 
-        self.skyBandpass = Bandpass()
-        self.skyBandpass.readThroughput(os.path.join(filedir, skyBandpass))
+        self.atmoTransmission = Bandpass()
+        self.atmoTransmission.readThroughput(os.path.join(filedir, atmoTransmission))
 
         commonComponents = []
         for cc in componentList:
@@ -113,7 +113,7 @@ class PhotometryHardware(object):
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.hardwareBandpassDict[w] = bandpassDummy
-            components += [os.path.join(filedir, skyBandpass)]
+            components += [os.path.join(filedir, atmoTransmission)]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.bandpassDict[w] = bandpassDummy
