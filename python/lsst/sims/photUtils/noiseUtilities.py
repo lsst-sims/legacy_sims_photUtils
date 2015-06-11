@@ -1,20 +1,12 @@
 import numpy
 from .Sed import Sed
 from .Bandpass import Bandpass
-from lsst.sims.photUtils import PhotometricDefaults
+from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcM5", "expectedSkyCountsForM5", "setM5", "calcGamma", "calcSNR_gamma"]
 
-def expectedSkyCountsForM5(m5target, totalBandpass,
-                      expTime=PhotometricDefaults.exptime,
-                      nexp=PhotometricDefaults.nexp,
-                      readnoise=PhotometricDefaults.rdnoise,
-                      darkcurrent=PhotometricDefaults.darkcurrent,
-                      othernoise=PhotometricDefaults.othernoise,
-                      seeing=PhotometricDefaults.seeing['r'],
-                      platescale=PhotometricDefaults.platescale,
-                      gain=PhotometricDefaults.gain,
-                      effarea=PhotometricDefaults.effarea):
+def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
+                           seeing = None):
 
     """
     Calculate the number of sky counts per pixel expected for a given
@@ -28,36 +20,23 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
-
     @param [in] the desired value of m5
 
     @param [in] totalBandpass is an instantiation of the Bandpass class
     representing the total throughput of the telescope (instrumentation
     plus atmosphere)
 
-    @param [in] expTime is the duration of a single exposure in seconds
-
-    @param [in] nexp is the number of exposures being combined
-
-    @param [in] readnoise in electrons per pixel per exposure
-
-    @param [in] darkcurrent in electrons per pixel per second
-
-    @param [in] othernoise in electrons per pixel per exposure
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
 
     @param [in] seeing in arcseconds
 
-    @param [in] platescale in arcseconds per pixel
-
-    @param [in] gain in electrons per ADU
-
-    @param [in] effarea is the effective area of the primary mirror in square centimeters
-
     @param [out] returns the expected number of sky counts per pixel
     """
+
+    if seeing is None:
+        seeing = LSSTdefaults().seeing('r')
 
     #instantiate a flat SED
     flatSed = Sed()
@@ -66,23 +45,23 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
     #normalize the SED so that it has a magnitude equal to the desired m5
     fNorm = flatSed.calcFluxNorm(m5target, totalBandpass)
     flatSed.multiplyFluxNorm(fNorm)
-    counts = flatSed.calcADU(totalBandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
+    counts = flatSed.calcADU(totalBandpass, photParams=photParams)
 
     #calculate the effective number of pixels for a double-Gaussian PSF
-    neff = flatSed.calcNeff(seeing, platescale)
+    neff = flatSed.calcNeff(seeing, photParams.platescale)
 
     #calculate the square of the noise due to the instrument
-    noise_instr_sq_electrons = flatSed.calcInstrNoiseSqElectrons(readnoise, darkcurrent, expTime, nexp, othernoise)
+    noise_instr_sq_electrons = flatSed.calcInstrNoiseSqElectrons(photParams=photParams)
 
     #convert to counts
-    noise_instr_sq = noise_instr_sq_electrons/(gain*gain)
+    noise_instr_sq = noise_instr_sq_electrons/(photParams.gain*photParams.gain)
 
     #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
     #given snr=5 and counts as calculated above
-    nSigmaSq = (counts*counts)/25.0 - counts/gain
+    nSigmaSq = (counts*counts)/25.0 - counts/photParams.gain
 
     skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
-    skyCountsTarget = skyNoiseTarget*gain
+    skyCountsTarget = skyNoiseTarget*photParams.gain
 
     #TODO:
     #This method should throw an error if skyCountsTarget is negative
@@ -95,15 +74,8 @@ def expectedSkyCountsForM5(m5target, totalBandpass,
 
 
 def setM5(m5target, skysed, totalBandpass, hardware,
-          expTime=PhotometricDefaults.exptime,
-          nexp=PhotometricDefaults.nexp,
-          readnoise=PhotometricDefaults.rdnoise,
-          darkcurrent=PhotometricDefaults.darkcurrent,
-          othernoise=PhotometricDefaults.othernoise,
-          seeing=PhotometricDefaults.seeing['r'],
-          platescale=PhotometricDefaults.platescale,
-          gain=PhotometricDefaults.gain,
-          effarea=PhotometricDefaults.effarea):
+          photParams,
+          seeing = None):
     """
     Take an SED representing the sky and normalize it so that
     m5 (the magnitude at which an object is detected in this
@@ -117,10 +89,6 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     provided hardware parameters. Using the resulting Sed in the
     'calcM5' method will return this target value for m5.
 
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
-
     @param [in] the desired value of m5
 
     @param [in] skysed is an instantiation of the Sed class representing
@@ -133,23 +101,11 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     @param [in] hardware is an instantiation of the Bandpass class representing
     the throughput due solely to instrumentation.
 
-    @param [in] expTime is the duration of a single exposure in seconds
-
-    @param [in] nexp is the number of exposures being combined
-
-    @param [in] readnoise in electrons per pixel per exposure
-
-    @param [in] darkcurrent in electrons per pixel per second
-
-    @param [in] othernoise in electrons per pixel per exposure
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
 
     @param [in] seeing in arcseconds
-
-    @param [in] platescale in arcseconds per pixel
-
-    @param [in] gain in electrons per ADU
-
-    @param [in] effarea is the effective area of the primary mirror in square centimeters
 
     @param [out] returns an instantiation of the Sed class that is the skysed renormalized
     so that m5 has the desired value.
@@ -162,33 +118,22 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     #This is based on the LSST SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
 
+    if seeing is None:
+        seeing = LSSTdefaults().seeing('r')
 
-    skyCountsTarget = expectedSkyCountsForM5(m5target, totalBandpass,
-                                             expTime=expTime,
-                                             nexp=nexp,
-                                             readnoise=readnoise,
-                                             darkcurrent=darkcurrent,
-                                             othernoise=othernoise,
-                                             seeing=seeing,
-                                             platescale=platescale,
-                                             gain=gain,
-                                             effarea=effarea)
+    skyCountsTarget = expectedSkyCountsForM5(m5target, totalBandpass, seeing=seeing,
+                                             photParams=photParams)
 
     skySedOut = Sed(wavelen=numpy.copy(skysed.wavelen),
                     flambda=numpy.copy(skysed.flambda))
 
-    skyCounts = skySedOut.calcADU(hardware, expTime=expTime*nexp, effarea=effarea, gain=gain) \
-                    * platescale * platescale
+    skyCounts = skySedOut.calcADU(hardware, photParams=photParams) \
+                    * photParams.platescale * photParams.platescale
     skySedOut.multiplyFluxNorm(skyCountsTarget/skyCounts)
 
     return skySedOut
 
-def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
-           nexp=PhotometricDefaults.nexp, readnoise=PhotometricDefaults.rdnoise,
-           darkcurrent=PhotometricDefaults.darkcurrent,
-           othernoise=PhotometricDefaults.othernoise,
-           seeing=PhotometricDefaults.seeing['r'], platescale=PhotometricDefaults.platescale,
-           gain=PhotometricDefaults.gain, effarea=PhotometricDefaults.effarea):
+def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     """
     Calculate the AB magnitude of a 5-sigma above sky background source.
 
@@ -197,10 +142,6 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     of the mirrors and the readnoise) together with the sky background. This
     method (calcM5) calculates the expected m5 value for an observation given
     a sky background Sed and hardware parameters.
-
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
 
     @param [in] skysed is an instantiation of the Sed class representing
     sky emission
@@ -212,28 +153,19 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     @param [in] hardware is an instantiation of the Bandpass class representing
     the throughput due solely to instrumentation.
 
-    @param [in] expTime is the duration of a single exposure in seconds
-
-    @param [in] nexp is the number of exposures being combined
-
-    @param [in] readnoise in electrons per pixel per exposure
-
-    @param [in] darkcurrent in electrons per pixel per second
-
-    @param [in] othernoise in electrons per pixel per exposure
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
 
     @param [in] seeing in arcseconds
-
-    @param [in] platescale in arcseconds per pixel
-
-    @param [in] gain in electrons per ADU
-
-    @param [in] effarea is the effective area of the primary mirror in square centimeters
 
     @param [out] returns the value of m5 for the given bandpass and sky SED
     """
     #This comes from equation 45 of the SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+
+    if seeing is None:
+        seeing = LSSTdefaults().seeing('r')
 
     #create a flat fnu source
     flatsource = Sed()
@@ -241,36 +173,26 @@ def calcM5(skysed, totalBandpass, hardware, expTime=PhotometricDefaults.exptime,
     snr = 5.0
     v_n, noise_instr_sq, \
     noise_sky_sq, noise_skymeasurement_sq, \
-    skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardware, readnoise,
-                                                      darkcurrent, othernoise, seeing,
-                                                      effarea, expTime, nexp, platescale,
-                                                      gain)
+    skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardware, photParams, seeing)
 
-    counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
+    counts_5sigma = (snr**2)/2.0/photParams.gain + \
+                     numpy.sqrt((snr**4)/4.0/photParams.gain + (snr**2)*v_n)
 
     #renormalize flatsource so that it has the required counts to be a 5-sigma detection
     #given the specified background
-    counts_flat = flatsource.calcADU(totalBandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
+    counts_flat = flatsource.calcADU(totalBandpass, photParams=photParams)
     flatsource.multiplyFluxNorm(counts_5sigma/counts_flat)
 
     # Calculate the AB magnitude of this source.
     mag_5sigma = flatsource.calcMag(totalBandpass)
     return mag_5sigma
 
-def calcGamma(bandpass, m5,
-              expTime=PhotometricDefaults.exptime,
-              nexp=PhotometricDefaults.nexp,
-              gain=PhotometricDefaults.gain,
-              effarea=PhotometricDefaults.effarea):
+def calcGamma(bandpass, m5, photParams):
 
     """
     Calculate the gamma parameter used for determining photometric
     signal to noise in equation 5 of the LSST overview paper
     (arXiv:0805.2366)
-
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
 
     @param [in] bandpass is an instantiation of the Bandpass class
     representing the bandpass for which you desire to calculate the
@@ -279,14 +201,9 @@ def calcGamma(bandpass, m5,
     @param [in] m5 is the magnitude at which a 5-sigma detection occurs
     in this Bandpass
 
-    @param [in] expTime is the duration of a single exposure in seconds
-
-    @param [in] nexp is the number of exposures being combined
-
-    @param [in] gain is the number of electrons per ADU
-
-    @param [in] effarea is the effective area of the primary mirror
-    in square centimeters (default is for 6.5 meter diameter)
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
 
     @param [out] gamma
     """
@@ -301,7 +218,7 @@ def calcGamma(bandpass, m5,
     #normalize the SED so that it has a magnitude equal to the desired m5
     fNorm = flatSed.calcFluxNorm(m5, bandpass)
     flatSed.multiplyFluxNorm(fNorm)
-    counts = flatSed.calcADU(bandpass, expTime=expTime*nexp, effarea=effarea, gain=gain)
+    counts = flatSed.calcADU(bandpass, photParams=photParams)
 
     #The expression for gamma below comes from:
     #
@@ -324,21 +241,13 @@ def calcGamma(bandpass, m5,
     #
     #This should give you
 
-    gamma = 0.04 - 1.0/(counts*gain)
+    gamma = 0.04 - 1.0/(counts*photParams.gain)
 
     return gamma
 
-def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
-                 expTime=PhotometricDefaults.exptime,
-                 nexp=PhotometricDefaults.nexp,
-                 gain=PhotometricDefaults.gain,
-                 effarea=PhotometricDefaults.effarea):
+def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
-
-    Note: default parameters are defined in
-
-    sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
 
     @param [in] fluxes is a numpy array of fluxes.  Each row is a different bandpass.
     Each column is a different object, i.e. fluxes[i][j] is the flux of the jth object
@@ -349,19 +258,14 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
 
     @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
 
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
-    @param [in] sig2sys is the square of the systematic signal to noise ratio.
-
-    @param [in] expTime (optional) is the duration of a single exposure in seconds
-
-    @param [in] nexp (optional) is the number of exposures being combined
-
-    @param [in] gain (optional) is the number of electrons per ADU
-
-    @param [in] effarea (optional) is the effective area of the primary mirror
-    in square centimeters (default is for 6.5 meter diameter)
+    @param [in] sigmaSysSq is the square of the systematic signal to noise ratio.
 
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
     the input fluxes.
@@ -388,18 +292,18 @@ def calcSNR_gamma(fluxes, bandpasses, m5, gamma=None, sig2sys=None,
     if gamma is None:
         gg = []
         for b, m in zip(bandpasses, m5):
-            gg.append(calcGamma(b, m, expTime=expTime, nexp=nexp, gain=gain, effarea=effarea))
+            gg.append(calcGamma(b, m, photParams=photParams))
 
         gamma = numpy.array(gg)
 
-    m5Fluxes = numpy.array(numpy.power(10.0, -0.4*m5))
+    m5Fluxes = Sed().fluxFromMag(m5)
 
     noise = []
     for (gg, mf, ff) in zip(gamma, m5Fluxes, fluxes):
         fluxRatio = mf/ff
 
-        if sig2sys is not None:
-            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio + sig2sys
+        if sigmaSysSq is not None:
+            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio + sigmaSysSq
         else:
             sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
 

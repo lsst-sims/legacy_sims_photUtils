@@ -14,8 +14,8 @@ import os
 import numpy
 import eups
 from collections import OrderedDict
-from lsst.sims.photUtils import Sed, Bandpass, PhotometricDefaults, calcGamma, \
-                                calcSNR_gamma
+from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
+                                calcSNR_gamma, PhotometricParameters
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -37,7 +37,7 @@ class PhotometryHardware(object):
     bandpassDict = None #total (hardware plus atmosphere) bandpasses loaded in this particular catalog;
                         #will be an OrderedDict
     hardwareBandpassDict = None #bandpasses associated with just the telescope hardware
-    skyBandpass = None #bandpass of the atmosphere
+    atmoTransmission = None #atmospheric transmissivity (will be an instantiation of the Bandpass class)
     nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
 
     skySED = None #the emission spectrum of the atmosphere
@@ -50,7 +50,7 @@ class PhotometryHardware(object):
                                 bandpassRoot = 'filter_',
                                 componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                                                  'lens1.dat', 'lens2.dat', 'lens3.dat'],
-                                skyBandpass='atmos.dat', skySED='darksky.dat'):
+                                atmoTransmission='atmos.dat', skySED='darksky.dat'):
         """
         Load bandpass information from files.  This method will separate the bandpasses
         into contributions due to instrumentations and contributions due to the atmosphere.
@@ -72,8 +72,8 @@ class PhotometryHardware(object):
                       'lense2.dat', 'lenst3.dat']
         for LSST).  These files are also expected to be stored in filedir
 
-        @param [in] skyBandpass is the name of the file representing the
-        throughput of the atmosphere (also assumed to be in filedir)
+        @param [in] atmoTransmission is the name of the file representing the
+        transmissivity of the atmosphere (also assumed to be in filedir)
 
         @param [in] skySED is the name of the file representing the emission
         spectrum of the atmosphere (also assumed to be in filedir)
@@ -81,7 +81,7 @@ class PhotometryHardware(object):
         This method loads these files and stores:
         total bandpasses in self.bandpassDict
         hardware bandpasses in self.hardwareBandpassDict
-        throughput of the atmosphere in self.skyBandpass
+        transmissivity of the atmosphere in self.atmoTransmission
         emission spectrum of the atmosphere in self.skySED
 
         This method will also setup the variables
@@ -98,8 +98,8 @@ class PhotometryHardware(object):
         self.skySED = Sed()
         self.skySED.readSED_flambda(os.path.join(filedir, skySED))
 
-        self.skyBandpass = Bandpass()
-        self.skyBandpass.readThroughput(os.path.join(filedir, skyBandpass))
+        self.atmoTransmission = Bandpass()
+        self.atmoTransmission.readThroughput(os.path.join(filedir, atmoTransmission))
 
         commonComponents = []
         for cc in componentList:
@@ -113,7 +113,7 @@ class PhotometryHardware(object):
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.hardwareBandpassDict[w] = bandpassDummy
-            components += [os.path.join(filedir, skyBandpass)]
+            components += [os.path.join(filedir, atmoTransmission)]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.bandpassDict[w] = bandpassDummy
@@ -198,7 +198,11 @@ class PhotometryBase(PhotometryHardware):
     dict keeyed to the array of bandpass keys stored in self.bandpassKey
     """
 
-    sig2sys = None #square of systematic noise associated with this catalog
+    sigmaSysSq = None #square of systematic noise associated with this catalog
+
+    #an object carrying around photometric parameters like readnoise, effective area, plate scale, etc.
+    #defaults to LSST values
+    photParams = PhotometricParameters()
 
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self, sedList, magNorm=None, resample_same=False, specFileMap=None):
@@ -371,7 +375,7 @@ class PhotometryBase(PhotometryHardware):
 
         return magList
 
-    def calculateFluxSignalToNoise(self, fluxes, obs_metadata=None, sig2sys=None):
+    def calculateFluxSignalToNoise(self, fluxes, obs_metadata=None, sigmaSysSq=None):
         """
         Calculate the signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
@@ -383,7 +387,7 @@ class PhotometryBase(PhotometryHardware):
         it will contain information about m5, the magnitude at which objects are detected
         at the 5-sigma limit in each bandpass)
 
-        @param [in] sig2sys the square of the systematic noise in flux
+        @param [in] sigmaSysSq the square of the systematic noise in flux
 
         @param [out] snr is a 1-dimensional numpy array containing the signal-to-noise in flux
         corresponding to the fluxes passed into this method.
@@ -399,29 +403,36 @@ class PhotometryBase(PhotometryHardware):
 
         #if we have not run this method before, calculate and cache the m5 and gamma parameter
         #values (see eqn 5 of arXiv:0805.2366) for future use
+        m5Defaults = None
+
         if not hasattr(self, '_gammaList') or len(self._gammaList) != self.nBandpasses:
             mm = []
             gg = []
             for b in self.bandpassDict.keys():
                 if b in obs_metadata.m5:
                     mm.append(obs_metadata.m5[b])
-                    gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b]))
+                    gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b],
+                              photParams=self.photParams))
                 else:
-                    if b not in PhotometricDefaults.m5:
+                    if m5Defaults is None:
+                        m5Defaults = LSSTdefaults()
+
+                    try:
+                        mm.append(m5Defaults.m5(b))
+                        gg.append(m5Defaults.gamma(b))
+                    except:
                         raise RuntimeError("No way to calculate gamma or m5 for filter %s " % b)
-                    mm.append(PhotometricDefaults.m5[b])
-                    gg.append(PhotometricDefaults.gamma[b])
 
             self._m5List = numpy.array(mm)
             self._gammaList = numpy.array(gg)
 
         snr, gamma = calcSNR_gamma(fluxes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
-                                   sig2sys=sig2sys)
+                                   sigmaSysSq=sigmaSysSq, photParams=self.photParams)
 
         return snr
 
 
-    def calculateMagnitudeUncertainty(self, magnitudes, obs_metadata=None, sig2sys=None):
+    def calculateMagnitudeUncertainty(self, magnitudes, obs_metadata=None, sigmaSysSq=None):
         """
         Calculate the uncertainty in magnitude
 
@@ -430,13 +441,13 @@ class PhotometryBase(PhotometryHardware):
 
         @param [in] obs_metadata is an instantiation of the ObservationMetaData class
 
-        @param [in] sig2sys is the square of the systematic signal to noise in flux
+        @param [in] sigmaSysSq is the square of the systematic signal to noise in flux
 
         @param [out] an array of magnitude uncertainties corresponding to the input magnitudes
         """
 
-        snr = self.calculateFluxSignalToNoise(numpy.power(10.0, -0.4*magnitudes),
-                                              obs_metadata=obs_metadata, sig2sys=sig2sys)
+        snr = self.calculateFluxSignalToNoise(Sed().fluxFromMag(magnitudes),
+                                              obs_metadata=obs_metadata, sigmaSysSq=sigmaSysSq)
 
         #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
         return 2.5*numpy.log10(1.0+1.0/snr)
@@ -895,7 +906,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('lsst_y')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                    sig2sys=self.sig2sys)
+                                                    sigmaSysSq=self.sigmaSysSq)
 
     @compound('sigma_uBulge', 'sigma_gBulge', 'sigma_rBulge',
               'sigma_iBulge', 'sigma_zBulge', 'sigma_yBulge')
@@ -911,7 +922,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('yBulge')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
     @compound('sigma_uDisk', 'sigma_gDisk', 'sigma_rDisk',
               'sigma_iDisk', 'sigma_zDisk', 'sigma_yDisk')
@@ -927,7 +938,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('yDisk')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
     @compound('sigma_uAgn', 'sigma_gAgn', 'sigma_rAgn',
               'sigma_iAgn', 'sigma_zAgn', 'sigma_yAgn')
@@ -943,7 +954,7 @@ class PhotometryGalaxies(PhotometryBase):
                                   self.column_by_name('yAgn')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
     @compound('lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
               'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
@@ -1094,7 +1105,7 @@ class PhotometryStars(PhotometryBase):
                                   self.column_by_name('lsst_y')])
 
         return self.calculateMagnitudeUncertainty(magnitudes, obs_metadata=self.obs_metadata,
-                                                  sig2sys=self.sig2sys)
+                                                  sigmaSysSq=self.sigmaSysSq)
 
 
     @compound('lsst_u','lsst_g','lsst_r','lsst_i','lsst_z','lsst_y')

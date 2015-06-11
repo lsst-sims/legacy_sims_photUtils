@@ -60,7 +60,7 @@ import os
 import warnings
 import numpy
 import gzip
-from lsst.sims.photUtils import PhotometricDefaults
+from lsst.sims.photUtils import PhysicalParameters
 from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation.
 
 __all__ = ["Bandpass"]
@@ -81,19 +81,22 @@ class Bandpass:
         Otherwise all set to None and user should call readThroughput, readThroughputList,
         or imsimBandpass to populate bandpass data.
         """
+
+        self._physParams = PhysicalParameters()
+
         if wavelen_min is None:
             if wavelen is None:
-                wavelen_min = PhotometricDefaults.minwavelen
+                wavelen_min = self._physParams.minwavelen
             else:
                 wavelen_min = wavelen.min()
         if wavelen_max is None:
             if wavelen is None:
-                wavelen_max = PhotometricDefaults.maxwavelen
+                wavelen_max = self._physParams.maxwavelen
             else:
                 wavelen_max = wavelen.max()
         if wavelen_step is None:
             if wavelen is None:
-                wavelen_step = PhotometricDefaults.wavelenstep
+                wavelen_step = self._physParams.wavelenstep
             else:
                 wavelen_step = numpy.diff(wavelen).min()
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
@@ -401,11 +404,13 @@ class Bandpass:
         sb_new = self.sb * sb_other
         return wavelen_new, sb_new
 
-    def calcZP_t(self, expTime=PhotometricDefaults.exptime,
-                 effarea=PhotometricDefaults.effarea,
-                 gain=PhotometricDefaults.gain):
+    def calcZP_t(self, photometricParameters):
         """
         Calculate the instrumental zeropoint for a bandpass.
+
+        @param [in] photometricParameters is an instantiation of the
+        PhotometricParameters class that carries details about the
+        photometric response of the telescope.  Defaults to LSST values.
         """
         # ZP_t is the magnitude of a (F_nu flat) source which produced 1 count per second.
         # This is often also known as the 'instrumental zeropoint'.
@@ -420,7 +425,7 @@ class Bandpass:
         flatsource = Sed()
         flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
                               wavelen_step=self.wavelen_step)
-        adu = flatsource.calcADU(self, expTime=expTime, effarea=effarea, gain=gain)
+        adu = flatsource.calcADU(self, photometricParameters=photometricParameters)
         # Scale fnu so that adu is 1 count/expTime.
         flatsource.fnu = flatsource.fnu * (1/adu)
         # Now need to calculate AB magnitude of the source with this fnu.
@@ -428,73 +433,6 @@ class Bandpass:
             self.sbTophi()
         zp_t = flatsource.calcMag(self)
         return zp_t
-
-    def calcM5(self, skysed, hardware, expTime=PhotometricDefaults.exptime,
-               nexp=PhotometricDefaults.nexp, readnoise=PhotometricDefaults.rdnoise,
-               darkcurrent=PhotometricDefaults.darkcurrent,
-               othernoise=PhotometricDefaults.othernoise,
-               seeing=PhotometricDefaults.seeing['r'], platescale=PhotometricDefaults.platescale,
-               gain=PhotometricDefaults.gain, effarea=PhotometricDefaults.effarea):
-        """
-        Calculate the AB magnitude of a 5-sigma above sky background source.
-
-        Pass into this function the bandpass, hardware only of bandpass, and sky sed objects.
-        The exposure time, nexp, readnoise, darkcurrent, gain,
-        seeing and platescale are also necessary.
-
-        Note: default parameters are defined in
-
-        sims_photUtils/python/lsst/sims/photUtils/photometricDefaults.py
-
-        @param [in] skysed is an instantiation of the Sed class representing
-        the emission spectrum of the sky
-
-        @param [in] hardware is an instantiation of the Bandpass class
-        representing the throughput of the system hardware
-
-        @param [in] expTime is the duration of each exposure in seconds
-
-        @param [in] nexp is the total number of exposures
-
-        @param [in] readnoise in electrons per pixel per exposure
-
-        @param [in] darkcurrent in electrons per pixel per second
-
-        @param [in] othernoise in electrons per pixel per second
-
-        @param [in] seeing in arcseconds
-
-        @param [in] plateScale in arcseconds per pixel
-
-        @param [in] gain in electrons per ADU
-
-        @param [in] eff area is the effective area of the telescope in cm^2
-        """
-        #This comes from equation 45 of the SNR document (v1.2, May 2010)
-        #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
-
-        #create a flat fnu source
-        flatsource = Sed()
-        flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
-                              wavelen_step=self.wavelen_step)
-        snr = 5.0
-        v_n, noise_instr_sq, \
-        noise_sky_sq, noise_skymeasurement_sq, \
-        skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardware, readnoise,
-                                                          darkcurrent, othernoise, seeing,
-                                                          effarea, expTime, nexp, platescale,
-                                                          gain)
-
-        counts_5sigma = (snr**2)/2.0/gain + numpy.sqrt((snr**4)/4.0/gain + (snr**2)*v_n)
-
-        #renormalize flatsource so that it has the required counts to be a 5-sigma detection
-        #given the specified background
-        counts_flat = flatsource.calcADU(self, expTime=expTime*nexp, effarea=effarea, gain=gain)
-        flatsource.multiplyFluxNorm(counts_5sigma/counts_flat)
-
-        # Calculate the AB magnitude of this source.
-        mag_5sigma = flatsource.calcMag(self)
-        return mag_5sigma
 
 
     def calcEffWavelen(self):
@@ -508,6 +446,7 @@ class Bandpass:
         effwavelenphi = (self.wavelen*self.phi).sum()/self.phi.sum()
         effwavelensb = (self.wavelen*self.sb).sum()/self.sb.sum()
         return effwavelenphi, effwavelensb
+
 
     def writeThroughput(self, filename, print_header=None, write_phi=False):
         """
