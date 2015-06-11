@@ -999,8 +999,7 @@ class Sed(object):
                photParams.darkcurrent*photParams.exptime*photParams.nexp + \
                photParams.nexp*photParams.othernoise**2
 
-    def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, seeing,
-                             photParams):
+    def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, photParams, seeing):
         """
         Calculate the noise due to things that are not the source being observed
         (i.e. intrumentation and sky background)
@@ -1010,11 +1009,11 @@ class Sed(object):
         @param [in] hardwarebandpass -- an instantiation of the Bandpass class representing
         just the instrumentation throughputs
 
-        @param [in] seeing in arcseconds
-
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
         photometric response of the telescope.
+
+        @param [in] seeing in arcseconds
 
         @param [out] total noise squared (in ADU)
 
@@ -1092,8 +1091,7 @@ class Sed(object):
         noise_instr_sq, \
         noise_sky_sq, \
         noise_skymeasurement_sq, \
-        skycounts, neff = self.calcNonSourceNoiseSq(skysed, hardwarebandpass, seeing,
-                                                    photParams=photParams)
+        skycounts, neff = self.calcNonSourceNoiseSq(skysed, hardwarebandpass, photParams, seeing)
 
         # Calculate total noise
         noise = numpy.sqrt(noise_source_sq + non_source_noise_sq)
