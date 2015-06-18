@@ -177,15 +177,8 @@ class photometryUnitTest(unittest.TestCase):
 
         phot = PhotometryGalaxies()
         test = phot.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
-        for ix, (tt, aa) in enumerate(zip(test, answer)):
-            if ix<7:
-                msg = 'ix %d tt %e aa %e' % (ix, tt, aa)
-                self.assertAlmostEqual(tt, aa, 10, msg=msg)
-                self.assertTrue(not numpy.isnan(tt))
-            else:
-                self.assertTrue(numpy.isnan(tt))
-                self.assertTrue(numpy.isnan(aa))
 
+        numpy.testing.assert_array_almost_equal(test, answer, decimal=10)
 
         for ix, (bb, dd, aa, truth) in enumerate(zip(bulge, disk, agn, answer)):
             test = phot.sum_magnitudes(bulge=bb, disk=dd, agn=aa)
