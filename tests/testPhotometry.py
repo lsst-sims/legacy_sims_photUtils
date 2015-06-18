@@ -106,7 +106,7 @@ class photometryUnitTest(unittest.TestCase):
         del self.star
         del self.obs_metadata
 
-    def testStars(self):
+    def testStarCatalog(self):
         test_cat=testStars(self.star, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testStarsOutput.txt")
         cat = open("testStarsOutput.txt")
@@ -119,7 +119,7 @@ class photometryUnitTest(unittest.TestCase):
         os.unlink("testStarsOutput.txt")
 
 
-    def testGalaxies(self):
+    def testGalaxyCatalog(self):
         test_cat=testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testGalaxiesOutput.txt")
         cat = open("testGalaxiesOutput.txt")
