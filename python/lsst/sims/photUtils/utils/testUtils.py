@@ -27,7 +27,8 @@ __all__ = ["makeStarDatabase", "makeGalaxyDatabase",
            "cartoonPhotometryGalaxies", "testCatalog", "cartoonStars",
            "cartoonStarsOnlyI", "cartoonStarsIZ",
            "cartoonGalaxies", "cartoonGalaxiesIG", "testStars", "testGalaxies",
-           "comovingDistanceIntegrand", "cosmologicalOmega"]
+           "comovingDistanceIntegrand", "cosmologicalOmega",
+           "galaxiesWithHoles"]
 
 def makeStarDatabase(filename='StellarPhotometryDB.db', size=1000, seedVal=32,
                      radius=1.0, unrefractedRA=50.0, unrefractedDec=-10.0):
@@ -522,6 +523,69 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
 
         output = self.meta_magnitudes_getter(idNames, columnNames)
         return output
+
+
+class galaxiesWithHoles(InstanceCatalog, PhotometryGalaxies):
+    """
+    This is an InstanceCatalog of galaxies that sets some of the
+    component Seds to 'None' so that we can test how sum_magnitudes
+    handles NaN's in the context of a catalog.
+    """
+    column_outputs = ['raJ2000','decJ2000',
+                      'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+                      'uBulge', 'gBulge', 'rBulge', 'iBulge', 'zBulge', 'yBulge',
+                      'uDisk', 'gDisk', 'rDisk', 'iDisk', 'zDisk', 'yDisk',
+                      'uAgn', 'gAgn', 'rAgn', 'iAgn', 'zAgn', 'yAgn']
+
+    default_formats = {'f':'%.12f'}
+
+    defSedName = "Inst.80E09.25Z.spec"
+    default_columns = [('glon', 210., float),
+                       ('glat', 70., float),
+                       ('internalAvBulge',3.1,float),
+                       ('internalAvDisk',3.1,float)]
+
+
+    def get_galid(self):
+        return self.column_by_name('id')
+
+    @compound('sedFilenameBulge', 'sedFilenameDisk', 'sedFilenameAgn')
+    def get_sedNames(self):
+        ra = self.column_by_name('raJ2000')
+        elements = len(ra)
+        bulge = []
+        disk = []
+        agn = []
+        for ix in range(elements):
+            bulge.append(self.defSedName)
+            disk.append(self.defSedName)
+            agn.append(self.defSedName)
+
+
+        for ix in range(elements/8):
+            ibase = ix*8
+            if ibase+1<elements:
+                bulge[ibase+1] = 'None'
+            if ibase+2<elements:
+                disk[ibase+2] = 'None'
+            if ibase+3<elements:
+                agn[ibase+3] = 'None'
+            if ibase+4<elements:
+                bulge[ibase+4] = 'None'
+                disk[ibase+4] = 'None'
+            if ibase+5<elements:
+                bulge[ibase+5] = 'None'
+                agn[ibase+5] = 'None'
+            if ibase+6<elements:
+                disk[ibase+6] = 'None'
+                agn[ibase+6] = 'None'
+            if ibase+7<elements:
+                bulge[ibase+7] = 'None'
+                disk[ibase+7] = 'None'
+                agn[ibase+7] = 'None'
+
+
+        return numpy.array([bulge, disk, agn])
 
 class testStars(InstanceCatalog, EBVmixin, VariabilityStars, TestVariabilityMixin, PhotometryStars,testDefaults):
     """

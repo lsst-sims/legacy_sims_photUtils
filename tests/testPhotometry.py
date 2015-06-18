@@ -19,7 +19,7 @@ from lsst.sims.photUtils.utils import testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
                                       cartoonStarsOnlyI, cartoonStarsIZ, \
-                                      cartoonGalaxiesIG
+                                      cartoonGalaxiesIG, galaxiesWithHoles
 
 class variabilityUnitTest(unittest.TestCase):
 
@@ -189,6 +189,71 @@ class photometryUnitTest(unittest.TestCase):
                 self.assertTrue(numpy.isnan(test))
                 self.assertTrue(numpy.isnan(truth))
 
+    def testSumMagnitudesCatalog(self):
+        """
+        test that sum_magnitudes handles NaNs correctly in the context
+        of a catalog by outputting a catalog of galaxies with NaNs in
+        different component magnitudes, reading that catalog back in,
+        and then calculating the summed magnitude by hand and comparing
+        """
+
+        catName = 'galaxiesWithHoles.txt'
+        obs_metadata=ObservationMetaData(mjd=50000.0,
+                               boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                               boundLength=10.0)
+        test_cat=galaxiesWithHoles(self.galaxy,obs_metadata=obs_metadata)
+        test_cat.write_catalog(catName)
+
+        dtype = numpy.dtype([
+                            ('raJ2000', numpy.float),
+                            ('decJ2000', numpy.float),
+                            ('u', numpy.float), ('g', numpy.float), ('r', numpy.float),
+                            ('i', numpy.float), ('z', numpy.float), ('y', numpy.float),
+                            ('ub', numpy.float), ('gb', numpy.float), ('rb', numpy.float),
+                            ('ib', numpy.float), ('zb', numpy.float), ('yb', numpy.float),
+                            ('ud', numpy.float), ('gd', numpy.float), ('rd', numpy.float),
+                            ('id', numpy.float), ('zd', numpy.float), ('yd', numpy.float),
+                            ('ua', numpy.float), ('ga', numpy.float), ('ra', numpy.float),
+                            ('ia', numpy.float), ('za', numpy.float), ('ya', numpy.float)
+                            ])
+
+
+
+        data = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
+        self.assertTrue(len(data)>16)
+        phot = PhotometryGalaxies()
+
+        test = phot.sum_magnitudes(bulge=data['ub'], disk=data['ud'], agn=data['ua'])
+        numpy.testing.assert_array_almost_equal(test, data['u'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['gb'], disk=data['gd'], agn=data['ga'])
+        numpy.testing.assert_array_almost_equal(test, data['g'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['rb'], disk=data['rd'], agn=data['ra'])
+        numpy.testing.assert_array_almost_equal(test, data['r'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['ib'], disk=data['id'], agn=data['ia'])
+        numpy.testing.assert_array_almost_equal(test, data['i'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['zb'], disk=data['zd'], agn=data['za'])
+        numpy.testing.assert_array_almost_equal(test, data['z'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['yb'], disk=data['yd'], agn=data['ya'])
+        numpy.testing.assert_array_almost_equal(test, data['y'], decimal=10)
+
+        # make sure that there were some NaNs for our catalog to deal with (but that they were not
+        # all NaNs
+        for line in [data['u'], data['g'], data['r'], data['i'], data['z'], data['y'],
+                     data['ub'], data['gb'], data['rb'], data['ib'], data['zb'], data['yb'],
+                     data['ud'], data['gd'], data['rd'], data['id'], data['zd'], data['yd'],
+                     data['ua'], data['ga'], data['ra'], data['ia'], data['za'], data['ya']]:
+
+            ctNans = len(numpy.where(numpy.isnan(line))[0])
+            self.assertTrue(ctNans>0)
+            self.assertTrue(ctNans<len(line))
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testStandAloneStellarPhotometry(self):
         """
