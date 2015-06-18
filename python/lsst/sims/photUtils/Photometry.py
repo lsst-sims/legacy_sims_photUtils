@@ -570,6 +570,7 @@ class PhotometryGalaxies(PhotometryBase):
                                "either floats or numpy arrays; you appear to have passed %s " % baselineType)
 
         mm_0 = 22.
+        tol = 1.0e-30
 
         if baselineType == numpy.ndarray:
             nn = numpy.zeros(elements)
@@ -586,9 +587,9 @@ class PhotometryGalaxies(PhotometryBase):
             nn += numpy.where(numpy.isnan(agn), 0.0, numpy.power(10, -0.4*(agn - mm_0)))
 
         if baselineType == numpy.ndarray:
-            return numpy.where(nn>0.0, -2.5*numpy.log10(nn) + mm_0, numpy.NaN)
+            return numpy.where(nn>tol, -2.5*numpy.log10(nn) + mm_0, numpy.NaN)
         else:
-            if nn>0.0:
+            if nn>tol:
                 return -2.5*numpy.log10(nn) + mm_0
             else:
                 return numpy.NaN
