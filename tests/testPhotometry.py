@@ -131,6 +131,72 @@ class photometryUnitTest(unittest.TestCase):
         self.assertTrue(len(result)>0) #to make sure some results are returned
         os.unlink("testGalaxiesOutput.txt")
 
+    def testSumMagnitudes(self):
+        """
+        Test that the method sum_magnitudes in PhotometryGalaxies handles
+        NaNs correctly.  Test it both in the vectorized and non-vectorized form.
+        """
+        mm_0 = 22.0
+
+        bulge = 15.0*numpy.ones(8)
+
+        disk = 15.2*numpy.ones(8)
+
+        agn = 15.4*numpy.ones(8)
+
+        bulge[0] = numpy.NaN
+        disk[1] = numpy.NaN
+        agn[2] = numpy.NaN
+
+        bulge[3] = numpy.NaN
+        disk[3] = numpy.NaN
+
+        bulge[4] = numpy.NaN
+        agn[4] = numpy.NaN
+
+        disk[5] = numpy.NaN
+        agn[5] = numpy.NaN
+
+        bulge[7] = numpy.NaN
+        disk[7] = numpy.NaN
+        agn[7] = numpy.NaN
+
+        bulge_flux = numpy.power(10.0, -0.4*(bulge-mm_0))
+        disk_flux = numpy.power(10.0, -0.4*(disk-mm_0))
+        agn_flux = numpy.power(10.0, -0.4*(agn-mm_0))
+
+        answer = numpy.zeros(8)
+        answer[0] = -2.5*numpy.log10(disk_flux[0]+agn_flux[0]) + mm_0
+        answer[1] = -2.5*numpy.log10(bulge_flux[1]+agn_flux[1]) + mm_0
+        answer[2] = -2.5*numpy.log10(bulge_flux[2]+disk_flux[2]) + mm_0
+        answer[3] = -2.5*numpy.log10(agn_flux[3]) + mm_0
+        answer[4] = -2.5*numpy.log10(disk_flux[4]) + mm_0
+        answer[5] = -2.5*numpy.log10(bulge_flux[5]) + mm_0
+        answer[6] = -2.5*numpy.log10(bulge_flux[6]+disk_flux[6]+agn_flux[6]) + mm_0
+        answer[7] = numpy.NaN
+
+        phot = PhotometryGalaxies()
+        test = phot.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
+        for ix, (tt, aa) in enumerate(zip(test, answer)):
+            if ix<7:
+                msg = 'ix %d tt %e aa %e' % (ix, tt, aa)
+                self.assertAlmostEqual(tt, aa, 10, msg=msg)
+                self.assertTrue(not numpy.isnan(tt))
+            else:
+                self.assertTrue(numpy.isnan(tt))
+                self.assertTrue(numpy.isnan(aa))
+
+
+        for ix, (bb, dd, aa, truth) in enumerate(zip(bulge, disk, agn, answer)):
+            test = phot.sum_magnitudes(bulge=bb, disk=dd, agn=aa)
+            if ix<7:
+                self.assertAlmostEqual(test, truth, 10)
+                self.assertTrue(not numpy.isnan(test))
+            else:
+                self.assertTrue(numpy.isnan(test))
+                self.assertTrue(numpy.isnan(truth))
+
+
     def testStandAloneStellarPhotometry(self):
         """
         Test that it is possible to run PhotometryStars.calculate_magnitudes
