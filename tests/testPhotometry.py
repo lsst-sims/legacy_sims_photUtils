@@ -433,8 +433,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
                                                  boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                                  boundLength=1.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         test_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testStarsCartoon.txt")
 
@@ -478,8 +477,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
                                boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
                                boundLength=10.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testGalaxiesCartoon.txt")
 
@@ -541,8 +539,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
                                                  boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                                  boundLength=1.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         baseline_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
         baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
@@ -590,8 +587,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
                                boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
                                boundLength=10.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         baseline_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
         baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
