@@ -587,6 +587,10 @@ class PhotometryGalaxies(PhotometryBase):
             nn += numpy.where(numpy.isnan(agn), 0.0, numpy.power(10, -0.4*(agn - mm_0)))
 
         if baselineType == numpy.ndarray:
+            # according to this link
+            # http://stackoverflow.com/questions/25087769/runtimewarning-divide-by-zero-error-how-to-avoid-python-numpy
+            # we will still get a divide by zero error from log10, but numpy.where will be
+            #circumventing the offending value, so it is probably okay
             return numpy.where(nn>tol, -2.5*numpy.log10(nn) + mm_0, numpy.NaN)
         else:
             if nn>tol:
