@@ -577,16 +577,16 @@ class PhotometryGalaxies(PhotometryBase):
             nn = 0.0
 
         if disk is not None:
-            nn+=numpy.power(10, (disk - mm_o)/-2.5)
+            nn += numpy.where(numpy.isnan(disk), 0.0, numpy.power(10, (disk - mm_o)/-2.5))
 
         if bulge is not None:
-            nn+=numpy.power(10, (bulge - mm_o)/-2.5)
+            nn += numpy.where(numpy.isnan(bulge), 0.0, numpy.power(10, (bulge - mm_o)/-2.5))
 
         if agn is not None:
-            nn+=numpy.power(10, (agn - mm_o)/-2.5)
+            nn += numpy.where(numpy.isnan(agn), 0.0, numpy.power(10, (agn - mm_o)/-2.5))
 
         if baselineType == numpy.ndarray:
-            return numpy.array([-2.5*numpy.log10(nnval) + mm_o if nnval>0.0 else numpy.NaN for nnval in nn])
+            return numpy.where(nn>0.0, -2.5*numpy.log10(nn) + mm_o, numpy.NaN)
         else:
             if nn>0.0:
                 return -2.5*numpy.log10(nn) + mm_o
