@@ -569,7 +569,7 @@ class PhotometryGalaxies(PhotometryBase):
             raise RuntimeError("Arguments of sum_magnitudes need to be " +
                                "either floats or numpy arrays; you appear to have passed %s " % baselineType)
 
-        mm_o = 22.
+        mm_0 = 22.
 
         if baselineType == numpy.ndarray:
             nn = numpy.zeros(elements)
@@ -577,19 +577,19 @@ class PhotometryGalaxies(PhotometryBase):
             nn = 0.0
 
         if disk is not None:
-            nn += numpy.where(numpy.isnan(disk), 0.0, numpy.power(10, (disk - mm_o)/-2.5))
+            nn += numpy.where(numpy.isnan(disk), 0.0, numpy.power(10, -0.4*(disk - mm_0)))
 
         if bulge is not None:
-            nn += numpy.where(numpy.isnan(bulge), 0.0, numpy.power(10, (bulge - mm_o)/-2.5))
+            nn += numpy.where(numpy.isnan(bulge), 0.0, numpy.power(10, -0.4*(bulge - mm_0)))
 
         if agn is not None:
-            nn += numpy.where(numpy.isnan(agn), 0.0, numpy.power(10, (agn - mm_o)/-2.5))
+            nn += numpy.where(numpy.isnan(agn), 0.0, numpy.power(10, -0.4*(agn - mm_0)))
 
         if baselineType == numpy.ndarray:
-            return numpy.where(nn>0.0, -2.5*numpy.log10(nn) + mm_o, numpy.NaN)
+            return numpy.where(nn>0.0, -2.5*numpy.log10(nn) + mm_0, numpy.NaN)
         else:
             if nn>0.0:
-                return -2.5*numpy.log10(nn) + mm_o
+                return -2.5*numpy.log10(nn) + mm_0
             else:
                 return numpy.NaN
 
