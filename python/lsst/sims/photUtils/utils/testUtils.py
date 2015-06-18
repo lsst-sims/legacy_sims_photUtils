@@ -446,7 +446,7 @@ class cartoonStarsIZ(cartoonStarsOnlyI):
     catalog_type = 'cartoonStarsIR'
     column_outputs = ['id', 'raObserved', 'decObserved', 'cartoon_i', 'cartoon_z']
 
-class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityGalaxies,cartoonPhotometryGalaxies,testDefaults):
+class cartoonGalaxies(InstanceCatalog, AstrometryGalaxies, EBVmixin, VariabilityGalaxies, cartoonPhotometryGalaxies, testDefaults):
     """
     A catalog of galaxies relying on the cartoon photometry methods (which use non-LSST bandpasses
     and output extra data for use by unit tests)
@@ -457,14 +457,14 @@ class cartoonGalaxies(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityGal
 
     #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = "Inst.80E09.25Z.spec"
-    default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,
-                       ('sedFilenameAgn', defSedName, (str, len(defSedName))),
-                       ('sedFilenameBulge', defSedName, (str, len(defSedName))),
-                       ('sedFilenameDisk', defSedName, (str, len(defSedName))),
+    default_columns = [('sedFilenameBulge', defSedName, (str,len(defSedName))),
+                       ('sedFilenameDisk', defSedName, (str,len(defSedName))),
+                       ('sedFilenameAgn', defSedName, (str,len(defSedName))),
                        ('glon', 210., float),
                        ('glat', 70., float),
                        ('internalAvBulge',3.1,float),
                        ('internalAvDisk',3.1,float)]
+
 
     def get_galid(self):
         return self.column_by_name('id')
@@ -490,10 +490,9 @@ class cartoonGalaxiesIG(InstanceCatalog,AstrometryGalaxies,EBVmixin,VariabilityG
 
     #I need to give it the name of an actual SED file that spans the expected wavelength range
     defSedName = "Inst.80E09.25Z.spec"
-    default_columns = [('sedFilename', defSedName, (str, len(defSedName))) ,
-                       ('sedFilenameAgn', defSedName, (str, len(defSedName))),
-                       ('sedFilenameBulge', defSedName, (str, len(defSedName))),
-                       ('sedFilenameDisk', defSedName, (str, len(defSedName))),
+    default_columns = [('sedFilenameBulge', defSedName, (str,len(defSedName))),
+                       ('sedFilenameDisk', defSedName, (str,len(defSedName))),
+                       ('sedFilenameAgn', defSedName, (str,len(defSedName))),
                        ('glon', 210., float),
                        ('glat', 70., float),
                        ('internalAvBulge',3.1,float),
