@@ -204,6 +204,13 @@ class PhotometryBase(PhotometryHardware):
     #defaults to LSST values
     photParams = PhotometricParameters()
 
+    # cache member variables so we are not constantly
+    # re-initializing the dust model for each Sed
+    _av_wavelen = None
+    _a_int = None
+    _b_int = None
+
+
     # Handy routines for handling Sed/Bandpass routines with sets of dictionaries.
     def loadSeds(self, sedList, magNorm=None, resample_same=False, specFileMap=None):
         """
@@ -283,7 +290,8 @@ class PhotometryBase(PhotometryHardware):
 
         return sedOut
 
-    def applyAvAndRedshift(self,sedList, internalAv=None, redshift=None):
+
+    def applyAv(self, sedList, internalAvList):
         """
         Take the array of SED objects sedList and apply the arrays of extinction and redshift
         (internalAV and redshift)
@@ -293,37 +301,52 @@ class PhotometryBase(PhotometryHardware):
 
         @param [in] sedList is a list of Sed objects
 
-        @param [in] internalAv is the Av extinction internal to the object
+        @param [in] internalAvList is a list of Av extinction values internal to each object
 
-        @param [in] redshift
-
+        This method will apply the O'Donnel 1994 dust model as encoded in the Sed class
+        to each Sed in sedList.
         """
 
-        wavelen_sampled=[]
+        if internalAvList is None:
+            return
 
-        for i in range(len(sedList)):
-            if sedList[i].wavelen is not None:
-                if internalAv is not None:
-                    #setupCCMab only depends on the wavelen array
-                    #because this is supposed to be the same for every
-                    #SED object in sedList, it is only called once for
-                    #each invocation of applyAvAndRedshift
-                    if wavelen_sampled == [] or (sedList[i].wavelen!=wavelen_sampled).any():
-                        a_int, b_int = sedList[i].setupCCMab()
-                        wavelen_sampled=sedList[i].wavelen
+        for sedobj, Av in zip(sedList, internalAvList):
+            if sedobj.wavelen is not None:
+                #setupCCMab only depends on the wavelen array
+                #because this is supposed to be the same for every
+                #SED object in sedList, it is only called once for
+                #each invocation of applyAv
+                if self._av_wavelen is None or (sedobj.wavelen!=self._av_wavelen).any():
+                    self._a_int, self._b_int = sedobj.setupCCMab()
+                    self._av_wavelen=sedobj.wavelen
 
-                    sedList[i].addCCMDust(a_int, b_int, A_v=internalAv[i])
-                if redshift is not None:
-                    #17 November 2014
-                    #We do not apply cosmological dimming here because that is
-                    #a wavelength-independent process and the galaxy's
-                    #magNorm presumably accounts for that (i.e., we are assuming
-                    #that the magNorm is calibrated to the galaxy's apparent
-                    #magnitude in the imsimband, rather than some absolute
-                    #magnitude).
-                    sedList[i].redshiftSED(redshift[i], dimming=False)
-                    sedList[i].name = sedList[i].name + '_Z' + '%.2f' %(redshift[i])
-                    sedList[i].resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
+                sedobj.addCCMDust(self._a_int, self._b_int, A_v=Av)
+
+
+    def applyRedshift(self, sedList, redshiftList):
+        """
+        Take the array of SED objects sedList and apply the arrays of extinction and redshift
+        (internalAV and redshift)
+
+        This method does not return anything.  It makes the necessary changes
+        to the Seds in SedList in situ.
+
+        @param [in] sedList is a list of Sed objects
+
+        @param [in] redshiftList is a list of redshift values
+
+        This method will redshift each Sed object in sedList
+        """
+
+        if redshiftList is None:
+            return
+
+        for sedobj, redshift in zip(sedList, redshiftList):
+            if sedobj.wavelen is not None:
+                sedobj.redshiftSED(redshift, dimming=False)
+                sedobj.name = sedobj.name + '_Z' + '%.2f' %(redshift)
+                sedobj.resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
+
 
     def manyMagCalc_list(self, sedobj, indices=None):
         """
@@ -504,7 +527,12 @@ class PhotometryGalaxies(PhotometryBase):
 
         if componentNames != [] and componentNames is not None:
             componentSed = self.loadSeds(componentNames, magNorm = magNorm, specFileMap=specFileMap)
-            self.applyAvAndRedshift(componentSed, internalAv = internalAv, redshift = redshift)
+
+            if internalAv is not None:
+                self.applyAv(componentSed, internalAv)
+
+            if redshift is not None:
+                self.applyRedshift(componentSed, redshift)
 
             for i in range(len(objectID)):
                 subList = self.manyMagCalc_list(componentSed[i], indices=indices)
