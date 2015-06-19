@@ -529,6 +529,10 @@ class PhotometryGalaxies(PhotometryBase):
         componentMags = {}
 
         if cosmologicalDistanceModulus is None:
+            # if there is not a separate column for cosmologicalDistanceModulus,
+            # assume that magNorm includes the distance effects of redshift but
+            # not the additional 1/(1+z) dimming.  This is how magNorms
+            # on the University of Washington LSST database work.
             cosmologicalDimming = True
         else:
             cosmologicalDimming = False
