@@ -323,7 +323,7 @@ class PhotometryBase(PhotometryHardware):
                 sedobj.addCCMDust(self._a_int, self._b_int, A_v=Av)
 
 
-    def applyRedshift(self, sedList, redshiftList):
+    def applyRedshift(self, sedList, redshiftList, dimming=True):
         """
         Take the array of SED objects sedList and apply the arrays of extinction and redshift
         (internalAV and redshift)
@@ -335,6 +335,9 @@ class PhotometryBase(PhotometryHardware):
 
         @param [in] redshiftList is a list of redshift values
 
+        @param [in] dimming is a boolean that turns on or off cosmological
+        dimming (the extra (1+z)^-1 factor in flux).  Defaults to True.
+
         This method will redshift each Sed object in sedList
         """
 
@@ -343,7 +346,7 @@ class PhotometryBase(PhotometryHardware):
 
         for sedobj, redshift in zip(sedList, redshiftList):
             if sedobj.wavelen is not None:
-                sedobj.redshiftSED(redshift, dimming=False)
+                sedobj.redshiftSED(redshift, dimming=dimming)
                 sedobj.name = sedobj.name + '_Z' + '%.2f' %(redshift)
                 sedobj.resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
 
@@ -525,6 +528,11 @@ class PhotometryGalaxies(PhotometryBase):
 
         componentMags = {}
 
+        if cosmologicalDistanceModulus is None:
+            cosmologicalDimming = True
+        else:
+            cosmologicalDimming = False
+
         if componentNames != [] and componentNames is not None:
             componentSed = self.loadSeds(componentNames, magNorm = magNorm, specFileMap=specFileMap)
 
@@ -532,7 +540,7 @@ class PhotometryGalaxies(PhotometryBase):
                 self.applyAv(componentSed, internalAv)
 
             if redshift is not None:
-                self.applyRedshift(componentSed, redshift)
+                self.applyRedshift(componentSed, redshift, dimming=cosmologicalDimming)
 
             for i in range(len(objectID)):
                 subList = self.manyMagCalc_list(componentSed[i], indices=indices)
@@ -802,7 +810,7 @@ class PhotometryGalaxies(PhotometryBase):
 
         redshift = self.column_by_name('redshift')
 
-        if 'cosmologicalDistanceModulus' in self.iter_column_names():
+        if 'cosmologicalDistanceModulus' in self._all_available_columns:
             cosmologicalDistanceModulus = self.column_by_name("cosmologicalDistanceModulus")
         else:
             cosmologicalDistanceModulus = None
