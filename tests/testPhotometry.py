@@ -19,7 +19,7 @@ from lsst.sims.photUtils.utils import testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
                                       cartoonStarsOnlyI, cartoonStarsIZ, \
-                                      cartoonGalaxiesIG
+                                      cartoonGalaxiesIG, galaxiesWithHoles
 
 class variabilityUnitTest(unittest.TestCase):
 
@@ -106,7 +106,7 @@ class photometryUnitTest(unittest.TestCase):
         del self.star
         del self.obs_metadata
 
-    def testStars(self):
+    def testStarCatalog(self):
         test_cat=testStars(self.star, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testStarsOutput.txt")
         cat = open("testStarsOutput.txt")
@@ -119,7 +119,7 @@ class photometryUnitTest(unittest.TestCase):
         os.unlink("testStarsOutput.txt")
 
 
-    def testGalaxies(self):
+    def testGalaxyCatalog(self):
         test_cat=testGalaxies(self.galaxy, obs_metadata=self.obs_metadata)
         test_cat.write_catalog("testGalaxiesOutput.txt")
         cat = open("testGalaxiesOutput.txt")
@@ -130,6 +130,130 @@ class photometryUnitTest(unittest.TestCase):
         result = getOneChunk(results)
         self.assertTrue(len(result)>0) #to make sure some results are returned
         os.unlink("testGalaxiesOutput.txt")
+
+    def testSumMagnitudes(self):
+        """
+        Test that the method sum_magnitudes in PhotometryGalaxies handles
+        NaNs correctly.  Test it both in the vectorized and non-vectorized form.
+        """
+        mm_0 = 22.0
+
+        bulge = 15.0*numpy.ones(8)
+
+        disk = 15.2*numpy.ones(8)
+
+        agn = 15.4*numpy.ones(8)
+
+        bulge[0] = numpy.NaN
+        disk[1] = numpy.NaN
+        agn[2] = numpy.NaN
+
+        bulge[3] = numpy.NaN
+        disk[3] = numpy.NaN
+
+        bulge[4] = numpy.NaN
+        agn[4] = numpy.NaN
+
+        disk[5] = numpy.NaN
+        agn[5] = numpy.NaN
+
+        bulge[7] = numpy.NaN
+        disk[7] = numpy.NaN
+        agn[7] = numpy.NaN
+
+        bulge_flux = numpy.power(10.0, -0.4*(bulge-mm_0))
+        disk_flux = numpy.power(10.0, -0.4*(disk-mm_0))
+        agn_flux = numpy.power(10.0, -0.4*(agn-mm_0))
+
+        answer = numpy.zeros(8)
+        answer[0] = -2.5*numpy.log10(disk_flux[0]+agn_flux[0]) + mm_0
+        answer[1] = -2.5*numpy.log10(bulge_flux[1]+agn_flux[1]) + mm_0
+        answer[2] = -2.5*numpy.log10(bulge_flux[2]+disk_flux[2]) + mm_0
+        answer[3] = -2.5*numpy.log10(agn_flux[3]) + mm_0
+        answer[4] = -2.5*numpy.log10(disk_flux[4]) + mm_0
+        answer[5] = -2.5*numpy.log10(bulge_flux[5]) + mm_0
+        answer[6] = -2.5*numpy.log10(bulge_flux[6]+disk_flux[6]+agn_flux[6]) + mm_0
+        answer[7] = numpy.NaN
+
+        phot = PhotometryGalaxies()
+        test = phot.sum_magnitudes(bulge=bulge, disk=disk, agn=agn)
+
+        numpy.testing.assert_array_almost_equal(test, answer, decimal=10)
+
+        for ix, (bb, dd, aa, truth) in enumerate(zip(bulge, disk, agn, answer)):
+            test = phot.sum_magnitudes(bulge=bb, disk=dd, agn=aa)
+            if ix<7:
+                self.assertAlmostEqual(test, truth, 10)
+                self.assertTrue(not numpy.isnan(test))
+            else:
+                self.assertTrue(numpy.isnan(test))
+                self.assertTrue(numpy.isnan(truth))
+
+    def testSumMagnitudesCatalog(self):
+        """
+        test that sum_magnitudes handles NaNs correctly in the context
+        of a catalog by outputting a catalog of galaxies with NaNs in
+        different component magnitudes, reading that catalog back in,
+        and then calculating the summed magnitude by hand and comparing
+        """
+
+        catName = 'galaxiesWithHoles.txt'
+        obs_metadata=ObservationMetaData(mjd=50000.0,
+                               boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
+                               boundLength=10.0)
+        test_cat=galaxiesWithHoles(self.galaxy,obs_metadata=obs_metadata)
+        test_cat.write_catalog(catName)
+
+        dtype = numpy.dtype([
+                            ('raJ2000', numpy.float),
+                            ('decJ2000', numpy.float),
+                            ('u', numpy.float), ('g', numpy.float), ('r', numpy.float),
+                            ('i', numpy.float), ('z', numpy.float), ('y', numpy.float),
+                            ('ub', numpy.float), ('gb', numpy.float), ('rb', numpy.float),
+                            ('ib', numpy.float), ('zb', numpy.float), ('yb', numpy.float),
+                            ('ud', numpy.float), ('gd', numpy.float), ('rd', numpy.float),
+                            ('id', numpy.float), ('zd', numpy.float), ('yd', numpy.float),
+                            ('ua', numpy.float), ('ga', numpy.float), ('ra', numpy.float),
+                            ('ia', numpy.float), ('za', numpy.float), ('ya', numpy.float)
+                            ])
+
+
+
+        data = numpy.genfromtxt(catName, dtype=dtype, delimiter=', ')
+        self.assertTrue(len(data)>16)
+        phot = PhotometryGalaxies()
+
+        test = phot.sum_magnitudes(bulge=data['ub'], disk=data['ud'], agn=data['ua'])
+        numpy.testing.assert_array_almost_equal(test, data['u'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['gb'], disk=data['gd'], agn=data['ga'])
+        numpy.testing.assert_array_almost_equal(test, data['g'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['rb'], disk=data['rd'], agn=data['ra'])
+        numpy.testing.assert_array_almost_equal(test, data['r'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['ib'], disk=data['id'], agn=data['ia'])
+        numpy.testing.assert_array_almost_equal(test, data['i'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['zb'], disk=data['zd'], agn=data['za'])
+        numpy.testing.assert_array_almost_equal(test, data['z'], decimal=10)
+
+        test = phot.sum_magnitudes(bulge=data['yb'], disk=data['yd'], agn=data['ya'])
+        numpy.testing.assert_array_almost_equal(test, data['y'], decimal=10)
+
+        # make sure that there were some NaNs for our catalog to deal with (but that they were not
+        # all NaNs
+        for line in [data['u'], data['g'], data['r'], data['i'], data['z'], data['y'],
+                     data['ub'], data['gb'], data['rb'], data['ib'], data['zb'], data['yb'],
+                     data['ud'], data['gd'], data['rd'], data['id'], data['zd'], data['yd'],
+                     data['ua'], data['ga'], data['ra'], data['ia'], data['za'], data['ya']]:
+
+            ctNans = len(numpy.where(numpy.isnan(line))[0])
+            self.assertTrue(ctNans>0)
+            self.assertTrue(ctNans<len(line))
+
+        if os.path.exists(catName):
+            os.unlink(catName)
 
     def testStandAloneStellarPhotometry(self):
         """
@@ -309,8 +433,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
                                                  boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                                  boundLength=1.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         test_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testStarsCartoon.txt")
 
@@ -354,8 +477,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
                                boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
                                boundLength=10.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         test_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         test_cat.write_catalog("testGalaxiesCartoon.txt")
 
@@ -417,8 +539,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
                                                  boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                                  boundLength=1.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         baseline_cat=cartoonStars(self.star,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
         baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
@@ -466,8 +587,7 @@ class photometryUnitTest(unittest.TestCase):
         obs_metadata_pointed=ObservationMetaData(mjd=50000.0,
                                boundType='circle',unrefractedRA=0.0,unrefractedDec=0.0,
                                boundLength=10.0)
-        obs_metadata_pointed.metadata = {}
-        obs_metadata_pointed.metadata['Opsim_filter'] = 'i'
+
         baseline_cat=cartoonGalaxies(self.galaxy,obs_metadata=obs_metadata_pointed)
         baseline_cat.write_catalog(baselineCatName)
         baselineData = numpy.genfromtxt(baselineCatName, dtype=baselineDtype, delimiter=',')
