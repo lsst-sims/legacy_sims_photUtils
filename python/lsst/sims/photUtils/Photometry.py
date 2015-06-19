@@ -550,7 +550,7 @@ class PhotometryGalaxies(PhotometryBase):
                     elements = len(bulge)
             elif not isinstance(bulge, baselineType):
                 raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
-                                   "of the same time (float or numpy array)")
+                                   "of the same type (float or numpy array)")
 
         elif not isinstance(agn, type(None)):
             if baseLineType == type(None):
@@ -559,7 +559,7 @@ class PhotometryGalaxies(PhotometryBase):
                     elements = len(agn)
             elif not isinstance(agn, baselineType):
                 raise RuntimeError("All non-None arguments of sum_magnitudes need to be " +
-                                   "of the same time (float or numpy array)")
+                                   "of the same type (float or numpy array)")
 
         if baselineType is not float and \
            baselineType is not numpy.ndarray and \
