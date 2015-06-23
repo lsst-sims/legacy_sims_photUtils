@@ -26,6 +26,13 @@ class absoluteGalaxyCatalog(testGalaxies):
                       'redshift']
 
 
+    def get_cosmologicalDistanceModulus(self):
+        """
+        Must set this to zero rather than `None` so that PhotometryGalaxies
+        does not apply cosmological dimming
+        """
+        return numpy.zeros(len(self.column_by_name('galid')))
+
 
 class CosmologyUnitTest(unittest.TestCase):
 

@@ -381,7 +381,10 @@ class cartoonPhotometryGalaxies(PhotometryGalaxies):
             redshift = self.column_by_name("redshift")
 
             sublist = self.loadSeds(sedNames, magNorm = magNormList)
-            self.applyAvAndRedshift(sublist, internalAv = Av, redshift = redshift)
+            if Av is not None:
+                self.applyAv(sublist, Av)
+
+            self.applyRedshift(sublist, redshift)
 
             for ss in sublist:
                 self.sedMasterDict[cc].append(ss)
