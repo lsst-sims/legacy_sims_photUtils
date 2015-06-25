@@ -49,6 +49,8 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     (i.e. intrumentation and sky background)
 
     @param [in] skySed -- an instantiation of the Sed class representing the sky
+    (normalized so that skySed.calcMag() gives the sky brightness in magnitudes
+    per square arcsecond)
 
     @param [in] hardwarebandpass -- an instantiation of the Bandpass class representing
     just the instrumentation throughputs
@@ -72,24 +74,29 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     @param [out] the effective number of pixels in a double Gaussian PSF
     """
 
-    #This method outputs all of the parameters calculated along the way
-    #so that the verbose version of calcSNR_sed still works
+    # This method outputs all of the parameters calculated along the way
+    # so that the verbose version of calcSNR_sed still works
 
-    #Calculate the effective number of pixels for double-Gaussian PSF
+    # Calculate the effective number of pixels for double-Gaussian PSF
     neff = calcNeff(seeing, photParams.platescale)
 
-    #Calculate the counts form the sky
+    # Calculate the counts from the sky.
+    # We multiply by two factors of the platescale because we expect the
+    # skySed to be normalized such that calcADU gives counts per
+    # square arc second, and we need to convert to counts per pixel.
+
     skycounts = skySed.calcADU(hardwarebandpass, photParams=photParams) \
                 * photParams.platescale * photParams.platescale
 
-    #Calculate the square of the noise due to instrumental effects.
-    #Include the readout noise as many times as there are exposures
+    # Calculate the square of the noise due to instrumental effects.
+    # Include the readout noise as many times as there are exposures
+
     noise_instr_sq = calcInstrNoiseSq(photParams=photParams)
 
-    #Calculate the square of the noise due to sky background poisson noise
+    # Calculate the square of the noise due to sky background poisson noise
     noise_sky_sq = skycounts/photParams.gain
 
-    #Discount error in sky measurement for now
+    # Discount error in sky measurement for now
     noise_skymeasurement_sq = 0
 
     total_noise_sq = neff*(noise_sky_sq + noise_instr_sq + noise_skymeasurement_sq)
@@ -208,7 +215,8 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     a sky background Sed and hardware parameters.
 
     @param [in] skysed is an instantiation of the Sed class representing
-    sky emission
+    sky emission, normalized so that skysed.calcMag gives the sky brightness
+    in magnitudes per square arcsecond.
 
     @param [in] totalBandpass is an instantiation of the Bandpass class
     representing the total throughput of the telescope (instrumentation
@@ -225,13 +233,13 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
 
     @param [out] returns the value of m5 for the given bandpass and sky SED
     """
-    #This comes from equation 45 of the SNR document (v1.2, May 2010)
-    #https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
+    # This comes from equation 45 of the SNR document (v1.2, May 2010)
+    # https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
 
     if seeing is None:
         seeing = LSSTdefaults().seeing('r')
 
-    #create a flat fnu source
+    # create a flat fnu source
     flatsource = Sed()
     flatsource.setFlatSED()
     snr = 5.0
@@ -242,8 +250,8 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     counts_5sigma = (snr**2)/2.0/photParams.gain + \
                      numpy.sqrt((snr**4)/4.0/photParams.gain + (snr**2)*v_n)
 
-    #renormalize flatsource so that it has the required counts to be a 5-sigma detection
-    #given the specified background
+    # renormalize flatsource so that it has the required counts to be a 5-sigma detection
+    # given the specified background
     counts_flat = flatsource.calcADU(totalBandpass, photParams=photParams)
     flatsource.multiplyFluxNorm(counts_5sigma/counts_flat)
 
@@ -285,39 +293,39 @@ def calcGamma(bandpass, m5, photParams):
 
     @param [out] gamma
     """
-    #This is based on the LSST SNR document (v1.2, May 2010)
-    #https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
-    #as well as equations 4-6 of the overview paper (arXiv:0805.2366)
+    # This is based on the LSST SNR document (v1.2, May 2010)
+    # https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
+    # as well as equations 4-6 of the overview paper (arXiv:0805.2366)
 
-    #instantiate a flat SED
+    # instantiate a flat SED
     flatSed = Sed()
     flatSed.setFlatSED()
 
-    #normalize the SED so that it has a magnitude equal to the desired m5
+    # normalize the SED so that it has a magnitude equal to the desired m5
     fNorm = flatSed.calcFluxNorm(m5, bandpass)
     flatSed.multiplyFluxNorm(fNorm)
     counts = flatSed.calcADU(bandpass, photParams=photParams)
 
-    #The expression for gamma below comes from:
+    # The expression for gamma below comes from:
     #
-    #1) Take the approximation N^2 = N0^2 + alpha S from footnote 88 in the overview paper
-    #where N is the noise in flux of a source, N0 is the noise in flux due to sky brightness
-    #and instrumentation, S is the number of counts registered from the source and alpha
-    #is some constant
+    # 1) Take the approximation N^2 = N0^2 + alpha S from footnote 88 in the overview paper
+    # where N is the noise in flux of a source, N0 is the noise in flux due to sky brightness
+    # and instrumentation, S is the number of counts registered from the source and alpha
+    # is some constant
     #
-    #2) Divide by S^2 and demand that N/S = 0.2 for a source detected at m5. Solve
-    #the resulting equation for alpha in terms of N0 and S5 (the number of counts from
-    #a source at m5)
+    # 2) Divide by S^2 and demand that N/S = 0.2 for a source detected at m5. Solve
+    # the resulting equation for alpha in terms of N0 and S5 (the number of counts from
+    # a source at m5)
     #
-    #3) Substitute this expression for alpha back into the equation for (N/S)^2
-    #for a general source.  Re-factor the equation so that it looks like equation
-    #5 of the overview paper (note that x = S5/S).  This should give you gamma = (N0/S5)^2
+    # 3) Substitute this expression for alpha back into the equation for (N/S)^2
+    # for a general source.  Re-factor the equation so that it looks like equation
+    # 5 of the overview paper (note that x = S5/S).  This should give you gamma = (N0/S5)^2
     #
-    #4) Solve equation 41 of the SNR document for the neff * sigma_total^2 term
-    #given snr=5 and counts as calculated above.  Note that neff * sigma_total^2
-    #is N0^2 in the equation above
+    # 4) Solve equation 41 of the SNR document for the neff * sigma_total^2 term
+    # given snr=5 and counts as calculated above.  Note that neff * sigma_total^2
+    # is N0^2 in the equation above
     #
-    #This should give you
+    # This should give you
 
     gamma = 0.04 - 1.0/(counts*photParams.gain)
 
@@ -380,9 +388,9 @@ def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     for (gg, mf, ff) in zip(gamma, m5Fluxes, sourceFluxes):
         fluxRatio = mf/ff
 
-        snrSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
+        noiseSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
 
-        noise.append(numpy.sqrt(snrSq))
+        noise.append(numpy.sqrt(noiseSq))
 
     return 1.0/numpy.array(noise), gamma
 
@@ -416,6 +424,7 @@ def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
         return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2))
     else:
         return magErrorFromSNR(snr)
+
 
 def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
                     photParams, seeing, verbose=False):
