@@ -338,6 +338,7 @@ def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=Non
 
     return 1.0/numpy.array(noise), gamma
 
+
 def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
                     photParams, seeing, verbose=False):
     """
@@ -396,7 +397,6 @@ def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
         print " Total Signal: %.2f   Total Noise: %.2f    SNR: %.2f" %(sourcecounts, noise, snr)
         # Return the signal to noise value.
     return snr
-
 
 
 def calcAstrometricError(mag, m5, nvisit=1):
