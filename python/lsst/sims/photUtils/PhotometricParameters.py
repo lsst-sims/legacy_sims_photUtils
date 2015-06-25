@@ -2,55 +2,177 @@ import numpy
 
 __all__ = ["PhotometricParameters"]
 
+class DefaultPhotometricParameters:
+    """
+    This class will just contain a bunch of dict which store
+    the default PhotometricParameters for LSST Bandpasses
+
+    Users should not access this class (which is why it is
+    not included in the __all__ declaration for this file).
+
+    It is only used to initialize PhotometricParameters off of
+    a bandpass name.
+    """
+
+    bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
+
+    #exposure time in seconds
+    exptime = {'u':15.0, 'g':15.0, 'r':15.0, 'i':15.0, 'z':15.0, 'y':15.0}
+
+    #number of exposures
+    nexp = {'u':2, 'g':2, 'r':2, 'i':2, 'z':2, 'y':2}
+
+    #effective area in cm^2
+    effarea = {'u': 3.31830724e5,
+               'g': 3.31830724e5,
+               'r': 3.31830724e5,
+               'i': 3.31830724e5,
+               'z': 3.31830724e5,
+               'y': 3.31830724e5}
+
+    #electrons per ADU
+    gain = {'u':2.3, 'g':2.3, 'r':2.3, 'i':2.3, 'z':2.3, 'y':2.3}
+
+    #electrons per pixel per exposure
+    readnoise = {'u':5.0, 'g':5.0, 'r':5.0, 'i':5.0, 'z':5.0, 'y':5.0}
+
+    #electrons per pixel per second
+    darkcurrent = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2}
+
+    #electrons per pixel per exposure
+    othernoise = {'u':4.69, 'g':4.69, 'r':4.69, 'i':4.69, 'z':4.69, 'y':4.69}
+
+    #arcseconds per pixel
+    platescale = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2}
+
+    #systematic squared error in magnitudes
+    sigmaSys = {'u':0.005, 'g':0.005, 'r':0.005, 'i':0.005, 'z':0.005, 'y':0.005}
+
+
 class PhotometricParameters(object):
 
-    def __init__(self, exptime=15.0,
-                 nexp=2,
-                 effarea=numpy.pi*(6.5*100./2.0)**2,
-                 gain=2.3,
-                 readnoise=5.,
-                 darkcurrent=0.2,
-                 othernoise=4.69,
-                 platescale=0.2,
-                 sigmaSys=0.005):
+    def __init__(self, exptime=None,
+                 nexp=None,
+                 effarea=None,
+                 gain=None,
+                 readnoise=None,
+                 darkcurrent=None,
+                 othernoise=None,
+                 platescale=None,
+                 sigmaSys=None,
+                 bandpass=None):
 
         """
-        @param [in] exptime exposure time in seconds (default 15)
+        @param [in] exptime exposure time in seconds (defaults to LSST value)
 
-        @param [in] nexp number of expusres (default 2)
+        @param [in] nexp number of expusres (defaults to LSST value)
 
-        @param [in] effarea effective area in cm^2 (default for 6.5 meter diameter)
+        @param [in] effarea effective area in cm^2 (defaults to LSST value)
 
-        @param [in] gain electrons per ADU (default 2.3)
+        @param [in] gain electrons per ADU (defaults to LSST value)
 
-        @param [in] readnoise electrons per pixel per exposure (default 5.0)
+        @param [in] readnoise electrons per pixel per exposure (defaults to LSST value)
 
-        @param [in] darkcurrent electons per pixel per second (default 0.2)
+        @param [in] darkcurrent electons per pixel per second (defaults to LSST value)
 
-        @param [in] othernoise electrons per pixel per exposure (default 4.69)
+        @param [in] othernoise electrons per pixel per exposure (defaults to LSST value)
 
-        @param [in] platescale arcseconds per pixel (default 0.2)
+        @param [in] platescale arcseconds per pixel (defaults to LSST value)
 
         @param [in] sigmaSys systematic error in magnitudes
-        (default 0.005)
+        (defaults to LSST value)
+
+        @param [in] bandpass is the name of the bandpass to which these paramters
+        correspond.  If set to an LSST bandpass, the constructor will initialize
+        PhotometricParamters to LSST default values for that bandpass, excepting
+        any paramters that have been set by hand, i.e
+
+        myPhotParams = PhotometricParameters(nexp=3, bandpass='u')
+
+        will initialize a PhotometricParameters object to u bandpass defaults, except
+        with 3 exposures instead of 2.
+
+        If bandpass is left as None, other parameters will default to LSST r band
+        values (except for those values set by hand).  The bandpass member variable
+        of PhotometricParameters will, however, remain None.
         """
 
-        self._exptime = exptime
-        self._nexp = nexp
-        self._effarea = effarea
-        self._gain = gain
-        self._platescale = platescale
-        self._sigmaSys = sigmaSys
+        # readnoise, darkcurrent and othernoise are measured in electrons.
+        # This is taken from the specifications document LSE-30 on Docushare
+        # Section 3.4.2.3 states that the total noise per pixel shall be 12.7 electrons
+        # which the defaults sum to (remember to multply darkcurrent by the number
+        # of seconds in an exposure=15).
 
-        #The quantities below are measured in electrons.
-        #This is taken from the specifications document LSE-30 on Docushare
-        #Section 3.4.2.3 states that the total noise per pixel shall be 12.7 electrons
-        #which the defaults sum to (remember to multply darkcurrent by the number
-        #of seconds in an exposure=15).
-        self._readnoise = readnoise
-        self._darkcurrent = darkcurrent
-        self._othernoise = othernoise
+        self._exptime = None
+        self._nexp = None
+        self._effarea = None
+        self._gain = None
+        self._platescale = None
+        self._sigmaSys = None
+        self._readnoise = None
+        self._darkcurrent = None
+        self._othernoise = None
 
+
+        self._bandpass = bandpass
+        defaults = DefaultPhotometricParameters()
+
+        if bandpass is None:
+            bandpass = 'r'
+            # This is so we do not set the self._bandpass member variable
+            # without the user's explicit consent, but we can still access
+            # default values from the PhotometricParameterDefaults
+
+        if bandpass in defaults.bandpassNames:
+            self._exptime = defaults.exptime[bandpass]
+            self._nexp = defaults.nexp[bandpass]
+            self._effarea = defaults.effarea[bandpass]
+            self._gain = defaults.gain[bandpass]
+            self._platescale = defaults.platescale[bandpass]
+            self._sigmaSys = defaults.sigmaSys[bandpass]
+            self._readnoise = defaults.readnoise[bandpass]
+            self._darkcurrent = defaults.darkcurrent[bandpass]
+            self._othernoise = defaults.othernoise[bandpass]
+
+        if exptime is not None:
+            self._exptime = exptime
+
+        if nexp is not None:
+            self._nexp = nexp
+
+        if effarea is not None:
+            self._effarea = effarea
+
+        if gain is not None:
+            self._gain = gain
+
+        if platescale is not None:
+            self._platescale = platescale
+
+        if sigmaSys is not None:
+            self._sigmaSys = sigmaSys
+
+        if readnoise is not None:
+            self._readnoise = readnoise
+
+        if darkcurrent is not None:
+            self._darkcurrent = darkcurrent
+
+        if othernoise is not None:
+            self._othernoise = othernoise
+
+
+    @property
+    def bandpass(self):
+        """
+        The name of the bandpass associated with these parameters (can be None)
+        """
+        return self._bandpass
+
+    @bandpass.setter
+    def bandpass(self, value):
+        raise RuntimeError("You should not be setting bandpass on the fly; " +
+                           "Just instantiate a new case of PhotometricParameters")
 
     @property
     def exptime(self):

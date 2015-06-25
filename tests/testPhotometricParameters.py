@@ -1,4 +1,5 @@
 import os
+import numpy
 import unittest
 import eups
 import lsst.utils.tests as utilsTests
@@ -16,7 +17,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
         defaults = PhotometricParameters()
         params = ['exptime', 'nexp', 'effarea',
                   'gain', 'readnoise', 'darkcurrent',
-                  'othernoise', 'platescale']
+                  'othernoise', 'platescale', 'sigmaSys']
 
         for attribute in params:
             kwargs = {}
@@ -32,6 +33,41 @@ class PhotometricParametersUnitTest(unittest.TestCase):
                                         testCase.__getattribute__(pp))
 
                     self.assertEqual(testCase.__getattribute__(pp), -100.0)
+
+
+    def testDefaults(self):
+        """
+        Test that PhotometricParameters are correctly assigned to defaults
+        """
+        bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
+        for bp in bandpassNames:
+            photParams = PhotometricParameters(bandpass=bp)
+            self.assertEqual(photParams.bandpass, bp)
+            self.assertAlmostEqual(photParams.exptime, 15.0, 7)
+            self.assertAlmostEqual(photParams.nexp, 2, 7)
+            self.assertAlmostEqual(photParams.effarea/(numpy.pi*(6.5*100/2.0)**2), 1.0, 7)
+            self.assertAlmostEqual(photParams.gain, 2.3, 7)
+            self.assertAlmostEqual(photParams.darkcurrent, 0.2, 7)
+            self.assertAlmostEqual(photParams.othernoise, 4.69, 7)
+            self.assertAlmostEqual(photParams.platescale, 0.2, 7)
+            self.assertAlmostEqual(photParams.sigmaSys, 0.005, 7)
+
+
+    def testNoBandpass(self):
+        """
+        Test that if no bandpass is set, bandpass stays 'None' even after all other
+        parameters are assigned.
+        """
+        photParams = PhotometricParameters()
+        self.assertEqual(photParams.bandpass, None)
+        self.assertAlmostEqual(photParams.exptime, 15.0, 7)
+        self.assertAlmostEqual(photParams.nexp, 2, 7)
+        self.assertAlmostEqual(photParams.effarea/(numpy.pi*(6.5*100/2.0)**2), 1.0, 7)
+        self.assertAlmostEqual(photParams.gain, 2.3, 7)
+        self.assertAlmostEqual(photParams.darkcurrent, 0.2, 7)
+        self.assertAlmostEqual(photParams.othernoise, 4.69, 7)
+        self.assertAlmostEqual(photParams.platescale, 0.2, 7)
+        self.assertAlmostEqual(photParams.sigmaSys, 0.005, 7)
 
 
     def testAssignment(self):
@@ -98,6 +134,20 @@ class PhotometricParametersUnitTest(unittest.TestCase):
             msg += 'was able to assign platescale; '
         except:
             self.assertEqual(testCase.platescale, controlCase.platescale)
+
+        try:
+            testCase.sigmaSys = -1.0
+            success += 1
+            msg += 'was able to assign sigmaSys; '
+        except:
+            self.assertEqual(testCase.sigmaSys, controlCase.sigmaSys)
+
+        try:
+            testCase.bandpass = 'z'
+            success += 1
+            msg += 'was able to assign bandpass; '
+        except:
+            self.assertEqual(testCase.bandpass, controlCase.bandpass)
 
         self.assertEqual(success, 0, msg=msg)
 
