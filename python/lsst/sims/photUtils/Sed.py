@@ -75,9 +75,6 @@ if the wavelength range and grid is the same for each SED (calculate a_x/b_x wit
      These methods are intended to give a user an easy way to scale an SED to match an expected magnitude.
   renormalizeSED  -- intended for rescaling SEDS to a common flambda or fnu level.
   writeSED -- keep a file record of your SED.
-  calcSNR_psf / calcSNR_mag -- two methods to calculate the SNR of a SED. (_psf is more accurate, but
-requires knowing the sky count backgrounds. _mag assumes you know the m5 already).
-  calcMagError / calcAstrometricError -- calculated based on SciBook values, but just estimates.
   setPhiArray -- given a list of bandpasses, sets up the 2-d phiArray (for manyMagCalc) and dlambda value.
   manyMagCalc -- given 2-d phiArray and dlambda, this will return an array of magnitudes (in the same
 order as the bandpasses) of this SED in each of those bandpasses.
