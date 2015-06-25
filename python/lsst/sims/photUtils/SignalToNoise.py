@@ -4,7 +4,7 @@ from .Bandpass import Bandpass
 from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
-          "calcM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_m5",
+          "calcM5", "calcSkyCountsPerPixelForM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_m5",
           "calcAstrometricError", "magErrorFromSNR", "calcMagError_m5", "calcMagError_sed"]
 
 
@@ -96,8 +96,8 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
 
 
-def calcSkyCountsForM5(m5target, totalBandpass, photParams,
-                       seeing = None):
+def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams,
+                               seeing = None):
 
     """
     Calculate the number of sky counts per pixel expected for a given
@@ -106,10 +106,7 @@ def calcSkyCountsForM5(m5target, totalBandpass, photParams,
     The 5-sigma limiting magnitude (m5) for an observation is
     determined by a combination of the telescope and camera parameters
     (such as diameter of the mirrors and the readnoise) together with the
-    sky background. This method (setM5) scales a provided sky background
-    Sed so that an observation would have a target m5 value, for the
-    provided hardware parameters. Using the resulting Sed in the
-    'calcM5' method will return this target value for m5.
+    sky background.
 
     @param [in] the desired value of m5
 
@@ -129,38 +126,75 @@ def calcSkyCountsForM5(m5target, totalBandpass, photParams,
     if seeing is None:
         seeing = LSSTdefaults().seeing('r')
 
-    #instantiate a flat SED
+    # instantiate a flat SED
     flatSed = Sed()
     flatSed.setFlatSED()
 
-    #normalize the SED so that it has a magnitude equal to the desired m5
+    # normalize the SED so that it has a magnitude equal to the desired m5
     fNorm = flatSed.calcFluxNorm(m5target, totalBandpass)
     flatSed.multiplyFluxNorm(fNorm)
     sourceCounts = flatSed.calcADU(totalBandpass, photParams=photParams)
 
-    #calculate the effective number of pixels for a double-Gaussian PSF
+    # calculate the effective number of pixels for a double-Gaussian PSF
     neff = calcNeff(seeing, photParams.platescale)
 
-    #calculate the square of the noise due to the instrument
+    # calculate the square of the noise due to the instrument
     noise_instr_sq = calcInstrNoiseSq(photParams=photParams)
 
-    #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
-    #given snr=5 and counts as calculated above
-    #SNR document can be found at
-    #https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
+    # now solve equation 41 of the SNR document for the neff * sigma_total^2 term
+    # given snr=5 and counts as calculated above
+    # SNR document can be found at
+    # https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
+
     nSigmaSq = (sourceCounts*sourceCounts)/25.0 - sourceCounts/photParams.gain
 
     skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
     skyCountsTarget = skyNoiseTarget*photParams.gain
 
-    #TODO:
-    #This method should throw an error if skyCountsTarget is negative
-    #unfortunately, that currently happens for default values of
-    #m5 as taken from arXiv:0805.2366, table 2.  Adding the error
-    #should probably wait for a later issue in which we hash out what
-    #the units are for all of the parameters stored in PhotometricDefaults.
+    # TODO:
+    # This method should throw an error if skyCountsTarget is negative
+    # unfortunately, that currently happens for default values of
+    # m5 as taken from arXiv:0805.2366, table 2.  Adding the error
+    # should probably wait for a later issue in which we hash out what
+    # the units are for all of the parameters stored in PhotometricDefaults.
 
     return skyCountsTarget
+
+
+def calcSkyCountsForM5(m5target, totalBandpass, photParams,
+                               seeing = None):
+
+    """
+    Calculate the number of sky counts (total; not per pixel) expected for a given
+    value of the 5-sigma limiting magnitude (m5)
+
+    The 5-sigma limiting magnitude (m5) for an observation is
+    determined by a combination of the telescope and camera parameters
+    (such as diameter of the mirrors and the readnoise) together with the
+    sky background.
+
+    @param [in] the desired value of m5
+
+    @param [in] totalBandpass is an instantiation of the Bandpass class
+    representing the total throughput of the telescope (instrumentation
+    plus atmosphere)
+
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
+    @param [in] seeing in arcseconds
+
+    @param [out] returns the expected number of sky counts
+    """
+
+    if seeing is None:
+        seeing = LSSTdefaults().seeing('r')
+
+    neff = calcNeff(seeing=seeing, platescale=photParams.platescale)
+
+    return neff*calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams, seeing=seeing)
+
 
 
 def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):

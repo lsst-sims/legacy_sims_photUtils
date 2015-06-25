@@ -14,7 +14,7 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase, PhotometryHardware
 from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, calcGamma, \
-                                calcM5, calcSNR_sed, calcSkyCountsForM5, magErrorFromSNR
+                                calcM5, calcSNR_sed, calcSkyCountsPerPixelForM5, magErrorFromSNR
 from lsst.sims.photUtils.utils import testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
@@ -70,7 +70,7 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     if seeing is None:
         seeing = LSSTdefaults().seeing('r')
 
-    skyCountsTarget = calcSkyCountsForM5(m5target, totalBandpass, seeing=seeing,
+    skyCountsTarget = calcSkyCountsPerPixelForM5(m5target, totalBandpass, seeing=seeing,
                                              photParams=photParams)
 
     skySedOut = Sed(wavelen=numpy.copy(skysed.wavelen),
