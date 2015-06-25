@@ -992,7 +992,7 @@ class Sed(object):
         photometric response of the telescope.
 
         @param [out] The noise due to all of these sources added in quadrature
-        in counts
+        in ADU counts
         """
 
         return (photParams.nexp*photParams.readnoise**2 + \
