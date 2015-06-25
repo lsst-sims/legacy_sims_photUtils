@@ -3,7 +3,7 @@ from .Sed import Sed
 from .Bandpass import Bandpass
 from lsst.sims.photUtils import LSSTdefaults
 
-__all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_psf",
+__all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
           "calcM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_gamma",
           "calcAstrometricError"]
 
@@ -72,7 +72,7 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     """
 
     #This method outputs all of the parameters calculated along the way
-    #so that the verbose version of calcSNR_psf still works
+    #so that the verbose version of calcSNR_sed still works
 
     #Calculate the effective number of pixels for double-Gaussian PSF
     neff = calcNeff(seeing, photParams.platescale)
@@ -338,7 +338,7 @@ def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=Non
 
     return 1.0/numpy.array(noise), gamma
 
-def calcSNR_psf(spectrum, totalbandpass, skysed, hardwarebandpass,
+def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
                     photParams, seeing, verbose=False):
     """
     Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.

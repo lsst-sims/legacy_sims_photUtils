@@ -14,7 +14,7 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase, PhotometryHardware
 from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_gamma, calcGamma, \
-                                calcM5, calcSNR_psf, calcSkyCountsForM5
+                                calcM5, calcSNR_sed, calcSkyCountsForM5
 from lsst.sims.photUtils.utils import testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
                                       cartoonGalaxies, testStars, testGalaxies, \
@@ -792,7 +792,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
     def testSignalToNoise(self):
         """
-        Test that calcSNR_gamma and calcSNR_psf give similar results
+        Test that calcSNR_gamma and calcSNR_sed give similar results
         """
         defaults = LSSTdefaults()
         photParams = PhotometricParameters()
@@ -824,7 +824,7 @@ class uncertaintyUnitTest(unittest.TestCase):
             controlList = []
             magList = []
             for filt in hardware.bandpassDict:
-                controlList.append(calcSNR_psf(spectrum, hardware.bandpassDict[filt],
+                controlList.append(calcSNR_sed(spectrum, hardware.bandpassDict[filt],
                                                hardware.skySED,
                                                hardware.hardwareBandpassDict[filt],
                                                photParams, defaults.seeing(filt)))
@@ -845,7 +845,7 @@ class uncertaintyUnitTest(unittest.TestCase):
     def testRawUncertainty(self):
         """
         Test that values calculated by calculatePhotometricUncertainty agree
-        with values calculated by calcSNR_psf
+        with values calculated by calcSNR_sed
         """
 
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
@@ -868,7 +868,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata)
         for i in range(len(self.bandpasses)):
-            snr = calcSNR_psf(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                               seeing=LSSTdefaults().seeing(self.bandpasses[i]),
                               photParams=PhotometricParameters())
 
@@ -902,7 +902,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata, sigmaSysSq=sigmaSysSq)
         for i in range(len(self.bandpasses)):
-            snr = calcSNR_psf(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
+            snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                               seeing=LSSTdefaults().seeing(self.bandpasses[i]),
                               photParams=PhotometricParameters())
 
