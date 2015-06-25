@@ -5,7 +5,7 @@ from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
           "calcM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_m5",
-          "calcAstrometricError"]
+          "calcAstrometricError", "magErrorFromSNR", "calcMagError_m5", "calcMagError_sed"]
 
 
 def calcNeff(seeing, platescale):
@@ -214,6 +214,20 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     mag_5sigma = flatsource.calcMag(totalBandpass)
     return mag_5sigma
 
+
+def magErrorFromSNR(snr):
+    """
+    convert flux signal to noise ratio to an error in magnitude
+
+    @param [in] snr is the signal to noise ratio in flux
+
+    @param [out] the resulting error in magnitude
+    """
+
+    #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
+    return 2.5*numpy.log10(1.0+1.0/snr)
+
+
 def calcGamma(bandpass, m5, photParams):
 
     """
@@ -272,16 +286,16 @@ def calcGamma(bandpass, m5, photParams):
 
     return gamma
 
-def calcSNR_m5(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
+def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
-    @param [in] fluxes is a numpy array of fluxes.  Each row is a different bandpass.
-    Each column is a different object, i.e. fluxes[i][j] is the flux of the jth object
+    @param [in] magnitudes is a numpy array.  Each row is a different bandpass.
+    Each column is a different object, i.e. magnitudes[i][j] is the magnitude of the jth object
     in the ith bandpass.
 
     @param [in] bandpasses is a list of Bandpass objects corresponding to the
-    bandpasses in which fluxes have been calculated
+    bandpasses in which magnitudes have been calculated
 
     @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
 
@@ -295,14 +309,14 @@ def calcSNR_m5(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
     @param [in] sigmaSysSq is the square of the systematic signal to noise ratio.
 
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
-    the input fluxes.
+    the input magnitudes.
 
     @param [out] gamma is a numpy array of the calculated gamma parameters for the
     bandpasses used here (in case the user wants to call this method again.
     """
 
-    if fluxes.shape[0] != len(bandpasses):
-        raise RuntimeError("Passed %d magnitudes to " % fluxes.shape[0] + \
+    if magnitudes.shape[0] != len(bandpasses):
+        raise RuntimeError("Passed %d magnitudes to " % magnitudes.shape[0] + \
                             " calcSNR_m5; " + \
                             "passed %d bandpasses" % len(bandpasses))
 
@@ -323,10 +337,12 @@ def calcSNR_m5(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
 
         gamma = numpy.array(gg)
 
-    m5Fluxes = Sed().fluxFromMag(m5)
+    dummySed = Sed()
+    m5Fluxes = dummySed.fluxFromMag(m5)
+    sourceFluxes = dummySed.fluxFromMag(magnitudes)
 
     noise = []
-    for (gg, mf, ff) in zip(gamma, m5Fluxes, fluxes):
+    for (gg, mf, ff) in zip(gamma, m5Fluxes, sourceFluxes):
         fluxRatio = mf/ff
 
         if sigmaSysSq is not None:
@@ -338,6 +354,35 @@ def calcSNR_m5(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
 
     return 1.0/numpy.array(noise), gamma
 
+
+def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
+    """
+    Calculate magnitude error using the model from equation (5) of arXiv:0805.2366
+
+    @param [in] magnitudes is a numpy array.  Each row is a different bandpass.
+    Each column is a different object, i.e. magnitudes[i][j] is the magnitude of the jth object
+    in the ith bandpass.
+
+    @param [in] bandpasses is a list of Bandpass objects corresponding to the
+    bandpasses in which magnitudes have been calculated
+
+    @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
+
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
+    @param [in] gamma (optional) is the gamma parameter from equation(5) of
+    arXiv:0805.2366.  If not provided, this method will calculate it.
+
+    @param [in] sigmaSysSq is the square of the systematic signal to noise ratio.
+
+    @param [out] is a numpy array of errors in magnitude
+    """
+
+    snr, gamma = calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=gamma, sigmaSysSq=sigmaSysSq)
+
+    return magErrorFromSNR(snr)
 
 def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
                     photParams, seeing, verbose=False):
@@ -397,6 +442,44 @@ def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
         print " Total Signal: %.2f   Total Noise: %.2f    SNR: %.2f" %(sourcecounts, noise, snr)
         # Return the signal to noise value.
     return snr
+
+
+def calcMagError_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
+                    photParams, seeing, verbose=False):
+    """
+    Calculate the magnitudeError for a source, given the bandpass(es) and sky SED.
+
+    For a given source, sky sed, total bandpass and hardware bandpass, as well as
+    seeing / expTime, calculates the SNR with optimal PSF extraction
+    assuming a double-gaussian PSF.
+
+    @param [in] spectrum is an instantiation of the Sed class containing the SED of
+    the object whose signal to noise ratio is being calculated
+
+    @param [in] totalbandpass is an instantiation of the Bandpass class
+    representing the total throughput (system + atmosphere)
+
+    @param [in] skysed is an instantiation of the Sed class representing
+    the sky emission per square arcsecond.
+
+    @param [in] hardwarebandpass is an instantiation of the Bandpass class
+    representing just the throughput of the system hardware.
+
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
+    @param [in] seeing in arcseconds
+
+    @param [in] verbose is a boolean
+
+    @param [out] magnitude error
+    """
+
+    snr = calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
+                      photParams, seeing, verbose=verbose)
+
+    return magErrorFromSNR(snr)
 
 
 def calcAstrometricError(mag, m5, nvisit=1):

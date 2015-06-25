@@ -15,7 +15,7 @@ import numpy
 import eups
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
-                                calcSNR_m5, PhotometricParameters
+                                calcSNR_m5, PhotometricParameters, magErrorFromSNR
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -401,12 +401,12 @@ class PhotometryBase(PhotometryHardware):
 
         return magList
 
-    def calculateFluxSignalToNoise(self, fluxes, obs_metadata=None, sigmaSysSq=None):
+    def calculateFluxSignalToNoise(self, magnitudes, obs_metadata=None, sigmaSysSq=None):
         """
         Calculate the signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
-        @param [in] fluxes is a list containing the object fluxes.  Every row corresponds to
-        a bandpass, which is to say that fluxes[i][j] is the magnitude of the jth object in the
+        @param [in] magnitudes is a numpy array containing the object magnitudes.  Every row corresponds to
+        a bandpass, which is to say that magnitudes[i][j] is the magnitude of the jth object in the
         bandpass characterized by self.bandpassDict.values()[i]
 
         @param [in] obs_metadata is the metadata of this observation (mostly desired because
@@ -422,8 +422,8 @@ class PhotometryBase(PhotometryHardware):
         if obs_metadata is None:
             raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
 
-        if fluxes.shape[0] != self.nBandpasses:
-            raise RuntimeError("Passed %d magnitudes to " % fluxes.shape[0] + \
+        if magnitudes.shape[0] != self.nBandpasses:
+            raise RuntimeError("Passed %d magnitudes to " % magnitudes.shape[0] + \
                                 " PhotometryBase.calculatePhotometricUncertainty; " + \
                                 "needed %d " % self.nBandpasses)
 
@@ -452,7 +452,7 @@ class PhotometryBase(PhotometryHardware):
             self._m5List = numpy.array(mm)
             self._gammaList = numpy.array(gg)
 
-        snr, gamma = calcSNR_m5(fluxes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
+        snr, gamma = calcSNR_m5(magnitudes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
                                 sigmaSysSq=sigmaSysSq, photParams=self.photParams)
 
         return snr
@@ -472,11 +472,10 @@ class PhotometryBase(PhotometryHardware):
         @param [out] an array of magnitude uncertainties corresponding to the input magnitudes
         """
 
-        snr = self.calculateFluxSignalToNoise(Sed().fluxFromMag(magnitudes),
+        snr = self.calculateFluxSignalToNoise(magnitudes,
                                               obs_metadata=obs_metadata, sigmaSysSq=sigmaSysSq)
 
-        #see www.ucolick.org/~bolte/AY257/s_n.pdf section 3.1
-        return 2.5*numpy.log10(1.0+1.0/snr)
+        return magErrorFromSNR(snr)
 
 
 class PhotometryGalaxies(PhotometryBase):

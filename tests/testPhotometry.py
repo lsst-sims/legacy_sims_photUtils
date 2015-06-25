@@ -782,12 +782,10 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         photParams = PhotometricParameters()
         shortGamma = numpy.array([1.0, 1.0])
-        fluxes = numpy.power(10.0, -0.4*magnitudes)
-        shortFluxes = numpy.power(10.0, -0.4*shortMagnitudes)
-        self.assertRaises(RuntimeError, calcSNR_m5, fluxes, phot.bandpassDict.values(), shortMagnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_m5, shortFluxes, phot.bandpassDict.values(), magnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_m5, fluxes, phot.bandpassDict.values(), magnitudes, photParams, gamma=shortGamma)
-        snr, gg = calcSNR_m5(fluxes, phot.bandpassDict.values(), magnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, phot.bandpassDict.values(), shortMagnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, shortMagnitudes, phot.bandpassDict.values(), magnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, phot.bandpassDict.values(), magnitudes, photParams, gamma=shortGamma)
+        snr, gg = calcSNR_m5(magnitudes, phot.bandpassDict.values(), magnitudes, photParams)
 
 
     def testSignalToNoise(self):
@@ -820,7 +818,7 @@ class uncertaintyUnitTest(unittest.TestCase):
             spectrum.readSED_flambda(os.path.join(sedDir, name))
             ff = spectrum.calcFluxNorm(m5[2]-offset[ix], hardware.bandpassDict.values()[2])
             spectrum.multiplyFluxNorm(ff)
-            fluxList = []
+            magList = []
             controlList = []
             magList = []
             for filt in hardware.bandpassDict:
@@ -829,9 +827,9 @@ class uncertaintyUnitTest(unittest.TestCase):
                                                hardware.hardwareBandpassDict[filt],
                                                photParams, defaults.seeing(filt)))
 
-                fluxList.append(spectrum.calcFlux(hardware.bandpassDict[filt]))
+                magList.append(spectrum.calcMag(hardware.bandpassDict[filt]))
 
-            testList, gammaList = calcSNR_m5(numpy.array(fluxList),
+            testList, gammaList = calcSNR_m5(numpy.array(magList),
                                         numpy.array(hardware.bandpassDict.values()),
                                         numpy.array(m5),
                                         photParams)
@@ -906,7 +904,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                               seeing=LSSTdefaults().seeing(self.bandpasses[i]),
                               photParams=PhotometricParameters())
 
-            testSNR, gamma = calcSNR_m5(numpy.array([Sed().fluxFromMag(magnitudes[i])]), [self.totalBandpasses[i]],
+            testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
                                            numpy.array([m5[i]]), photParams=PhotometricParameters())
 
             self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
