@@ -15,7 +15,7 @@ import numpy
 import eups
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
-                                calcSNR_gamma, PhotometricParameters
+                                calcSNR_m5, PhotometricParameters
 from lsst.sims.catalogs.measures.instance import defaultSpecMap
 from lsst.sims.catalogs.measures.instance import compound
 
@@ -452,8 +452,8 @@ class PhotometryBase(PhotometryHardware):
             self._m5List = numpy.array(mm)
             self._gammaList = numpy.array(gg)
 
-        snr, gamma = calcSNR_gamma(fluxes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
-                                   sigmaSysSq=sigmaSysSq, photParams=self.photParams)
+        snr, gamma = calcSNR_m5(fluxes, self.bandpassDict.values(), self._m5List, gamma=self._gammaList,
+                                sigmaSysSq=sigmaSysSq, photParams=self.photParams)
 
         return snr
 

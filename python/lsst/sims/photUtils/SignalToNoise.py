@@ -4,7 +4,7 @@ from .Bandpass import Bandpass
 from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
-          "calcM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_gamma",
+          "calcM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_m5",
           "calcAstrometricError"]
 
 
@@ -272,7 +272,7 @@ def calcGamma(bandpass, m5, photParams):
 
     return gamma
 
-def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
+def calcSNR_m5(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
@@ -303,17 +303,17 @@ def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=Non
 
     if fluxes.shape[0] != len(bandpasses):
         raise RuntimeError("Passed %d magnitudes to " % fluxes.shape[0] + \
-                            " calcSNR_gamma; " + \
+                            " calcSNR_m5; " + \
                             "passed %d bandpasses" % len(bandpasses))
 
     if gamma is not None and len(gamma) != len(bandpasses):
         raise RuntimeError("Passed %d bandpasses to " % len(bandpasses) + \
-                           " calcSNR_gamma; " + \
+                           " calcSNR_m5; " + \
                            "passed %d gamma parameters" % len(gamma))
 
     if len(m5) != len(bandpasses):
         raise RuntimeError("Passed %d bandpasses to " % len(bandpasses) + \
-                           " calcSNR_gamma; " + \
+                           " calcSNR_m5; " + \
                            "passed %d m5 values" % len(m5))
 
     if gamma is None:

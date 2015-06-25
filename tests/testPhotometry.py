@@ -13,7 +13,7 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, PhotometryBase, PhotometryHardware
-from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_gamma, calcGamma, \
+from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, calcGamma, \
                                 calcM5, calcSNR_sed, calcSkyCountsForM5
 from lsst.sims.photUtils.utils import testDefaults, cartoonPhotometryStars, \
                                       cartoonPhotometryGalaxies, testCatalog, cartoonStars, \
@@ -784,15 +784,15 @@ class uncertaintyUnitTest(unittest.TestCase):
         shortGamma = numpy.array([1.0, 1.0])
         fluxes = numpy.power(10.0, -0.4*magnitudes)
         shortFluxes = numpy.power(10.0, -0.4*shortMagnitudes)
-        self.assertRaises(RuntimeError, calcSNR_gamma, fluxes, phot.bandpassDict.values(), shortMagnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_gamma, shortFluxes, phot.bandpassDict.values(), magnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_gamma, fluxes, phot.bandpassDict.values(), magnitudes, photParams, gamma=shortGamma)
-        snr, gg = calcSNR_gamma(fluxes, phot.bandpassDict.values(), magnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, fluxes, phot.bandpassDict.values(), shortMagnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, shortFluxes, phot.bandpassDict.values(), magnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, fluxes, phot.bandpassDict.values(), magnitudes, photParams, gamma=shortGamma)
+        snr, gg = calcSNR_m5(fluxes, phot.bandpassDict.values(), magnitudes, photParams)
 
 
     def testSignalToNoise(self):
         """
-        Test that calcSNR_gamma and calcSNR_sed give similar results
+        Test that calcSNR_m5 and calcSNR_sed give similar results
         """
         defaults = LSSTdefaults()
         photParams = PhotometricParameters()
@@ -831,7 +831,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
                 fluxList.append(spectrum.calcFlux(hardware.bandpassDict[filt]))
 
-            testList, gammaList = calcSNR_gamma(numpy.array(fluxList),
+            testList, gammaList = calcSNR_m5(numpy.array(fluxList),
                                         numpy.array(hardware.bandpassDict.values()),
                                         numpy.array(m5),
                                         photParams)
@@ -906,10 +906,10 @@ class uncertaintyUnitTest(unittest.TestCase):
                               seeing=LSSTdefaults().seeing(self.bandpasses[i]),
                               photParams=PhotometricParameters())
 
-            testSNR, gamma = calcSNR_gamma(numpy.array([Sed().fluxFromMag(magnitudes[i])]), [self.totalBandpasses[i]],
+            testSNR, gamma = calcSNR_m5(numpy.array([Sed().fluxFromMag(magnitudes[i])]), [self.totalBandpasses[i]],
                                            numpy.array([m5[i]]), photParams=PhotometricParameters())
 
-            self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_gamma test %e != %e ' \
+            self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
                                                                % (snr, testSNR[0]))
 
             control = 1.0/(snr*snr) + sigmaSysSq
