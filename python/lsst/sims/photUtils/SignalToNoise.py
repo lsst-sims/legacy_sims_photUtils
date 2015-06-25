@@ -103,8 +103,7 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
 
 
-def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams,
-                               seeing = None):
+def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams, seeing=None):
 
     """
     Calculate the number of sky counts per pixel expected for a given
@@ -168,8 +167,7 @@ def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams,
     return skyCountsTarget
 
 
-def calcSkyCountsForM5(m5target, totalBandpass, photParams,
-                               seeing = None):
+def calcSkyCountsForM5(m5target, totalBandpass, photParams, seeing=None):
 
     """
     Calculate the number of sky counts (total; not per pixel) expected for a given
