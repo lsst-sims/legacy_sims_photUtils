@@ -286,7 +286,7 @@ def calcGamma(bandpass, m5, photParams):
 
     return gamma
 
-def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
+def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
@@ -345,17 +345,14 @@ def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=No
     for (gg, mf, ff) in zip(gamma, m5Fluxes, sourceFluxes):
         fluxRatio = mf/ff
 
-        if sigmaSysSq is not None:
-            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio + sigmaSysSq
-        else:
-            sigmaSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
+        snrSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
 
-        noise.append(numpy.sqrt(sigmaSq))
+        noise.append(numpy.sqrt(snrSq))
 
     return 1.0/numpy.array(noise), gamma
 
 
-def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=None):
+def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     """
     Calculate magnitude error using the model from equation (5) of arXiv:0805.2366
 
@@ -380,9 +377,12 @@ def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None, sigmaSys
     @param [out] is a numpy array of errors in magnitude
     """
 
-    snr, gamma = calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=gamma, sigmaSysSq=sigmaSysSq)
+    snr, gamma = calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=gamma)
 
-    return magErrorFromSNR(snr)
+    if photParams.sigmaSysSq is not None:
+        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSysSq,2))
+    else:
+        return magErrorFromSNR(snr)
 
 def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
                     photParams, seeing, verbose=False):
@@ -479,7 +479,10 @@ def calcMagError_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     snr = calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
                       photParams, seeing, verbose=verbose)
 
-    return magErrorFromSNR(snr)
+    if photParams.sigmaSysSq is not None:
+        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSysSq,2))
+    else:
+        return magErrorFromSNR(snr)
 
 
 def calcAstrometricError(mag, m5, nvisit=1):
