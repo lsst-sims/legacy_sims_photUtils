@@ -983,7 +983,7 @@ class Sed(object):
         """
         return 2.436*(seeing/platescale)**2
 
-    def calcInstrNoiseSqElectrons(self, photParams):
+    def calcInstrNoiseSq(self, photParams):
         """
         Combine all of the noise due to intrumentation into one value
 
@@ -992,12 +992,12 @@ class Sed(object):
         photometric response of the telescope.
 
         @param [out] The noise due to all of these sources added in quadrature
-        in electrons
+        in counts
         """
 
-        return photParams.nexp*photParams.readnoise**2 + \
+        return (photParams.nexp*photParams.readnoise**2 + \
                photParams.darkcurrent*photParams.exptime*photParams.nexp + \
-               photParams.nexp*photParams.othernoise**2
+               photParams.nexp*photParams.othernoise**2)/(photParams.gain*photParams.gain)
 
     def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, photParams, seeing):
         """
@@ -1038,10 +1038,7 @@ class Sed(object):
 
         #Calculate the square of the noise due to instrumental effects.
         #Include the readout noise as many times as there are exposures
-        noise_instr_sq_electrons = self.calcInstrNoiseSqElectrons(photParams=photParams)
-
-        #convert to counts
-        noise_instr_sq = noise_instr_sq_electrons/(photParams.gain*photParams.gain)
+        noise_instr_sq = self.calcInstrNoiseSq(photParams=photParams)
 
         #Calculate the square of the noise due to sky background poisson noise
         noise_sky_sq = skycounts/photParams.gain

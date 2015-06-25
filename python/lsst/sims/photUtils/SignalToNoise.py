@@ -51,10 +51,7 @@ def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
     neff = flatSed.calcNeff(seeing, photParams.platescale)
 
     #calculate the square of the noise due to the instrument
-    noise_instr_sq_electrons = flatSed.calcInstrNoiseSqElectrons(photParams=photParams)
-
-    #convert to counts
-    noise_instr_sq = noise_instr_sq_electrons/(photParams.gain*photParams.gain)
+    noise_instr_sq = flatSed.calcInstrNoiseSq(photParams=photParams)
 
     #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
     #given snr=5 and counts as calculated above
