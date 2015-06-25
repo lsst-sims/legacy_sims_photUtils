@@ -3,7 +3,97 @@ from .Sed import Sed
 from .Bandpass import Bandpass
 from lsst.sims.photUtils import LSSTdefaults
 
-__all__ = ["calcM5", "expectedSkyCountsForM5", "setM5", "calcGamma", "calcSNR_gamma"]
+__all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_psf",
+          "calcM5", "expectedSkyCountsForM5", "setM5", "calcGamma", "calcSNR_gamma",
+          "calcAstrometricError"]
+
+
+def calcNeff(seeing, platescale):
+    """
+    Calculate the effective number of pixels in a double Gaussian PSF
+
+    @param [in] seeing in arcseconds
+
+    @param [in] platescale in arcseconds per pixel
+
+    @param [out] the effective number of pixels contained by a double
+    Gaussian PSF
+
+    see equation 31 of the SNR document
+    http://www.astro.washington.edu/users/ivezic/Teaching/Astr511/LSST_SNRdoc.pdf
+    """
+    return 2.436*(seeing/platescale)**2
+
+
+def calcInstrNoiseSq(photParams):
+    """
+    Combine all of the noise due to intrumentation into one value
+
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
+    @param [out] The noise due to all of these sources added in quadrature
+    in ADU counts
+    """
+
+    return (photParams.nexp*photParams.readnoise**2 + \
+           photParams.darkcurrent*photParams.exptime*photParams.nexp + \
+           photParams.nexp*photParams.othernoise**2)/(photParams.gain*photParams.gain)
+
+
+
+def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
+    """
+    Calculate the noise due to things that are not the source being observed
+    (i.e. intrumentation and sky background)
+
+    @param [in] skySed -- an instantiation of the Sed class representing the sky
+
+    @param [in] hardwarebandpass -- an instantiation of the Bandpass class representing
+    just the instrumentation throughputs
+
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
+    @param [in] seeing in arcseconds
+
+    @param [out] total non-source noise squared (in ADU counts)
+    (this is simga^2_tot * neff in equation 41 of the SNR document)
+
+    @param [out] noise squared due just to the instrument (in ADU counts)
+
+    @param [out] noise squared due to the sky (in ADU counts)
+
+    @param [out] noise squared due to sky measurement (in ADU counts, presently set to zero)
+
+    @param [out] the effective number of pixels in a double Gaussian PSF
+    """
+
+    #This method outputs all of the parameters calculated along the way
+    #so that the verbose version of calcSNR_psf still works
+
+    #Calculate the effective number of pixels for double-Gaussian PSF
+    neff = calcNeff(seeing, photParams.platescale)
+
+    #Calculate the counts form the sky
+    skycounts = skySed.calcADU(hardwarebandpass, photParams=photParams) \
+                * photParams.platescale * photParams.platescale
+
+    #Calculate the square of the noise due to instrumental effects.
+    #Include the readout noise as many times as there are exposures
+    noise_instr_sq = calcInstrNoiseSq(photParams=photParams)
+
+    #Calculate the square of the noise due to sky background poisson noise
+    noise_sky_sq = skycounts/photParams.gain
+
+    #Discount error in sky measurement for now
+    noise_skymeasurement_sq = 0
+
+    total_noise_sq = neff*(noise_sky_sq + noise_instr_sq + noise_skymeasurement_sq)
+    return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
+
 
 def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
                            seeing = None):
@@ -48,10 +138,10 @@ def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
     counts = flatSed.calcADU(totalBandpass, photParams=photParams)
 
     #calculate the effective number of pixels for a double-Gaussian PSF
-    neff = flatSed.calcNeff(seeing, photParams.platescale)
+    neff = calcNeff(seeing, photParams.platescale)
 
     #calculate the square of the noise due to the instrument
-    noise_instr_sq = flatSed.calcInstrNoiseSq(photParams=photParams)
+    noise_instr_sq = calcInstrNoiseSq(photParams=photParams)
 
     #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
     #given snr=5 and counts as calculated above
@@ -170,7 +260,7 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     snr = 5.0
     v_n, noise_instr_sq, \
     noise_sky_sq, noise_skymeasurement_sq, \
-    skycounts, neff = flatsource.calcTotalNonSourceNoiseSq(skysed, hardware, photParams, seeing)
+    skycounts, neff = calcTotalNonSourceNoiseSq(skysed, hardware, photParams, seeing)
 
     counts_5sigma = (snr**2)/2.0/photParams.gain + \
                      numpy.sqrt((snr**4)/4.0/photParams.gain + (snr**2)*v_n)
@@ -307,3 +397,91 @@ def calcSNR_gamma(fluxes, bandpasses, m5, photParams, gamma=None, sigmaSysSq=Non
         noise.append(numpy.sqrt(sigmaSq))
 
     return 1.0/numpy.array(noise), gamma
+
+def calcSNR_psf(spectrum, totalbandpass, skysed, hardwarebandpass,
+                    photParams, seeing, verbose=False):
+    """
+    Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
+
+    For a given source, sky sed, total bandpass and hardware bandpass, as well as
+    seeing / expTime, calculates the SNR with optimal PSF extraction
+    assuming a double-gaussian PSF.
+
+    @param [in] spectrum is an instantiation of the Sed class containing the SED of
+    the object whose signal to noise ratio is being calculated
+
+    @param [in] totalbandpass is an instantiation of the Bandpass class
+    representing the total throughput (system + atmosphere)
+
+    @param [in] skysed is an instantiation of the Sed class representing
+    the sky emission per square arcsecond.
+
+    @param [in] hardwarebandpass is an instantiation of the Bandpass class
+    representing just the throughput of the system hardware.
+
+    @param [in] photParams is an instantiation of the
+    PhotometricParameters class that carries details about the
+    photometric response of the telescope.
+
+    @param [in] seeing in arcseconds
+
+    @param [in] verbose is a boolean
+
+    @param [out] signal to noise ratio
+    """
+
+    # Calculate the counts from the source.
+    sourcecounts = spectrum.calcADU(totalbandpass, photParams=photParams)
+
+    # Calculate the (square of the) noise due to signal poisson noise.
+    noise_source_sq = sourcecounts/photParams.gain
+
+    non_source_noise_sq, \
+    noise_instr_sq, \
+    noise_sky_sq, \
+    noise_skymeasurement_sq, \
+    skycounts, neff = calcTotalNonSourceNoiseSq(skysed, hardwarebandpass, photParams, seeing)
+
+    # Calculate total noise
+    noise = numpy.sqrt(noise_source_sq + non_source_noise_sq)
+    # Calculate the signal to noise ratio.
+    snr = sourcecounts / noise
+    if verbose:
+        print "For Nexp %.1f of time %.1f: " % (photParams.nexp, photParams.expTime)
+        print "Counts from source: %.2f  Counts from sky: %.2f" %(sourcecounts, skycounts)
+        print "Seeing: %.2f('')  Neff pixels: %.3f(pix)" %(seeing, neff)
+        print "Noise from sky: %.2f Noise from instrument: %.2f" \
+            %(numpy.sqrt(noise_sky_sq), numpy.sqrt(noise_instr_sq))
+        print "Noise from source: %.2f" %(numpy.sqrt(noise_source_sq))
+        print " Total Signal: %.2f   Total Noise: %.2f    SNR: %.2f" %(sourcecounts, noise, snr)
+        # Return the signal to noise value.
+    return snr
+
+
+
+def calcAstrometricError(mag, m5, nvisit=1):
+    """
+    Calculate the astrometric error, for object catalog purposes.
+
+    Returns astrometric error for a given SNR, in mas.
+    """
+    # The astrometric error can be applied to parallax or proper motion (for nvisit>1).
+    # If applying to proper motion, should also divide by the # of years of the survey.
+    # This is also referenced in the astroph/0805.2366 paper.
+    # D. Monet suggests sqrt(Nvisit/2) for first 3 years, sqrt(N) for longer, in reduction of error
+    # because of the astrometric measurement method, the systematic and random error are both reduced.
+    # Zeljko says 'be conservative', so removing this reduction for now.
+    rgamma = 0.039
+    xval = numpy.power(10, 0.4*(mag-m5))
+    # The average seeing is 0.7" (or 700 mas).
+    error_rand = 700.0 * numpy.sqrt((0.04-rgamma)*xval + rgamma*xval*xval)
+    error_rand = error_rand / numpy.sqrt(nvisit)
+    # The systematic error floor in astrometry:
+    error_sys = 10.0
+    # These next few lines are the code removed due to Zeljko's 'be conservative' requirement.
+    #if (nvisit<30):
+    #    error_sys = error_sys/numpy.sqrt(nvisit/2.0)
+    #if (nvisit>30):
+    #    error_sys = error_sys/numpy.sqrt(nvisit)
+    astrom_error = numpy.sqrt(error_sys * error_sys + error_rand*error_rand)
+    return astrom_error
