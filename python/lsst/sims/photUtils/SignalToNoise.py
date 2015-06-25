@@ -20,7 +20,7 @@ def calcNeff(seeing, platescale):
     Gaussian PSF
 
     see equation 31 of the SNR document
-    http://www.astro.washington.edu/users/ivezic/Teaching/Astr511/LSST_SNRdoc.pdf
+    https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
     """
     return 2.436*(seeing/platescale)**2
 
@@ -60,7 +60,8 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     @param [in] seeing in arcseconds
 
     @param [out] total non-source noise squared (in ADU counts)
-    (this is simga^2_tot * neff in equation 41 of the SNR document)
+    (this is simga^2_tot * neff in equation 41 of the SNR document
+    https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40 )
 
     @param [out] noise squared due just to the instrument (in ADU counts)
 
@@ -145,6 +146,8 @@ def calcSkyCountsForM5(m5target, totalBandpass, photParams,
 
     #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
     #given snr=5 and counts as calculated above
+    #SNR document can be found at
+    #https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
     nSigmaSq = (sourceCounts*sourceCounts)/25.0 - sourceCounts/photParams.gain
 
     skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
@@ -189,7 +192,7 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     @param [out] returns the value of m5 for the given bandpass and sky SED
     """
     #This comes from equation 45 of the SNR document (v1.2, May 2010)
-    #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+    #https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
 
     if seeing is None:
         seeing = LSSTdefaults().seeing('r')
@@ -249,7 +252,7 @@ def calcGamma(bandpass, m5, photParams):
     @param [out] gamma
     """
     #This is based on the LSST SNR document (v1.2, May 2010)
-    #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
+    #https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
     #as well as equations 4-6 of the overview paper (arXiv:0805.2366)
 
     #instantiate a flat SED
