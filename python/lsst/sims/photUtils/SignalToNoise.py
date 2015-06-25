@@ -4,7 +4,7 @@ from .Bandpass import Bandpass
 from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_psf",
-          "calcM5", "expectedSkyCountsForM5", "setM5", "calcGamma", "calcSNR_gamma",
+          "calcM5", "expectedSkyCountsForM5", "calcGamma", "calcSNR_gamma",
           "calcAstrometricError"]
 
 
@@ -159,66 +159,6 @@ def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
 
     return skyCountsTarget
 
-
-def setM5(m5target, skysed, totalBandpass, hardware,
-          photParams,
-          seeing = None):
-    """
-    Take an SED representing the sky and normalize it so that
-    m5 (the magnitude at which an object is detected in this
-    bandpass at 5-sigma) is set to some specified value.
-
-    The 5-sigma limiting magnitude (m5) for an observation is
-    determined by a combination of the telescope and camera parameters
-    (such as diameter of the mirrors and the readnoise) together with the
-    sky background. This method (setM5) scales a provided sky background
-    Sed so that an observation would have a target m5 value, for the
-    provided hardware parameters. Using the resulting Sed in the
-    'calcM5' method will return this target value for m5.
-
-    @param [in] the desired value of m5
-
-    @param [in] skysed is an instantiation of the Sed class representing
-    sky emission
-
-    @param [in] totalBandpass is an instantiation of the Bandpass class
-    representing the total throughput of the telescope (instrumentation
-    plus atmosphere)
-
-    @param [in] hardware is an instantiation of the Bandpass class representing
-    the throughput due solely to instrumentation.
-
-    @param [in] photParams is an instantiation of the
-    PhotometricParameters class that carries details about the
-    photometric response of the telescope.
-
-    @param [in] seeing in arcseconds
-
-    @param [out] returns an instantiation of the Sed class that is the skysed renormalized
-    so that m5 has the desired value.
-
-    Note that the returned SED will be renormalized such that calling the method
-    self.calcADU(hardwareBandpass) on it will yield the number of counts per square
-    arcsecond in a given bandpass.
-    """
-
-    #This is based on the LSST SNR document (v1.2, May 2010)
-    #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
-
-    if seeing is None:
-        seeing = LSSTdefaults().seeing('r')
-
-    skyCountsTarget = expectedSkyCountsForM5(m5target, totalBandpass, seeing=seeing,
-                                             photParams=photParams)
-
-    skySedOut = Sed(wavelen=numpy.copy(skysed.wavelen),
-                    flambda=numpy.copy(skysed.flambda))
-
-    skyCounts = skySedOut.calcADU(hardware, photParams=photParams) \
-                    * photParams.platescale * photParams.platescale
-    skySedOut.multiplyFluxNorm(skyCountsTarget/skyCounts)
-
-    return skySedOut
 
 def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     """
