@@ -999,7 +999,7 @@ class Sed(object):
                photParams.darkcurrent*photParams.exptime*photParams.nexp + \
                photParams.nexp*photParams.othernoise**2)/(photParams.gain*photParams.gain)
 
-    def calcNonSourceNoiseSq(self, skySed, hardwarebandpass, photParams, seeing):
+    def calcTotalNonSourceNoiseSq(self, skySed, hardwarebandpass, photParams, seeing):
         """
         Calculate the noise due to things that are not the source being observed
         (i.e. intrumentation and sky background)
@@ -1015,13 +1015,14 @@ class Sed(object):
 
         @param [in] seeing in arcseconds
 
-        @param [out] total noise squared (in ADU)
+        @param [out] total non-source noise squared (in ADU counts)
+        (this is simga^2_tot * neff in equation 41 of the SNR document)
 
-        @param [out] noise squared due just to the instrument (in ADU)
+        @param [out] noise squared due just to the instrument (in ADU counts)
 
-        @param [out] noise squared due to the sky (in ADU)
+        @param [out] noise squared due to the sky (in ADU counts)
 
-        @param [out] noise squared due to sky measurement (in ADU, presently set to zero)
+        @param [out] noise squared due to sky measurement (in ADU counts, presently set to zero)
 
         @param [out] the effective number of pixels in a double Gaussian PSF
         """
@@ -1088,7 +1089,7 @@ class Sed(object):
         noise_instr_sq, \
         noise_sky_sq, \
         noise_skymeasurement_sq, \
-        skycounts, neff = self.calcNonSourceNoiseSq(skysed, hardwarebandpass, photParams, seeing)
+        skycounts, neff = self.calcTotalNonSourceNoiseSq(skysed, hardwarebandpass, photParams, seeing)
 
         # Calculate total noise
         noise = numpy.sqrt(noise_source_sq + non_source_noise_sq)

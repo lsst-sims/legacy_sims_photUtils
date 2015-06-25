@@ -170,7 +170,7 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     snr = 5.0
     v_n, noise_instr_sq, \
     noise_sky_sq, noise_skymeasurement_sq, \
-    skycounts, neff = flatsource.calcNonSourceNoiseSq(skysed, hardware, photParams, seeing)
+    skycounts, neff = flatsource.calcTotalNonSourceNoiseSq(skysed, hardware, photParams, seeing)
 
     counts_5sigma = (snr**2)/2.0/photParams.gain + \
                      numpy.sqrt((snr**4)/4.0/photParams.gain + (snr**2)*v_n)
