@@ -4,7 +4,7 @@ from .Bandpass import Bandpass
 from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_psf",
-          "calcM5", "expectedSkyCountsForM5", "calcGamma", "calcSNR_gamma",
+          "calcM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_gamma",
           "calcAstrometricError"]
 
 
@@ -95,8 +95,8 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
 
 
-def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
-                           seeing = None):
+def calcSkyCountsForM5(m5target, totalBandpass, photParams,
+                       seeing = None):
 
     """
     Calculate the number of sky counts per pixel expected for a given
@@ -135,7 +135,7 @@ def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
     #normalize the SED so that it has a magnitude equal to the desired m5
     fNorm = flatSed.calcFluxNorm(m5target, totalBandpass)
     flatSed.multiplyFluxNorm(fNorm)
-    counts = flatSed.calcADU(totalBandpass, photParams=photParams)
+    sourceCounts = flatSed.calcADU(totalBandpass, photParams=photParams)
 
     #calculate the effective number of pixels for a double-Gaussian PSF
     neff = calcNeff(seeing, photParams.platescale)
@@ -145,7 +145,7 @@ def expectedSkyCountsForM5(m5target, totalBandpass, photParams,
 
     #now solve equation 41 of the SNR document for the neff * sigma_total^2 term
     #given snr=5 and counts as calculated above
-    nSigmaSq = (counts*counts)/25.0 - counts/photParams.gain
+    nSigmaSq = (sourceCounts*sourceCounts)/25.0 - sourceCounts/photParams.gain
 
     skyNoiseTarget = nSigmaSq/neff - noise_instr_sq
     skyCountsTarget = skyNoiseTarget*photParams.gain
