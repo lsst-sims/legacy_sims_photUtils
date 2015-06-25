@@ -104,7 +104,6 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
 
 
 def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams, seeing=None):
-
     """
     Calculate the number of sky counts per pixel expected for a given
     value of the 5-sigma limiting magnitude (m5)
