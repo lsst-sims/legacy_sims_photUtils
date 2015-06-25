@@ -871,7 +871,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                               photParams=PhotometricParameters())
 
             ss = 2.5*numpy.log10(1.0+1.0/snr)
-            ss = numpy.sqrt(ss*ss + numpy.power(phot.photParams.sigmaSysSq,2))
+            ss = numpy.sqrt(ss*ss + numpy.power(phot.photParams.sigmaSys,2))
             msg = '%e is not %e; failed' % (ss, sigma[i])
             self.assertAlmostEqual(ss, sigma[i], 10, msg=msg)
 
@@ -879,9 +879,9 @@ class uncertaintyUnitTest(unittest.TestCase):
         """
         Test that systematic uncertainty is added correctly.
         """
-        sigmaSysSq = 0.002
+        sigmaSys = 0.002
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        photParams= PhotometricParameters(sigmaSysSq=sigmaSysSq)
+        photParams= PhotometricParameters(sigmaSys=sigmaSys)
 
         phot = PhotometryBase()
         phot.photParams = photParams
@@ -909,12 +909,12 @@ class uncertaintyUnitTest(unittest.TestCase):
                               photParams=PhotometricParameters())
 
             testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
-                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSysSq=None))
+                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSys=None))
 
             self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
                                                                % (snr, testSNR[0]))
 
-            control = numpy.sqrt(numpy.power(magErrorFromSNR(testSNR),2) + numpy.power(sigmaSysSq,2))
+            control = numpy.sqrt(numpy.power(magErrorFromSNR(testSNR),2) + numpy.power(sigmaSys,2))
 
             msg = '%e is not %e; failed' % (sigma[i], control)
 
@@ -926,7 +926,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         Test that systematic uncertainty is handled correctly when set to None.
         """
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        photParams= PhotometricParameters(sigmaSysSq=None)
+        photParams= PhotometricParameters(sigmaSys=None)
 
         phot = PhotometryBase()
         phot.photParams = photParams
@@ -954,7 +954,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                               photParams=PhotometricParameters())
 
             testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
-                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSysSq=None))
+                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSys=None))
 
             self.assertAlmostEqual(snr, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
                                                                % (snr, testSNR[0]))

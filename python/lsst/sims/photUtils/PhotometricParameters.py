@@ -12,7 +12,7 @@ class PhotometricParameters(object):
                  darkcurrent=0.2,
                  othernoise=4.69,
                  platescale=0.2,
-                 sigmaSysSq=0.005):
+                 sigmaSys=0.005):
 
         """
         @param [in] exptime exposure time in seconds (default 15)
@@ -31,7 +31,7 @@ class PhotometricParameters(object):
 
         @param [in] platescale arcseconds per pixel (default 0.2)
 
-        @param [in] sigmaSysSq systematic squared error in magnitudes
+        @param [in] sigmaSys systematic error in magnitudes
         (default 0.005)
         """
 
@@ -40,7 +40,7 @@ class PhotometricParameters(object):
         self._effarea = effarea
         self._gain = gain
         self._platescale = platescale
-        self._sigmaSysSq = sigmaSysSq
+        self._sigmaSys = sigmaSys
 
         #The quantities below are measured in electrons.
         #This is taken from the specifications document LSE-30 on Docushare
@@ -157,14 +157,14 @@ class PhotometricParameters(object):
 
 
     @property
-    def sigmaSysSq(self):
+    def sigmaSys(self):
         """
-        systematic squared error in magnitudes
+        systematic error in magnitudes
         """
-        return self._sigmaSysSq
+        return self._sigmaSys
 
 
-    @sigmaSysSq.setter
-    def sigmaSysSq(self, value):
-        raise RuntimeError("You should not be setting sigmaSysSq on the fly; " +
+    @sigmaSys.setter
+    def sigmaSys(self, value):
+        raise RuntimeError("You should not be setting sigmaSys on the fly; " +
                            "Just instantiate a new case of PhotometricParameters")

@@ -306,8 +306,6 @@ def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
-    @param [in] sigmaSysSq is the square of the systematic signal to noise ratio.
-
     @param [out] snr is a numpy array of the signal to noise ratio corresponding to
     the input magnitudes.
 
@@ -372,15 +370,13 @@ def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
-    @param [in] sigmaSysSq is the square of the systematic signal to noise ratio.
-
     @param [out] is a numpy array of errors in magnitude
     """
 
     snr, gamma = calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=gamma)
 
-    if photParams.sigmaSysSq is not None:
-        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSysSq,2))
+    if photParams.sigmaSys is not None:
+        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2))
     else:
         return magErrorFromSNR(snr)
 
@@ -479,8 +475,8 @@ def calcMagError_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     snr = calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
                       photParams, seeing, verbose=verbose)
 
-    if photParams.sigmaSysSq is not None:
-        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSysSq,2))
+    if photParams.sigmaSys is not None:
+        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2))
     else:
         return magErrorFromSNR(snr)
 
