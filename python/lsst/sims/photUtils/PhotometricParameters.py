@@ -103,10 +103,10 @@ class PhotometricParameters(object):
         @param [in] sigmaSys systematic error in magnitudes
         (defaults to LSST value)
 
-        @param [in] bandpass is the name of the bandpass to which these paramters
+        @param [in] bandpass is the name of the bandpass to which these parameters
         correspond.  If set to an LSST bandpass, the constructor will initialize
-        PhotometricParamters to LSST default values for that bandpass, excepting
-        any paramters that have been set by hand, i.e
+        PhotometricParameters to LSST default values for that bandpass, excepting
+        any parameters that have been set by hand, i.e
 
         myPhotParams = PhotometricParameters(nexp=3, bandpass='u')
 
