@@ -55,27 +55,6 @@ class TestSNRmethods(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(magM5, magSed, decimal=3)
 
 
-    def testSkyCounts(self):
-        """
-        Make sure that sky counts per pixel and total sky counts are properly
-        related.
-        """
-        phot = PhotometryHardware()
-        phot.loadBandpassesFromFiles()
-        seeing = 0.6
-        platescale = 0.1
-        photParams = PhotometricParameters(platescale=platescale)
-        neff = snr.calcNeff(seeing=seeing, platescale=platescale)
-        m5 = 22.0
-        for bp in phot.bandpassDict:
-            ctsPerPixel = snr.calcSkyCountsPerPixelForM5(m5, phot.bandpassDict[bp],
-                                                         photParams, seeing=seeing)
-
-            ctsTotal = snr.calcSkyCountsForM5(m5, phot.bandpassDict[bp], photParams, seeing=seeing)
-
-            self.assertAlmostEqual(ctsTotal/ctsPerPixel, neff, 7)
-
-
 def suite():
     utilsTests.init()
     suites = []

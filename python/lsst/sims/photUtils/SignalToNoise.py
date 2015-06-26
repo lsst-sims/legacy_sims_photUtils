@@ -4,7 +4,7 @@ from .Bandpass import Bandpass
 from lsst.sims.photUtils import LSSTdefaults
 
 __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
-          "calcM5", "calcSkyCountsPerPixelForM5", "calcSkyCountsForM5", "calcGamma", "calcSNR_m5",
+          "calcM5", "calcSkyCountsPerPixelForM5", "calcGamma", "calcSNR_m5",
           "calcAstrometricError", "magErrorFromSNR", "calcMagError_m5", "calcMagError_sed"]
 
 
@@ -169,40 +169,6 @@ def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams, seeing=None)
     # the units are for all of the parameters stored in PhotometricDefaults.
 
     return skyCountsTarget
-
-
-def calcSkyCountsForM5(m5target, totalBandpass, photParams, seeing=None):
-
-    """
-    Calculate the number of sky counts (total; not per pixel) expected for a given
-    value of the 5-sigma limiting magnitude (m5)
-
-    The 5-sigma limiting magnitude (m5) for an observation is
-    determined by a combination of the telescope and camera parameters
-    (such as diameter of the mirrors and the readnoise) together with the
-    sky background.
-
-    @param [in] the desired value of m5
-
-    @param [in] totalBandpass is an instantiation of the Bandpass class
-    representing the total throughput of the telescope (instrumentation
-    plus atmosphere)
-
-    @param [in] photParams is an instantiation of the
-    PhotometricParameters class that carries details about the
-    photometric response of the telescope.
-
-    @param [in] seeing in arcseconds
-
-    @param [out] returns the expected number of sky counts
-    """
-
-    if seeing is None:
-        seeing = LSSTdefaults().seeing('r')
-
-    neff = calcNeff(seeing=seeing, platescale=photParams.platescale)
-
-    return neff*calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams, seeing=seeing)
 
 
 
