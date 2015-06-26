@@ -2,7 +2,7 @@ from .LSSTdefaults import *
 from .PhysicalParameters import *
 from .PhotometricParameters import *
 from .Bandpass import * 
-from .noiseUtilities import *
+from .SignalToNoise import *
 from .Sed import *
 from .Photometry import *
 from .Variability import *
