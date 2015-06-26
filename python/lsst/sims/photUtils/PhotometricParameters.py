@@ -20,14 +20,21 @@ class DefaultPhotometricParameters:
     # everything else (and to make it possible for
     # PhotometricParameters to access them using the bandpass name
     # passed to its constructor)
+    #
+    # Note: all dicts contain an 'any' key which will be the default
+    # value if an unknown bandpass is asked for
+    #
+    # 'any' values should be kept consistent with r band
 
-    bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
+    bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y', 'any']
 
     # exposure time in seconds
-    exptime = {'u':15.0, 'g':15.0, 'r':15.0, 'i':15.0, 'z':15.0, 'y':15.0}
+    exptime = {'u':15.0, 'g':15.0, 'r':15.0, 'i':15.0, 'z':15.0, 'y':15.0,
+               'any':15.0}
 
     # number of exposures
-    nexp = {'u':2, 'g':2, 'r':2, 'i':2, 'z':2, 'y':2}
+    nexp = {'u':2, 'g':2, 'r':2, 'i':2, 'z':2, 'y':2,
+            'any':2}
 
     # effective area in cm^2
     effarea = {'u': 3.31830724e5,
@@ -35,25 +42,32 @@ class DefaultPhotometricParameters:
                'r': 3.31830724e5,
                'i': 3.31830724e5,
                'z': 3.31830724e5,
-               'y': 3.31830724e5}
+               'y': 3.31830724e5,
+               'any': 3.31830724e5}
 
     # electrons per ADU
-    gain = {'u':2.3, 'g':2.3, 'r':2.3, 'i':2.3, 'z':2.3, 'y':2.3}
+    gain = {'u':2.3, 'g':2.3, 'r':2.3, 'i':2.3, 'z':2.3, 'y':2.3,
+            'any':2.3}
 
     # electrons per pixel per exposure
-    readnoise = {'u':5.0, 'g':5.0, 'r':5.0, 'i':5.0, 'z':5.0, 'y':5.0}
+    readnoise = {'u':5.0, 'g':5.0, 'r':5.0, 'i':5.0, 'z':5.0, 'y':5.0,
+                 'any':5.0}
 
     # electrons per pixel per second
-    darkcurrent = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2}
+    darkcurrent = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2,
+                   'any':0.2}
 
     # electrons per pixel per exposure
-    othernoise = {'u':4.69, 'g':4.69, 'r':4.69, 'i':4.69, 'z':4.69, 'y':4.69}
+    othernoise = {'u':4.69, 'g':4.69, 'r':4.69, 'i':4.69, 'z':4.69, 'y':4.69,
+                  'any':4.69}
 
     # arcseconds per pixel
-    platescale = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2}
+    platescale = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2,
+                  'any':0.2}
 
     # systematic squared error in magnitudes
-    sigmaSys = {'u':0.005, 'g':0.005, 'r':0.005, 'i':0.005, 'z':0.005, 'y':0.005}
+    sigmaSys = {'u':0.005, 'g':0.005, 'r':0.005, 'i':0.005, 'z':0.005, 'y':0.005,
+                'any':0.005}
 
 
 class PhotometricParameters(object):
@@ -72,7 +86,7 @@ class PhotometricParameters(object):
         """
         @param [in] exptime exposure time in seconds (defaults to LSST value)
 
-        @param [in] nexp number of expusres (defaults to LSST value)
+        @param [in] nexp number of exposures (defaults to LSST value)
 
         @param [in] effarea effective area in cm^2 (defaults to LSST value)
 
@@ -120,26 +134,27 @@ class PhotometricParameters(object):
         self._darkcurrent = None
         self._othernoise = None
 
-
         self._bandpass = bandpass
         defaults = DefaultPhotometricParameters()
 
         if bandpass is None:
-            bandpass = 'r'
+            bandpassKey = 'any'
             # This is so we do not set the self._bandpass member variable
             # without the user's explicit consent, but we can still access
             # default values from the PhotometricParameterDefaults
+        else:
+            bandpassKey = bandpass
 
-        if bandpass in defaults.bandpassNames:
-            self._exptime = defaults.exptime[bandpass]
-            self._nexp = defaults.nexp[bandpass]
-            self._effarea = defaults.effarea[bandpass]
-            self._gain = defaults.gain[bandpass]
-            self._platescale = defaults.platescale[bandpass]
-            self._sigmaSys = defaults.sigmaSys[bandpass]
-            self._readnoise = defaults.readnoise[bandpass]
-            self._darkcurrent = defaults.darkcurrent[bandpass]
-            self._othernoise = defaults.othernoise[bandpass]
+        if bandpassKey in defaults.bandpassNames:
+            self._exptime = defaults.exptime[bandpassKey]
+            self._nexp = defaults.nexp[bandpassKey]
+            self._effarea = defaults.effarea[bandpassKey]
+            self._gain = defaults.gain[bandpassKey]
+            self._platescale = defaults.platescale[bandpassKey]
+            self._sigmaSys = defaults.sigmaSys[bandpassKey]
+            self._readnoise = defaults.readnoise[bandpassKey]
+            self._darkcurrent = defaults.darkcurrent[bandpassKey]
+            self._othernoise = defaults.othernoise[bandpassKey]
 
         if exptime is not None:
             self._exptime = exptime
@@ -167,6 +182,49 @@ class PhotometricParameters(object):
 
         if othernoise is not None:
             self._othernoise = othernoise
+
+        failureMessage = ''
+        failureCt = 0
+
+        if self._exptime is None:
+            failureMessage += 'did not set exptime\n'
+            failureCt += 1
+
+        if self._nexp is None:
+            failureMessage += 'did not set nexp\n'
+            failureCt += 1
+
+        if self._effarea is None:
+            failureMessage += 'did not set effarea\n'
+            failureCt += 1
+
+        if self._gain is None:
+            failureMessage += 'did not set gain\n'
+            failureCt += 1
+
+        if self._platescale is None:
+            failureMessage += 'did not set platescale\n'
+            failureCt +=1
+
+        if self._sigmaSys is None:
+            failureMessage += 'did not set sigmaSys\n'
+            failureCt += 1
+
+        if self._readnoise is None:
+            failureMessage += 'did not set readnoise\n'
+            failureCt += 1
+
+        if self._darkcurrent is None:
+            failureMessage += 'did not set darkcurrent\n'
+            failureCt +=1
+
+        if self._othernoise is None:
+            failureMessage += 'did not set othernoise\n'
+            failureCt += 1
+
+        if failureCt>0:
+            raise RuntimeError('In PhotometricParameters:\n%s' % failureMessage)
+
 
 
     @property

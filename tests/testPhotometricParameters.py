@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import os
 import numpy
 import unittest
@@ -33,6 +34,48 @@ class PhotometricParametersUnitTest(unittest.TestCase):
                                         testCase.__getattribute__(pp))
 
                     self.assertEqual(testCase.__getattribute__(pp), -100.0)
+
+
+    def testExceptions(self):
+        """
+        Test that exceptions get raised when they ought to by the
+        PhotometricParameters constructor
+
+        We will instantiate PhotometricParametrs with different incomplete
+        lists of parameters set.  We will verify that the returned
+        error messages correctly point out which parameters were ignored.
+        """
+
+        expectedMessage={
+                        'exptime':'did not set exptime',
+                        'nexp':'did not set nexp',
+                        'effarea':'did not set effarea',
+                        'gain':'did not set gain',
+                        'platescale':'did not set platescale',
+                        'sigmaSys':'did not set sigmaSys',
+                        'readnoise':'did not set readnoise',
+                        'darkcurrent':'did not set darkcurrent',
+                        'othernoise':'did not set othernoise'
+                        }
+
+        with self.assertRaises(RuntimeError) as context:
+            PhotometricParameters(bandpass='x')
+
+        for name in expectedMessage:
+            self.assertTrue(expectedMessage[name] in context.exception.message)
+
+        for name1 in expectedMessage:
+            for name2 in expectedMessage:
+                setParameters = {name1:2.0, name2:2.0}
+                with self.assertRaises(RuntimeError) as context:
+                    PhotometricParameters(bandpass='x',**setParameters)
+
+                for name3 in expectedMessage:
+                    if name3 not in setParameters:
+                        self.assertTrue(expectedMessage[name3] in context.exception.message)
+                    else:
+                        self.assertTrue(expectedMessage[name3] not in context.exception.message)
+
 
 
     def testDefaults(self):
