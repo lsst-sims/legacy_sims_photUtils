@@ -23,13 +23,13 @@ class DefaultPhotometricParameters:
 
     bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
 
-    #exposure time in seconds
+    # exposure time in seconds
     exptime = {'u':15.0, 'g':15.0, 'r':15.0, 'i':15.0, 'z':15.0, 'y':15.0}
 
-    #number of exposures
+    # number of exposures
     nexp = {'u':2, 'g':2, 'r':2, 'i':2, 'z':2, 'y':2}
 
-    #effective area in cm^2
+    # effective area in cm^2
     effarea = {'u': 3.31830724e5,
                'g': 3.31830724e5,
                'r': 3.31830724e5,
@@ -37,22 +37,22 @@ class DefaultPhotometricParameters:
                'z': 3.31830724e5,
                'y': 3.31830724e5}
 
-    #electrons per ADU
+    # electrons per ADU
     gain = {'u':2.3, 'g':2.3, 'r':2.3, 'i':2.3, 'z':2.3, 'y':2.3}
 
-    #electrons per pixel per exposure
+    # electrons per pixel per exposure
     readnoise = {'u':5.0, 'g':5.0, 'r':5.0, 'i':5.0, 'z':5.0, 'y':5.0}
 
-    #electrons per pixel per second
+    # electrons per pixel per second
     darkcurrent = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2}
 
-    #electrons per pixel per exposure
+    # electrons per pixel per exposure
     othernoise = {'u':4.69, 'g':4.69, 'r':4.69, 'i':4.69, 'z':4.69, 'y':4.69}
 
-    #arcseconds per pixel
+    # arcseconds per pixel
     platescale = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2}
 
-    #systematic squared error in magnitudes
+    # systematic squared error in magnitudes
     sigmaSys = {'u':0.005, 'g':0.005, 'r':0.005, 'i':0.005, 'z':0.005, 'y':0.005}
 
 
