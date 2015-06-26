@@ -82,7 +82,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
         """
         Test that PhotometricParameters are correctly assigned to defaults
         """
-        bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
+        bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y', None]
         for bp in bandpassNames:
             photParams = PhotometricParameters(bandpass=bp)
             self.assertEqual(photParams.bandpass, bp)
@@ -93,7 +93,10 @@ class PhotometricParametersUnitTest(unittest.TestCase):
             self.assertAlmostEqual(photParams.darkcurrent, 0.2, 7)
             self.assertAlmostEqual(photParams.othernoise, 4.69, 7)
             self.assertAlmostEqual(photParams.platescale, 0.2, 7)
-            self.assertAlmostEqual(photParams.sigmaSys, 0.005, 7)
+            if bp not in ['u', 'z', 'y']:
+                self.assertAlmostEqual(photParams.sigmaSys, 0.005, 7)
+            else:
+                self.assertAlmostEqual(photParams.sigmaSys, 0.0075, 7)
 
 
     def testNoBandpass(self):

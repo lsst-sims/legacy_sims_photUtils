@@ -66,7 +66,9 @@ class DefaultPhotometricParameters:
                   'any':0.2}
 
     # systematic squared error in magnitudes
-    sigmaSys = {'u':0.005, 'g':0.005, 'r':0.005, 'i':0.005, 'z':0.005, 'y':0.005,
+    # see Table 14 of the SRD document
+    # https://docushare.lsstcorp.org/docushare/dsweb/Get/LPM-17
+    sigmaSys = {'u':0.0075, 'g':0.005, 'r':0.005, 'i':0.005, 'z':0.0075, 'y':0.0075,
                 'any':0.005}
 
 
