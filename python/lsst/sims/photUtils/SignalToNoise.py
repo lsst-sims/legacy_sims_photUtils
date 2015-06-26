@@ -37,10 +37,15 @@ def calcInstrNoiseSq(photParams):
     in ADU counts
     """
 
-    return (photParams.nexp*photParams.readnoise**2 + \
-           photParams.darkcurrent*photParams.exptime*photParams.nexp + \
-           photParams.nexp*photParams.othernoise**2)/(photParams.gain*photParams.gain)
+    # instrumental squared noise in electrons
+    instNoiseSq = photParams.nexp*photParams.readnoise**2 + \
+                  photParams.darkcurrent*photParams.exptime*photParams.nexp + \
+                  photParams.nexp*photParams.othernoise**2
 
+    # convert to ADU counts
+    instNoiseSq = instNoiseSq/(photParams.gain*photParams.gain)
+
+    return instNoiseSq
 
 
 def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
