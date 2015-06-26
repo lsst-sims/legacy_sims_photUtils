@@ -14,6 +14,13 @@ class DefaultPhotometricParameters:
     a bandpass name.
     """
 
+    # Obviously, some of these parameters (effarea, gain, platescale,
+    # darkcurrent, and readnoise) will not change as a function of bandpass;
+    # we are just making them dicts here to be consistent with
+    # everything else (and to make it possible for
+    # PhotometricParameters to access them using the bandpass name
+    # passed to its constructor)
+
     bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y']
 
     #exposure time in seconds
