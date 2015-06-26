@@ -55,6 +55,24 @@ class TestSNRmethods(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(magM5, magSed, decimal=3)
 
 
+    def testVerboseSNR(self):
+        """
+        Make sure that calcSNR_sed has everything it needs to run in verbose mode
+        """
+        defaults = LSSTdefaults()
+        photParams = PhotometricParameters()
+        phot = PhotometryHardware()
+        phot.loadBandpassesFromFiles()
+
+        #create a cartoon spectrum to test on
+        spectrum = Sed()
+        spectrum.setFlatSED()
+        spectrum.multiplyFluxNorm(1.0e-9)
+
+        snr.calcSNR_sed(spectrum, phot.bandpassDict['u'], phot.skySED,
+                        phot.hardwareBandpassDict['u'], photParams, seeing=0.7, verbose=True)
+
+
 def suite():
     utilsTests.init()
     suites = []

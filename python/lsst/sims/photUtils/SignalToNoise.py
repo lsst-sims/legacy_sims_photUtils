@@ -69,14 +69,6 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     @param [out] total non-source noise squared (in ADU counts)
     (this is simga^2_tot * neff in equation 41 of the SNR document
     https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40 )
-
-    @param [out] noise squared due just to the instrument (in ADU counts)
-
-    @param [out] noise squared due to the sky (in ADU counts)
-
-    @param [out] noise squared due to sky measurement (in ADU counts, presently set to zero)
-
-    @param [out] the effective number of pixels in a double Gaussian PSF
     """
 
     # This method outputs all of the parameters calculated along the way
@@ -105,7 +97,8 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     noise_skymeasurement_sq = 0
 
     total_noise_sq = neff*(noise_sky_sq + noise_instr_sq + noise_skymeasurement_sq)
-    return total_noise_sq, noise_instr_sq, noise_sky_sq, noise_skymeasurement_sq, skycounts, neff
+
+    return total_noise_sq
 
 
 def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams, seeing=None):
@@ -211,9 +204,7 @@ def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
     flatsource = Sed()
     flatsource.setFlatSED()
     snr = 5.0
-    v_n, noise_instr_sq, \
-    noise_sky_sq, noise_skymeasurement_sq, \
-    skycounts, neff = calcTotalNonSourceNoiseSq(skysed, hardware, photParams, seeing)
+    v_n = calcTotalNonSourceNoiseSq(skysed, hardware, photParams, seeing)
 
     counts_5sigma = (snr**2)/2.0/photParams.gain + \
                      numpy.sqrt((snr**4)/4.0/photParams.gain + (snr**2)*v_n)
@@ -400,7 +391,7 @@ def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
 
     For a given source, sky sed, total bandpass and hardware bandpass, as well as
-    seeing / expTime, calculates the SNR with optimal PSF extraction
+    seeing / exptime, calculates the SNR with optimal PSF extraction
     assuming a double-gaussian PSF.
 
     @param [in] spectrum is an instantiation of the Sed class containing the SED of
@@ -432,18 +423,19 @@ def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     # Calculate the (square of the) noise due to signal poisson noise.
     noise_source_sq = sourcecounts/photParams.gain
 
-    non_source_noise_sq, \
-    noise_instr_sq, \
-    noise_sky_sq, \
-    noise_skymeasurement_sq, \
-    skycounts, neff = calcTotalNonSourceNoiseSq(skysed, hardwarebandpass, photParams, seeing)
+    non_source_noise_sq = calcTotalNonSourceNoiseSq(skysed, hardwarebandpass, photParams, seeing)
 
     # Calculate total noise
     noise = numpy.sqrt(noise_source_sq + non_source_noise_sq)
     # Calculate the signal to noise ratio.
     snr = sourcecounts / noise
     if verbose:
-        print "For Nexp %.1f of time %.1f: " % (photParams.nexp, photParams.expTime)
+        skycounts = skysed.calcADU(hardwarebandpass, photParams) * (photParams.platescale**2)
+        noise_sky_sq = skycounts/photParams.gain
+        neff = calcNeff(seeing, photParams.platescale)
+        noise_instr_sq = calcInstrNoiseSq(photParams)
+
+        print "For Nexp %.1f of time %.1f: " % (photParams.nexp, photParams.exptime)
         print "Counts from source: %.2f  Counts from sky: %.2f" %(sourcecounts, skycounts)
         print "Seeing: %.2f('')  Neff pixels: %.3f(pix)" %(seeing, neff)
         print "Noise from sky: %.2f Noise from instrument: %.2f" \
@@ -460,7 +452,7 @@ def calcMagError_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     Calculate the magnitudeError for a source, given the bandpass(es) and sky SED.
 
     For a given source, sky sed, total bandpass and hardware bandpass, as well as
-    seeing / expTime, calculates the SNR with optimal PSF extraction
+    seeing / exptime, calculates the SNR with optimal PSF extraction
     assuming a double-gaussian PSF.
 
     @param [in] spectrum is an instantiation of the Sed class containing the SED of
