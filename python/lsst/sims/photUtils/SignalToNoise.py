@@ -385,7 +385,7 @@ def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
         return magErrorFromSNR(snr)
 
 
-def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
+def calcSNR_sed(sourceSed, totalbandpass, skysed, hardwarebandpass,
                     photParams, seeing, verbose=False):
     """
     Calculate the signal to noise ratio for a source, given the bandpass(es) and sky SED.
@@ -394,7 +394,7 @@ def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     seeing / exptime, calculates the SNR with optimal PSF extraction
     assuming a double-gaussian PSF.
 
-    @param [in] spectrum is an instantiation of the Sed class containing the SED of
+    @param [in] sourceSed is an instantiation of the Sed class containing the SED of
     the object whose signal to noise ratio is being calculated
 
     @param [in] totalbandpass is an instantiation of the Bandpass class
@@ -418,7 +418,7 @@ def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     """
 
     # Calculate the counts from the source.
-    sourcecounts = spectrum.calcADU(totalbandpass, photParams=photParams)
+    sourcecounts = sourceSed.calcADU(totalbandpass, photParams=photParams)
 
     # Calculate the (square of the) noise due to signal poisson noise.
     noise_source_sq = sourcecounts/photParams.gain
@@ -446,7 +446,7 @@ def calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     return snr
 
 
-def calcMagError_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
+def calcMagError_sed(sourceSed, totalbandpass, skysed, hardwarebandpass,
                     photParams, seeing, verbose=False):
     """
     Calculate the magnitudeError for a source, given the bandpass(es) and sky SED.
@@ -455,7 +455,7 @@ def calcMagError_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     seeing / exptime, calculates the SNR with optimal PSF extraction
     assuming a double-gaussian PSF.
 
-    @param [in] spectrum is an instantiation of the Sed class containing the SED of
+    @param [in] sourceSed is an instantiation of the Sed class containing the SED of
     the object whose signal to noise ratio is being calculated
 
     @param [in] totalbandpass is an instantiation of the Bandpass class
@@ -478,7 +478,7 @@ def calcMagError_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
     @param [out] magnitude error
     """
 
-    snr = calcSNR_sed(spectrum, totalbandpass, skysed, hardwarebandpass,
+    snr = calcSNR_sed(sourceSed, totalbandpass, skysed, hardwarebandpass,
                       photParams, seeing, verbose=verbose)
 
     if photParams.sigmaSys is not None:
