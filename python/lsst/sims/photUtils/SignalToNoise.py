@@ -71,9 +71,6 @@ def calcTotalNonSourceNoiseSq(skySed, hardwarebandpass, photParams, seeing):
     https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40 )
     """
 
-    # This method outputs all of the parameters calculated along the way
-    # so that the verbose version of calcSNR_sed still works
-
     # Calculate the effective number of pixels for double-Gaussian PSF
     neff = calcNeff(seeing, photParams.platescale)
 
