@@ -3,7 +3,6 @@ import numpy
 import eups
 import unittest
 import lsst.utils.tests as utilsTests
-
 import lsst.sims.photUtils.SignalToNoise as snr
 from lsst.sims.photUtils import Sed, Bandpass, PhotometricParameters, \
                                 LSSTdefaults
@@ -95,6 +94,21 @@ class TestSNRmethods(unittest.TestCase):
 
         snr.calcSNR_sed(spectrum, self.bpList[0], self.skySed,
                         self.hardwareList[0], photParams, seeing=0.7, verbose=True)
+
+
+    def testSNRexceptions(self):
+        """
+        test that calcSNR_m5 raises an exception when arguments are not of the right shape.
+        """
+
+        photParams = PhotometricParameters()
+        shortGamma = numpy.array([1.0, 1.0])
+        shortMagnitudes = numpy.array([22.0, 23.0])
+        magnitudes = 22.0*numpy.ones(6)
+        self.assertRaises(RuntimeError, snr.calcSNR_m5, magnitudes, self.bpList, shortMagnitudes, photParams)
+        self.assertRaises(RuntimeError, snr.calcSNR_m5, shortMagnitudes, self.bpList, magnitudes, photParams)
+        self.assertRaises(RuntimeError, snr.calcSNR_m5, magnitudes, self.bpList, magnitudes, photParams, gamma=shortGamma)
+        signalToNoise, gg = snr.calcSNR_m5(magnitudes, self.bpList, magnitudes, photParams)
 
 
 def suite():
