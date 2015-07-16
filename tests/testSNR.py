@@ -215,6 +215,56 @@ class TestSNRmethods(unittest.TestCase):
             self.assertAlmostEqual(sigmaList[i], control, 10, msg=msg)
 
 
+
+
+    def testNoSystematicUncertainty(self):
+        """
+        Test that systematic uncertainty is handled correctly when set to None.
+        """
+        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
+        photParams= PhotometricParameters(sigmaSys=0.0)
+
+        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.filterNameList)
+
+        magnitudes = []
+        for bp in self.bpList:
+            mag = self.starSED.calcMag(bp)
+            magnitudes.append(mag)
+
+        skySedList = []
+
+        for bp, hardware, filterName in zip(self.bpList, self.hardwareList, self.filterNameList):
+            skyDummy = Sed()
+            skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+            normalizedSkyDummy = setM5(obs_metadata.m5[filterName], skyDummy,
+                                       bp, hardware,
+                                       seeing=LSSTdefaults().seeing(filterName),
+                                       photParams=photParams)
+
+            skySedList.append(normalizedSkyDummy)
+
+        sigmaList = snr.calcMagError_m5(numpy.array(magnitudes), numpy.array(self.bpList), \
+                                        numpy.array(m5), photParams)
+
+
+        for i in range(len(self.bpList)):
+            snrat = snr.calcSNR_sed(self.starSED, self.bpList[i], skySedList[i], self.hardwareList[i],
+                              seeing=LSSTdefaults().seeing(self.filterNameList[i]),
+                              photParams=PhotometricParameters())
+
+            testSNR, gamma = snr.calcSNR_m5(numpy.array([magnitudes[i]]), [self.bpList[i]],
+                                           numpy.array([m5[i]]), photParams=PhotometricParameters(sigmaSys=0.0))
+
+            self.assertAlmostEqual(snrat, testSNR[0], 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
+                                                               % (snrat, testSNR[0]))
+
+            control = snr.magErrorFromSNR(testSNR)
+
+            msg = '%e is not %e; failed' % (sigmaList[i], control)
+
+            self.assertAlmostEqual(sigmaList[i], control, 10, msg=msg)
+
+
 def suite():
     utilsTests.init()
     suites = []
