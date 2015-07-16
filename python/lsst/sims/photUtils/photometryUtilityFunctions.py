@@ -1,4 +1,5 @@
-from lsst.sims.catalogs.generation.db import ObservationMetaData, CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 
 __all__ = ["setupPhotometryCatalog"]

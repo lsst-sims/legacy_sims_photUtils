@@ -9,7 +9,7 @@ import os
 import sqlite3
 import json
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, register_method, register_class, compound
-from lsst.sims.catalogs.generation.db import ObservationMetaData
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk

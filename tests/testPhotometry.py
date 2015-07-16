@@ -4,7 +4,7 @@ import os
 import unittest
 import eups
 import lsst.utils.tests as utilsTests
-from lsst.sims.catalogs.generation.db import ObservationMetaData
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
                                                 makeStarTestDB, makeGalTestDB, getOneChunk
 

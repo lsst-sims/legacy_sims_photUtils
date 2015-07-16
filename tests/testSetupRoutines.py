@@ -4,7 +4,8 @@ import os
 import unittest
 import eups
 import lsst.utils.tests as utilsTests
-from lsst.sims.catalogs.generation.db import ObservationMetaData, CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.coordUtils import AstrometryStars, AstrometryGalaxies
 from lsst.sims.photUtils import PhotometryStars, PhotometryGalaxies, setupPhotometryCatalog
