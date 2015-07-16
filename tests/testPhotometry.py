@@ -335,56 +335,6 @@ class uncertaintyUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, obs_metadata=obs_metadata)
 
 
-    def testSignalToNoise(self):
-        """
-        Test that calcSNR_m5 and calcSNR_sed give similar results
-        """
-        defaults = LSSTdefaults()
-        photParams = PhotometricParameters()
-        hardware = PhotometryHardware()
-        hardware.loadBandpassesFromFiles()
-
-        m5 = []
-        for filt in hardware.bandpassDict:
-            m5.append(calcM5(hardware.skySED, hardware.bandpassDict[filt],
-                      hardware.hardwareBandpassDict[filt],
-                      photParams, seeing=defaults.seeing(filt)))
-
-
-        sedDir = eups.productDir('sims_sed_library')
-        sedDir = os.path.join(sedDir, 'starSED', 'kurucz')
-        fileNameList = os.listdir(sedDir)
-
-        numpy.random.seed(42)
-        offset = numpy.random.random_sample(len(fileNameList))*2.0
-
-        for ix, name in enumerate(fileNameList):
-            if ix>100:
-                break
-            spectrum = Sed()
-            spectrum.readSED_flambda(os.path.join(sedDir, name))
-            ff = spectrum.calcFluxNorm(m5[2]-offset[ix], hardware.bandpassDict.values()[2])
-            spectrum.multiplyFluxNorm(ff)
-            magList = []
-            controlList = []
-            magList = []
-            for filt in hardware.bandpassDict:
-                controlList.append(calcSNR_sed(spectrum, hardware.bandpassDict[filt],
-                                               hardware.skySED,
-                                               hardware.hardwareBandpassDict[filt],
-                                               photParams, defaults.seeing(filt)))
-
-                magList.append(spectrum.calcMag(hardware.bandpassDict[filt]))
-
-            testList, gammaList = calcSNR_m5(numpy.array(magList),
-                                        numpy.array(hardware.bandpassDict.values()),
-                                        numpy.array(m5),
-                                        photParams)
-
-            for tt, cc in zip(controlList, testList):
-                msg = '%e != %e ' % (tt, cc)
-                self.assertTrue(numpy.abs(tt/cc - 1.0) < 0.001, msg=msg)
-
 
 
 

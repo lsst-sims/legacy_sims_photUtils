@@ -124,47 +124,53 @@ class TestSNRmethods(unittest.TestCase):
         signalToNoise, gg = snr.calcSNR_m5(magnitudes, self.bpList, magnitudes, photParams)
 
 
-    def testRawUncertainty(self):
+    def testSignalToNoise(self):
         """
-        Test that values calculated by calculatePhotometricUncertainty agree
-        with values calculated by calcSNR_sed
+        Test that calcSNR_m5 and calcSNR_sed give similar results
         """
-
+        defaults = LSSTdefaults()
         photParams = PhotometricParameters()
-        m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.filterNameList)
-        magnitudes = []
-        for bp in self.bpList:
-            mag=self.starSED.calcMag(bp)
-            magnitudes.append(mag)
 
-        skySedList = []
-
-        for bp, hardware, filterName in zip(self.bpList, self.hardwareList, self.filterNameList):
-            skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
-            normalizedSkyDummy = setM5(obs_metadata.m5[filterName], skyDummy,
-                                       bp, hardware,
-                                       seeing=LSSTdefaults().seeing(filterName),
-                                       photParams=photParams)
-
-            skySedList.append(normalizedSkyDummy)
-
-        sigmaList = snr.calcMagError_m5(numpy.array(magnitudes), numpy.array(self.bpList), \
-                                        numpy.array(m5), photParams)
+        m5 = []
+        for i in range(len(self.hardwareList)):
+            m5.append(snr.calcM5(self.skySed, self.bpList[i],
+                      self.hardwareList[i],
+                      photParams, seeing=defaults.seeing(self.filterNameList[i])))
 
 
-        for bp, hardware, skySed, filterName, sigma in \
-        zip(self.bpList, self.hardwareList, skySedList, self.filterNameList, sigmaList):
+        sedDir = eups.productDir('sims_sed_library')
+        sedDir = os.path.join(sedDir, 'starSED', 'kurucz')
+        fileNameList = os.listdir(sedDir)
 
-            snrat = snr.calcSNR_sed(self.starSED, bp, skySed, hardware,
-                                    seeing=LSSTdefaults().seeing(filterName),
-                                    photParams=photParams)
+        numpy.random.seed(42)
+        offset = numpy.random.random_sample(len(fileNameList))*2.0
 
-            ss = 2.5*numpy.log10(1.0+1.0/snrat)
-            ss = numpy.sqrt(ss*ss + photParams.sigmaSys*photParams.sigmaSys)
-            msg = '%e is not %e; failed' % (ss, sigma)
-            self.assertAlmostEqual(ss, sigma, 10, msg=msg)
+        for ix, name in enumerate(fileNameList):
+            if ix>100:
+                break
+            spectrum = Sed()
+            spectrum.readSED_flambda(os.path.join(sedDir, name))
+            ff = spectrum.calcFluxNorm(m5[2]-offset[ix], self.bpList[2])
+            spectrum.multiplyFluxNorm(ff)
+            magList = []
+            controlList = []
+            magList = []
+            for i in range(len(self.bpList)):
+                controlList.append(snr.calcSNR_sed(spectrum, self.bpList[i],
+                                               self.skySed,
+                                               self.hardwareList[i],
+                                               photParams, defaults.seeing(self.filterNameList[i])))
+
+                magList.append(spectrum.calcMag(self.bpList[i]))
+
+            testList, gammaList = snr.calcSNR_m5(numpy.array(magList),
+                                        numpy.array(self.bpList),
+                                        numpy.array(m5),
+                                        photParams)
+
+            for tt, cc in zip(controlList, testList):
+                msg = '%e != %e ' % (tt, cc)
+                self.assertTrue(numpy.abs(tt/cc - 1.0) < 0.001, msg=msg)
 
 
 
