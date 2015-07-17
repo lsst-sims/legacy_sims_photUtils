@@ -52,7 +52,7 @@ The methods in CosmologyObject have been tested on astropy v0.2.5 and v0.4.2
 import numpy
 import astropy.cosmology as cosmology
 import astropy.units as units
-from lsst.sims.catalogs.measures.instance import cached
+
 flatnessthresh = 1.0e-12
 
 __all__ = ["CosmologyObject"]

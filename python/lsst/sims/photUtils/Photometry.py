@@ -226,7 +226,7 @@ class PhotometryBase(PhotometryHardware):
         @param [in] specFileMap is a mapping from the names in sedList to the absolute
         path to the SED files.  It is an instantiation of the class defined in
 
-        sims_catalogs_measures/python/lsst/sims/catalogs_measures/instance/fileMaps.py
+        sims_utils/python/lsst/sims/utils/fileMaps.py
 
         If not provided, a default will be instantiated.
 
