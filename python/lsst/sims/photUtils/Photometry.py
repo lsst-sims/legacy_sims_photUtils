@@ -16,7 +16,7 @@ import eups
 from collections import OrderedDict
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, PhotometricParameters, magErrorFromSNR
-from lsst.sims.catalogs.measures.instance import defaultSpecMap
+from lsst.sims.utils import defaultSpecMap
 
 __all__ = ["PhotometryHardware", "PhotometryBase"]
 

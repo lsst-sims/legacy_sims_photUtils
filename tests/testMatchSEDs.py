@@ -14,7 +14,7 @@ from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
-from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
+from lsst.sims.utils import SpecMap
 
 class TestMatchBase(unittest.TestCase):
 
