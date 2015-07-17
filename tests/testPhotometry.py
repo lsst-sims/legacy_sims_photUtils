@@ -64,7 +64,7 @@ class photometryUnitTest(unittest.TestCase):
         sedFileName = os.path.join(sedFileName,'km20_5750.fits_g40_5790.gz')
         ss = Sed()
         ss.readSED_flambda(sedFileName)
-        
+
         controlBandpass = Bandpass()
         controlBandpass.imsimBandpass()
         ff = ss.calcFluxNorm(22.0, controlBandpass)
@@ -80,6 +80,35 @@ class photometryUnitTest(unittest.TestCase):
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],testMags[j],10)
 
+
+
+    def testEBV(self):
+
+        ebvObject = EBVbase()
+        ra = []
+        dec = []
+        gLat = []
+        gLon = []
+        for i in range(10):
+            ra.append(i*2.0*numpy.pi/10.0)
+            dec.append(i*numpy.pi/10.0)
+
+            gLat.append(-0.5*numpy.pi+i*numpy.pi/10.0)
+            gLon.append(i*2.0*numpy.pi/10.0)
+
+            equatorialCoordinates=numpy.array([ra,dec])
+            galacticCoordinates=numpy.array([gLon,gLat])
+
+        ebvOutput = ebvObject.calculateEbv(equatorialCoordinates=equatorialCoordinates)
+        self.assertEqual(len(ebvOutput),len(ra))
+
+        ebvOutput = ebvObject.calculateEbv(galacticCoordinates=galacticCoordinates)
+        self.assertEqual(len(ebvOutput),len(gLon))
+
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=equatorialCoordinates,
+        galacticCoordinates=galacticCoordinates)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=None, galacticCoordinates=None)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv)
 
 
 class uncertaintyUnitTest(unittest.TestCase):
