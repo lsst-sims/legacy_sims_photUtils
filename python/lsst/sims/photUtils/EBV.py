@@ -3,7 +3,6 @@ import math
 import numpy
 import os
 
-from lsst.sims.catalogs.measures.instance import cached
 from lsst.sims.utils import galacticFromEquatorial
 
 __all__ = ["EBVmap", "EBVbase"]

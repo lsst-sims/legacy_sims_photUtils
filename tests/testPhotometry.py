@@ -5,9 +5,6 @@ import unittest
 import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.catalogs.generation.utils import myTestGals, myTestStars, \
-                                                makeStarTestDB, makeGalTestDB, getOneChunk
-
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
