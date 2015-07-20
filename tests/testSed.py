@@ -6,7 +6,7 @@ import eups
 import lsst.utils.tests as utilsTests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
-from lsst.sims.photUtils import calcM5, PhotometricParameters
+from lsst.sims.photUtils import PhotometricParameters
 
 class TestSedWavelenLimits(unittest.TestCase):
     def setUp(self):

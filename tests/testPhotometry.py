@@ -10,8 +10,8 @@ from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import PhotometryBase, PhotometryHardware
-from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, calcGamma, \
-                                calcM5, calcSNR_sed, calcSkyCountsPerPixelForM5, magErrorFromSNR
+from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, \
+                                calcM5, calcSNR_sed, magErrorFromSNR
 from lsst.sims.photUtils.utils import setM5
 
 class photometryUnitTest(unittest.TestCase):
