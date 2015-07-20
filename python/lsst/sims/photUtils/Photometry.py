@@ -22,15 +22,33 @@ __all__ = ["PhotometryHardware", "PhotometryBase"]
 
 class PhotometryHardware(object):
     """
-    This mixin provides the basic infrastructure for reading in bandpasses.
+    This class provides the basic infrastructure for reading in bandpasses.
 
-    To initiailize a different set of bandpasses, call self.loadBandPassesFromFiles() with a different
-    set of arguments.
+    To initialize a different set of bandpasses, call either self.loadBandpassesFromFiles() or
+    self.loadTotalBandpassesFromFiles with a different set of arguments.
 
-    Once self.loadBandPassesFromFiles() as been called, self.loadSeds() can be used to return an array
-    of SED objects.  These objects can be passed to self.manyMagCalc_list() which will calculate
-    the magnitudes of the the SEDs, integrated over the loaded bandpasses, and return them as a
-    dict keeyed to the array of bandpass keys stored in self.bandpassKey
+    These methods will create member variables:
+
+    self.bandpassDict -- an OrderedDict containing the total system and atmospheric throughput
+    of each filter keyed on the filter name (e.g. ['u', 'g', 'r', 'i', 'z', 'y'])
+
+    self.hardwareBandpassDict -- an OrderedDict containing the system throughput of each filter
+    keyed on the filter name (only if you call self.loadBandpassesFromFiles() rather than
+    self.loadTotalBandpassesFromFiles())
+
+    self.atmoTransmission -- an instantiation of the Bandpass class containing the throughput of the
+    atmosphere (if specified in self.loadBandpassesFromFiles())
+
+    self.skySEd -- an instantiation of the Sed class containing the sky emission spectrum (if specified
+    in self.loadBandpassesFromFiles())
+
+    self.phiArray -- a numpy array containing the normalized response curves phi (see equation 2.3 of
+    the LSST Science Book) for each filter
+
+    self.wavelenStep -- the step size of the wavelength grid associated with self.phiArray.
+
+    self.phiArray and self.wavelenStep should only be used internally by the method self.manyMagCalc_list
+    provided by the class PhotometryBase which inherits from this class.
     """
 
     bandpassDict = None #total (hardware plus atmosphere) bandpasses loaded in this particular catalog;
@@ -181,15 +199,16 @@ class PhotometryHardware(object):
 
 class PhotometryBase(PhotometryHardware):
     """
-    This mixin provides the basic infrastructure for photometry.
+    This class provides the basic infrastructure for photometry.
     It can read in SEDs and bandpasses, apply extinction and redshift, and, given
     an SED object it can calculate magnitudes.
 
     In order to avoid duplication of work, the bandpasses, wavelength array, and phi array
-    are stored as instance variables once they are read in by self.loadTotalBandpassesFromFiles()
+    are stored as instance variables once they are read in by either self.loadTotalBandpassesFromFiles()
+    or self.loadBandpassesFromFiles()
 
-    To initiailize a different set of bandpasses, call self.loadBandPassesFromFiles() with a different
-    set of arguments.
+    See the documentation of PhotometryHardware (from which this class inherits) for instructions how
+    to read in alternative bandpasses.
 
     Once self.loadBandPassesFromFiles() as been called, self.loadSeds() can be used to return an array
     of SED objects.  These objects can be passed to self.manyMagCalc_list() which will calculate
