@@ -8,7 +8,7 @@ import re
 import eups
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
-from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
+from lsst.sims.utils import SpecMap
 
 class TestReadGalfast(unittest.TestCase):
 

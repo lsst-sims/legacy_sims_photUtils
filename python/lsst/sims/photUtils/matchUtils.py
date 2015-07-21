@@ -11,7 +11,7 @@ import re
 
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
-from lsst.sims.catalogs.measures.instance.fileMaps import SpecMap
+from lsst.sims.utils import SpecMap
 
 __all__ = ["matchBase", "matchStar", "matchGalaxy"]
 

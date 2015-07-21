@@ -5,11 +5,9 @@ from .Bandpass import *
 from .SignalToNoise import *
 from .Sed import *
 from .Photometry import *
-from .Variability import *
 from .applyIGM import *
 from .EBV import *
 from .CosmologyObject import *
-from .photometryUtilityFunctions import *
 from .matchUtils import *
 from .selectStarSED import *
 from .selectGalaxySED import *
