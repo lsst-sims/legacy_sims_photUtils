@@ -405,6 +405,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     def testMatchToRestFrame(self):
         """Test that Galaxies with no effects added into catalog mags are matched correctly."""
+        np.random.seed(42)
         galPhot = phot()
         galPhot.loadTotalBandpassesFromFiles()
         galPhot.setupPhiArray_dict()
@@ -468,6 +469,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     def testMatchToObserved(self):
         """Test that Galaxy SEDs with extinction or redshift are matched correctly"""
+        np.random.seed(42)
         galPhot = phot()
         galPhot.loadTotalBandpassesFromFiles()
         galPhot.setupPhiArray_dict()
@@ -628,6 +630,7 @@ class TestSelectStarSED(unittest.TestCase):
     def testFindSED(self):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
         Includes testing with extinction and passing in only colors."""
+        np.random.seed(42)
         starPhot = phot()
         starPhot.loadTotalBandpassesFromFiles(('u','g','r','i','z'), 
                                         bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
