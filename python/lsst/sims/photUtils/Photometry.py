@@ -332,7 +332,9 @@ class PhotometryBase(PhotometryHardware):
                 #because this is supposed to be the same for every
                 #SED object in sedList, it is only called once for
                 #each invocation of applyAv
-                if self._av_wavelen is None or (sedobj.wavelen!=self._av_wavelen).any():
+
+                if self._av_wavelen is None or len(sedobj.wavelen)!=len(self._av_wavelen) \
+                or (sedobj.wavelen!=self._av_wavelen).any():
                     self._a_int, self._b_int = sedobj.setupCCMab()
                     self._av_wavelen=sedobj.wavelen
 
