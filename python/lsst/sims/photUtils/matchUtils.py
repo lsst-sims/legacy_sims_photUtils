@@ -5,10 +5,10 @@ Created on Wed Feb 25 14:07:03 2015
 @author: Bryce Kalmbach
 """
 import numpy as np
-import eups
 import os
 import re
 
+import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.utils import SpecMap
@@ -158,7 +158,7 @@ class matchStar(matchBase):
         """
 
         if sEDDir is None:
-            self.sEDDir = eups.productDir('sims_sed_library')
+            self.sEDDir = lsst.utils.getPackageDir('sims_sed_library')
         else:
             self.sEDDir = sEDDir
         #Use SpecMap to pull the directory locations
@@ -359,7 +359,7 @@ class matchGalaxy(matchBase):
             for key, val in sorted(specMap.subdir_map.iteritems()):
                 if re.match(key, specFileStart):
                     galSpecDir = str(val)
-            self.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir)            
+            self.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir)
         else:
             self.galDir = galDir    
     

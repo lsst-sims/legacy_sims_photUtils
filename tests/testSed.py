@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 import unittest
 import os
-import eups
+
 import lsst.utils.tests as utilsTests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass

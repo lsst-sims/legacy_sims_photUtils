@@ -3,7 +3,7 @@ import os
 import shutil
 import numpy as np
 import re
-import eups
+import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.selectStarSED import selectStarSED
 from lsst.sims.photUtils.selectGalaxySED import selectGalaxySED
@@ -26,7 +26,7 @@ class TestMatchBase(unittest.TestCase):
         for key, val in sorted(specMap.subdir_map.iteritems()):
             if re.match(key, specFileStart):
                 galSpecDir = str(val)
-        cls.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir + '/')
+        cls.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir + '/')
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
     @classmethod
@@ -42,7 +42,7 @@ class TestMatchBase(unittest.TestCase):
         testUtils = matchBase()
         testPhot = phot()
         testPhot.loadTotalBandpassesFromFiles(self.filterList,
-                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
         testPhot.setupPhiArray_dict()
 
@@ -82,7 +82,7 @@ class TestMatchBase(unittest.TestCase):
         testSED = Sed()
         testPhot = phot()
         testPhot.loadTotalBandpassesFromFiles(self.filterList,
-                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
         testPhot.setupPhiArray_dict()
 
@@ -106,7 +106,7 @@ class TestMatchBase(unittest.TestCase):
         testPhot = phot()
 
         testPhot.loadTotalBandpassesFromFiles(self.filterList,
-                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
         testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
         copyTest.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
@@ -164,9 +164,9 @@ class TestMatchStar(unittest.TestCase):
         os.makedirs(cls.testKDir)
         os.mkdir(cls.testMLTDir)
         os.mkdir(cls.testWDDir)
-        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
+        cls.kDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         kList = os.listdir(cls.kDir)[0:20]
         #Use particular indices to get different types of seds within mlt and wds
         for kFile, mltFile, wdFile in zip(kList,
@@ -324,7 +324,7 @@ class TestMatchGalaxy(unittest.TestCase):
         for key, val in sorted(specMap.subdir_map.iteritems()):
             if re.match(key, specFileStart):
                 galSpecDir = str(val)
-        cls.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir + '/')
+        cls.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir + '/')
 
         #Set up Test Spectra Directory
         cls.testSpecDir = 'testGalaxySEDSpectrum/'
@@ -388,7 +388,7 @@ class TestSelectGalaxySED(unittest.TestCase):
         for key, val in sorted(specMap.subdir_map.iteritems()):
             if re.match(key, specFileStart):
                 galSpecDir = str(val)
-        cls.galDir = str(eups.productDir('sims_sed_library') + '/' + galSpecDir + '/')
+        cls.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir + '/')
 
         #Set up Test Spectra Directory
         cls.testSpecDir = 'testGalaxySEDSpectrum/'
@@ -599,9 +599,9 @@ class TestSelectStarSED(unittest.TestCase):
         os.makedirs(cls.testKDir)
         os.mkdir(cls.testMLTDir)
         os.mkdir(cls.testWDDir)
-        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
+        cls.kDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         kList = os.listdir(cls.kDir)[0:3]
         #Use particular indices to get different types of seds within mlt and wds
         for kFile, mltFile, wdFile in zip(kList,
@@ -633,7 +633,7 @@ class TestSelectStarSED(unittest.TestCase):
         np.random.seed(42)
         starPhot = phot()
         starPhot.loadTotalBandpassesFromFiles(('u','g','r','i','z'),
-                                        bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                        bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
         starPhot.setupPhiArray_dict()
 

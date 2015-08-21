@@ -2,7 +2,7 @@ from __future__ import with_statement
 import os
 import numpy
 import unittest
-import eups
+import lsst.utils
 import lsst.utils.tests as utilsTests
 
 from lsst.sims.photUtils import Bandpass, Sed, PhotometricParameters, \
@@ -209,7 +209,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
         testSed.setFlatSED()
 
         testBandpass = Bandpass()
-        testBandpass.readThroughput(os.path.join(eups.productDir('throughputs'),
+        testBandpass.readThroughput(os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                  'baseline','total_g.dat'))
 
         control = testSed.calcADU(testBandpass,

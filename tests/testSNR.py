@@ -1,7 +1,7 @@
 import os
 import numpy
-import eups
 import unittest
+import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
 import lsst.sims.photUtils.SignalToNoise as snr
@@ -14,9 +14,9 @@ class TestSNRmethods(unittest.TestCase):
 
     def setUp(self):
 
-        starFileName = os.path.join(eups.productDir('sims_sed_library'),'starSED')
+        starFileName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),'starSED')
         starFileName = os.path.join(starFileName, 'kurucz','km20_5750.fits_g40_5790.gz')
-        starName = os.path.join(eups.productDir('sims_sed_library'),starFileName)
+        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),starFileName)
         self.starSED = Sed()
         self.starSED.readSED_flambda(starName)
         imsimband = Bandpass()
@@ -24,7 +24,7 @@ class TestSNRmethods(unittest.TestCase):
         fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
         self.starSED.multiplyFluxNorm(fNorm)
 
-        hardwareDir = os.path.join(eups.productDir('throughputs'),'baseline')
+        hardwareDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline')
         componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                          'lens1.dat', 'lens2.dat', 'lens3.dat']
         self.skySed = Sed()
@@ -138,7 +138,7 @@ class TestSNRmethods(unittest.TestCase):
                       photParams, seeing=defaults.seeing(self.filterNameList[i])))
 
 
-        sedDir = eups.productDir('sims_sed_library')
+        sedDir = lsst.utils.getPackageDir('sims_sed_library')
         sedDir = os.path.join(sedDir, 'starSED', 'kurucz')
         fileNameList = os.listdir(sedDir)
 
@@ -192,7 +192,7 @@ class TestSNRmethods(unittest.TestCase):
 
         for bp, hardware, filterName in zip(self.bpList, self.hardwareList, self.filterNameList):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[filterName], skyDummy,
                                        bp, hardware,
                                        seeing=LSSTdefaults().seeing(filterName),
@@ -241,7 +241,7 @@ class TestSNRmethods(unittest.TestCase):
 
         for bp, hardware, filterName in zip(self.bpList, self.hardwareList, self.filterNameList):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[filterName], skyDummy,
                                        bp, hardware,
                                        seeing=LSSTdefaults().seeing(filterName),
