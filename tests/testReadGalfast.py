@@ -5,7 +5,7 @@ import numpy as np
 import gzip
 import pyfits
 import re
-import eups
+import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
 from lsst.sims.utils import SpecMap
@@ -38,9 +38,9 @@ class TestReadGalfast(unittest.TestCase):
         os.makedirs(cls.testKDir)
         os.mkdir(cls.testMLTDir)
         os.mkdir(cls.testWDDir)
-        cls.kDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = eups.productDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
+        cls.kDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
+        cls.mltDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
+        cls.wdDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
         #Use particular indices to get different types of seds within mlt and wds
         for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20], 
                                           np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 

@@ -1,8 +1,8 @@
 import os
 import numpy as np
-import eups
 import warnings
 
+import lsst.utils
 from lsst.sims.photUtils.matchUtils import matchStar
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
 from lsst.sims.photUtils.EBV import EBVbase as ebv
@@ -72,8 +72,8 @@ class selectStarSED(matchStar):
         
         starPhot = phot()
         if bandpassDict is None:
-            starPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'], 
-                                            bandpassDir = os.path.join(eups.productDir('throughputs'),
+            starPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+                                            bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                                        'sdss'),
                                             bandpassRoot = 'sdss_')
         else:

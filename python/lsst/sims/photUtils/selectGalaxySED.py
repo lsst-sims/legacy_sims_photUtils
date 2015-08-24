@@ -1,7 +1,7 @@
 import os
 import numpy as np
-import eups
 
+import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.matchUtils import matchGalaxy
 from lsst.sims.photUtils.Photometry import PhotometryBase as phot
@@ -51,7 +51,7 @@ class selectGalaxySED(matchGalaxy):
         galPhot = phot()
         if bandpassDict is None:
             galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
-                                            bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                            bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                             bandpassRoot = 'sdss_')
         else:
             galPhot.bandpassDict = bandpassDict
@@ -171,7 +171,7 @@ class selectGalaxySED(matchGalaxy):
         galPhot = phot()
         if bandpassDict is None:
             galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
-                                            bandpassDir = os.path.join(eups.productDir('throughputs'),'sdss'),
+                                            bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                             bandpassRoot = 'sdss_')
         else:
             galPhot.bandpassDict = bandpassDict

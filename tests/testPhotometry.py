@@ -2,7 +2,7 @@ import numpy
 
 import os
 import unittest
-import eups
+import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import defaultSpecMap
@@ -41,7 +41,7 @@ class photometryUnitTest(unittest.TestCase):
                                                  boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                                  boundLength=1.0)
 
-        bandpassDir=os.path.join(eups.productDir('sims_photUtils'),'tests','cartoonSedTestData')
+        bandpassDir=os.path.join(lsst.utils.getPackageDir('sims_photUtils'),'tests','cartoonSedTestData')
 
         cartoon_phot = PhotometryBase()
         cartoon_phot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
@@ -60,7 +60,7 @@ class photometryUnitTest(unittest.TestCase):
         sedObj = Sed()
         phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
 
-        sedFileName = os.path.join(eups.productDir('sims_sed_library'),'starSED','kurucz')
+        sedFileName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),'starSED','kurucz')
         sedFileName = os.path.join(sedFileName,'km20_5750.fits_g40_5790.gz')
         ss = Sed()
         ss.readSED_flambda(sedFileName)
@@ -117,7 +117,7 @@ class uncertaintyUnitTest(unittest.TestCase):
     """
 
     def setUp(self):
-        starName = os.path.join(eups.productDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
         self.starSED = Sed()
         self.starSED.readSED_flambda(starName)
         imsimband = Bandpass()
@@ -132,16 +132,16 @@ class uncertaintyUnitTest(unittest.TestCase):
                          'lens1.dat', 'lens2.dat', 'lens3.dat']
         hardwareComponents = []
         for c in componentList:
-            hardwareComponents.append(os.path.join(eups.productDir('throughputs'),'baseline',c))
+            hardwareComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline',c))
 
         self.bandpasses = ['u', 'g', 'r', 'i', 'z', 'y']
         for b in self.bandpasses:
-            filterName = os.path.join(eups.productDir('throughputs'),'baseline','filter_%s.dat' % b)
+            filterName = os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','filter_%s.dat' % b)
             components = hardwareComponents + [filterName]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.hardwareBandpasses.append(bandpassDummy)
-            components = components + [os.path.join(eups.productDir('throughputs'),'baseline','atmos.dat')]
+            components = components + [os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','atmos.dat')]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
             self.totalBandpasses.append(bandpassDummy)
@@ -190,7 +190,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                       photParams, seeing=defaults.seeing(filt)))
 
 
-        sedDir = eups.productDir('sims_sed_library')
+        sedDir = lsst.utils.getPackageDir('sims_sed_library')
         sedDir = os.path.join(sedDir, 'starSED', 'kurucz')
         fileNameList = os.listdir(sedDir)
 
@@ -242,7 +242,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         for i in range(len(self.bandpasses)):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
                                        seeing=LSSTdefaults().seeing(self.bandpasses[i]),
@@ -280,7 +280,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         for i in range(len(self.bandpasses)):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
                                                        seeing=LSSTdefaults().seeing(self.bandpasses[i]),
@@ -325,7 +325,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         for i in range(len(self.bandpasses)):
             skyDummy = Sed()
-            skyDummy.readSED_flambda(os.path.join(eups.productDir('throughputs'), 'baseline', 'darksky.dat'))
+            skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
                                                        seeing=LSSTdefaults().seeing(self.bandpasses[i]),

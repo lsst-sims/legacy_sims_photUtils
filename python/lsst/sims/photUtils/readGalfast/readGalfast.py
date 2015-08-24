@@ -1,10 +1,10 @@
 import os
 import gzip
 import pyfits
-import eups
 import itertools
 import numpy as np
 
+import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.selectStarSED import selectStarSED
@@ -206,7 +206,7 @@ class readGalfast():
 
         sdssPhot = phot()
         sdssPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
-                                         bandpassDir = os.path.join(eups.productDir('throughputs'),
+                                         bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                                     'sdss'),
                                          bandpassRoot = 'sdss_')
         sdssPhot.setupPhiArray_dict()

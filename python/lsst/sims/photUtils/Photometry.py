@@ -12,8 +12,8 @@ Collection of utilities to aid usage of Sed and Bandpass with dictionaries.
 
 import os
 import numpy
-import eups
 from collections import OrderedDict
+import lsst.utils
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, PhotometricParameters, magErrorFromSNR
 from lsst.sims.utils import defaultSpecMap
@@ -63,7 +63,7 @@ class PhotometryHardware(object):
     waveLenStep = None
 
     def loadBandpassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
-                                filedir = os.path.join(eups.productDir('throughputs'), 'baseline'),
+                                filedir = os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline'),
                                 bandpassRoot = 'filter_',
                                 componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                                                  'lens1.dat', 'lens2.dat', 'lens3.dat'],
