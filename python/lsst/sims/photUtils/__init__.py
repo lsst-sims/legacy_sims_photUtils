@@ -3,6 +3,7 @@ from .PhysicalParameters import *
 from .Sed import *
 from .Bandpass import * 
 from .CatSimBandpassDict import *
+from .CatSimSedList import *
 from .PhotometricParameters import *
 from .SignalToNoise import *
 from .Photometry import *
