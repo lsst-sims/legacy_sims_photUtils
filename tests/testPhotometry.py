@@ -9,7 +9,8 @@ from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
-from lsst.sims.photUtils import PhotometryBase, PhotometryHardware
+from lsst.sims.photUtils import PhotometryBase, loadBandpassesFromFiles, \
+                                loadTotalBandpassesFromFiles
 from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, \
                                 calcM5, calcSNR_sed, magErrorFromSNR
 from lsst.sims.photUtils.utils import setM5
@@ -43,9 +44,8 @@ class photometryUnitTest(unittest.TestCase):
 
         bandpassDir=os.path.join(lsst.utils.getPackageDir('sims_photUtils'),'tests','cartoonSedTestData')
 
-        cartoon_phot = PhotometryBase()
-        cartoon_dict = cartoon_phot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
-                                                                 bandpassRoot = 'test_bandpass_')
+        cartoon_dict = loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
+                                                     bandpassRoot = 'test_bandpass_')
 
         testBandPasses = {}
         keys = ['u','g','r','i','z']
@@ -159,7 +159,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         Test the calculateMagnitudeUncertainty raises exceptions when it needs to
         """
         phot = PhotometryBase()
-        totalDict, hardwareDict = phot.loadBandpassesFromFiles()
+        totalDict, hardwareDict = loadBandpassesFromFiles()
         magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
         shortMagnitudes = numpy.array([22.0])
         self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes, totalDict)
@@ -181,12 +181,15 @@ class uncertaintyUnitTest(unittest.TestCase):
         """
         defaults = LSSTdefaults()
         photParams = PhotometricParameters()
-        hardware = PhotometryHardware()
-        totalDict, hardwareDict = hardware.loadBandpassesFromFiles()
+        totalDict, hardwareDict = loadBandpassesFromFiles()
+
+        skySED = Sed()
+        skySED.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'),
+                                            'baseline', 'darksky.dat'))
 
         m5 = []
         for filt in totalDict:
-            m5.append(calcM5(hardware.skySED, totalDict[filt],
+            m5.append(calcM5(skySED, totalDict[filt],
                       hardwareDict[filt],
                       photParams, seeing=defaults.seeing(filt)))
 
@@ -210,7 +213,7 @@ class uncertaintyUnitTest(unittest.TestCase):
             magList = []
             for filt in totalDict:
                 controlList.append(calcSNR_sed(spectrum, totalDict[filt],
-                                               hardware.skySED,
+                                               skySED,
                                                hardwareDict[filt],
                                                photParams, defaults.seeing(filt)))
 
@@ -234,8 +237,8 @@ class uncertaintyUnitTest(unittest.TestCase):
         """
 
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
+        bandpassDict = loadTotalBandpassesFromFiles()
         phot = PhotometryBase()
-        bandpassDict = phot.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.calcMagList(self.starSED)
 
@@ -273,7 +276,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         phot = PhotometryBase()
         phot.photParams = photParams
 
-        bandpassDict = phot.loadTotalBandpassesFromFiles()
+        bandpassDict = loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.calcMagList(self.starSED)
 
@@ -318,7 +321,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         phot = PhotometryBase()
         phot.photParams = photParams
 
-        bandpassDict = phot.loadTotalBandpassesFromFiles()
+        bandpassDict = loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.calcMagList(self.starSED)
 

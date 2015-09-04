@@ -19,169 +19,108 @@ from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 magErrorFromSNR, CatSimBandpassDict
 from lsst.sims.utils import defaultSpecMap
 
-__all__ = ["PhotometryHardware", "PhotometryBase"]
+__all__ = ["loadBandpassesFromFiles", "loadTotalBandpassesFromFiles", "PhotometryBase"]
 
-class PhotometryHardware(object):
+
+def loadBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+                            filedir = os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline'),
+                            bandpassRoot = 'filter_',
+                            componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
+                                             'lens1.dat', 'lens2.dat', 'lens3.dat'],
+                            atmoTransmission='atmos.dat'):
     """
-    This class provides the basic infrastructure for reading in bandpasses.
+    Load bandpass information from files into CatSimBandpassDicts.
+    This method will separate the bandpasses into contributions due to instrumentations
+    and contributions due to the atmosphere.
 
-    To initialize a different set of bandpasses, call either self.loadBandpassesFromFiles() or
-    self.loadTotalBandpassesFromFiles with a different set of arguments.
+    @param [in] bandpassNames is a list of strings labeling the bandpasses
+    (e.g. ['u', 'g', 'r', 'i', 'z', 'y'])
 
-    These methods will create member variables:
+    @param [in] filedir is a string indicating the name of the directory containing the
+    bandpass files
 
-    self.bandpassDict -- an OrderedDict containing the total system and atmospheric throughput
-    of each filter keyed on the filter name (e.g. ['u', 'g', 'r', 'i', 'z', 'y'])
+    @param [in] bandpassRoot is the root of the names of the files associated with the
+    bandpasses.  This method assumes that bandpasses are stored in
+    filedir/bandpassRoot_bandpassNames[i].dat
 
-    self.hardwareBandpassDict -- an OrderedDict containing the system throughput of each filter
-    keyed on the filter name (only if you call self.loadBandpassesFromFiles() rather than
-    self.loadTotalBandpassesFromFiles())
+    @param [in] componentList lists the files associated with bandpasses representing
+    hardware components shared by all filters
+    (defaults to ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat', 'lens1.dat',
+                  'lense2.dat', 'lenst3.dat']
+    for LSST).  These files are also expected to be stored in filedir
 
-    self.atmoTransmission -- an instantiation of the Bandpass class containing the throughput of the
-    atmosphere (if specified in self.loadBandpassesFromFiles())
+    @param [in] atmoTransmission is the name of the file representing the
+    transmissivity of the atmosphere (also assumed to be in filedir)
 
-    self.skySEd -- an instantiation of the Sed class containing the sky emission spectrum (if specified
-    in self.loadBandpassesFromFiles())
+    @param [out] bandpassDict is a CatSimBandpassDict containing the total
+    throughput (instrumentation + atmosphere)
 
-    self.phiArray -- a numpy array containing the normalized response curves phi (see equation 2.3 of
-    the LSST Science Book) for each filter
-
-    self.wavelenStep -- the step size of the wavelength grid associated with self.phiArray.
-
-    self.phiArray and self.wavelenStep should only be used internally by the method self.manyMagCalc_list
-    provided by the class PhotometryBase which inherits from this class.
+    @param [out] hardwareBandpassDict is a CatSimBandpassDict containing
+    the throughput due to instrumentation only
     """
 
-    atmoTransmission = None #atmospheric transmissivity (will be an instantiation of the Bandpass class)
+    commonComponents = []
+    for cc in componentList:
+        commonComponents.append(os.path.join(filedir,cc))
 
-    skySED = None #the emission spectrum of the atmosphere
+    bandpassList = []
+    hardwareBandpassList = []
 
+    for w in bandpassNames:
+        components = commonComponents + [os.path.join(filedir,"%s.dat" % (bandpassRoot +w))]
+        bandpassDummy = Bandpass()
+        bandpassDummy.readThroughputList(components)
+        hardwareBandpassList.append(bandpassDummy)
 
-    def loadBandpassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
-                                filedir = os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline'),
-                                bandpassRoot = 'filter_',
-                                componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
-                                                 'lens1.dat', 'lens2.dat', 'lens3.dat'],
-                                atmoTransmission='atmos.dat', skySED='darksky.dat'):
-        """
-        Load bandpass information from files.  This method will separate the bandpasses
-        into contributions due to instrumentations and contributions due to the atmosphere.
-        It will also load an SED associated with sky emission.
-
-        @param [in] bandpassNames is a list of strings labeling the bandpasses
-        (e.g. ['u', 'g', 'r', 'i', 'z', 'y'])
-
-        @param [in] filedir is a string indicating the name of the directory containing the
-        bandpass files
-
-        @param [in] bandpassRoot is the root of the names of the files associated with the
-        bandpasses.  This method assumes that bandpasses are stored in
-        filedir/bandpassRoot_bandpassNames[i].dat
-
-        @param [in] componentList lists the files associated with bandpasses representing
-        hardware components shared by all filters
-        (defaults to ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat', 'lens1.dat',
-                      'lense2.dat', 'lenst3.dat']
-        for LSST).  These files are also expected to be stored in filedir
-
-        @param [in] atmoTransmission is the name of the file representing the
-        transmissivity of the atmosphere (also assumed to be in filedir)
-
-        @param [in] skySED is the name of the file representing the emission
-        spectrum of the atmosphere (also assumed to be in filedir)
-
-        This method loads these files and stores:
-        total bandpasses in self.bandpassDict
-        hardware bandpasses in self.hardwareBandpassDict
-        transmissivity of the atmosphere in self.atmoTransmission
-        emission spectrum of the atmosphere in self.skySED
-
-        This method will also setup the variables
-        self.phiArray
-        self.waveLenStep
-        for purposes of photometric calculations
-        """
-
-        #This method isn't really used now.
-        #It exists in anticipation of a time when we will will load
-        #a skySED and normalize it based on the sky brightness, rather
-        #than m5.
-
-        self.skySED = Sed()
-        self.skySED.readSED_flambda(os.path.join(filedir, skySED))
-
-        self.atmoTransmission = Bandpass()
-        self.atmoTransmission.readThroughput(os.path.join(filedir, atmoTransmission))
-
-        commonComponents = []
-        for cc in componentList:
-            commonComponents.append(os.path.join(filedir,cc))
-
-        self.gammaDict = None
-
-        bandpassList = []
-        hardwareBandpassList = []
-
-        for w in bandpassNames:
-            components = commonComponents + [os.path.join(filedir,"%s.dat" % (bandpassRoot +w))]
-            bandpassDummy = Bandpass()
-            bandpassDummy.readThroughputList(components)
-            hardwareBandpassList.append(bandpassDummy)
-
-            components += [os.path.join(filedir, atmoTransmission)]
-            bandpassDummy = Bandpass()
-            bandpassDummy.readThroughputList(components)
-            bandpassList.append(bandpassDummy)
+        components += [os.path.join(filedir, atmoTransmission)]
+        bandpassDummy = Bandpass()
+        bandpassDummy.readThroughputList(components)
+        bandpassList.append(bandpassDummy)
 
 
-        bandpassDict = CatSimBandpassDict(bandpassList, bandpassNames)
-        hardwareBandpassDict = CatSimBandpassDict(hardwareBandpassList, bandpassNames)
+    bandpassDict = CatSimBandpassDict(bandpassList, bandpassNames)
+    hardwareBandpassDict = CatSimBandpassDict(hardwareBandpassList, bandpassNames)
 
-        return bandpassDict, hardwareBandpassDict
+    return bandpassDict, hardwareBandpassDict
 
 
-    def loadTotalBandpassesFromFiles(self,bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
+def loadTotalBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
                                 bandpassRoot = 'total_'):
-        """
-        This will take the list of band passes named by bandpassNames and use them to set up
-        self.bandpassDict (which is being cached so that
-        it does not have to be loaded again unless we change which bandpasses we want)
+    """
+    This will take the list of band passes named by bandpassNames and load them into
+    a CatSimBandpassDict
 
-        The bandpasses loaded this way are total bandpasses: they account for instrumental
-        and atmospheric transmission.
+    The bandpasses loaded this way are total bandpasses: they account for instrumental
+    and atmospheric transmission.
 
-        @param [in] bandpassNames is a list of names identifying each filter.
-        Defaults to ['u', 'g', 'r', 'i', 'z', 'y']
+    @param [in] bandpassNames is a list of names identifying each filter.
+    Defaults to ['u', 'g', 'r', 'i', 'z', 'y']
 
-        @param [in] bandpassDir is the name of the directory where the bandpass files are stored
+    @param [in] bandpassDir is the name of the directory where the bandpass files are stored
 
-        @param [in] bandpassRoot contains the first part of the bandpass file name, i.e., it is assumed
-        that the bandpasses are stored in files of the type
+    @param [in] bandpassRoot contains the first part of the bandpass file name, i.e., it is assumed
+    that the bandpasses are stored in files of the type
 
-        bandpassDir/bandpassRoot_bandpassNames[i].dat
+    bandpassDir/bandpassRoot_bandpassNames[i].dat
 
-        if we want to load bandpasses for a telescope other than LSST, we would do so
-        by altering bandpassDir and bandpassRoot
+    if we want to load bandpasses for a telescope other than LSST, we would do so
+    by altering bandpassDir and bandpassRoot
 
-        This method sets up the variables
-        self.phiArray
-        self.waveLenStep
-        for purposes of photometric calculations
-        """
+    @param [out] bandpassDict is a CatSimBandpassDict containing the loaded throughputs
+    """
 
-        self.gammaDict = None
-        bandpassList = []
+    bandpassList = []
 
-        for w in bandpassNames:
-            bandpassDummy = Bandpass()
-            bandpassDummy.readThroughput(os.path.join(bandpassDir,"%s.dat" % (bandpassRoot + w)))
-            bandpassList.append(bandpassDummy)
+    for w in bandpassNames:
+        bandpassDummy = Bandpass()
+        bandpassDummy.readThroughput(os.path.join(bandpassDir,"%s.dat" % (bandpassRoot + w)))
+        bandpassList.append(bandpassDummy)
 
-        return CatSimBandpassDict(bandpassList, bandpassNames)
+    return CatSimBandpassDict(bandpassList, bandpassNames)
 
 
-class PhotometryBase(PhotometryHardware):
+class PhotometryBase(object):
     """
     This class provides the basic infrastructure for photometry.
     It can read in SEDs and bandpasses, apply extinction and redshift, and, given

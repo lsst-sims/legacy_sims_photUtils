@@ -8,7 +8,7 @@ import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.selectStarSED import selectStarSED
-from lsst.sims.photUtils.Photometry import PhotometryBase as phot
+from lsst.sims.photUtils.Photometry import loadTotalBandpassesFromFiles
 
 __all__ = ["readGalfast"]
 
@@ -204,14 +204,14 @@ class readGalfast():
         sdssExtCoeffs = [1.8551, 1.4455, 1.0, 0.7431, 0.5527]
         lsstExtCoeffs = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
 
-        sdssPhot=phot().loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+        sdssPhot = loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                          bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                                     'sdss'),
                                          bandpassRoot = 'sdss_')
 
         #Load Bandpasses for LSST colors to get colors from matched SEDs
         lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
-        lsstPhot=phot().loadTotalBandpassesFromFiles(lsstFilterList)
+        lsstPhot = loadTotalBandpassesFromFiles(lsstFilterList)
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
 

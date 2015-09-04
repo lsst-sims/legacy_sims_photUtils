@@ -4,7 +4,7 @@ import numpy as np
 import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.matchUtils import matchGalaxy
-from lsst.sims.photUtils.Photometry import PhotometryBase as phot
+from lsst.sims.photUtils.Photometry import loadTotalBandpassesFromFiles
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 
 __all__ = ["selectGalaxySED"]
@@ -49,7 +49,7 @@ class selectGalaxySED(matchGalaxy):
 
         #Set up photometry to calculate model Mags
         if bandpassDict is None:
-            galPhot.phot().loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+            galPhot = loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                             bandpassRoot = 'sdss_')
         else:
@@ -167,7 +167,7 @@ class selectGalaxySED(matchGalaxy):
 
         #Set up photometry to calculate model Mags
         if bandpassDict is None:
-            galPhot = phot().loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+            galPhot = loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                             bandpassRoot = 'sdss_')
         else:
