@@ -204,18 +204,14 @@ class readGalfast():
         sdssExtCoeffs = [1.8551, 1.4455, 1.0, 0.7431, 0.5527]
         lsstExtCoeffs = [1.8140, 1.4166, 0.9947, 0.7370, 0.5790, 0.4761]
 
-        sdssPhot = phot()
-        sdssPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+        sdssPhot=phot().loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                          bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                                     'sdss'),
                                          bandpassRoot = 'sdss_')
-        sdssPhot.setupPhiArray_dict()
 
         #Load Bandpasses for LSST colors to get colors from matched SEDs
-        lsstPhot = phot()
         lsstFilterList = ('u', 'g', 'r', 'i', 'z', 'y')
-        lsstPhot.loadTotalBandpassesFromFiles(lsstFilterList)
-        lsstPhot.setupPhiArray_dict()
+        lsstPhot=phot().loadTotalBandpassesFromFiles(lsstFilterList)
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
 
@@ -388,7 +384,7 @@ class readGalfast():
                                    flambda = listDict[sedType][positionDict[sedName]].flambda)
                     fluxNorm = testSED.calcFluxNorm(magNorm, imSimBand)
                     testSED.multiplyFluxNorm(fluxNorm)
-                    lsstMagsUnred.append(lsstPhot.manyMagCalc_list(testSED))
+                    lsstMagsUnred.append(lsstPhot.calcMagList(testSED))
                 #If the extinction value is negative then it will add the reddening back in
                 lsstMags = selectStarSED0.deReddenMags((-1.0*am), lsstMagsUnred,
                                                        lsstExtCoeffs)

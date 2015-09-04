@@ -44,8 +44,8 @@ class photometryUnitTest(unittest.TestCase):
         bandpassDir=os.path.join(lsst.utils.getPackageDir('sims_photUtils'),'tests','cartoonSedTestData')
 
         cartoon_phot = PhotometryBase()
-        cartoon_phot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
-                    bandpassRoot = 'test_bandpass_')
+        cartoon_dict = cartoon_phot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
+                                                                 bandpassRoot = 'test_bandpass_')
 
         testBandPasses = {}
         keys = ['u','g','r','i','z']
@@ -70,7 +70,7 @@ class photometryUnitTest(unittest.TestCase):
         ff = ss.calcFluxNorm(22.0, controlBandpass)
         ss.multiplyFluxNorm(ff)
 
-        testMags = cartoon_phot.manyMagCalc_list(ss)
+        testMags = cartoon_dict.calcMagList(ss)
 
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
@@ -159,19 +159,20 @@ class uncertaintyUnitTest(unittest.TestCase):
         Test the calculateMagnitudeUncertainty raises exceptions when it needs to
         """
         phot = PhotometryBase()
-        phot.loadBandpassesFromFiles()
+        totalDict, hardwareDict = phot.loadBandpassesFromFiles()
         magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
         shortMagnitudes = numpy.array([22.0])
-        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes)
+        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, magnitudes, totalDict)
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, bandpassName='g', m5=23.0)
-        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, phot.calculateMagnitudeUncertainty, shortMagnitudes, totalDict, \
+                          obs_metadata=obs_metadata)
 
         photParams = PhotometricParameters()
         shortGamma = numpy.array([1.0, 1.0])
-        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, phot.bandpassDict.values(), shortMagnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_m5, shortMagnitudes, phot.bandpassDict.values(), magnitudes, photParams)
-        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, phot.bandpassDict.values(), magnitudes, photParams, gamma=shortGamma)
-        snr, gg = calcSNR_m5(magnitudes, phot.bandpassDict.values(), magnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), shortMagnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, shortMagnitudes, totalDict.values(), magnitudes, photParams)
+        self.assertRaises(RuntimeError, calcSNR_m5, magnitudes, totalDict.values(), magnitudes, photParams, gamma=shortGamma)
+        snr, gg = calcSNR_m5(magnitudes, totalDict.values(), magnitudes, photParams)
 
 
     def testSignalToNoise(self):
@@ -181,12 +182,12 @@ class uncertaintyUnitTest(unittest.TestCase):
         defaults = LSSTdefaults()
         photParams = PhotometricParameters()
         hardware = PhotometryHardware()
-        hardware.loadBandpassesFromFiles()
+        totalDict, hardwareDict = hardware.loadBandpassesFromFiles()
 
         m5 = []
-        for filt in hardware.bandpassDict:
-            m5.append(calcM5(hardware.skySED, hardware.bandpassDict[filt],
-                      hardware.hardwareBandpassDict[filt],
+        for filt in totalDict:
+            m5.append(calcM5(hardware.skySED, totalDict[filt],
+                      hardwareDict[filt],
                       photParams, seeing=defaults.seeing(filt)))
 
 
@@ -202,21 +203,21 @@ class uncertaintyUnitTest(unittest.TestCase):
                 break
             spectrum = Sed()
             spectrum.readSED_flambda(os.path.join(sedDir, name))
-            ff = spectrum.calcFluxNorm(m5[2]-offset[ix], hardware.bandpassDict.values()[2])
+            ff = spectrum.calcFluxNorm(m5[2]-offset[ix], totalDict.values()[2])
             spectrum.multiplyFluxNorm(ff)
             magList = []
             controlList = []
             magList = []
-            for filt in hardware.bandpassDict:
-                controlList.append(calcSNR_sed(spectrum, hardware.bandpassDict[filt],
+            for filt in totalDict:
+                controlList.append(calcSNR_sed(spectrum, totalDict[filt],
                                                hardware.skySED,
-                                               hardware.hardwareBandpassDict[filt],
+                                               hardwareDict[filt],
                                                photParams, defaults.seeing(filt)))
 
-                magList.append(spectrum.calcMag(hardware.bandpassDict[filt]))
+                magList.append(spectrum.calcMag(totalDict[filt]))
 
             testList, gammaList = calcSNR_m5(numpy.array(magList),
-                                        numpy.array(hardware.bandpassDict.values()),
+                                        numpy.array(totalDict.values()),
                                         numpy.array(m5),
                                         photParams)
 
@@ -234,9 +235,9 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
         phot = PhotometryBase()
-        phot.loadTotalBandpassesFromFiles()
+        bandpassDict = phot.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = phot.manyMagCalc_list(self.starSED)
+        magnitudes = bandpassDict.calcMagList(self.starSED)
 
         skySeds = []
 
@@ -250,7 +251,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
             skySeds.append(normalizedSkyDummy)
 
-        sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata)
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
         for i in range(len(self.bandpasses)):
             snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                               seeing=LSSTdefaults().seeing(self.bandpasses[i]),
@@ -272,9 +273,9 @@ class uncertaintyUnitTest(unittest.TestCase):
         phot = PhotometryBase()
         phot.photParams = photParams
 
-        phot.loadTotalBandpassesFromFiles()
+        bandpassDict = phot.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = phot.manyMagCalc_list(self.starSED)
+        magnitudes = bandpassDict.calcMagList(self.starSED)
 
         skySeds = []
 
@@ -288,7 +289,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
             skySeds.append(normalizedSkyDummy)
 
-        sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata)
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
         for i in range(len(self.bandpasses)):
             snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                               seeing=LSSTdefaults().seeing(self.bandpasses[i]),
@@ -317,9 +318,9 @@ class uncertaintyUnitTest(unittest.TestCase):
         phot = PhotometryBase()
         phot.photParams = photParams
 
-        phot.loadTotalBandpassesFromFiles()
+        bandpassDict = phot.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = phot.manyMagCalc_list(self.starSED)
+        magnitudes = bandpassDict.calcMagList(self.starSED)
 
         skySeds = []
 
@@ -333,7 +334,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
             skySeds.append(normalizedSkyDummy)
 
-        sigma = phot.calculateMagnitudeUncertainty(magnitudes, obs_metadata=obs_metadata)
+        sigma = phot.calculateMagnitudeUncertainty(magnitudes, bandpassDict, obs_metadata=obs_metadata)
         for i in range(len(self.bandpasses)):
             snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
                               seeing=LSSTdefaults().seeing(self.bandpasses[i]),

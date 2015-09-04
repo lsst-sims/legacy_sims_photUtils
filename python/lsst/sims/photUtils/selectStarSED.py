@@ -45,7 +45,7 @@ class selectStarSED(matchStar):
         in bandpassDict.
         If false, this means it will not run the dereddening procedure.
         
-        @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes. If left
+        @param [in] bandpassDict is a CatSimBandpassDict with which to calculate magnitudes. If left
         equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
         default extCoeffs.
         
@@ -69,16 +69,14 @@ class selectStarSED(matchStar):
         @param [out] matchErrors contains the Mean Squared Error between the colors of each object and
         the colors of the matched SED.
         """
-        
-        starPhot = phot()
+
         if bandpassDict is None:
-            starPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+            starPhot = phot().loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                                        'sdss'),
                                             bandpassRoot = 'sdss_')
         else:
-            starPhot.bandpassDict = bandpassDict
-        starPhot.setupPhiArray_dict()
+            starPhot = bandpassDict
         
         if colors is None:
             modelColors = self.calcBasicColors(sedList, starPhot, makeCopy=makeCopy)
@@ -104,7 +102,7 @@ class selectStarSED(matchStar):
         objMags = np.array(objMags)
         matchColors = []
 
-        for filtNum in range(0, len(starPhot.bandpassDict)-1):
+        for filtNum in range(0, len(starPhot)-1):
             matchColors.append(np.transpose(objMags)[filtNum] - np.transpose(objMags)[filtNum+1])
 
         matchColors = np.transpose(matchColors)
@@ -118,8 +116,8 @@ class selectStarSED(matchStar):
 
         for catObject in matchColors:
             #This is done to handle objects with incomplete magnitude data
-            colorRange = np.arange(0, len(starPhot.bandpassDict)-1)
-            filtNums = np.arange(0, len(starPhot.bandpassDict))
+            colorRange = np.arange(0, len(starPhot)-1)
+            filtNums = np.arange(0, len(starPhot))
             if np.isnan(np.amin(catObject))==True:
                 colorRange = np.where(np.isnan(catObject)==False)[0]
                 filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm

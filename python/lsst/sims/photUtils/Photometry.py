@@ -15,7 +15,8 @@ import numpy
 from collections import OrderedDict
 import lsst.utils
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
-                                calcMagError_m5, PhotometricParameters, magErrorFromSNR
+                                calcMagError_m5, PhotometricParameters, \
+                                magErrorFromSNR, CatSimBandpassDict
 from lsst.sims.utils import defaultSpecMap
 
 __all__ = ["PhotometryHardware", "PhotometryBase"]
@@ -51,16 +52,10 @@ class PhotometryHardware(object):
     provided by the class PhotometryBase which inherits from this class.
     """
 
-    bandpassDict = None #total (hardware plus atmosphere) bandpasses loaded in this particular catalog;
-                        #will be an OrderedDict
-    hardwareBandpassDict = None #bandpasses associated with just the telescope hardware
     atmoTransmission = None #atmospheric transmissivity (will be an instantiation of the Bandpass class)
-    nBandpasses = 0 #the number of bandpasses loaded (will need to be zero for InstanceCatalog's dry run)
 
     skySED = None #the emission spectrum of the atmosphere
 
-    phiArray = None #the response curves for the bandpasses
-    waveLenStep = None
 
     def loadBandpassesFromFiles(self, bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 filedir = os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline'),
@@ -122,22 +117,27 @@ class PhotometryHardware(object):
         for cc in componentList:
             commonComponents.append(os.path.join(filedir,cc))
 
-        self.bandpassDict = OrderedDict()
-        self.hardwareBandpassDict = OrderedDict()
         self.gammaDict = None
+
+        bandpassList = []
+        hardwareBandpassList = []
+
         for w in bandpassNames:
             components = commonComponents + [os.path.join(filedir,"%s.dat" % (bandpassRoot +w))]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
-            self.hardwareBandpassDict[w] = bandpassDummy
+            hardwareBandpassList.append(bandpassDummy)
+
             components += [os.path.join(filedir, atmoTransmission)]
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughputList(components)
-            self.bandpassDict[w] = bandpassDummy
+            bandpassList.append(bandpassDummy)
 
-        self.phiArray = None
-        self.waveLenStep = None
-        self.setupPhiArray_dict()
+
+        bandpassDict = CatSimBandpassDict(bandpassList, bandpassNames)
+        hardwareBandpassDict = CatSimBandpassDict(hardwareBandpassList, bandpassNames)
+
+        return bandpassDict, hardwareBandpassDict
 
 
     def loadTotalBandpassesFromFiles(self,bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
@@ -170,31 +170,15 @@ class PhotometryHardware(object):
         for purposes of photometric calculations
         """
 
-        self.bandpassDict = OrderedDict()
         self.gammaDict = None
+        bandpassList = []
 
         for w in bandpassNames:
             bandpassDummy = Bandpass()
             bandpassDummy.readThroughput(os.path.join(bandpassDir,"%s.dat" % (bandpassRoot + w)))
-            self.bandpassDict[w] = bandpassDummy
+            bandpassList.append(bandpassDummy)
 
-        self.phiArray = None
-        self.waveLenStep = None
-        self.setupPhiArray_dict()
-
-    def setupPhiArray_dict(self):
-        """
-        Generate 2-dimensional numpy array for Phi values associated with the bandpasses in
-        self.bandpasses
-
-        The results from this calculation will be stored in the instance variables
-        self.phiArray and self.waveLenStep for future use by self.manyMagCalc_list()
-        """
-
-        sedobj = Sed()
-        if self.bandpassDict is not None:
-            self.phiArray, self.waveLenStep = sedobj.setupPhiArray(self.bandpassDict.values())
-            self.nBandpasses = len(self.bandpassDict)
+        return CatSimBandpassDict(bandpassList, bandpassNames)
 
 
 class PhotometryBase(PhotometryHardware):
@@ -366,66 +350,17 @@ class PhotometryBase(PhotometryHardware):
             if sedobj.wavelen is not None:
                 sedobj.redshiftSED(redshift, dimming=dimming)
                 sedobj.name = sedobj.name + '_Z' + '%.2f' %(redshift)
-                sedobj.resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
 
 
-    def manyMagCalc_list(self, sedobj, indices=None):
-        """
-        Return a list of magnitudes for a single Sed object.
-
-        Bandpass information is taken from the instance variables self.bandpassDict,
-        self.phiArray, and self.waveLenStep
-
-        @param [in] sedobj is an Sed object
-
-        @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for.  Other magnitudes will be listed as 'None' (i.e. this method will
-        return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
-        just return nonsense for magnitudes you did not actually ask for)
-
-        @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
-        """
-        # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
-        # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
-
-        magList = []
-        if sedobj.wavelen is not None:
-            sedobj.resampleSED(wavelen_match=self.bandpassDict.values()[0].wavelen)
-
-            #for some reason, moving this call to flambdaTofnu()
-            #to a point earlier in the
-            #process results in some SEDs having 'None' for fnu.
-            #
-            #I looked more carefully at the documentation in Sed.py
-            #Any time you update flambda in any way, fnu gets set to 'None'
-            #This is to prevent the two arrays from getting out synch
-            #(e.g. renormalizing flambda but forgettint to renormalize fnu)
-            #
-            sedobj.flambdaTofnu()
-
-            if indices is not None:
-                for i in range(self.nBandpasses):
-                    magList.append(numpy.NaN)
-
-                magArray = sedobj.manyMagCalc(self.phiArray, self.waveLenStep, observedBandPassInd=indices)
-                for i,ix in enumerate(indices):
-                    magList[ix] = magArray[i]
-            else:
-                magList = sedobj.manyMagCalc(self.phiArray, self.waveLenStep)
-
-        else:
-            for i in range(self.nBandpasses):
-                magList.append(numpy.NaN)
-
-        return magList
-
-    def calculateMagnitudeUncertainty(self, magnitudes, obs_metadata=None):
+    def calculateMagnitudeUncertainty(self, magnitudes, bandpassDict, obs_metadata=None):
         """
         Calculate the uncertainty in magnitudes using the model from equation (5) of arXiv:0805.2366
 
         @param [in] magnitudes is a numpy array containing the object magnitudes.  Every row corresponds to
         a bandpass, which is to say that magnitudes[i][j] is the magnitude of the jth object in the
         bandpass characterized by self.bandpassDict.values()[i]
+
+        @param [in] bandpassDict is a CatSimBandpassDict characterizing the bandpasses being used
 
         @param [in] obs_metadata is the metadata of this observation (mostly desired because
         it will contain information about m5, the magnitude at which objects are detected
@@ -438,22 +373,24 @@ class PhotometryBase(PhotometryHardware):
         if obs_metadata is None:
             raise RuntimeError("Need to pass an ObservationMetaData into calculatePhotometricUncertainty")
 
-        if magnitudes.shape[0] != self.nBandpasses:
+        if magnitudes.shape[0] != len(bandpassDict):
             raise RuntimeError("Passed %d magnitudes to " % magnitudes.shape[0] + \
                                 " PhotometryBase.calculatePhotometricUncertainty; " + \
-                                "needed %d " % self.nBandpasses)
+                                "needed %d " % len(bandpassDict))
 
         #if we have not run this method before, calculate and cache the m5 and gamma parameter
         #values (see eqn 5 of arXiv:0805.2366) for future use
         m5Defaults = None
 
-        if not hasattr(self, '_gammaList') or len(self._gammaList) != self.nBandpasses:
+        if not hasattr(self, '_gammaList') or \
+        len(self._gammaList) != bandpassDict.nBandpasses:
+
             mm = []
             gg = []
-            for b in self.bandpassDict.keys():
+            for b in bandpassDict.keys():
                 if b in obs_metadata.m5:
                     mm.append(obs_metadata.m5[b])
-                    gg.append(calcGamma(self.bandpassDict[b], obs_metadata.m5[b],
+                    gg.append(calcGamma(bandpassDict[b], obs_metadata.m5[b],
                               photParams=self.photParams))
                 else:
                     if m5Defaults is None:
@@ -468,7 +405,7 @@ class PhotometryBase(PhotometryHardware):
             self._m5List = numpy.array(mm)
             self._gammaList = numpy.array(gg)
 
-        error = calcMagError_m5(magnitudes, self.bandpassDict.values(), self._m5List,
+        error = calcMagError_m5(magnitudes, bandpassDict.values(), self._m5List,
                                 gamma=self._gammaList, photParams=self.photParams)
 
         return error

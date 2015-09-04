@@ -21,7 +21,7 @@ class matchBase():
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
     """
 
-    def calcMagNorm(self, objectMags, sedObj, photObj, mag_error = None, 
+    def calcMagNorm(self, objectMags, sedObj, bandpassDict, mag_error = None,
                     redshift = None, filtRange = None):
 
         """
@@ -35,7 +35,7 @@ class matchBase():
         @param [in] sedObj is an Sed class instance that is set with the wavelength and flux of the
         matched SED
 
-        @param [in] photObj is a PhotometryBase class instance with the Bandpasses set to those
+        @param [in] bandpassDict is a CatSimBandpassDict class instance with the Bandpasses set to those
         for the magnitudes given for the catalog object
 
         @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
@@ -59,9 +59,9 @@ class matchBase():
         imSimBand.imsimBandpass()
         zp = -2.5*np.log10(3631)  #Note using default AB zeropoint
         flux_obs = np.power(10,(objectMags + zp)/(-2.5))
-        sedTest.resampleSED(wavelen_match=photObj.bandpassDict.values()[0].wavelen)
+        sedTest.resampleSED(wavelen_match=bandpassDict.values()[0].wavelen)
         sedTest.flambdaTofnu()
-        flux_model = sedTest.manyFluxCalc(photObj.phiArray, photObj.waveLenStep)
+        flux_model = sedTest.manyFluxCalc(bandpassDict.phiArray, bandpassDict.wavelenStep)
         if filtRange is not None:
             flux_obs = flux_obs[filtRange]
             flux_model = flux_model[filtRange]
@@ -74,22 +74,22 @@ class matchBase():
         bestMagNorm = sedTest.calcMag(imSimBand)
         return bestMagNorm
 
-    def calcBasicColors(self, sedList, photObj, makeCopy = False):
-        
+    def calcBasicColors(self, sedList, bandpassDict, makeCopy = False):
+
         """
         This will calculate a set of colors from a list of SED objects when there is no need to redshift
         the SEDs.
-        
+
         @param [in] sedList is the set of spectral objects from the models SEDs provided by loaders in
         rgStar or rgGalaxy. NOTE: Since this uses photometryBase.manyMagCalc_list the SED objects
         will be changed.
-        
-        @param [in] photObj is a PhotometryBase class instance with the Bandpasses set to those
+
+        @param [in] bandpassDict is a CatSimBandpassDict class instance with the Bandpasses set to those
         for the magnitudes given for the catalog object
 
-        @param [in] makeCopy indicates whether or not to operate on copies of the SED objects in sedList 
+        @param [in] makeCopy indicates whether or not to operate on copies of the SED objects in sedList
         since this method will change the wavelength grid.
-        
+
         @param [out] modelColors is the set of colors in the Bandpasses provided for the given sedList.
         """
 
@@ -99,30 +99,30 @@ class matchBase():
             if makeCopy==True:
                 fileSED = Sed()
                 fileSED.setSED(wavelen = specObj.wavelen, flambda = specObj.flambda)
-                sEDMags = photObj.manyMagCalc_list(fileSED)
+                sEDMags = bandpassDict.calcMagList(fileSED)
             else:
-                sEDMags = photObj.manyMagCalc_list(specObj)
+                sEDMags = bandpassDict.calcMagList(specObj)
             colorInfo = []
-            for filtNum in range(0, len(photObj.bandpassDict)-1):
+            for filtNum in range(0, len(bandpassDict)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])
             modelColors.append(colorInfo)
 
         return modelColors
-        
+
     def deReddenMags(self, ebvVals, catMags, extCoeffs):
-        
+
         """
         This will correct for extinction effects in a set of catalog Magnitudes.
-        
+
         @param [in] ebvVals is a list of ebv Values from calculateEBV in ebv.py or given by user that
         correspond to the same set of objects as the set of magnitudes.
-        
+
         @param [in] catMags is an array of the magnitudes of the catalog objects.
-        
+
         @param [in] extCoeffs is a list of the coefficients which should come
         from Schlafly and Finkbeiner (2011) (ApJ, 737, 103) for the same filters and in the same order
         as the catalog mags.
-        
+
         @param [out] deRedMags is the array of corrected magnitudes.
         """
 
@@ -133,8 +133,8 @@ class matchBase():
 class matchStar(matchBase):
 
     """
-    This class provides loading routines for the star SEDs currently in sims_sed_library. 
-    To load one's own SED library, the user can subclass this and add their own loader following 
+    This class provides loading routines for the star SEDs currently in sims_sed_library.
+    To load one's own SED library, the user can subclass this and add their own loader following
     the format of those included here.
     """
 
@@ -152,9 +152,9 @@ class matchStar(matchBase):
 
         @param [in] mltDir is the same as kuruczPath except that it specifies a directory for the
         mlt SEDs
-        
+
         @param [in] wdDir is the same as the previous two except that it specifies a path to an
-        alternate white dwarf SED directory.                                 
+        alternate white dwarf SED directory.
         """
 
         if sEDDir is None:
@@ -170,7 +170,7 @@ class matchStar(matchBase):
             for key, val in sorted(specMap.subdir_map.iteritems()):
                 if re.match(key, specStart):
                     specMapDict[specKey] = str(val)
-        
+
         if kuruczDir is None:
             self.kuruczDir = str(self.sEDDir + '/' + specMapDict['kurucz'] + '/')
         else:
@@ -215,7 +215,7 @@ class matchStar(matchBase):
         for fileName in files:
             if numOn % 100 == 0:
                 print 'Loading %i of %i: Kurucz SEDs' % (numOn, numFiles)
- 
+
             try:
                 spec = Sed()
                 spec.readSED_flambda(str(self.kuruczDir + '/' + fileName))
@@ -271,7 +271,7 @@ class matchStar(matchBase):
         for fileName in files:
             if numOn % 100 == 0:
                 print 'Loading %i of %i: MLT SEDs' % (numOn, numFiles)
- 
+
             try:
                 spec = Sed()
                 spec.readSED_flambda(str(self.mltDir + '/' + fileName))
@@ -290,7 +290,7 @@ class matchStar(matchBase):
     def loadwdSEDs(self, subset = None):
 
         """
-        By default will load all seds in wd directory. The user can also define a subset of                                                                           
+        By default will load all seds in wd directory. The user can also define a subset of
         what's in the directory and load only those SEDs instead. Will skip over extraneous
         files in sed folder.
 
@@ -299,7 +299,7 @@ class matchStar(matchBase):
 
         @param [out] sedListH is the set of model SED spectra objects for Hydrogen WDs to be passed onto
         the matching routines.
-        
+
         @param [out] sedListHE is the set of model SED spectra objects for Helium WDs to be passed onto
         the matching routines.
         """
@@ -321,12 +321,12 @@ class matchStar(matchBase):
         for fileName in files:
             if numOn % 100 == 0:
                 print 'Loading %i of %i: WD SEDs' % (numOn, numFiles)
- 
+
             try:
                 spec = Sed()
                 spec.readSED_flambda(str(self.wdDir + '/' + fileName))
-                spec.name = fileName                
-                if fileName.split("_")[1] == 'He':      
+                spec.name = fileName
+                if fileName.split("_")[1] == 'He':
                     sedListHE.append(spec)
                 else:
                     sedListH.append(spec)
@@ -341,13 +341,13 @@ class matchStar(matchBase):
 class matchGalaxy(matchBase):
 
     """
-    This class provides loading routines for the galaxy SEDs currently in sims_sed_library. 
-    To load one's own SED library, the user can subclass this and add their own loader following 
+    This class provides loading routines for the galaxy SEDs currently in sims_sed_library.
+    To load one's own SED library, the user can subclass this and add their own loader following
     the format of those included here.
     """
 
     def __init__(self, galDir = None):
-        
+
         """
         @param [in] galDir is the directory where the galaxy SEDs are stored
         """
@@ -361,15 +361,15 @@ class matchGalaxy(matchBase):
                     galSpecDir = str(val)
             self.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir)
         else:
-            self.galDir = galDir    
-    
+            self.galDir = galDir
+
     def loadBC03(self, subset = None):
 
         """
         This loads the Bruzual and Charlot SEDs that are currently in the SIMS_SED_LIBRARY.
         If the user wants to use different SEDs another loading method can be created and used in place
         of this.
-        
+
         @param [in] subset is the list of the subset of files in the galDir that the user
         can specify if using all the SEDs in the directory is not desired.
 
@@ -393,7 +393,7 @@ class matchGalaxy(matchBase):
         for fileName in files:
             if numOn % 100 == 0:
                 print 'Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles)
- 
+
             try:
                 spec = Sed()
                 spec.readSED_flambda(str(self.galDir + '/' + fileName))
