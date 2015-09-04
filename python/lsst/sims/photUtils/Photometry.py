@@ -27,7 +27,8 @@ def loadBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                             bandpassRoot = 'filter_',
                             componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                                              'lens1.dat', 'lens2.dat', 'lens3.dat'],
-                            atmoTransmission='atmos.dat'):
+                            atmoTransmission=os.path.join(lsst.utils.getPackageDir('throughputs'),
+                                                          'baseline','atmos.dat')):
     """
     Load bandpass information from files into CatSimBandpassDicts.
     This method will separate the bandpasses into contributions due to instrumentations
@@ -49,8 +50,9 @@ def loadBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                   'lense2.dat', 'lenst3.dat']
     for LSST).  These files are also expected to be stored in filedir
 
-    @param [in] atmoTransmission is the name of the file representing the
-    transmissivity of the atmosphere (also assumed to be in filedir)
+    @param [in] atmoTransmission is the absolute path to the file representing the
+    transmissivity of the atmosphere (defaults to baseline/atmos.dat in the LSST
+    'throughputs' package).
 
     @param [out] bandpassDict is a CatSimBandpassDict containing the total
     throughput (instrumentation + atmosphere)
@@ -72,7 +74,7 @@ def loadBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
         bandpassDummy.readThroughputList(components)
         hardwareBandpassList.append(bandpassDummy)
 
-        components += [os.path.join(filedir, atmoTransmission)]
+        components += [atmoTransmission]
         bandpassDummy = Bandpass()
         bandpassDummy.readThroughputList(components)
         bandpassList.append(bandpassDummy)
