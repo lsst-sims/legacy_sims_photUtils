@@ -10,7 +10,6 @@ from lsst.sims.photUtils import Bandpass, Sed, CatSimBandpassDict
 
 class BandpassDictTest(unittest.TestCase):
 
-    @classmethod
     def setUp(self):
         self.rng = numpy.random.seed(32)
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
