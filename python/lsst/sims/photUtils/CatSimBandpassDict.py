@@ -72,12 +72,19 @@ class CatSimBandpassDict(object):
 
         @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
         """
-        # Set up the SED for using manyMagCalc - note that this CHANGES sedobj
-        # Have to check that the wavelength range for sedobj matches bandpass - this is why the dictionary is passed in.
 
         if sedobj.wavelen is not None:
-            dummySed = Sed(wavelen=sedobj.wavelen, flambda=sedobj.flambda)
-            dummySed.resampleSED(wavelen_match=self._bandpassDict.values()[0].wavelen)
+
+            # If the Sed's wavelength grid agrees with self._wavelen_match to one part in
+            # 10^6, just use the Sed as-is.  Otherwise, copy it and resample it onto
+            # self._wavelen_match
+            if len(sedobj.wavelen)!=len(self._wavelen_match) or \
+            not numpy.allclose(sedobj.wavelen, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+                dummySed = Sed(wavelen=sedobj.wavelen, flambda=sedobj.flambda)
+                dummySed.resampleSED(wavelen_match=self._bandpassDict.values()[0].wavelen)
+            else:
+                dummySed = sedobj
+
 
             #for some reason, moving this call to flambdaTofnu()
             #to a point earlier in the
