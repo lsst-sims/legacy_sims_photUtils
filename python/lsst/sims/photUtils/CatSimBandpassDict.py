@@ -167,6 +167,115 @@ class CatSimBandpassDict(object):
         return numpy.array(output_list)
 
 
+    def calcFluxListFromSed(self, sedobj, indices=None):
+        """
+        Return a list of Fluxes for a single Sed object.
+
+        @param [in] sedobj is an Sed object
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate fluxes for.  Other fluxes will be listed as 'None' (i.e. this method will
+        return as many fluxes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return nonsense for fluxes you did not actually ask for)
+
+        @param [out] fluxList is a list of fluxes in the bandpasses stored in self.bandpassDict
+        """
+
+        if sedobj.wavelen is not None:
+
+            # If the Sed's wavelength grid agrees with self._wavelen_match to one part in
+            # 10^6, just use the Sed as-is.  Otherwise, copy it and resample it onto
+            # self._wavelen_match
+            if len(sedobj.wavelen)!=len(self._wavelen_match) or \
+            not numpy.allclose(sedobj.wavelen, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+                dummySed = Sed(wavelen=sedobj.wavelen, flambda=sedobj.flambda)
+                dummySed.resampleSED(wavelen_match=self._bandpassDict.values()[0].wavelen)
+            else:
+                dummySed = sedobj
+
+
+            #for some reason, moving this call to flambdaTofnu()
+            #to a point earlier in the
+            #process results in some SEDs having 'None' for fnu.
+            #
+            #I looked more carefully at the documentation in Sed.py
+            #Any time you update flambda in any way, fnu gets set to 'None'
+            #This is to prevent the two arrays from getting out synch
+            #(e.g. renormalizing flambda but forgettint to renormalize fnu)
+            #
+            dummySed.flambdaTofnu()
+
+            if indices is not None:
+                fluxList = [numpy.NaN]*self._nBandpasses
+
+                fluxArray = dummySed.manyFluxCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
+                for i,ix in enumerate(indices):
+                    fluxList[ix] = fluxArray[i]
+            else:
+                fluxList = dummySed.manyFluxCalc(self._phiArray, self._wavelenStep)
+
+            return numpy.array(fluxList)
+
+        else:
+            return numpy.array([numpy.NaN]*self._nBandpasses)
+
+
+
+    def calcFluxListFromSedList(self, sedList, indices=None):
+        """
+        Return a 2-D array of fluxes from a CatSimSedList.
+        Each row will correspond to a different Sed, each column
+        will correspond to a different bandpass.
+
+        @param [in] sedList is a CatSimSedList containing the Seds
+        whose fluxes are desired.
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate fluxes for.  Other fluxes will be listed as 'None' (i.e. this method will
+        return as many fluxes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return nonsense for fluxes you did not actually ask for)
+
+        @param [out] output_list is a 2-D numpy array containing the fluxes
+        of each Sed (the rows) in each bandpass contained in this CatSimBandpassDict
+        (the columns)
+        """
+
+        one_at_a_time = False
+        if sedList.wavelenMatch is None:
+            one_at_a_time = True
+        elif len(sedList.wavelenMatch) != len(self._wavelen_match):
+            one_at_a_time = True
+        elif not numpy.allclose(sedList.wavelenMatch, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+            one_at_a_time = True
+
+        output_list = []
+        if one_at_a_time:
+            for sed_obj in sedList:
+                sub_list = self.calcFluxListFromSed(sed_obj, indices=indices)
+                output_list.append(sub_list)
+        else:
+            if indices is not None:
+                for sed_obj in sedList:
+                    sub_list = numpy.array([numpy.NaN]*self._nBandpasses)
+                    if sed_obj.wavelen is not None:
+                        sed_obj.flambdaTofnu()
+                        flux_list = sed_obj.manyFluxCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
+                        for i,ix in enumerate(indices):
+                            sub_list[ix] = flux_list[i]
+                    output_list.append(sub_list)
+            else:
+                for sed_obj in sedList:
+                    if sed_obj.wavelen is None:
+                        sub_list = numpy.array([numpy.Nan]*self._nBandpasses)
+                    else:
+                        sed_obj.flambdaTofnu()
+                        sub_list = sed_obj.manyFluxCalc(self._phiArray, self._wavelenStep)
+                    output_list.append(sub_list)
+
+        return numpy.array(output_list)
+
+
+
     @property
     def phiArray(self):
         """
