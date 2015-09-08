@@ -99,9 +99,9 @@ class matchBase():
             if makeCopy==True:
                 fileSED = Sed()
                 fileSED.setSED(wavelen = specObj.wavelen, flambda = specObj.flambda)
-                sEDMags = bandpassDict.calcMagList(fileSED)
+                sEDMags = bandpassDict.calcMagListFromSed(fileSED)
             else:
-                sEDMags = bandpassDict.calcMagList(specObj)
+                sEDMags = bandpassDict.calcMagListFromSed(specObj)
             colorInfo = []
             for filtNum in range(0, len(bandpassDict)-1):
                 colorInfo.append(sEDMags[filtNum] - sEDMags[filtNum+1])

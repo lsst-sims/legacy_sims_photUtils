@@ -13,7 +13,7 @@ class CatSimBandpassDict(object):
     the input Bandpasses to be on the same wavelength grid (defined
     by the first input Bandpass).  The constructor will then calculate
     the 2-D phiArray for quick calculation of magnitudes in all
-    Bandpasses simultaneously (see the member method calcMagList).
+    Bandpasses simultaneously (see the member method calcMagListFromSed).
     """
 
     def __init__(self, bandpassList, bandpassNameList):
@@ -59,7 +59,7 @@ class CatSimBandpassDict(object):
         return self._bandpassDict.keys()
 
 
-    def calcMagList(self, sedobj, indices=None):
+    def calcMagListFromSed(self, sedobj, indices=None):
         """
         Return a list of magnitudes for a single Sed object.
 

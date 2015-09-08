@@ -384,7 +384,7 @@ class readGalfast():
                                    flambda = listDict[sedType][positionDict[sedName]].flambda)
                     fluxNorm = testSED.calcFluxNorm(magNorm, imSimBand)
                     testSED.multiplyFluxNorm(fluxNorm)
-                    lsstMagsUnred.append(lsstPhot.calcMagList(testSED))
+                    lsstMagsUnred.append(lsstPhot.calcMagListFromSed(testSED))
                 #If the extinction value is negative then it will add the reddening back in
                 lsstMags = selectStarSED0.deReddenMags((-1.0*am), lsstMagsUnred,
                                                        lsstExtCoeffs)

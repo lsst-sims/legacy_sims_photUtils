@@ -56,7 +56,7 @@ class TestMatchBase(unittest.TestCase):
         testSED.redshiftSED(redVal)
         fluxNorm = testSED.calcFluxNorm(magNorm, imSimBand)
         testSED.multiplyFluxNorm(fluxNorm)
-        sedMags = testPhot.calcMagList(testSED)
+        sedMags = testPhot.calcMagListFromSed(testSED)
         stepSize = 0.001
         testMagNorm = testUtils.calcMagNorm(sedMags, unChangedSED, testPhot, redshift = redVal)
         #Test adding in mag_errors. If an array of np.ones is passed in we should get same result
@@ -83,7 +83,7 @@ class TestMatchBase(unittest.TestCase):
                                         bandpassRoot = 'sdss_')
 
         testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
-        testMags = testPhot.calcMagList(testSED)
+        testMags = testPhot.calcMagListFromSed(testSED)
         testColors = []
         for filtNum in range(0, len(self.filterList)-1):
             testColors.append(testMags[filtNum] - testMags[filtNum+1])
@@ -105,7 +105,7 @@ class TestMatchBase(unittest.TestCase):
         testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
         copyTest.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
         testLambda = copyTest.wavelen[0]
-        testMags = testPhot.calcMagList(testSED)
+        testMags = testPhot.calcMagListFromSed(testSED)
         testColors = []
         for filtNum in range(0, len(self.filterList)-1):
             testColors.append(testMags[filtNum] - testMags[filtNum+1])
@@ -422,7 +422,7 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMagNormList.append(testMagNorm)
             fluxNorm = getSEDMags.calcFluxNorm(testMagNorm, imSimBand)
             getSEDMags.multiplyFluxNorm(fluxNorm)
-            testMags.append(galPhot.calcMagList(getSEDMags))
+            testMags.append(galPhot.calcMagListFromSed(getSEDMags))
 
         #Also testing to make sure passing in non-default bandpasses works
         #Substitute in nan values to simulate incomplete data.
@@ -487,7 +487,7 @@ class TestSelectGalaxySED(unittest.TestCase):
             getSEDMags = Sed()
             testSEDNames.append(testSED.name)
             getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
-            testMags.append(galPhot.calcMagList(getSEDMags))
+            testMags.append(galPhot.calcMagListFromSed(getSEDMags))
 
             #Check Extinction corrections
             sedRA = np.random.uniform(10,170)
@@ -497,7 +497,7 @@ class TestSelectGalaxySED(unittest.TestCase):
             raDec = np.array((sedRA, sedDec)).reshape((2,1))
             ebvVal = ebv().calculateEbv(equatorialCoordinates = raDec)
             extVal = ebvVal*extCoeffs
-            testMagsExt.append(galPhot.calcMagList(getSEDMags) + extVal)
+            testMagsExt.append(galPhot.calcMagListFromSed(getSEDMags) + extVal)
 
             #Setup magnitudes for testing matching to redshifted values
             getRedshiftMags = Sed()
@@ -509,7 +509,7 @@ class TestSelectGalaxySED(unittest.TestCase):
             getRedshiftMags.redshiftSED(testZ)
             fluxNorm = getRedshiftMags.calcFluxNorm(testMagNorm, imSimBand)
             getRedshiftMags.multiplyFluxNorm(fluxNorm)
-            testMagsRedshift.append(galPhot.calcMagList(getRedshiftMags))
+            testMagsRedshift.append(galPhot.calcMagListFromSed(getRedshiftMags))
 
         #Will also test in passing of non-default bandpass
         testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testMags, np.zeros(20),
@@ -655,7 +655,7 @@ class TestSelectStarSED(unittest.TestCase):
                     typeMagNorms.append(testMagNorm)
                     fluxNorm = getSEDMags.calcFluxNorm(testMagNorm, imSimBand)
                     getSEDMags.multiplyFluxNorm(fluxNorm)
-                    typeMags.append(starPhot.calcMagList(getSEDMags))
+                    typeMags.append(starPhot.calcMagListFromSed(getSEDMags))
                 testSEDNames.append(typeSEDNames)
                 testMags.append(typeMags)
                 testMagNormList.append(typeMagNorms)

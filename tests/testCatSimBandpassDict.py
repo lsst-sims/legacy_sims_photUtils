@@ -147,9 +147,9 @@ class BandpassDictTest(unittest.TestCase):
         self.assertTrue('You should not be setting wavelenMatch' in context.exception.message)
 
 
-    def testCalcMag(self):
+    def testCalcMagListFromSed(self):
         """
-        Test that calcMagList calculates the correct magnitude
+        Test that calcMagListFromSed calculates the correct magnitude
         """
 
         wavelen = numpy.arange(10.0,2000.0,1.0)
@@ -162,7 +162,7 @@ class BandpassDictTest(unittest.TestCase):
             testDict = CatSimBandpassDict(bpList, nameList)
             self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
 
-            magList = testDict.calcMagList(spectrum)
+            magList = testDict.calcMagListFromSed(spectrum)
             for ix, (name, bp, magTest) in enumerate(zip(nameList, bpList, magList)):
                 magControl = spectrum.calcMag(bp)
                 self.assertAlmostEqual(magTest, magControl, 5)
