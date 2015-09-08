@@ -66,6 +66,38 @@ class BandpassDictTest(unittest.TestCase):
                 numpy.testing.assert_array_equal(bpControl.sb, bpTest.sb)
 
 
+    def testWavelenMatch(self):
+        """
+        Test that when you load bandpasses sampled over different
+        wavelength grids, they all get sampled to the same wavelength
+        grid.
+        """
+        dwavList = numpy.arange(5.0,25.0,5.0)
+        bpList = []
+        bpNameList = []
+        for ix, dwav in enumerate(dwavList):
+            name = 'bp_%d' % ix
+            wavelen = numpy.arange(10.0, 1500.0, dwav)
+            sb = numpy.exp(-0.5*(numpy.power((wavelen-100.0*ix)/100.0,2)))
+            bp = Bandpass(wavelen=wavelen, sb=sb)
+            bpList.append(bp)
+            bpNameList.append(name)
+
+        # First make sure that we have created distinct wavelength grids
+        for ix in range(len(bpList)):
+            for iy in range(ix+1,len(bpList)):
+                self.assertTrue(len(bpList[ix].wavelen)!=len(bpList[iy].wavelen))
+
+        testDict = CatSimBandpassDict(bpList, bpNameList)
+
+        # Now make sure that the wavelength grids in the dict were resampled, but that
+        # the original wavelength grids were not changed
+        for ix in range(len(bpList)):
+            numpy.testing.assert_array_equal(testDict.values()[ix].wavelen, testDict.wavelenMatch)
+            if ix!=0:
+                self.assertTrue(len(testDict.wavelenMatch)!=len(bpList[ix].wavelen))
+
+
     def testPhiArray(self):
         """
         Test that the phi array is correctly calculated by CatSimBandpassDict
@@ -109,6 +141,10 @@ class BandpassDictTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             testDict.wavelenStep = 0.9
         self.assertTrue('You should not be setting wavelenStep' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            testDict.wavelenMatch = numpy.arange(10.0,100.0,1.0)
+        self.assertTrue('You should not be setting wavelenMatch' in context.exception.message)
 
 
     def testCalcMag(self):

@@ -34,6 +34,7 @@ class CatSimBandpassDict(object):
 
         dummySed = Sed()
         self._phiArray, self._wavelenStep = dummySed.setupPhiArray(self._bandpassDict.values())
+        self._wavelen_match = self._bandpassDict.values()[0].wavelen
         self._nBandpasses = len(self._bandpassDict)
 
 
@@ -143,4 +144,18 @@ class CatSimBandpassDict(object):
     @nBandpasses.setter
     def nBandpasses(self, value):
         raise RuntimeError("You should not be setting nBandpasses on the fly " \
+                           + "in a CatSimBandpassDict")
+
+
+    @property
+    def wavelenMatch(self):
+        """
+        The wavelength grid (in nm) on which all of the bandpass
+        throughputs have been sampled.
+        """
+        return self._wavelen_match
+
+    @wavelenMatch.setter
+    def wavelenMatch(self, value):
+        raise RuntimeError("You should not be setting wavelenMatch on the fly " \
                            + "in a CatSimBandpassDict")
