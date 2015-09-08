@@ -222,7 +222,8 @@ class CatSimSedList(object):
 
         if self._wavelen_match is not None:
             for sedObj in temp_sed_list:
-                sedObj.resampleSED(wavelen_match=self._wavelen_match)
+                if sedObj.wavelen is not None:
+                    sedObj.resampleSED(wavelen_match=self._wavelen_match)
 
         if galacticAvList is not None:
             self._av_gal_wavelen, \

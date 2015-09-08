@@ -113,6 +113,60 @@ class CatSimBandpassDict(object):
 
 
 
+    def calcMagListFromSedList(self, sedList, indices=None):
+        """
+        Return a 2-D array of magnitudes from a CatSimSedList.
+        Each row will correspond to a different Sed, each column
+        will correspond to a different bandpass.
+
+        @param [in] sedList is a CatSimSedList containing the Seds
+        whose magnitudes are desired.
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for.  Other magnitudes will be listed as 'None' (i.e. this method will
+        return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return nonsense for magnitudes you did not actually ask for)
+
+        @param [out] output_list is a 2-D numpy array containing the magnitudes
+        of each Sed (the rows) in each bandpass contained in this CatSimBandpassDict
+        (the columns)
+        """
+
+        one_at_a_time = False
+        if sedList.wavelenMatch is None:
+            one_at_a_time = True
+        elif len(sedList.wavelenMatch) != len(self._wavelen_match):
+            one_at_a_time = True
+        elif not numpy.allclose(sedList.wavelenMatch, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+            one_at_a_time = True
+
+        output_list = []
+        if one_at_a_time:
+            for sed_obj in sedList:
+                sub_list = self.calcMagListFromSed(sed_obj, indices=indices)
+                output_list.append(sub_list)
+        else:
+            if indices is not None:
+                for sed_obj in sedList:
+                    sub_list = numpy.array([numpy.Nan]*self._nBandpasses)
+                    if sed_obj.wavelen is not None:
+                        sed_obj.flambdaTofnu()
+                        mag_list = sed_obj.manyMagCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
+                        for i,ix in enumerate(indices):
+                            sub_list[ix] = mag_list[i]
+                    output_list.append(sub_list)
+            else:
+                for sed_obj in sedList:
+                    if sed_obj.wavelen is None:
+                        sub_list = numpy.array([numpy.Nan]*self._nBandpasses)
+                    else:
+                        sed_obj.flambdaTofnu()
+                        sub_list = sed_obj.manyMagCalc(self._phiArray, self._wavelenStep)
+                    output_list.append(sub_list)
+
+        return numpy.array(output_list)
+
+
     @property
     def phiArray(self):
         """

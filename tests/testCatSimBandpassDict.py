@@ -6,7 +6,8 @@ import numpy
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 
-from lsst.sims.photUtils import Bandpass, Sed, CatSimBandpassDict
+from lsst.sims.photUtils import Bandpass, Sed, CatSimBandpassDict, \
+                                CatSimSedList
 
 class BandpassDictTest(unittest.TestCase):
 
@@ -14,6 +15,15 @@ class BandpassDictTest(unittest.TestCase):
         numpy.random.seed(32)
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
         self.bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
+        self.sedDir = os.path.join(getPackageDir('sims_sed_library'))
+        self.sedDir = os.path.join(self.sedDir, 'galaxySED')
+        self.sedPossibilities = os.listdir(self.sedDir)
+
+
+    def getListOfSedNames(self, nNames):
+        return [self.sedPossibilities[ii].replace('.gz','') \
+                for ii in \
+                numpy.random.random_integers(0, len(self.sedPossibilities)-1, nNames)]
 
 
     def getListOfBandpasses(self, nBp):
@@ -158,7 +168,7 @@ class BandpassDictTest(unittest.TestCase):
 
         for nBp in range(3, 10, 1):
 
-            nameList, bpList = self.getListOfBandpasses(7)
+            nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = CatSimBandpassDict(bpList, nameList)
             self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
 
@@ -166,6 +176,66 @@ class BandpassDictTest(unittest.TestCase):
             for ix, (name, bp, magTest) in enumerate(zip(nameList, bpList, magList)):
                 magControl = spectrum.calcMag(bp)
                 self.assertAlmostEqual(magTest, magControl, 5)
+
+
+    def testCalcMagListFromSedList(self):
+        """
+        Test that calcMagListFromSedList calculates the correct magnitude
+        """
+
+        nBandpasses = 7
+        bpNameList, bpList = self.getListOfBandpasses(nBandpasses)
+        testBpDict = CatSimBandpassDict(bpList, bpNameList)
+
+        nSed = 20
+        sedNameList = self.getListOfSedNames(nSed)
+        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
+        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        redshiftList = numpy.random.random_sample(nSed)*5.0
+        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+
+        # first, test on an SedList without a wavelenMatch
+        testSedList = CatSimSedList(sedNameList, magNormList,
+                                    internalAvList=internalAvList,
+                                    redshiftList=redshiftList,
+                                    galacticAvList=galacticAvList)
+
+        magList = testBpDict.calcMagListFromSedList(testSedList)
+        self.assertEqual(magList.shape[0], nSed)
+        self.assertEqual(magList.shape[1], nBandpasses)
+
+        imsimBand = Bandpass()
+        imsimBand.imsimBandpass()
+
+        for ix, sedObj in enumerate(testSedList):
+            dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
+                           flambda=copy.deepcopy(sedObj.flambda))
+
+            for iy, bp in enumerate(testBpDict):
+                mag = dummySed.calcMag(testBpDict[bp])
+                self.assertAlmostEqual(mag, magList[ix][iy], 3)
+
+        # now use wavelenMatch
+        testSedList = CatSimSedList(sedNameList, magNormList,
+                                    internalAvList=internalAvList,
+                                    redshiftList=redshiftList,
+                                    galacticAvList=galacticAvList,
+                                    wavelenMatch=testBpDict.wavelenMatch)
+
+        magList = testBpDict.calcMagListFromSedList(testSedList)
+        self.assertEqual(magList.shape[0], nSed)
+        self.assertEqual(magList.shape[1], nBandpasses)
+
+        imsimBand = Bandpass()
+        imsimBand.imsimBandpass()
+
+        for ix, sedObj in enumerate(testSedList):
+            dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
+                           flambda=copy.deepcopy(sedObj.flambda))
+
+            for iy, bp in enumerate(testBpDict):
+                mag = dummySed.calcMag(testBpDict[bp])
+                self.assertAlmostEqual(mag, magList[ix][iy], 3)
 
 
 
