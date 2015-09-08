@@ -11,7 +11,7 @@ from lsst.sims.photUtils import Bandpass, Sed, CatSimBandpassDict
 class BandpassDictTest(unittest.TestCase):
 
     def setUp(self):
-        self.rng = numpy.random.seed(32)
+        numpy.random.seed(32)
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
         self.bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
 
