@@ -100,7 +100,7 @@ class CatSimBandpassDict(object):
             if indices is not None:
                 magList = [numpy.NaN]*self._nBandpasses
 
-                magArray = dummySed.manyMagCalc(self._phiArray, self._wavelenStep, observedBandPassInd=indices)
+                magArray = dummySed.manyMagCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
                 for i,ix in enumerate(indices):
                     magList[ix] = magArray[i]
             else:
@@ -151,7 +151,7 @@ class CatSimBandpassDict(object):
                     sub_list = numpy.array([numpy.NaN]*self._nBandpasses)
                     if sed_obj.wavelen is not None:
                         sed_obj.flambdaTofnu()
-                        mag_list = sed_obj.manyMagCalc(self._phiArray, self._wavelenStep, observedBandPassInd=indices)
+                        mag_list = sed_obj.manyMagCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
                         for i,ix in enumerate(indices):
                             sub_list[ix] = mag_list[i]
                     output_list.append(sub_list)
