@@ -158,7 +158,7 @@ class CatSimBandpassDict(object):
             else:
                 for sed_obj in sedList:
                     if sed_obj.wavelen is None:
-                        sub_list = numpy.array([numpy.Nan]*self._nBandpasses)
+                        sub_list = numpy.array([numpy.NaN]*self._nBandpasses)
                     else:
                         sed_obj.flambdaTofnu()
                         sub_list = sed_obj.manyMagCalc(self._phiArray, self._wavelenStep)
@@ -266,7 +266,7 @@ class CatSimBandpassDict(object):
             else:
                 for sed_obj in sedList:
                     if sed_obj.wavelen is None:
-                        sub_list = numpy.array([numpy.Nan]*self._nBandpasses)
+                        sub_list = numpy.array([numpy.NaN]*self._nBandpasses)
                     else:
                         sed_obj.flambdaTofnu()
                         sub_list = sed_obj.manyFluxCalc(self._phiArray, self._wavelenStep)
