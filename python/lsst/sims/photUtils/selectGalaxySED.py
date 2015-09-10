@@ -135,7 +135,7 @@ class selectGalaxySED(matchGalaxy):
         @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
         then this defaults to 1.0. This should be an array of the same size as catMags.
 
-        @param [in] bandpassDict is a CatSimBandpassDict with which to calculate magnitudes.
+        @param [in] bandpassDict is a BandpassDict with which to calculate magnitudes.
         If left equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with
         default extCoeffs.
 

@@ -2,8 +2,8 @@ from .LSSTdefaults import *
 from .PhysicalParameters import *
 from .Sed import *
 from .Bandpass import * 
-from .CatSimBandpassDict import *
-from .CatSimSedList import *
+from .BandpassDict import *
+from .SedList import *
 from .PhotometricParameters import *
 from .SignalToNoise import *
 from .Photometry import *

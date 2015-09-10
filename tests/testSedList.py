@@ -6,7 +6,7 @@ import numpy
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 
-from lsst.sims.photUtils import Bandpass, Sed, CatSimSedList
+from lsst.sims.photUtils import Bandpass, Sed, SedList
 
 class SedListTest(unittest.TestCase):
 
@@ -30,7 +30,7 @@ class SedListTest(unittest.TestCase):
         redshiftList = numpy.random.random_sample(nSed)*5.0
         galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
         wavelen_match = numpy.arange(300.0, 1500.0, 10.0)
-        testList = CatSimSedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, galacticAvList=galacticAvList,
                                  wavelenMatch=wavelen_match)
 
@@ -61,7 +61,7 @@ class SedListTest(unittest.TestCase):
         self.assertTrue('set galacticAvList' in context.exception.message)
 
 
-        testList = CatSimSedList(sedNameList, magNormList)
+        testList = SedList(sedNameList, magNormList)
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, internalAvList=internalAvList)
@@ -86,7 +86,7 @@ class SedListTest(unittest.TestCase):
         nSed = 10
         sedNameList = self.getListOfSedNames(nSed)
         magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
-        testList = CatSimSedList(sedNameList, magNormList)
+        testList = SedList(sedNameList, magNormList)
         self.assertEqual(len(testList), nSed)
         self.assertTrue(testList.internalAvList is None)
         self.assertTrue(testList.galacticAvList is None)
@@ -111,7 +111,7 @@ class SedListTest(unittest.TestCase):
         sedNameList = self.getListOfSedNames(nSed)
         magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
         internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        testList = CatSimSedList(sedNameList, magNormList, internalAvList=internalAvList)
+        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList)
         self.assertTrue(testList.galacticAvList is None)
         self.assertTrue(testList.redshiftList is None)
         self.assertTrue(testList.wavelenMatch is None)
@@ -138,7 +138,7 @@ class SedListTest(unittest.TestCase):
         magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
         internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
         redshiftList = numpy.random.random_sample(nSed)*5.0
-        testList = CatSimSedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList)
         self.assertTrue(testList.galacticAvList is None)
         self.assertTrue(testList.wavelenMatch is None)
@@ -171,7 +171,7 @@ class SedListTest(unittest.TestCase):
         magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
         internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
         redshiftList = numpy.random.random_sample(nSed)*5.0
-        testList = CatSimSedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, cosmologicalDimming=False)
         self.assertTrue(testList.galacticAvList is None)
         self.assertTrue(testList.wavelenMatch is None)
@@ -205,7 +205,7 @@ class SedListTest(unittest.TestCase):
         internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
         redshiftList = numpy.random.random_sample(nSed)*5.0
         galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        testList = CatSimSedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, galacticAvList=galacticAvList)
         self.assertTrue(testList.wavelenMatch is None)
         self.assertTrue(testList.cosmologicalDimming is True)
@@ -247,7 +247,7 @@ class SedListTest(unittest.TestCase):
         redshiftList = numpy.random.random_sample(nSed)*5.0
         galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
         wavelen_match = numpy.arange(300.0, 1500.0, 10.0)
-        testList = CatSimSedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, galacticAvList=galacticAvList,
                                  wavelenMatch=wavelen_match)
 
@@ -297,7 +297,7 @@ class SedListTest(unittest.TestCase):
         redshiftList_0 = numpy.random.random_sample(nSed)*5.0
         galacticAvList_0 = numpy.random.random_sample(nSed)*0.3 + 0.1
         wavelen_match = numpy.arange(300.0, 1500.0, 10.0)
-        testList = CatSimSedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0, \
+        testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0, \
                                  redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
                                  wavelenMatch=wavelen_match)
 
@@ -390,7 +390,7 @@ class SedListTest(unittest.TestCase):
         redshiftList_0 = numpy.random.random_sample(nSed)*5.0
         galacticAvList_0 = numpy.random.random_sample(nSed)*0.3 + 0.1
         wavelen_match = numpy.arange(300.0, 1500.0, 10.0)
-        testList = CatSimSedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0, \
+        testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0, \
                                  redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
                                  wavelenMatch=wavelen_match)
 

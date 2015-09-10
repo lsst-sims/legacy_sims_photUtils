@@ -3,9 +3,9 @@ import numpy
 from collections import OrderedDict
 from lsst.sims.photUtils import Bandpass, Sed
 
-__all__ = ["CatSimBandpassDict"]
+__all__ = ["BandpassDict"]
 
-class CatSimBandpassDict(object):
+class BandpassDict(object):
     """
     This class will wrap an OrderedDict of Bandpass instantiations.
 
@@ -28,7 +28,7 @@ class CatSimBandpassDict(object):
 
             if bandpassName in self._bandpassDict:
                 raise RuntimeError("The bandpass %s occurs twice in your input " % bandpassName \
-                                   + "to CatSimBandpassDict")
+                                   + "to BandpassDict")
 
             self._bandpassDict[bandpassName] = copy.deepcopy(bandpass)
 
@@ -115,11 +115,11 @@ class CatSimBandpassDict(object):
 
     def calcMagListFromSedList(self, sedList, indices=None):
         """
-        Return a 2-D array of magnitudes from a CatSimSedList.
+        Return a 2-D array of magnitudes from a SedList.
         Each row will correspond to a different Sed, each column
         will correspond to a different bandpass.
 
-        @param [in] sedList is a CatSimSedList containing the Seds
+        @param [in] sedList is a SedList containing the Seds
         whose magnitudes are desired.
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
@@ -128,7 +128,7 @@ class CatSimBandpassDict(object):
         just return nonsense for magnitudes you did not actually ask for)
 
         @param [out] output_list is a 2-D numpy array containing the magnitudes
-        of each Sed (the rows) in each bandpass contained in this CatSimBandpassDict
+        of each Sed (the rows) in each bandpass contained in this BandpassDict
         (the columns)
         """
 
@@ -223,11 +223,11 @@ class CatSimBandpassDict(object):
 
     def calcFluxListFromSedList(self, sedList, indices=None):
         """
-        Return a 2-D array of fluxes from a CatSimSedList.
+        Return a 2-D array of fluxes from a SedList.
         Each row will correspond to a different Sed, each column
         will correspond to a different bandpass.
 
-        @param [in] sedList is a CatSimSedList containing the Seds
+        @param [in] sedList is a SedList containing the Seds
         whose fluxes are desired.
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
@@ -236,7 +236,7 @@ class CatSimBandpassDict(object):
         just return nonsense for fluxes you did not actually ask for)
 
         @param [out] output_list is a 2-D numpy array containing the fluxes
-        of each Sed (the rows) in each bandpass contained in this CatSimBandpassDict
+        of each Sed (the rows) in each bandpass contained in this BandpassDict
         (the columns)
         """
 
@@ -287,7 +287,7 @@ class CatSimBandpassDict(object):
     @phiArray.setter
     def phiArray(self, value):
         raise RuntimeError("You should not be setting phiArray on the fly " \
-                           + "in a CatSimBandpassDict")
+                           + "in a BandpassDict")
 
 
     @property
@@ -301,7 +301,7 @@ class CatSimBandpassDict(object):
     @wavelenStep.setter
     def wavelenStep(self, value):
         raise RuntimeError("You should not be setting wavelenStep on the fly " \
-                          + "in a CatSimBandpassDict")
+                          + "in a BandpassDict")
 
 
     @property
@@ -314,7 +314,7 @@ class CatSimBandpassDict(object):
     @nBandpasses.setter
     def nBandpasses(self, value):
         raise RuntimeError("You should not be setting nBandpasses on the fly " \
-                           + "in a CatSimBandpassDict")
+                           + "in a BandpassDict")
 
 
     @property
@@ -328,4 +328,4 @@ class CatSimBandpassDict(object):
     @wavelenMatch.setter
     def wavelenMatch(self, value):
         raise RuntimeError("You should not be setting wavelenMatch on the fly " \
-                           + "in a CatSimBandpassDict")
+                           + "in a BandpassDict")

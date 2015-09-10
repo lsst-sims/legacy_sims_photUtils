@@ -45,7 +45,7 @@ class selectStarSED(matchStar):
         in bandpassDict.
         If false, this means it will not run the dereddening procedure.
         
-        @param [in] bandpassDict is a CatSimBandpassDict with which to calculate magnitudes. If left
+        @param [in] bandpassDict is a BandpassDict with which to calculate magnitudes. If left
         equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
         default extCoeffs.
         

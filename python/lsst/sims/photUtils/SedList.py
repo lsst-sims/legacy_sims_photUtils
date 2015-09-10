@@ -5,9 +5,9 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils import Bandpass, Sed
 
-__all__ = ["CatSimSedList"]
+__all__ = ["SedList"]
 
-class CatSimSedList(object):
+class SedList(object):
     """
     This class will read in a list of Seds from disk and store them.
 
@@ -62,7 +62,7 @@ class CatSimSedList(object):
         Note: once wavelenMatch and cosmologicalDimming have been set in
         the constructor, they cannot be un-set.
 
-        Similarly: if you construct a CatSimSedList without a galacticAvList,
+        Similarly: if you construct a SedList without a galacticAvList,
         internalAvList, or redshiftList, you cannot later add spectra with
         whichever of those features were left out.
         """
@@ -137,7 +137,7 @@ class CatSimSedList(object):
 
         Seds are read in and stored to this object's internal list of Seds.
 
-        Note: if you constructed this CatSimSedList object without internalAvList,
+        Note: if you constructed this SedList object without internalAvList,
         you cannot load Seds with internalAvList now.  Likewise for galacticAvlist
         and redshiftList.
         """
@@ -160,7 +160,7 @@ class CatSimSedList(object):
 
         else:
             if self._internal_av_list is None and internalAvList is not None:
-                raise RuntimeError("This CatSimSedList does not contain internalAvList")
+                raise RuntimeError("This SedList does not contain internalAvList")
             elif self._internal_av_list is not None:
                 if internalAvList is None:
                     self._internal_av_list += [None] * len(sedNameList)
@@ -168,7 +168,7 @@ class CatSimSedList(object):
                     self._internal_av_list += list(internalAvList)
 
             if self._galactic_av_list is None and galacticAvList is not None:
-                raise RuntimeError("This CatSimSedList does not contain galacticAvList")
+                raise RuntimeError("This SedList does not contain galacticAvList")
             elif self._galactic_av_list is not None:
                 if galacticAvList is None:
                     self._galactic_av_list += [None] * len(sedNameList)
@@ -176,7 +176,7 @@ class CatSimSedList(object):
                     self._galactic_av_list += list(galacticAvList)
 
             if self._redshift_list is None and redshiftList is not None:
-                raise RuntimeError("This CatSimSedList does not contain redshiftList")
+                raise RuntimeError("This SedList does not contain redshiftList")
             elif self._redshift_list is not None:
                 if redshiftList is None:
                     self._redshift_list += [None] * len(sedNameList)
@@ -312,7 +312,7 @@ class CatSimSedList(object):
 
     def flush(self):
         """
-        Delete all SEDs stored in this CatSimSedList.
+        Delete all SEDs stored in this SedList.
 
         However, self._unique_sed_dict still retains memory of all the raw Seds
         read in by this object.
@@ -329,63 +329,63 @@ class CatSimSedList(object):
         """
         Boolean determining whether cosmological dimming (the extra
         (1+z)^-1 factor in flux) is applied to Seds when they are
-        redshifte by this CatSimSedList.
+        redshifte by this SedList.
         """
         return self._cosmological_dimming
 
     @cosmologicalDimming.setter
     def cosmologicalDimming(self, value):
         raise RuntimeError("You shold not set cosmologicalDimming " \
-                           + "on the fly in CatSimSedList")
+                           + "on the fly in SedList")
 
     @property
     def wavelenMatch(self):
         """
         Wavelength grid against which to match Seds stored in this
-        CatSimSedList.
+        SedList.
         """
         return self._wavelen_match
 
     @wavelenMatch.setter
     def wavelenMatch(self, value):
         raise RuntimeError("You should not set wavelenMatch " \
-                           + "on the fly in CatSimSedList")
+                           + "on the fly in SedList")
 
     @property
     def redshiftList(self):
         """
         List of redshifts applied to the Seds stored in this
-        CatSimSedList.
+        SedList.
         """
         return self._redshift_list
 
     @redshiftList.setter
     def redshiftList(self, value):
         raise RuntimeError("You should not set redshiftList " \
-                           + "on the fly in CatSimSedList")
+                           + "on the fly in SedList")
 
     @property
     def internalAvList(self):
         """
         A(V) due to internal dust applied to the Seds stored in
-        this CatSimSedList.
+        this SedList.
         """
         return self._internal_av_list
 
     @internalAvList.setter
     def internalAvList(self, value):
         raise RuntimeError("You should not set internalAvList " \
-                           + "on the fly in CatSimSedList")
+                           + "on the fly in SedList")
 
     @property
     def galacticAvList(self):
         """
         List of A(V) due to Milky Way dust applied to the Seds
-        stored in this CatSimSedList
+        stored in this SedList
         """
         return self._galactic_av_list
 
     @galacticAvList.setter
     def galacticAvList(self, value):
         raise RuntimeError("You should not set galacticAvList " \
-                           + "on the fly in CatSimSedList")
+                           + "on the fly in SedList")

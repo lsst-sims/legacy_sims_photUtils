@@ -35,7 +35,7 @@ class matchBase():
         @param [in] sedObj is an Sed class instance that is set with the wavelength and flux of the
         matched SED
 
-        @param [in] bandpassDict is a CatSimBandpassDict class instance with the Bandpasses set to those
+        @param [in] bandpassDict is a BandpassDict class instance with the Bandpasses set to those
         for the magnitudes given for the catalog object
 
         @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
@@ -84,7 +84,7 @@ class matchBase():
         rgStar or rgGalaxy. NOTE: Since this uses photometryBase.manyMagCalc_list the SED objects
         will be changed.
 
-        @param [in] bandpassDict is a CatSimBandpassDict class instance with the Bandpasses set to those
+        @param [in] bandpassDict is a BandpassDict class instance with the Bandpasses set to those
         for the magnitudes given for the catalog object
 
         @param [in] makeCopy indicates whether or not to operate on copies of the SED objects in sedList

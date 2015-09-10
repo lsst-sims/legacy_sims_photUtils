@@ -16,7 +16,7 @@ from collections import OrderedDict
 import lsst.utils
 from lsst.sims.photUtils import Sed, Bandpass, LSSTdefaults, calcGamma, \
                                 calcMagError_m5, PhotometricParameters, \
-                                magErrorFromSNR, CatSimBandpassDict
+                                magErrorFromSNR, BandpassDict
 from lsst.sims.utils import defaultSpecMap
 
 __all__ = ["loadBandpassesFromFiles", "loadTotalBandpassesFromFiles"]
@@ -30,7 +30,7 @@ def loadBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                             atmoTransmission=os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                           'baseline','atmos.dat')):
     """
-    Load bandpass information from files into CatSimBandpassDicts.
+    Load bandpass information from files into BandpassDicts.
     This method will separate the bandpasses into contributions due to instrumentations
     and contributions due to the atmosphere.
 
@@ -54,10 +54,10 @@ def loadBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
     transmissivity of the atmosphere (defaults to baseline/atmos.dat in the LSST
     'throughputs' package).
 
-    @param [out] bandpassDict is a CatSimBandpassDict containing the total
+    @param [out] bandpassDict is a BandpassDict containing the total
     throughput (instrumentation + atmosphere)
 
-    @param [out] hardwareBandpassDict is a CatSimBandpassDict containing
+    @param [out] hardwareBandpassDict is a BandpassDict containing
     the throughput due to instrumentation only
     """
 
@@ -80,8 +80,8 @@ def loadBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
         bandpassList.append(bandpassDummy)
 
 
-    bandpassDict = CatSimBandpassDict(bandpassList, bandpassNames)
-    hardwareBandpassDict = CatSimBandpassDict(hardwareBandpassList, bandpassNames)
+    bandpassDict = BandpassDict(bandpassList, bandpassNames)
+    hardwareBandpassDict = BandpassDict(hardwareBandpassList, bandpassNames)
 
     return bandpassDict, hardwareBandpassDict
 
@@ -91,7 +91,7 @@ def loadTotalBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
                                 bandpassRoot = 'total_'):
     """
     This will take the list of band passes named by bandpassNames and load them into
-    a CatSimBandpassDict
+    a BandpassDict
 
     The bandpasses loaded this way are total bandpasses: they account for instrumental
     and atmospheric transmission.
@@ -109,7 +109,7 @@ def loadTotalBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
     if we want to load bandpasses for a telescope other than LSST, we would do so
     by altering bandpassDir and bandpassRoot
 
-    @param [out] bandpassDict is a CatSimBandpassDict containing the loaded throughputs
+    @param [out] bandpassDict is a BandpassDict containing the loaded throughputs
     """
 
     bandpassList = []
@@ -119,6 +119,6 @@ def loadTotalBandpassesFromFiles(bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
         bandpassDummy.readThroughput(os.path.join(bandpassDir,"%s.dat" % (bandpassRoot + w)))
         bandpassList.append(bandpassDummy)
 
-    return CatSimBandpassDict(bandpassList, bandpassNames)
+    return BandpassDict(bandpassList, bandpassNames)
 
 
