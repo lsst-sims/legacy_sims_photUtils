@@ -3,7 +3,7 @@ import math
 import numpy
 import os
 
-from lsst.sims.utils import galacticFromEquatorial
+from lsst.sims.utils import _galacticFromEquatorial
 
 __all__ = ["EBVmap", "EBVbase"]
 
@@ -254,7 +254,7 @@ class EBVbase(object):
             if equatorialCoordinates is None:
                raise RuntimeError("Must specify coordinates in calculateEbv")
 
-            galacticCoordinates = numpy.array(galacticFromEquatorial(equatorialCoordinates[0,:],equatorialCoordinates[1,:]))
+            galacticCoordinates = numpy.array(_galacticFromEquatorial(equatorialCoordinates[0,:],equatorialCoordinates[1,:]))
             
         if northMap is None:
             if self.ebvMapNorth is None:
