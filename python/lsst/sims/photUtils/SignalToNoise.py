@@ -8,7 +8,7 @@ __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR
           "calcAstrometricError", "magErrorFromSNR", "calcMagError_m5", "calcMagError_sed"]
 
 
-def calcNeff(seeing, platescale):
+def calcNeff(FWHMeff, platescale):
     """
     Calculate the effective number of pixels in a double Gaussian PSF
 
@@ -21,8 +21,17 @@ def calcNeff(seeing, platescale):
 
     see equation 31 of the SNR document
     https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
+    Update:
+    The 'seeing' should be replaced by the FWHMeff.
+    (this changes the equation from Neff = 2.436*(seeing/platescale)**2
+       to Neff = 2.266*(FWHMeff / platescale)**2
+    The FWHMeff is a way to represent the equivalent seeing value, if the
+    atmosphere could be simply represented as a single gaussian (instead of a more
+    complicated von Karman profile for the atmosphere, convolved properly with the
+    telescope hardware additional blurring of 0.4").
+    We may need a translation from 'seeing' (as reported by opsim, etc.) to FWHMeff.
     """
-    return 2.436*(seeing/platescale)**2
+    return 2.266*(FWHMeff/platescale)**2
 
 
 def calcInstrNoiseSq(photParams):
@@ -159,7 +168,6 @@ def calcSkyCountsPerPixelForM5(m5target, totalBandpass, photParams, seeing=None)
     # the units are for all of the parameters stored in PhotometricDefaults.
 
     return skyCountsTarget
-
 
 
 def calcM5(skysed, totalBandpass, hardware, photParams, seeing=None):
