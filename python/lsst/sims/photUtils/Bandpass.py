@@ -357,16 +357,10 @@ class Bandpass:
             raise Exception("No overlap between known wavelength range and desired wavelength range.")
         # Set up gridded wavelength.
         wavelen_grid = numpy.arange(wavelen_min, wavelen_max+wavelen_step/2.0, wavelen_step, dtype='float')
-        if len(wavelen) < 5:
-            k = 1
-        else:
-            k = 3
-        tck = interpolate.splrep(wavelen, sb, k=k)
-        sb_grid = interpolate.splev(wavelen_grid, tck, ext=0)
         # Extrapolate using np.interp
-        #sb_grid = numpy.empty(len(wavelen), dtype='float')
+        sb_grid = numpy.empty(len(wavelen), dtype='float')
         # Do the interpolation of wavelen/sb onto the grid. (note wavelen/sb type failures will die here).
-        #sb_grid = numpy.interp(wavelen_grid, wavelen, sb, left=0.0, right=0.0)
+        sb_grid = numpy.interp(wavelen_grid, wavelen, sb, left=0.0, right=0.0)
         # Update self values if necessary.
         if update_self:
             self.phi = None
