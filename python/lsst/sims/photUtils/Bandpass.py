@@ -59,7 +59,6 @@ Methods:
 import os
 import warnings
 import numpy
-from scipy import interpolate
 import gzip
 from lsst.sims.photUtils import PhysicalParameters
 from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calculation.
