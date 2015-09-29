@@ -134,7 +134,7 @@ class BandpassDict(object):
     @classmethod
     def loadTotalBandpassesFromFiles(cls,
                                     bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
-                                    bandpassDir = os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline'),
+                                    bandpassDir = os.path.join(getPackageDir('throughputs'),'baseline'),
                                     bandpassRoot = 'total_'):
         """
         This will take the list of band passes named by bandpassNames and load them into
