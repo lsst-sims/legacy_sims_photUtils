@@ -23,7 +23,9 @@ class SedList(object):
     after the constructor has been called.
     """
 
-    def __init__(self, sedNameList, magNormList, specMap=defaultSpecMap,
+    def __init__(self, sedNameList, magNormList,
+                 normalizingBandpass=None,
+                 specMap=defaultSpecMap,
                  fileDir = getPackageDir('sims_sed_library'),
                  wavelenMatch = None,
                  redshiftList = None,
@@ -35,7 +37,12 @@ class SedList(object):
         @param [in] sedNameList is a list of SED file names.
 
         @param [in] magNormList is a list of magnitude normalizations
-        (in the imsimBandpass) for each of the Seds.
+        (in the normalizingBandpass) for each of the Seds.
+
+        @param[in] normalizingBandpass is an instantiation of the Bandpass
+        class defining the bandpass in which the magNorms from magNormList
+        are calculated.  This defaults to the Bandpass().imsimBandpass(),
+        which is essentially a delta function at 500 nm.
 
         @param [in] fileDir is the base directory where the Sed files are stored
         (defaults to LSST sims_sed_library package).
@@ -80,10 +87,11 @@ class SedList(object):
         self._unique_sed_dict = {}
         self._unique_sed_dict['None'] = Sed()
 
-        # initialize the delat funciton bandpass for calibrating
-        # magNorm
-        self._imsimband = Bandpass()
-        self._imsimband.imsimBandpass()
+        if normalizingBandpass is None:
+            normalizingBandpass = Bandpass()
+            normalizingBandpass.imsimBandpass()
+
+        self._normalizing_bandpass = normalizingBandpass
 
         self._sed_list = []
         self._redshift_list = None
@@ -205,7 +213,7 @@ class SedList(object):
             sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu, name=ss.name)
 
             if sedName != "None":
-                fNorm = sed.calcFluxNorm(magNorm, self._imsimband)
+                fNorm = sed.calcFluxNorm(magNorm, self._normalizing_bandpass)
                 sed.multiplyFluxNorm(fNorm)
 
             temp_sed_list.append(sed)
