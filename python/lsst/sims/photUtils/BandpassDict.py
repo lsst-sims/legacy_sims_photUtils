@@ -331,6 +331,11 @@ class BandpassDict(object):
         just return numpy.NaN for fluxes you did not actually ask for)
 
         @param [out] fluxList is a list of fluxes in the bandpasses stored in self.bandpassDict
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
         """
 
         if sedobj.wavelen is not None:
@@ -368,6 +373,11 @@ class BandpassDict(object):
         @param [out] output_list is a 2-D numpy array containing the fluxes
         of each Sed (the rows) in each bandpass contained in this BandpassDict
         (the columns)
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
         """
 
         one_at_a_time = False

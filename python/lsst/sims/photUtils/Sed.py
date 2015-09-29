@@ -755,6 +755,11 @@ class Sed(object):
         Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
            (temporary values of these are used).
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
         """
         use_self = self._checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function.
@@ -1025,6 +1030,11 @@ class Sed(object):
         `sed.setupPhiArray()` first. These assumptions are to avoid error
         checking within this function (for speed), but could lead to errors if
         method is used incorrectly.
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
         """
 
         if observedBandpassInd is not None:
