@@ -9,10 +9,8 @@ from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
-from lsst.sims.photUtils import loadBandpassesFromFiles, \
-                                loadTotalBandpassesFromFiles
 from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, \
-                                calcM5, calcSNR_sed, magErrorFromSNR
+                                calcM5, calcSNR_sed, magErrorFromSNR, BandpassDict
 from lsst.sims.photUtils.utils import setM5
 
 class photometryUnitTest(unittest.TestCase):
@@ -44,8 +42,8 @@ class photometryUnitTest(unittest.TestCase):
 
         bandpassDir=os.path.join(lsst.utils.getPackageDir('sims_photUtils'),'tests','cartoonSedTestData')
 
-        cartoon_dict = loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
-                                                     bandpassRoot = 'test_bandpass_')
+        cartoon_dict = BandpassDict.loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
+                                                                 bandpassRoot = 'test_bandpass_')
 
         testBandPasses = {}
         keys = ['u','g','r','i','z']
@@ -158,7 +156,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         """
         Test that calcSNR_m5 raises exceptions when it needs to
         """
-        totalDict, hardwareDict = loadBandpassesFromFiles()
+        totalDict, hardwareDict = BandpassDict.loadBandpassesFromFiles()
         magnitudes = numpy.array([22.0, 23.0, 24.0, 25.0, 26.0, 27.0])
         shortMagnitudes = numpy.array([22.0])
         photParams = PhotometricParameters()
@@ -175,7 +173,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         """
         defaults = LSSTdefaults()
         photParams = PhotometricParameters()
-        totalDict, hardwareDict = loadBandpassesFromFiles()
+        totalDict, hardwareDict = BandpassDict.loadBandpassesFromFiles()
 
         skySED = Sed()
         skySED.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'),
@@ -231,7 +229,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
         photParams= PhotometricParameters(sigmaSys=sigmaSys)
 
-        bandpassDict = loadTotalBandpassesFromFiles()
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
 
@@ -270,7 +268,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
         photParams= PhotometricParameters(sigmaSys=0.0)
 
-        bandpassDict = loadTotalBandpassesFromFiles()
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
 

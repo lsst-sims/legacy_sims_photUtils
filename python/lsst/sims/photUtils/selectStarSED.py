@@ -4,7 +4,7 @@ import warnings
 
 import lsst.utils
 from lsst.sims.photUtils.matchUtils import matchStar
-from lsst.sims.photUtils.Photometry import loadTotalBandpassesFromFiles
+from lsst.sims.photUtils import BandpassDict
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 
 __all__ = ["selectStarSED"]
@@ -71,7 +71,7 @@ class selectStarSED(matchStar):
         """
 
         if bandpassDict is None:
-            starPhot = loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+            starPhot = BandpassDict.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),
                                                                        'sdss'),
                                             bandpassRoot = 'sdss_')

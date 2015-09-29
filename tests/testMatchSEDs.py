@@ -13,7 +13,7 @@ from lsst.sims.photUtils.matchUtils import matchGalaxy
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
-from lsst.sims.photUtils.Photometry import loadTotalBandpassesFromFiles
+from lsst.sims.photUtils import BandpassDict
 from lsst.sims.utils import SpecMap
 
 class TestMatchBase(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestMatchBase(unittest.TestCase):
         in the given bandpasses."""
 
         testUtils = matchBase()
-        testPhot = loadTotalBandpassesFromFiles(self.filterList,
+        testPhot = BandpassDict.loadTotalBandpassesFromFiles(self.filterList,
                                         bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
 
@@ -78,7 +78,7 @@ class TestMatchBase(unittest.TestCase):
 
         testUtils = matchBase()
         testSED = Sed()
-        testPhot = loadTotalBandpassesFromFiles(self.filterList,
+        testPhot = BandpassDict.loadTotalBandpassesFromFiles(self.filterList,
                                         bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
 
@@ -99,7 +99,7 @@ class TestMatchBase(unittest.TestCase):
         testUtils = matchBase()
         testSED = Sed()
         copyTest = Sed()
-        testPhot = loadTotalBandpassesFromFiles(self.filterList,
+        testPhot = BandpassDict.loadTotalBandpassesFromFiles(self.filterList,
                                         bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
         testSED.readSED_flambda(str(self.galDir + os.listdir(self.galDir)[0]))
@@ -400,7 +400,7 @@ class TestSelectGalaxySED(unittest.TestCase):
     def testMatchToRestFrame(self):
         """Test that Galaxies with no effects added into catalog mags are matched correctly."""
         np.random.seed(42)
-        galPhot = loadTotalBandpassesFromFiles()
+        galPhot = BandpassDict.loadTotalBandpassesFromFiles()
 
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
@@ -462,7 +462,7 @@ class TestSelectGalaxySED(unittest.TestCase):
     def testMatchToObserved(self):
         """Test that Galaxy SEDs with extinction or redshift are matched correctly"""
         np.random.seed(42)
-        galPhot = loadTotalBandpassesFromFiles()
+        galPhot = BandpassDict.loadTotalBandpassesFromFiles()
 
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
@@ -621,7 +621,7 @@ class TestSelectStarSED(unittest.TestCase):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
         Includes testing with extinction and passing in only colors."""
         np.random.seed(42)
-        starPhot = loadTotalBandpassesFromFiles(('u','g','r','i','z'),
+        starPhot = BandpassDict.loadTotalBandpassesFromFiles(('u','g','r','i','z'),
                                         bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                         bandpassRoot = 'sdss_')
 
