@@ -247,7 +247,19 @@ class BandpassDict(object):
         """
         Return a 2-D array of magnitudes from a SedList.
         Each row will correspond to a different Sed, each column
-        will correspond to a different bandpass.
+        will correspond to a different bandpass, i.e. in the case of
+
+        mag = myBandpassDict.calcMagListFromSedList(mySedList)
+
+        mag[0][0] will be the magnitude of the 0th Sed in the 0th bandpass
+        mag[0][1] will be the magnitude of the 0th Sed in the 1st bandpass
+        mag[1][1] will be the magnitude of the 1st Sed in the 1st bandpass
+        etc.
+
+        For maximum efficiency, use the wavelenMatch keyword when loading
+        SEDs into your SedList and make sure that wavelenMatch = myBandpassDict.wavelenMatch.
+        That way, this method will not have to waste time resampling the Seds
+        onto the wavelength grid of the BandpassDict.
 
         @param [in] sedList is a SedList containing the Seds
         whose magnitudes are desired.
@@ -360,7 +372,19 @@ class BandpassDict(object):
         """
         Return a 2-D array of fluxes from a SedList.
         Each row will correspond to a different Sed, each column
-        will correspond to a different bandpass.
+        will correspond to a different bandpass, i.e. in the case of
+
+        flux = myBandpassDict.calcFluxListFromSedList(mySedList)
+
+        flux[0][0] will be the flux of the 0th Sed in the 0th bandpass
+        flux[0][1] will be the flux of the 0th Sed in the 1st bandpass
+        flux[1][1] will be the flux of the 1st Sed in the 1st bandpass
+        etc.
+
+        For maximum efficiency, use the wavelenMatch keyword when loading
+        SEDs into your SedList and make sure that wavelenMatch = myBandpassDict.wavelenMatch.
+        That way, this method will not have to waste time resampling the Seds
+        onto the wavelength grid of the BandpassDict.
 
         @param [in] sedList is a SedList containing the Seds
         whose fluxes are desired.
