@@ -269,7 +269,7 @@ class SedList(object):
         """
 
         for sedobj, av in zip(sedList, avList):
-            if sedobj.wavelen is not None:
+            if sedobj.wavelen is not None and av is not None:
                 #setupCCMab only depends on the wavelen array
                 #because this is supposed to be the same for every
                 #SED object in sedList, it is only called once for
@@ -305,7 +305,7 @@ class SedList(object):
             return
 
         for sedobj, redshift in zip(sedList, redshiftList):
-            if sedobj.wavelen is not None:
+            if sedobj.wavelen is not None and redshift is not None:
                 sedobj.redshiftSED(redshift, dimming=self._cosmological_dimming)
                 sedobj.name = sedobj.name + '_Z' + '%.2f' %(redshift)
 
