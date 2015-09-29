@@ -48,7 +48,6 @@ class BandpassDict(object):
         dummySed = Sed()
         self._phiArray, self._wavelenStep = dummySed.setupPhiArray(self._bandpassDict.values())
         self._wavelen_match = self._bandpassDict.values()[0].wavelen
-        self._nBandpasses = len(self._bandpassDict)
 
 
     def __getitem__(self, bandpass):
@@ -186,7 +185,7 @@ class BandpassDict(object):
         """
 
         if sedobj.wavelen is None:
-            return [numpy.NaN]*self._nBandpasses
+            return [numpy.NaN]*len(self._bandpassDict)
         else:
 
             #for some reason, moving this call to flambdaTofnu()
@@ -201,7 +200,7 @@ class BandpassDict(object):
             sedobj.flambdaTofnu()
 
             if indices is not None:
-                outputList = [numpy.NaN] * self._nBandpasses
+                outputList = [numpy.NaN] * len(self._bandpassDict)
                 magList = sedobj.manyMagCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
                 for i, ix in enumerate(indices):
                     outputList[ix] = magList[i]
@@ -241,7 +240,7 @@ class BandpassDict(object):
             return numpy.array(self._calcMagListFromSed(dummySed, indices=indices))
 
         else:
-            return numpy.array([numpy.NaN]*self._nBandpasses)
+            return numpy.array([numpy.NaN]*len(self._bandpassDict))
 
 
 
@@ -308,7 +307,7 @@ class BandpassDict(object):
         """
 
         if sedobj.wavelen is None:
-            return [numpy.NaN]*self._nBandpasses
+            return [numpy.NaN]*len(self._bandpassDict)
         else:
 
             #for some reason, moving this call to flambdaTofnu()
@@ -323,7 +322,7 @@ class BandpassDict(object):
             sedobj.flambdaTofnu()
 
             if indices is not None:
-                outputList = [numpy.NaN] * self._nBandpasses
+                outputList = [numpy.NaN] * len(self._bandpassDict)
                 magList = sedobj.manyFluxCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
                 for i, ix in enumerate(indices):
                     outputList[ix] = magList[i]
@@ -368,7 +367,7 @@ class BandpassDict(object):
             return numpy.array(self._calcFluxListFromSed(dummySed, indices=indices))
 
         else:
-            return numpy.array([numpy.NaN]*self._nBandpasses)
+            return numpy.array([numpy.NaN]*len(self._bandpassDict))
 
 
 
@@ -447,14 +446,6 @@ class BandpassDict(object):
         stored in this dict.
         """
         return self._wavelenStep
-
-
-    @property
-    def nBandpasses(self):
-        """
-        The number of bandpasses stored in this dict.
-        """
-        return self._nBandpasses
 
 
     @property

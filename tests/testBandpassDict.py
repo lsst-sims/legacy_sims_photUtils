@@ -58,7 +58,6 @@ class BandpassDictTest(unittest.TestCase):
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
 
-            self.assertEqual(testDict.nBandpasses, nBp)
             self.assertEqual(len(testDict), nBp)
 
             for controlName, testName in zip(nameList, testDict):
@@ -139,9 +138,6 @@ class BandpassDictTest(unittest.TestCase):
 
 
         testDict = BandpassDict(bpList, nameList)
-
-        with self.assertRaises(AttributeError) as context:
-            testDict.nBandpasses = 6
 
         with self.assertRaises(AttributeError) as context:
             testDict.phiArray = None
