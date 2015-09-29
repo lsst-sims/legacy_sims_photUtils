@@ -196,9 +196,6 @@ class BandpassDictTest(unittest.TestCase):
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
 
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
-
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
                            flambda=copy.deepcopy(sedObj.flambda))
@@ -217,9 +214,6 @@ class BandpassDictTest(unittest.TestCase):
         magList = testBpDict.magListForSedList(testSedList)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
-
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -254,9 +248,6 @@ class BandpassDictTest(unittest.TestCase):
 
         magArray = testBpDict.magArrayForSedList(testSedList)
 
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
-
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
                            flambda=copy.deepcopy(sedObj.flambda))
@@ -273,9 +264,6 @@ class BandpassDictTest(unittest.TestCase):
                                     wavelenMatch=testBpDict.wavelenMatch)
 
         magArray = testBpDict.magArrayForSedList(testSedList)
-
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -332,9 +320,6 @@ class BandpassDictTest(unittest.TestCase):
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
 
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
-
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
                            flambda=copy.deepcopy(sedObj.flambda))
@@ -360,9 +345,6 @@ class BandpassDictTest(unittest.TestCase):
         magList = testBpDict.magListForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
-
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -427,9 +409,6 @@ class BandpassDictTest(unittest.TestCase):
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
 
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
-
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
                            flambda=copy.deepcopy(sedObj.flambda))
@@ -448,9 +427,6 @@ class BandpassDictTest(unittest.TestCase):
         fluxList = testBpDict.fluxListForSedList(testSedList)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
-
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -506,9 +482,6 @@ class BandpassDictTest(unittest.TestCase):
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
 
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
-
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
                            flambda=copy.deepcopy(sedObj.flambda))
@@ -534,9 +507,6 @@ class BandpassDictTest(unittest.TestCase):
         fluxList = testBpDict.fluxListForSedList(testSedList, indices=indices)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
-
-        imsimBand = Bandpass()
-        imsimBand.imsimBandpass()
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
