@@ -35,7 +35,7 @@ class BandpassDict(object):
         @param [in] bandpassList is a list of Bandpass instantiations
 
         @param [in] bandpassNameList is a list of tags to be associated
-        with those Bandpasses
+        with those Bandpasses.  These will be used as keys for the BandpassDict.
         """
         self._bandpassDict = OrderedDict()
         for bandpassName, bandpass in zip(bandpassNameList, bandpassList):
@@ -224,7 +224,7 @@ class BandpassDict(object):
         return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
         just return numpy.NaN for magnitudes you did not actually ask for)
 
-        @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
+        @param [out] magList is a list of magnitudes in the bandpasses stored in this BandpassDict
         """
 
         if sedobj.wavelen is not None:
@@ -411,7 +411,7 @@ class BandpassDict(object):
         return as many fluxes as were loaded with the loadBandpassesFromFiles methods; it will
         just return numpy.NaN for fluxes you did not actually ask for)
 
-        @param [out] fluxList is a list of fluxes in the bandpasses stored in self.bandpassDict
+        @param [out] fluxList is a list of fluxes in the bandpasses stored in this BandpassDict
 
         Note on units: Fluxes calculated this way will be the flux density integrated over the
         weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
