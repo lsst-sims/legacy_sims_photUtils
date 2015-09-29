@@ -17,6 +17,13 @@ class BandpassDict(object):
     the 2-D phiArray for quick calculation of magnitudes in all
     Bandpasses simultaneously (see the member method calcMagListFromSed).
 
+    Note: when re-sampling the wavelength grid, it is assumed that
+    the first bandpass is sampled on a uniform grid (i.e. all bandpasses
+    are resampled to a grid with wavlen_min, wavelen_max determined by
+    the bounds of the first bandpasses grid and with wavelen_step defined
+    to be the difference between the 0th and 1st element of the first
+    bandpass' wavelength grid).
+
     The class methods loadBandpassesFromFiles and loadTotalBandpassesFromFiles
     can be used to easily read throughput files in from disk and conver them
     into BandpassDict objects.
