@@ -230,6 +230,63 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertAlmostEqual(mag, magList[ix][iy], 3)
 
 
+    def testMagArrayForSedList(self):
+        """
+        Test that magArrayForSedList calculates the correct magnitude
+        """
+
+        nBandpasses = 7
+        bpNameList, bpList = self.getListOfBandpasses(nBandpasses)
+        testBpDict = BandpassDict(bpList, bpNameList)
+
+        nSed = 20
+        sedNameList = self.getListOfSedNames(nSed)
+        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
+        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        redshiftList = numpy.random.random_sample(nSed)*5.0
+        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+
+        # first, test on an SedList without a wavelenMatch
+        testSedList = SedList(sedNameList, magNormList,
+                                    internalAvList=internalAvList,
+                                    redshiftList=redshiftList,
+                                    galacticAvList=galacticAvList)
+
+        magArray = testBpDict.magArrayForSedList(testSedList)
+
+        imsimBand = Bandpass()
+        imsimBand.imsimBandpass()
+
+        for ix, sedObj in enumerate(testSedList):
+            dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
+                           flambda=copy.deepcopy(sedObj.flambda))
+
+            for iy, bp in enumerate(bpNameList):
+                mag = dummySed.calcMag(bpList[iy])
+                self.assertAlmostEqual(mag, magArray[bp][ix], 3)
+
+        # now use wavelenMatch
+        testSedList = SedList(sedNameList, magNormList,
+                                    internalAvList=internalAvList,
+                                    redshiftList=redshiftList,
+                                    galacticAvList=galacticAvList,
+                                    wavelenMatch=testBpDict.wavelenMatch)
+
+        magArray = testBpDict.magArrayForSedList(testSedList)
+
+        imsimBand = Bandpass()
+        imsimBand.imsimBandpass()
+
+        for ix, sedObj in enumerate(testSedList):
+            dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
+                           flambda=copy.deepcopy(sedObj.flambda))
+
+            for iy, bp in enumerate(bpNameList):
+                mag = dummySed.calcMag(bpList[iy])
+                self.assertAlmostEqual(mag, magArray[bp][ix], 3)
+
+
+
     def testIndicesOnMagnitudes(self):
         """
         Test that, when you pass a list of indices into the calcMagList

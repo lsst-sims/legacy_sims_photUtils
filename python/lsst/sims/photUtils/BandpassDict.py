@@ -298,6 +298,44 @@ class BandpassDict(object):
         return numpy.array(output_list)
 
 
+    def magArrayForSedList(self, sedList, indices=None):
+        """
+        Return a dtyped numpy array of magnitudes from a SedList.
+        The array will be keyed to the keys of this BandpassDict,
+        i.e. in the case of
+
+        mag = myBandpassDict.magArrayForSedList(mySedList)
+
+        mag['u'][0] will be the magnitude of the 0th Sed in the 'u' bandpass
+        mag['u'][1] will be the magnitude of the 1st Sed in the 'u' bandpass
+        mag['z'] will be a numpy array of every Sed's magnitude in the 'z' bandpass
+        etc.
+
+        For maximum efficiency, use the wavelenMatch keyword when loading
+        SEDs into your SedList and make sure that wavelenMatch = myBandpassDict.wavelenMatch.
+        That way, this method will not have to waste time resampling the Seds
+        onto the wavelength grid of the BandpassDict.
+
+        @param [in] sedList is a SedList containing the Seds
+        whose magnitudes are desired.
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for.  Other magnitudes will be listed as numpy.NaN (i.e. this method will
+        return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return numpy.NaN for magnitudes you did not actually ask for)
+
+        @param [out] output_array is a dtyped numpy array of magnitudes (see above).
+        """
+
+        magList = self.magListForSedList(sedList, indices=None)
+
+        dtype = numpy.dtype([(bp, numpy.float) for bp in self._bandpassDict.keys()])
+
+        outputArray = numpy.array([tuple(row) for row in magList], dtype=dtype)
+
+        return outputArray
+
+
     def _fluxListForSed(self, sedobj, indices=None):
         """
         This is a private method which will take an sedobj which has already
