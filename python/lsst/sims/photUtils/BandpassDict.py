@@ -215,7 +215,9 @@ class BandpassDict(object):
         """
         Return a list of magnitudes for a single Sed object.
 
-        @param [in] sedobj is an Sed object
+        @param [in] sedobj is an Sed object.  Its wavelength grid can be arbitrary.  If necessary,
+        a copy will be created and resampled onto the wavelength grid of the Bandpasses before
+        magnitudes are calculated.  The original Sed will be unchanged.
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
         calculate magnitudes for.  Other magnitudes will be listed as numpy.NaN (i.e. this method will
@@ -335,7 +337,9 @@ class BandpassDict(object):
         """
         Return a list of Fluxes for a single Sed object.
 
-        @param [in] sedobj is an Sed object
+        @param [in] sedobj is an Sed object.   Its wavelength grid can be arbitrary. If necessary,
+        a copy will be created and resampled onto the wavelength grid of the Bandpasses before
+        fluxes are calculated.  The original Sed will be unchanged.
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
         calculate fluxes for.  Other fluxes will be listed as numpy.NaN (i.e. this method will
