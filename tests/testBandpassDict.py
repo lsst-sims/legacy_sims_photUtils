@@ -36,23 +36,10 @@ class BandpassDictTest(unittest.TestCase):
         dexList = numpy.random.random_integers(0, len(self.bandpassPossibilities)-1, nBp)
         bandpassNameList = []
         bandpassList = []
-
-        wMax = None
-        wMin = None
-        wStep = None
-
         for dex in dexList:
             name = self.bandpassPossibilities[dex]
             bp = Bandpass()
             bp.readThroughput(os.path.join(self.bandpassDir,'total_%s.dat' % name))
-
-            if wMax is None:
-                wMin = bp.wavelen[0]
-                wMax = bp.wavelen[-1]
-                wStep = bp.wavelen[1]-bp.wavelen[0]
-            else:
-                bp.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
-
             while name in bandpassNameList:
                 name += '0'
             bandpassNameList.append(name)
@@ -235,7 +222,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(testBpDict):
                 mag = dummySed.calcMag(bpList[iy])
-                self.assertAlmostEqual(mag, magList[ix][iy], 3)
+                self.assertAlmostEqual(mag, magList[ix][iy], 2)
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -254,7 +241,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(testBpDict):
                 mag = dummySed.calcMag(bpList[iy])
-                self.assertAlmostEqual(mag, magList[ix][iy], 3)
+                self.assertAlmostEqual(mag, magList[ix][iy], 2)
 
 
     def testMagArrayForSedList(self):
@@ -287,7 +274,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(bpNameList):
                 mag = dummySed.calcMag(bpList[iy])
-                self.assertAlmostEqual(mag, magArray[bp][ix], 3)
+                self.assertAlmostEqual(mag, magArray[bp][ix], 2)
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -304,7 +291,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(bpNameList):
                 mag = dummySed.calcMag(bpList[iy])
-                self.assertAlmostEqual(mag, magArray[bp][ix], 3)
+                self.assertAlmostEqual(mag, magArray[bp][ix], 2)
 
 
 
@@ -361,7 +348,7 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(testBpDict):
                 if iy in indices:
                     mag = dummySed.calcMag(testBpDict[bp])
-                    self.assertAlmostEqual(mag, magList[ix][iy], 3)
+                    self.assertAlmostEqual(mag, magList[ix][iy], 2)
                 else:
                     ctNaN += 1
                     self.assertTrue(numpy.isnan(magList[ix][iy]))
@@ -387,7 +374,7 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(testBpDict):
                 if iy in indices:
                     mag = dummySed.calcMag(testBpDict[bp])
-                    self.assertAlmostEqual(mag, magList[ix][iy], 3)
+                    self.assertAlmostEqual(mag, magList[ix][iy], 2)
                 else:
                     ctNaN +=  1
                     self.assertTrue(numpy.isnan(magList[ix][iy]))
@@ -413,7 +400,7 @@ class BandpassDictTest(unittest.TestCase):
             fluxList = testDict.fluxListForSed(spectrum)
             for ix, (name, bp, fluxTest) in enumerate(zip(nameList, bpList, fluxList)):
                 fluxControl = spectrum.calcFlux(bp)
-                self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 3)
+                self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 2)
 
 
     def testFluxDictForSed(self):
@@ -434,7 +421,7 @@ class BandpassDictTest(unittest.TestCase):
             fluxDict = testDict.fluxDictForSed(spectrum)
             for ix, (name, bp) in enumerate(zip(nameList, bpList)):
                 fluxControl = spectrum.calcFlux(bp)
-                self.assertAlmostEqual(fluxDict[name]/fluxControl, 1.0, 3)
+                self.assertAlmostEqual(fluxDict[name]/fluxControl, 1.0, 2)
 
 
 
@@ -470,7 +457,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(testBpDict):
                 flux = dummySed.calcFlux(bpList[iy])
-                self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 3)
+                self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -489,7 +476,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(testBpDict):
                 flux = dummySed.calcFlux(bpList[iy])
-                self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 3)
+                self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
 
 
     def testFluxArrayForSedList(self):
@@ -522,7 +509,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(bpNameList):
                 flux = dummySed.calcFlux(bpList[iy])
-                self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 3)
+                self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 2)
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -539,7 +526,7 @@ class BandpassDictTest(unittest.TestCase):
 
             for iy, bp in enumerate(bpNameList):
                 flux = dummySed.calcFlux(bpList[iy])
-                self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 3)
+                self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 2)
 
 
 
@@ -564,7 +551,7 @@ class BandpassDictTest(unittest.TestCase):
         for ix, (name, bp, fluxTest) in enumerate(zip(nameList, bpList, fluxList)):
             if ix in indices:
                 fluxControl = spectrum.calcFlux(bp)
-                self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 3)
+                self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 2)
             else:
                 ctNaN += 1
                 self.assertTrue(numpy.isnan(fluxTest))
@@ -596,7 +583,7 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(testBpDict):
                 if iy in indices:
                     flux = dummySed.calcFlux(testBpDict[bp])
-                    self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 3)
+                    self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                 else:
                     ctNaN += 1
                     self.assertTrue(numpy.isnan(fluxList[ix][iy]))
@@ -622,7 +609,7 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(testBpDict):
                 if iy in indices:
                     flux = dummySed.calcFlux(testBpDict[bp])
-                    self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 3)
+                    self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                 else:
                     ctNaN +=  1
                     self.assertTrue(numpy.isnan(fluxList[ix][iy]))
