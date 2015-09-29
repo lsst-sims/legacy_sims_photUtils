@@ -23,6 +23,9 @@ class SedListTest(unittest.TestCase):
 
 
     def testExceptions(self):
+        """
+        Test that exceptions are raised when they should be
+        """
         nSed = 10
         sedNameList = self.getListOfSedNames(nSed)
         magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
@@ -54,22 +57,22 @@ class SedListTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, internalAvList=internalAvList)
-
         self.assertTrue('does not contain internalAvList' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, galacticAvList=galacticAvList)
-
         self.assertTrue('does not contain galacticAvList' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, redshiftList=redshiftList)
-
         self.assertTrue('does not contain redshiftList' in context.exception.message)
 
 
 
     def testSetUp(self):
+        """
+        Test the SedList can be successfully initialized
+        """
 
         ############## Try just reading in an normalizing some SEDs
         nSed = 10
@@ -638,6 +641,9 @@ class SedListTest(unittest.TestCase):
 
 
     def testFlush(self):
+        """
+        Test that the flush method of SedList behaves properly
+        """
         imsimBand = Bandpass()
         imsimBand.imsimBandpass()
         nSed = 10
