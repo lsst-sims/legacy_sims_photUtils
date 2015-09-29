@@ -468,6 +468,50 @@ class BandpassDict(object):
         return numpy.array(output_list)
 
 
+    def fluxArrayForSedList(self, sedList, indices=None):
+        """
+        Return a dtyped numpy array of fluxes from a SedList.
+        The array will be keyed to the keys of this BandpassDict,
+        i.e. in the case of
+
+        flux = myBandpassDict.fluxArrayForSedList(mySedList)
+
+        flux['u'][0] will be the flux of the 0th Sed in the 'u' bandpass
+        flux['u'][1] will be the flux of the 1st Sed in the 'u' bandpass
+        flux['z'] will be a numpy array of every Sed's flux in the 'z' bandpass
+        etc.
+
+        For maximum efficiency, use the wavelenMatch keyword when loading
+        SEDs into your SedList and make sure that wavelenMatch = myBandpassDict.wavelenMatch.
+        That way, this method will not have to waste time resampling the Seds
+        onto the wavelength grid of the BandpassDict.
+
+        @param [in] sedList is a SedList containing the Seds
+        whose fluxes are desired.
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate fluxes for.  Other fluxes will be listed as numpy.NaN (i.e. this method will
+        return as many fluxes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return numpy.NaN for fluxes you did not actually ask for)
+
+        @param [out] output_list is a 2-D numpy array containing the fluxes
+        of each Sed (the rows) in each bandpass contained in this BandpassDict
+        (the columns)
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
+        """
+
+        fluxList = self.fluxListForSedList(sedList, indices=None)
+
+        dtype = numpy.dtype([(bp, numpy.float) for bp in self._bandpassDict.keys()])
+
+        outputArray = numpy.array([tuple(row) for row in fluxList], dtype=dtype)
+
+        return outputArray
+
 
     @property
     def phiArray(self):

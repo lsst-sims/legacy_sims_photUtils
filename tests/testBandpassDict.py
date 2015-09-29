@@ -437,6 +437,57 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 3)
 
 
+    def testFluxArrayForSedList(self):
+        """
+        Test that fluxArrayForSedList calculates the correct fluxes
+        """
+
+        nBandpasses = 7
+        bpNameList, bpList = self.getListOfBandpasses(nBandpasses)
+        testBpDict = BandpassDict(bpList, bpNameList)
+
+        nSed = 20
+        sedNameList = self.getListOfSedNames(nSed)
+        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
+        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        redshiftList = numpy.random.random_sample(nSed)*5.0
+        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+
+        # first, test on an SedList without a wavelenMatch
+        testSedList = SedList(sedNameList, magNormList,
+                                    internalAvList=internalAvList,
+                                    redshiftList=redshiftList,
+                                    galacticAvList=galacticAvList)
+
+        fluxArray = testBpDict.fluxArrayForSedList(testSedList)
+
+        for ix, sedObj in enumerate(testSedList):
+            dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
+                           flambda=copy.deepcopy(sedObj.flambda))
+
+            for iy, bp in enumerate(bpNameList):
+                flux = dummySed.calcFlux(bpList[iy])
+                self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 3)
+
+        # now use wavelenMatch
+        testSedList = SedList(sedNameList, magNormList,
+                                    internalAvList=internalAvList,
+                                    redshiftList=redshiftList,
+                                    galacticAvList=galacticAvList,
+                                    wavelenMatch=testBpDict.wavelenMatch)
+
+        fluxArray = testBpDict.fluxArrayForSedList(testSedList)
+
+        for ix, sedObj in enumerate(testSedList):
+            dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
+                           flambda=copy.deepcopy(sedObj.flambda))
+
+            for iy, bp in enumerate(bpNameList):
+                flux = dummySed.calcFlux(bpList[iy])
+                self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 3)
+
+
+
     def testIndicesOnFlux(self):
         """
         Test that, when you pass a list of indices into the calcFluxList
