@@ -436,6 +436,37 @@ class BandpassDict(object):
             return numpy.array([numpy.NaN]*len(self._bandpassDict))
 
 
+    def fluxDictForSed(self, sedobj, indices=None):
+        """
+        Return an OrderedDict of fluxes for a single Sed object.
+
+        The OrderedDict will be keyed off of the keys for this BandpassDict
+
+        @param [in] sedobj is an Sed object.   Its wavelength grid can be arbitrary. If necessary,
+        a copy will be created and resampled onto the wavelength grid of the Bandpasses before
+        fluxes are calculated.  The original Sed will be unchanged.
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate fluxes for.  Other fluxes will be listed as numpy.NaN (i.e. this method will
+        return as many fluxes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return numpy.NaN for fluxes you did not actually ask for)
+
+        @param [out] fluxList is a list of fluxes in the bandpasses stored in this BandpassDict
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
+        """
+        fluxList = self.fluxListForSed(sedobj, indices=indices)
+
+        outputDict = OrderedDict()
+
+        for ix, bp in enumerate(self._bandpassDict.keys()):
+            outputDict[bp] = fluxList[ix]
+
+        return outputDict
+
 
     def fluxListForSedList(self, sedList, indices=None):
         """

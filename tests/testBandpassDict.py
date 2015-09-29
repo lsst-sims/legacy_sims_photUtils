@@ -403,6 +403,28 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 3)
 
 
+    def testFluxDictForSed(self):
+        """
+        Test that fluxDictForSed calculates the correct fluxes
+        """
+
+        wavelen = numpy.arange(10.0,2000.0,1.0)
+        flux = (wavelen*2.0-5.0)*1.0e-6
+        spectrum = Sed(wavelen=wavelen, flambda=flux)
+
+        for nBp in range(3, 10, 1):
+
+            nameList, bpList = self.getListOfBandpasses(nBp)
+            testDict = BandpassDict(bpList, nameList)
+            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+
+            fluxDict = testDict.fluxDictForSed(spectrum)
+            for ix, (name, bp) in enumerate(zip(nameList, bpList)):
+                fluxControl = spectrum.calcFlux(bp)
+                self.assertAlmostEqual(fluxDict[name]/fluxControl, 1.0, 3)
+
+
+
     def testFluxListForSedList(self):
         """
         Test that fluxListForSedList calculates the correct fluxes
