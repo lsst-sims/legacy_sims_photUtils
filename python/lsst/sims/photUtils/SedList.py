@@ -341,10 +341,6 @@ class SedList(object):
         """
         return self._cosmological_dimming
 
-    @cosmologicalDimming.setter
-    def cosmologicalDimming(self, value):
-        raise RuntimeError("You shold not set cosmologicalDimming " \
-                           + "on the fly in SedList")
 
     @property
     def wavelenMatch(self):
@@ -354,10 +350,6 @@ class SedList(object):
         """
         return self._wavelen_match
 
-    @wavelenMatch.setter
-    def wavelenMatch(self, value):
-        raise RuntimeError("You should not set wavelenMatch " \
-                           + "on the fly in SedList")
 
     @property
     def redshiftList(self):
@@ -367,10 +359,6 @@ class SedList(object):
         """
         return self._redshift_list
 
-    @redshiftList.setter
-    def redshiftList(self, value):
-        raise RuntimeError("You should not set redshiftList " \
-                           + "on the fly in SedList")
 
     @property
     def internalAvList(self):
@@ -380,10 +368,6 @@ class SedList(object):
         """
         return self._internal_av_list
 
-    @internalAvList.setter
-    def internalAvList(self, value):
-        raise RuntimeError("You should not set internalAvList " \
-                           + "on the fly in SedList")
 
     @property
     def galacticAvList(self):
@@ -392,8 +376,3 @@ class SedList(object):
         stored in this SedList
         """
         return self._galactic_av_list
-
-    @galacticAvList.setter
-    def galacticAvList(self, value):
-        raise RuntimeError("You should not set galacticAvList " \
-                           + "on the fly in SedList")

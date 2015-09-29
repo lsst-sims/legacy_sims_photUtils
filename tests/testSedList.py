@@ -35,31 +35,20 @@ class SedListTest(unittest.TestCase):
                                  wavelenMatch=wavelen_match)
 
 
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testList.wavelenMatch = numpy.arange(10.0, 1000.0, 1000.0)
 
-        self.assertTrue('set wavelenMatch' in context.exception.message)
-
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testList.cosmologicalDimming = False
 
-        self.assertTrue('set cosmologicalDimming' in context.exception.message)
-
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testList.redshiftList = [1.8]
 
-        self.assertTrue('set redshiftList' in context.exception.message)
-
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testList.internalAvList = [2.5]
 
-        self.assertTrue('set internalAvList' in context.exception.message)
-
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testList.galacticAvList = [1.9]
-
-        self.assertTrue('set galacticAvList' in context.exception.message)
-
 
         testList = SedList(sedNameList, magNormList)
 
