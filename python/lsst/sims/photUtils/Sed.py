@@ -373,8 +373,8 @@ class Sed(object):
          Method will first check if resampling needs to be done or not, unless 'force' is True.
         """
         # Check if need resampling:
-        if (self._needResample(wavelen_match=wavelen_match, wavelen=wavelen, wavelen_min=wavelen_min,
-                                wavelen_max=wavelen_max, wavelen_step=wavelen_step)) or (force):
+        if force or (self._needResample(wavelen_match=wavelen_match, wavelen=wavelen, wavelen_min=wavelen_min,
+                                        wavelen_max=wavelen_max, wavelen_step=wavelen_step)):
             # Is method acting on self.wavelen/flambda or passed in wavelen/flux arrays?
             update_self=self._checkUseSelf(wavelen, flux)
             if update_self:

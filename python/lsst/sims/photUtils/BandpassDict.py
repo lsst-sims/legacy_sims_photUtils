@@ -230,10 +230,9 @@ class BandpassDict(object):
             # If the Sed's wavelength grid agrees with self._wavelen_match to one part in
             # 10^6, just use the Sed as-is.  Otherwise, copy it and resample it onto
             # self._wavelen_match
-            if len(sedobj.wavelen)!=len(self._wavelen_match) or \
-            not numpy.allclose(sedobj.wavelen, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+            if sedobj._needResample(wavelen_match=self._wavelen_match):
                 dummySed = Sed(wavelen=sedobj.wavelen, flambda=sedobj.flambda)
-                dummySed.resampleSED(wavelen_match=self._bandpassDict.values()[0].wavelen)
+                dummySed.resampleSED(force=True, wavelen_match=self._bandpassDict.values()[0].wavelen)
             else:
                 dummySed = sedobj
 
@@ -266,9 +265,7 @@ class BandpassDict(object):
         one_at_a_time = False
         if sedList.wavelenMatch is None:
             one_at_a_time = True
-        elif len(sedList.wavelenMatch) != len(self._wavelen_match):
-            one_at_a_time = True
-        elif not numpy.allclose(sedList.wavelenMatch, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+        elif sedList[0]._needResample(wavelen_match=self._wavelen_match):
             one_at_a_time = True
 
         output_list = []
@@ -341,10 +338,9 @@ class BandpassDict(object):
             # If the Sed's wavelength grid agrees with self._wavelen_match to one part in
             # 10^6, just use the Sed as-is.  Otherwise, copy it and resample it onto
             # self._wavelen_match
-            if len(sedobj.wavelen)!=len(self._wavelen_match) or \
-            not numpy.allclose(sedobj.wavelen, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+            if sedobj._needResample(wavelen_match=self._wavelen_match):
                 dummySed = Sed(wavelen=sedobj.wavelen, flambda=sedobj.flambda)
-                dummySed.resampleSED(wavelen_match=self._bandpassDict.values()[0].wavelen)
+                dummySed.resampleSED(force=True, wavelen_match=self._bandpassDict.values()[0].wavelen)
             else:
                 dummySed = sedobj
 
@@ -377,9 +373,7 @@ class BandpassDict(object):
         one_at_a_time = False
         if sedList.wavelenMatch is None:
             one_at_a_time = True
-        elif len(sedList.wavelenMatch) != len(self._wavelen_match):
-            one_at_a_time = True
-        elif not numpy.allclose(sedList.wavelenMatch, self._wavelen_match, atol=0.0, rtol=1.0e-6):
+        elif sedList[0]._needResample(wavelen_match=self._wavelen_match):
             one_at_a_time = True
 
         output_list = []
