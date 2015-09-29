@@ -287,6 +287,41 @@ class BandpassDict(object):
         return numpy.array(output_list)
 
 
+    def _calcFluxListFromSed(self, sedobj, indices=None):
+        """
+        This is a private method which will take an sedobj which has already
+        been resampled to self._wavelen_match and calculate the fluxes
+        of that object in each of the bandpasses stored in this Dict.
+
+        The results are returned as a list.
+        """
+
+        if sedobj.wavelen is None:
+            return [numpy.NaN]*self._nBandpasses
+        else:
+
+            #for some reason, moving this call to flambdaTofnu()
+            #to a point earlier in the
+            #process results in some SEDs having 'None' for fnu.
+            #
+            #I looked more carefully at the documentation in Sed.py
+            #Any time you update flambda in any way, fnu gets set to 'None'
+            #This is to prevent the two arrays from getting out synch
+            #(e.g. renormalizing flambda but forgettint to renormalize fnu)
+            #
+            sedobj.flambdaTofnu()
+
+            if indices is not None:
+                outputList = [numpy.NaN] * self._nBandpasses
+                magList = sedobj.manyFluxCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
+                for i, ix in enumerate(indices):
+                    outputList[ix] = magList[i]
+            else:
+                outputList = sedobj.manyFluxCalc(self._phiArray, self._wavelenStep)
+
+            return outputList
+
+
     def calcFluxListFromSed(self, sedobj, indices=None):
         """
         Return a list of Fluxes for a single Sed object.
@@ -313,28 +348,7 @@ class BandpassDict(object):
             else:
                 dummySed = sedobj
 
-
-            #for some reason, moving this call to flambdaTofnu()
-            #to a point earlier in the
-            #process results in some SEDs having 'None' for fnu.
-            #
-            #I looked more carefully at the documentation in Sed.py
-            #Any time you update flambda in any way, fnu gets set to 'None'
-            #This is to prevent the two arrays from getting out synch
-            #(e.g. renormalizing flambda but forgettint to renormalize fnu)
-            #
-            dummySed.flambdaTofnu()
-
-            if indices is not None:
-                fluxList = [numpy.NaN]*self._nBandpasses
-
-                fluxArray = dummySed.manyFluxCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
-                for i,ix in enumerate(indices):
-                    fluxList[ix] = fluxArray[i]
-            else:
-                fluxList = dummySed.manyFluxCalc(self._phiArray, self._wavelenStep)
-
-            return numpy.array(fluxList)
+            return numpy.array(self._calcFluxListFromSed(dummySed, indices=indices))
 
         else:
             return numpy.array([numpy.NaN]*self._nBandpasses)
@@ -374,23 +388,12 @@ class BandpassDict(object):
                 sub_list = self.calcFluxListFromSed(sed_obj, indices=indices)
                 output_list.append(sub_list)
         else:
-            if indices is not None:
-                for sed_obj in sedList:
-                    sub_list = numpy.array([numpy.NaN]*self._nBandpasses)
-                    if sed_obj.wavelen is not None:
-                        sed_obj.flambdaTofnu()
-                        flux_list = sed_obj.manyFluxCalc(self._phiArray, self._wavelenStep, observedBandpassInd=indices)
-                        for i,ix in enumerate(indices):
-                            sub_list[ix] = flux_list[i]
-                    output_list.append(sub_list)
-            else:
-                for sed_obj in sedList:
-                    if sed_obj.wavelen is None:
-                        sub_list = numpy.array([numpy.NaN]*self._nBandpasses)
-                    else:
-                        sed_obj.flambdaTofnu()
-                        sub_list = sed_obj.manyFluxCalc(self._phiArray, self._wavelenStep)
-                    output_list.append(sub_list)
+            # the difference between this block and the block above is that the block
+            # above performs the additional check of making sure that sed_obj.wavelen
+            # is equivalent to self._wavelen_match
+            for sed_obj in sedList:
+                sub_list = self._calcFluxListFromSed(sed_obj, indices=indices)
+                output_list.append(sub_list)
 
         return numpy.array(output_list)
 
