@@ -68,7 +68,7 @@ class photometryUnitTest(unittest.TestCase):
         ff = ss.calcFluxNorm(22.0, controlBandpass)
         ss.multiplyFluxNorm(ff)
 
-        testMags = cartoon_dict.calcMagListFromSed(ss)
+        testMags = cartoon_dict.magListForSed(ss)
 
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
@@ -231,7 +231,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
 
@@ -270,7 +270,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
         obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
-        magnitudes = bandpassDict.calcMagListFromSed(self.starSED)
+        magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
 

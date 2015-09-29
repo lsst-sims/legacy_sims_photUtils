@@ -149,9 +149,9 @@ class BandpassDictTest(unittest.TestCase):
             testDict.wavelenMatch = numpy.arange(10.0,100.0,1.0)
 
 
-    def testCalcMagListFromSed(self):
+    def testMagListForSed(self):
         """
-        Test that calcMagListFromSed calculates the correct magnitude
+        Test that magListForSed calculates the correct magnitude
         """
 
         wavelen = numpy.arange(10.0,2000.0,1.0)
@@ -164,15 +164,15 @@ class BandpassDictTest(unittest.TestCase):
             testDict = BandpassDict(bpList, nameList)
             self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
 
-            magList = testDict.calcMagListFromSed(spectrum)
+            magList = testDict.magListForSed(spectrum)
             for ix, (name, bp, magTest) in enumerate(zip(nameList, bpList, magList)):
                 magControl = spectrum.calcMag(bp)
                 self.assertAlmostEqual(magTest, magControl, 5)
 
 
-    def testCalcMagListFromSedList(self):
+    def testMagListForSedList(self):
         """
-        Test that calcMagListFromSedList calculates the correct magnitude
+        Test that magListForSedList calculates the correct magnitude
         """
 
         nBandpasses = 7
@@ -192,7 +192,7 @@ class BandpassDictTest(unittest.TestCase):
                                     redshiftList=redshiftList,
                                     galacticAvList=galacticAvList)
 
-        magList = testBpDict.calcMagListFromSedList(testSedList)
+        magList = testBpDict.magListForSedList(testSedList)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
 
@@ -214,7 +214,7 @@ class BandpassDictTest(unittest.TestCase):
                                     galacticAvList=galacticAvList,
                                     wavelenMatch=testBpDict.wavelenMatch)
 
-        magList = testBpDict.calcMagListFromSedList(testSedList)
+        magList = testBpDict.magListForSedList(testSedList)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
 
@@ -246,7 +246,7 @@ class BandpassDictTest(unittest.TestCase):
         spectrum = Sed(wavelen=wavelen, flambda=flux)
         indices = [1,2,5]
 
-        magList = testBpDict.calcMagListFromSed(spectrum, indices=indices)
+        magList = testBpDict.magListForSed(spectrum, indices=indices)
         ctNaN = 0
         for ix, (name, bp, magTest) in enumerate(zip(nameList, bpList, magList)):
             if ix in indices:
@@ -271,7 +271,7 @@ class BandpassDictTest(unittest.TestCase):
                                     redshiftList=redshiftList,
                                     galacticAvList=galacticAvList)
 
-        magList = testBpDict.calcMagListFromSedList(testSedList, indices=indices)
+        magList = testBpDict.magListForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
 
@@ -300,7 +300,7 @@ class BandpassDictTest(unittest.TestCase):
                                     galacticAvList=galacticAvList,
                                     wavelenMatch=testBpDict.wavelenMatch)
 
-        magList = testBpDict.calcMagListFromSedList(testSedList, indices=indices)
+        magList = testBpDict.magListForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
 
@@ -323,9 +323,9 @@ class BandpassDictTest(unittest.TestCase):
             self.assertEqual(ctNaN, 4)
 
 
-    def testCalcFluxListFromSed(self):
+    def testFluxListForSed(self):
         """
-        Test that calcFluxListFromSed calculates the correct fluxes
+        Test that fluxListForSed calculates the correct fluxes
         """
 
         wavelen = numpy.arange(10.0,2000.0,1.0)
@@ -338,15 +338,15 @@ class BandpassDictTest(unittest.TestCase):
             testDict = BandpassDict(bpList, nameList)
             self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
 
-            fluxList = testDict.calcFluxListFromSed(spectrum)
+            fluxList = testDict.fluxListForSed(spectrum)
             for ix, (name, bp, fluxTest) in enumerate(zip(nameList, bpList, fluxList)):
                 fluxControl = spectrum.calcFlux(bp)
                 self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 3)
 
 
-    def testCalcFluxListFromSedList(self):
+    def testFluxListForSedList(self):
         """
-        Test that calcFluxListFromSedList calculates the correct fluxes
+        Test that fluxListForSedList calculates the correct fluxes
         """
 
         nBandpasses = 7
@@ -366,7 +366,7 @@ class BandpassDictTest(unittest.TestCase):
                                     redshiftList=redshiftList,
                                     galacticAvList=galacticAvList)
 
-        fluxList = testBpDict.calcFluxListFromSedList(testSedList)
+        fluxList = testBpDict.fluxListForSedList(testSedList)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
 
@@ -388,7 +388,7 @@ class BandpassDictTest(unittest.TestCase):
                                     galacticAvList=galacticAvList,
                                     wavelenMatch=testBpDict.wavelenMatch)
 
-        fluxList = testBpDict.calcFluxListFromSedList(testSedList)
+        fluxList = testBpDict.fluxListForSedList(testSedList)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
 
@@ -420,7 +420,7 @@ class BandpassDictTest(unittest.TestCase):
         spectrum = Sed(wavelen=wavelen, flambda=flux)
         indices = [1,2,5]
 
-        fluxList = testBpDict.calcFluxListFromSed(spectrum, indices=indices)
+        fluxList = testBpDict.fluxListForSed(spectrum, indices=indices)
         ctNaN = 0
         for ix, (name, bp, fluxTest) in enumerate(zip(nameList, bpList, fluxList)):
             if ix in indices:
@@ -445,7 +445,7 @@ class BandpassDictTest(unittest.TestCase):
                                     redshiftList=redshiftList,
                                     galacticAvList=galacticAvList)
 
-        fluxList = testBpDict.calcFluxListFromSedList(testSedList, indices=indices)
+        fluxList = testBpDict.fluxListForSedList(testSedList, indices=indices)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
 
@@ -474,7 +474,7 @@ class BandpassDictTest(unittest.TestCase):
                                     galacticAvList=galacticAvList,
                                     wavelenMatch=testBpDict.wavelenMatch)
 
-        fluxList = testBpDict.calcFluxListFromSedList(testSedList, indices=indices)
+        fluxList = testBpDict.fluxListForSedList(testSedList, indices=indices)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
 

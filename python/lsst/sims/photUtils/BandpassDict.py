@@ -15,7 +15,8 @@ class BandpassDict(object):
     the input Bandpasses to be on the same wavelength grid (defined
     by the first input Bandpass).  The constructor will then calculate
     the 2-D phiArray for quick calculation of magnitudes in all
-    Bandpasses simultaneously (see the member method calcMagListFromSed).
+    Bandpasses simultaneously (see the member methods magListForSed,
+    magListForSedList, fluxListForSed, fluxListForSedList).
 
     Note: when re-sampling the wavelength grid, it is assumed that
     the first bandpass is sampled on a uniform grid (i.e. all bandpasses
@@ -175,7 +176,7 @@ class BandpassDict(object):
         return cls(bandpassList, bandpassNames)
 
 
-    def _calcMagListFromSed(self, sedobj, indices=None):
+    def _magListForSed(self, sedobj, indices=None):
         """
         This is a private method which will take an sedobj which has already
         been resampled to self._wavelen_match and calculate the magnitudes
@@ -210,7 +211,7 @@ class BandpassDict(object):
             return outputList
 
 
-    def calcMagListFromSed(self, sedobj, indices=None):
+    def magListForSed(self, sedobj, indices=None):
         """
         Return a list of magnitudes for a single Sed object.
 
@@ -237,20 +238,20 @@ class BandpassDict(object):
             else:
                 dummySed = sedobj
 
-            return numpy.array(self._calcMagListFromSed(dummySed, indices=indices))
+            return numpy.array(self._magListForSed(dummySed, indices=indices))
 
         else:
             return numpy.array([numpy.NaN]*len(self._bandpassDict))
 
 
 
-    def calcMagListFromSedList(self, sedList, indices=None):
+    def magListForSedList(self, sedList, indices=None):
         """
         Return a 2-D array of magnitudes from a SedList.
         Each row will correspond to a different Sed, each column
         will correspond to a different bandpass, i.e. in the case of
 
-        mag = myBandpassDict.calcMagListFromSedList(mySedList)
+        mag = myBandpassDict.magListForSedList(mySedList)
 
         mag[0][0] will be the magnitude of the 0th Sed in the 0th bandpass
         mag[0][1] will be the magnitude of the 0th Sed in the 1st bandpass
@@ -284,20 +285,20 @@ class BandpassDict(object):
         output_list = []
         if one_at_a_time:
             for sed_obj in sedList:
-                sub_list = self.calcMagListFromSed(sed_obj, indices=indices)
+                sub_list = self.magListForSed(sed_obj, indices=indices)
                 output_list.append(sub_list)
         else:
             # the difference between this block and the block above is that the block
             # above performs the additional check of making sure that sed_obj.wavelen
             # is equivalent to self._wavelen_match
             for sed_obj in sedList:
-                sub_list = self._calcMagListFromSed(sed_obj, indices=indices)
+                sub_list = self._magListForSed(sed_obj, indices=indices)
                 output_list.append(sub_list)
 
         return numpy.array(output_list)
 
 
-    def _calcFluxListFromSed(self, sedobj, indices=None):
+    def _fluxListForSed(self, sedobj, indices=None):
         """
         This is a private method which will take an sedobj which has already
         been resampled to self._wavelen_match and calculate the fluxes
@@ -332,7 +333,7 @@ class BandpassDict(object):
             return outputList
 
 
-    def calcFluxListFromSed(self, sedobj, indices=None):
+    def fluxListForSed(self, sedobj, indices=None):
         """
         Return a list of Fluxes for a single Sed object.
 
@@ -364,20 +365,20 @@ class BandpassDict(object):
             else:
                 dummySed = sedobj
 
-            return numpy.array(self._calcFluxListFromSed(dummySed, indices=indices))
+            return numpy.array(self._fluxListForSed(dummySed, indices=indices))
 
         else:
             return numpy.array([numpy.NaN]*len(self._bandpassDict))
 
 
 
-    def calcFluxListFromSedList(self, sedList, indices=None):
+    def fluxListForSedList(self, sedList, indices=None):
         """
         Return a 2-D array of fluxes from a SedList.
         Each row will correspond to a different Sed, each column
         will correspond to a different bandpass, i.e. in the case of
 
-        flux = myBandpassDict.calcFluxListFromSedList(mySedList)
+        flux = myBandpassDict.fluxListForSedList(mySedList)
 
         flux[0][0] will be the flux of the 0th Sed in the 0th bandpass
         flux[0][1] will be the flux of the 0th Sed in the 1st bandpass
@@ -416,14 +417,14 @@ class BandpassDict(object):
         output_list = []
         if one_at_a_time:
             for sed_obj in sedList:
-                sub_list = self.calcFluxListFromSed(sed_obj, indices=indices)
+                sub_list = self.fluxListForSed(sed_obj, indices=indices)
                 output_list.append(sub_list)
         else:
             # the difference between this block and the block above is that the block
             # above performs the additional check of making sure that sed_obj.wavelen
             # is equivalent to self._wavelen_match
             for sed_obj in sedList:
-                sub_list = self._calcFluxListFromSed(sed_obj, indices=indices)
+                sub_list = self._fluxListForSed(sed_obj, indices=indices)
                 output_list.append(sub_list)
 
         return numpy.array(output_list)
