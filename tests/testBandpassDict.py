@@ -36,10 +36,23 @@ class BandpassDictTest(unittest.TestCase):
         dexList = numpy.random.random_integers(0, len(self.bandpassPossibilities)-1, nBp)
         bandpassNameList = []
         bandpassList = []
+
+        wMax = None
+        wMin = None
+        wStep = None
+
         for dex in dexList:
             name = self.bandpassPossibilities[dex]
             bp = Bandpass()
             bp.readThroughput(os.path.join(self.bandpassDir,'total_%s.dat' % name))
+
+            if wMax is None:
+                wMin = bp.wavelen[0]
+                wMax = bp.wavelen[-1]
+                wStep = bp.wavelen[1]-bp.wavelen[0]
+            else:
+                bp.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
+
             while name in bandpassNameList:
                 name += '0'
             bandpassNameList.append(name)
