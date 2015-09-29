@@ -505,6 +505,36 @@ class BandpassDictTest(unittest.TestCase):
             self.assertEqual(ctNaN, 4)
 
 
+    def testLoadTotalBandpassesFromFiles(self):
+        """
+        Test that the class method loadTotalBandpassesFromFiles produces the
+        expected result
+        """
+
+        bandpassDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
+        bandpassNames = ['g', 'r', 'u']
+        bandpassRoot = 'test_bandpass_'
+
+        bandpassDict = BandpassDict.loadTotalBandpassesFromFiles(bandpassNames=bandpassNames,
+                                                                 bandpassDir=bandpassDir,
+                                                                 bandpassRoot = bandpassRoot)
+
+        controlBandpassList = []
+        for bpn in bandpassNames:
+            dummyBp = Bandpass()
+            dummyBp.readThroughput(os.path.join(bandpassDir,bandpassRoot+bpn+'.dat'))
+            controlBandpassList.append(dummyBp)
+
+        wMin = controlBandpassList[0].wavelen[0]
+        wMax = controlBandpassList[0].wavelen[-1]
+        wStep = controlBandpassList[0].wavelen[1]-controlBandpassList[0].wavelen[0]
+
+        for bp in controlBandpassList:
+            bp.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
+
+        for test, control in zip(bandpassDict.values(), controlBandpassList):
+            numpy.testing.assert_array_equal(test.wavelen, control.wavelen)
+            numpy.testing.assert_array_equal(test.sb, control.sb)
 
 
 def suite():
