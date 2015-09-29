@@ -169,6 +169,26 @@ class BandpassDictTest(unittest.TestCase):
                 magControl = spectrum.calcMag(bp)
                 self.assertAlmostEqual(magTest, magControl, 5)
 
+    def testMagDictForSed(self):
+        """
+        Test that magDictForSed calculates the correct magnitude
+        """
+
+        wavelen = numpy.arange(10.0,2000.0,1.0)
+        flux = (wavelen*2.0-5.0)*1.0e-6
+        spectrum = Sed(wavelen=wavelen, flambda=flux)
+
+        for nBp in range(3, 10, 1):
+
+            nameList, bpList = self.getListOfBandpasses(nBp)
+            testDict = BandpassDict(bpList, nameList)
+            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+
+            magDict = testDict.magDictForSed(spectrum)
+            for ix, (name, bp) in enumerate(zip(nameList, bpList)):
+                magControl = spectrum.calcMag(bp)
+                self.assertAlmostEqual(magDict[name], magControl, 5)
+
 
     def testMagListForSedList(self):
         """

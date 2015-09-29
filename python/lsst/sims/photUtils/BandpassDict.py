@@ -244,6 +244,33 @@ class BandpassDict(object):
             return numpy.array([numpy.NaN]*len(self._bandpassDict))
 
 
+    def magDictForSed(self, sedobj, indices=None):
+        """
+        Return an OrderedDict of magnitudes for a single Sed object.
+
+        The OrderedDict will be keyed off of the keys to this BandpassDict
+
+        @param [in] sedobj is an Sed object.  Its wavelength grid can be arbitrary.  If necessary,
+        a copy will be created and resampled onto the wavelength grid of the Bandpasses before
+        magnitudes are calculated.  The original Sed will be unchanged.
+
+        @param [in] indices is an optional list of indices indicating which bandpasses to actually
+        calculate magnitudes for.  Other magnitudes will be listed as numpy.NaN (i.e. this method will
+        return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
+        just return numpy.NaN for magnitudes you did not actually ask for)
+
+        @param [out] magDict is an OrderedDict of magnitudes in the bandpasses stored in this BandpassDict
+        """
+
+        magList = self.magListForSed(sedobj, indices=indices)
+
+        outputDict = OrderedDict()
+
+        for ix, bp in enumerate(self._bandpassDict.keys()):
+            outputDict[bp] = magList[ix]
+
+        return outputDict
+
 
     def magListForSedList(self, sedList, indices=None):
         """
