@@ -537,6 +537,61 @@ class BandpassDictTest(unittest.TestCase):
             numpy.testing.assert_array_equal(test.sb, control.sb)
 
 
+    def testLoadBandpassesFromFiles(self):
+        """
+        Test that running the classmethod loadBandpassesFromFiles produces
+        expected result
+        """
+
+        fileDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
+        bandpassNames = ['g', 'z', 'i']
+        bandpassRoot='test_bandpass_'
+        componentList = ['toy_mirror.dat']
+        atmo = os.path.join(fileDir, 'toy_atmo.dat')
+
+        bandpassDict, hardwareDict = BandpassDict.loadBandpassesFromFiles(bandpassNames=bandpassNames,
+                                                                          filedir=fileDir,
+                                                                          bandpassRoot=bandpassRoot,
+                                                                          componentList=componentList,
+                                                                          atmoTransmission=atmo)
+
+        controlBandpassList = []
+        controlHardwareList = []
+
+        for bpn in bandpassNames:
+            componentList = [os.path.join(fileDir, bandpassRoot+bpn+'.dat'),
+                             os.path.join(fileDir, 'toy_mirror.dat')]
+
+            dummyBp = Bandpass()
+            dummyBp.readThroughputList(componentList)
+            controlHardwareList.append(dummyBp)
+
+            componentList = [os.path.join(fileDir, bandpassRoot+bpn+'.dat'),
+                             os.path.join(fileDir, 'toy_mirror.dat'),
+                             os.path.join(fileDir, 'toy_atmo.dat')]
+
+            dummyBp = Bandpass()
+            dummyBp.readThroughputList(componentList)
+            controlBandpassList.append(dummyBp)
+
+
+        wMin = controlBandpassList[0].wavelen[0]
+        wMax = controlBandpassList[0].wavelen[-1]
+        wStep = controlBandpassList[0].wavelen[1]-controlBandpassList[0].wavelen[0]
+
+        for bp, hh in zip(controlBandpassList, controlHardwareList):
+            bp.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
+            hh.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
+
+        for test, control in zip(bandpassDict.values(), controlBandpassList):
+            numpy.testing.assert_array_equal(test.wavelen, control.wavelen)
+            numpy.testing.assert_array_equal(test.sb, control.sb)
+
+        for test, control in zip(hardwareDict.values(), controlHardwareList):
+            numpy.testing.assert_array_equal(test.wavelen, control.wavelen)
+            numpy.testing.assert_array_equal(test.sb, control.sb)
+
+
 def suite():
     utilsTests.init()
     suites = []
