@@ -201,7 +201,7 @@ class BandpassDictTest(unittest.TestCase):
                            flambda=copy.deepcopy(sedObj.flambda))
 
             for iy, bp in enumerate(testBpDict):
-                mag = dummySed.calcMag(testBpDict[bp])
+                mag = dummySed.calcMag(bpList[iy])
                 self.assertAlmostEqual(mag, magList[ix][iy], 3)
 
         # now use wavelenMatch
@@ -220,7 +220,7 @@ class BandpassDictTest(unittest.TestCase):
                            flambda=copy.deepcopy(sedObj.flambda))
 
             for iy, bp in enumerate(testBpDict):
-                mag = dummySed.calcMag(testBpDict[bp])
+                mag = dummySed.calcMag(bpList[iy])
                 self.assertAlmostEqual(mag, magList[ix][iy], 3)
 
 
@@ -414,7 +414,7 @@ class BandpassDictTest(unittest.TestCase):
                            flambda=copy.deepcopy(sedObj.flambda))
 
             for iy, bp in enumerate(testBpDict):
-                flux = dummySed.calcFlux(testBpDict[bp])
+                flux = dummySed.calcFlux(bpList[iy])
                 self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 3)
 
         # now use wavelenMatch
@@ -433,7 +433,7 @@ class BandpassDictTest(unittest.TestCase):
                            flambda=copy.deepcopy(sedObj.flambda))
 
             for iy, bp in enumerate(testBpDict):
-                flux = dummySed.calcFlux(testBpDict[bp])
+                flux = dummySed.calcFlux(bpList[iy])
                 self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 3)
 
 
