@@ -218,9 +218,9 @@ class BandpassDict(object):
         @param [in] sedobj is an Sed object
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for.  Other magnitudes will be listed as 'None' (i.e. this method will
+        calculate magnitudes for.  Other magnitudes will be listed as numpy.NaN (i.e. this method will
         return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
-        just return nonsense for magnitudes you did not actually ask for)
+        just return numpy.NaN for magnitudes you did not actually ask for)
 
         @param [out] magList is a list of magnitudes in the bandpasses stored in self.bandpassDict
         """
@@ -253,9 +253,9 @@ class BandpassDict(object):
         whose magnitudes are desired.
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate magnitudes for.  Other magnitudes will be listed as 'None' (i.e. this method will
+        calculate magnitudes for.  Other magnitudes will be listed as numpy.NaN (i.e. this method will
         return as many magnitudes as were loaded with the loadBandpassesFromFiles methods; it will
-        just return nonsense for magnitudes you did not actually ask for)
+        just return numpy.NaN for magnitudes you did not actually ask for)
 
         @param [out] output_list is a 2-D numpy array containing the magnitudes
         of each Sed (the rows) in each bandpass contained in this BandpassDict
@@ -326,9 +326,9 @@ class BandpassDict(object):
         @param [in] sedobj is an Sed object
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate fluxes for.  Other fluxes will be listed as 'None' (i.e. this method will
+        calculate fluxes for.  Other fluxes will be listed as numpy.NaN (i.e. this method will
         return as many fluxes as were loaded with the loadBandpassesFromFiles methods; it will
-        just return nonsense for fluxes you did not actually ask for)
+        just return numpy.NaN for fluxes you did not actually ask for)
 
         @param [out] fluxList is a list of fluxes in the bandpasses stored in self.bandpassDict
         """
@@ -361,9 +361,9 @@ class BandpassDict(object):
         whose fluxes are desired.
 
         @param [in] indices is an optional list of indices indicating which bandpasses to actually
-        calculate fluxes for.  Other fluxes will be listed as 'None' (i.e. this method will
+        calculate fluxes for.  Other fluxes will be listed as numpy.NaN (i.e. this method will
         return as many fluxes as were loaded with the loadBandpassesFromFiles methods; it will
-        just return nonsense for fluxes you did not actually ask for)
+        just return numpy.NaN for fluxes you did not actually ask for)
 
         @param [out] output_list is a 2-D numpy array containing the fluxes
         of each Sed (the rows) in each bandpass contained in this BandpassDict
