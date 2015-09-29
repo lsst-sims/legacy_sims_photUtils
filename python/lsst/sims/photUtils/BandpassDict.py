@@ -401,11 +401,6 @@ class BandpassDict(object):
         """
         return self._phiArray
 
-    @phiArray.setter
-    def phiArray(self, value):
-        raise RuntimeError("You should not be setting phiArray on the fly " \
-                           + "in a BandpassDict")
-
 
     @property
     def wavelenStep(self):
@@ -415,11 +410,6 @@ class BandpassDict(object):
         """
         return self._wavelenStep
 
-    @wavelenStep.setter
-    def wavelenStep(self, value):
-        raise RuntimeError("You should not be setting wavelenStep on the fly " \
-                          + "in a BandpassDict")
-
 
     @property
     def nBandpasses(self):
@@ -427,11 +417,6 @@ class BandpassDict(object):
         The number of bandpasses stored in this dict.
         """
         return self._nBandpasses
-
-    @nBandpasses.setter
-    def nBandpasses(self, value):
-        raise RuntimeError("You should not be setting nBandpasses on the fly " \
-                           + "in a BandpassDict")
 
 
     @property
@@ -441,8 +426,3 @@ class BandpassDict(object):
         throughputs have been sampled.
         """
         return self._wavelen_match
-
-    @wavelenMatch.setter
-    def wavelenMatch(self, value):
-        raise RuntimeError("You should not be setting wavelenMatch on the fly " \
-                           + "in a BandpassDict")

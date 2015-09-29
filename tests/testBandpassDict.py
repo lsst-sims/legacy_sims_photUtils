@@ -140,21 +140,17 @@ class BandpassDictTest(unittest.TestCase):
 
         testDict = BandpassDict(bpList, nameList)
 
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testDict.nBandpasses = 6
-        self.assertTrue('You should not be setting nBandpasses' in context.exception.message)
 
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testDict.phiArray = None
-        self.assertTrue('You should not be setting phiArray' in context.exception.message)
 
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testDict.wavelenStep = 0.9
-        self.assertTrue('You should not be setting wavelenStep' in context.exception.message)
 
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(AttributeError) as context:
             testDict.wavelenMatch = numpy.arange(10.0,100.0,1.0)
-        self.assertTrue('You should not be setting wavelenMatch' in context.exception.message)
 
 
     def testCalcMagListFromSed(self):
