@@ -4,7 +4,7 @@ import numpy as np
 import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.matchUtils import matchGalaxy
-from lsst.sims.photUtils.Photometry import PhotometryBase as phot
+from lsst.sims.photUtils import BandpassDict
 from lsst.sims.photUtils.EBV import EBVbase as ebv
 
 __all__ = ["selectGalaxySED"]
@@ -48,14 +48,12 @@ class selectGalaxySED(matchGalaxy):
         """
 
         #Set up photometry to calculate model Mags
-        galPhot = phot()
         if bandpassDict is None:
-            galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+            galPhot = BandpassDict.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                             bandpassRoot = 'sdss_')
         else:
-            galPhot.bandpassDict = bandpassDict
-        galPhot.setupPhiArray_dict()
+            galPhot = bandpassDict
 
         modelColors = []
         sedMatches = []
@@ -72,15 +70,15 @@ class selectGalaxySED(matchGalaxy):
         matchColors = []
         matchErrors = []
 
-        for filtNum in range(0, len(galPhot.bandpassDict)-1):
+        for filtNum in range(0, len(galPhot)-1):
             matchColors.append(np.transpose(catMags)[filtNum] - np.transpose(catMags)[filtNum+1])
 
         matchColors = np.transpose(matchColors)
 
         for catObject in matchColors:
             #This is done to handle objects with incomplete magnitude data
-            colorRange = np.arange(0, len(galPhot.bandpassDict)-1)
-            filtNums = np.arange(0, len(galPhot.bandpassDict))
+            colorRange = np.arange(0, len(galPhot)-1)
+            filtNums = np.arange(0, len(galPhot))
             if np.isnan(np.amin(catObject))==True:
                 colorRange = np.where(np.isnan(catObject)==False)[0]
                 filtNums = np.unique([colorRange, colorRange+1]) #To pick out right filters in calcMagNorm
@@ -137,7 +135,7 @@ class selectGalaxySED(matchGalaxy):
         @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
         then this defaults to 1.0. This should be an array of the same size as catMags.
 
-        @param [in] bandpassDict is an OrderedDict of bandpass objects with which to calculate magnitudes.
+        @param [in] bandpassDict is a BandpassDict with which to calculate magnitudes.
         If left equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with
         default extCoeffs.
 
@@ -168,14 +166,12 @@ class selectGalaxySED(matchGalaxy):
         """
 
         #Set up photometry to calculate model Mags
-        galPhot = phot()
         if bandpassDict is None:
-            galPhot.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
+            galPhot = BandpassDict.loadTotalBandpassesFromFiles(['u','g','r','i','z'],
                                             bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'sdss'),
                                             bandpassRoot = 'sdss_')
         else:
-            galPhot.bandpassDict = bandpassDict
-        galPhot.setupPhiArray_dict()
+            galPhot = bandpassDict
 
         #Calculate ebv from ra, dec coordinates if needed
         if reddening == True:
@@ -225,12 +221,12 @@ class selectGalaxySED(matchGalaxy):
             for currentIndex in redshiftIndex[numOn:]:
                 matchMags = objMags[currentIndex]
                 if lastRedshift < np.round(catRedshifts[currentIndex],dzAcc) <= redshift:
-                    colorRange = np.arange(0, len(galPhot.bandpassDict)-1)
+                    colorRange = np.arange(0, len(galPhot)-1)
                     matchColors = []
                     for colorNum in colorRange:
                         matchColors.append(matchMags[colorNum] - matchMags[colorNum+1])
                     #This is done to handle objects with incomplete magnitude data
-                    filtNums = np.arange(0, len(galPhot.bandpassDict))
+                    filtNums = np.arange(0, len(galPhot))
                     if np.isnan(np.amin(matchColors))==True:
                         colorRange = np.where(np.isnan(matchColors)==False)[0]
                         filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm

@@ -373,8 +373,8 @@ class Sed(object):
          Method will first check if resampling needs to be done or not, unless 'force' is True.
         """
         # Check if need resampling:
-        if (self._needResample(wavelen_match=wavelen_match, wavelen=wavelen, wavelen_min=wavelen_min,
-                                wavelen_max=wavelen_max, wavelen_step=wavelen_step)) or (force):
+        if force or (self._needResample(wavelen_match=wavelen_match, wavelen=wavelen, wavelen_min=wavelen_min,
+                                        wavelen_max=wavelen_max, wavelen_step=wavelen_step)):
             # Is method acting on self.wavelen/flambda or passed in wavelen/flux arrays?
             update_self=self._checkUseSelf(wavelen, flux)
             if update_self:
@@ -755,6 +755,11 @@ class Sed(object):
         Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
            (temporary values of these are used).
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
         """
         use_self = self._checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function.
@@ -991,7 +996,7 @@ class Sed(object):
         return phiarray, wavelen_step
 
 
-    def manyFluxCalc(self, phiarray, wavelen_step, observedBandPassInd=None):
+    def manyFluxCalc(self, phiarray, wavelen_step, observedBandpassInd=None):
         """
         Calculate fluxes of a single sed for which fnu has been evaluated in a
         set of bandpasses for which phiarray has been set up to have the same
@@ -1009,7 +1014,7 @@ class Sed(object):
         wavelen_step: `float`, mandatory
             the uniform grid size of the SED
 
-        observedBandPassInd: list of integers, optional, defaults to None
+        observedBandpassInd: list of integers, optional, defaults to None
             list of indices of phiarray corresponding to observed bandpasses,
             if None, the original phiarray is returned
 
@@ -1025,16 +1030,21 @@ class Sed(object):
         `sed.setupPhiArray()` first. These assumptions are to avoid error
         checking within this function (for speed), but could lead to errors if
         method is used incorrectly.
+
+        Note on units: Fluxes calculated this way will be the flux density integrated over the
+        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
+
+        http://www.lsst.org/scientists/scibook
         """
 
-        if observedBandPassInd is not None:
-            phiarray = phiarray[observedBandPassInd]
+        if observedBandpassInd is not None:
+            phiarray = phiarray[observedBandpassInd]
         flux = numpy.empty(len(phiarray), dtype='float')
         flux = numpy.sum(phiarray*self.fnu, axis=1)*wavelen_step
         return flux
 
 
-    def manyMagCalc(self, phiarray, wavelen_step, observedBandPassInd=None):
+    def manyMagCalc(self, phiarray, wavelen_step, observedBandpassInd=None):
         """
         Calculate many magnitudes for many bandpasses using a single sed.
 
@@ -1054,11 +1064,11 @@ class Sed(object):
         wavelen_step: `float`, mandatory
             the uniform grid size of the SED
 
-        observedBandPassInd: list of integers, optional, defaults to None
+        observedBandpassInd: list of integers, optional, defaults to None
             list of indices of phiarray corresponding to observed bandpasses,
             if None, the original phiarray is returned
 
         """
-        fluxes = self.manyFluxCalc(phiarray, wavelen_step, observedBandPassInd)
+        fluxes = self.manyFluxCalc(phiarray, wavelen_step, observedBandpassInd)
         mags = -2.5*numpy.log10(fluxes) - self.zp
         return mags
