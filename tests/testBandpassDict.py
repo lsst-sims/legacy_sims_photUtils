@@ -67,12 +67,12 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertEqual(controlName, testName)
 
             for name, bp in zip(nameList, bpList):
-                numpy.testing.assert_array_equal(bp.wavelen, testDict[name].wavelen)
-                numpy.testing.assert_array_equal(bp.sb, testDict[name].sb)
+                numpy.testing.assert_array_almost_equal(bp.wavelen, testDict[name].wavelen, 19)
+                numpy.testing.assert_array_almost_equal(bp.sb, testDict[name].sb, 19)
 
             for bpControl, bpTest in zip(bpList, testDict.values()):
-                numpy.testing.assert_array_equal(bpControl.wavelen, bpTest.wavelen)
-                numpy.testing.assert_array_equal(bpControl.sb, bpTest.sb)
+                numpy.testing.assert_array_almost_equal(bpControl.wavelen, bpTest.wavelen, 19)
+                numpy.testing.assert_array_almost_equal(bpControl.sb, bpTest.sb, 19)
 
 
     def testWavelenMatch(self):
@@ -102,7 +102,7 @@ class BandpassDictTest(unittest.TestCase):
         # Now make sure that the wavelength grids in the dict were resampled, but that
         # the original wavelength grids were not changed
         for ix in range(len(bpList)):
-            numpy.testing.assert_array_equal(testDict.values()[ix].wavelen, testDict.wavelenMatch)
+            numpy.testing.assert_array_almost_equal(testDict.values()[ix].wavelen, testDict.wavelenMatch, 19)
             if ix!=0:
                 self.assertTrue(len(testDict.wavelenMatch)!=len(bpList[ix].wavelen))
 
@@ -118,7 +118,7 @@ class BandpassDictTest(unittest.TestCase):
             testDict = BandpassDict(bpList, nameList)
             dummySed = Sed()
             controlPhi, controlWavelenStep = dummySed.setupPhiArray(bpList)
-            numpy.testing.assert_array_equal(controlPhi, testDict.phiArray)
+            numpy.testing.assert_array_almost_equal(controlPhi, testDict.phiArray, 19)
             self.assertAlmostEqual(controlWavelenStep, testDict.wavelenStep, 10)
 
 
@@ -645,8 +645,8 @@ class BandpassDictTest(unittest.TestCase):
             bp.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
 
         for test, control in zip(bandpassDict.values(), controlBandpassList):
-            numpy.testing.assert_array_equal(test.wavelen, control.wavelen)
-            numpy.testing.assert_array_equal(test.sb, control.sb)
+            numpy.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
+            numpy.testing.assert_array_almost_equal(test.sb, control.sb, 19)
 
 
     def testLoadBandpassesFromFiles(self):
@@ -696,12 +696,12 @@ class BandpassDictTest(unittest.TestCase):
             hh.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
 
         for test, control in zip(bandpassDict.values(), controlBandpassList):
-            numpy.testing.assert_array_equal(test.wavelen, control.wavelen)
-            numpy.testing.assert_array_equal(test.sb, control.sb)
+            numpy.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
+            numpy.testing.assert_array_almost_equal(test.sb, control.sb, 19)
 
         for test, control in zip(hardwareDict.values(), controlHardwareList):
-            numpy.testing.assert_array_equal(test.wavelen, control.wavelen)
-            numpy.testing.assert_array_equal(test.sb, control.sb)
+            numpy.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
+            numpy.testing.assert_array_almost_equal(test.sb, control.sb, 19)
 
 
 def suite():
