@@ -83,6 +83,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 
 import warnings
 import numpy
+import scipy.interpolate as interpolate
 import gzip
 from lsst.sims.photUtils import LSSTdefaults, PhysicalParameters
 
@@ -391,12 +392,12 @@ class Sed(object):
             else:
                 wavelen_grid = numpy.copy(wavelen_match)
             # Check if the wavelength range desired and the wavelength range of the object overlap.
-            # If there is any non-overlap, raise exception.
+            # If there is any non-overlap, raise warning.
             if (wavelen.max() < wavelen_grid.max()) or (wavelen.min() > wavelen_grid.min()):
                 warnings.warn('There is an area of non-overlap between desired wavelength range (%.2f to %.2f) and sed %s (%.2f to %2.f)' % (wavelen_grid.min(), wavelen_grid.max(), self.name, wavelen.min(), wavelen.max()))
-            flux_grid = numpy.empty(len(wavelen), dtype='float')
             # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
-            flux_grid = numpy.interp(wavelen_grid, wavelen, flux, left=numpy.NaN, right=numpy.NaN)
+            f = interpolate.interp1d(wavelen, flux, bounds_error=False, fill_value=numpy.NaN)
+            flux_grid = f(wavelen_grid)
             # Update self values if necessary.
             if update_self:
                 self.wavelen = wavelen_grid
