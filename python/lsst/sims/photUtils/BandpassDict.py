@@ -3,7 +3,8 @@ import numpy
 import os
 from lsst.utils import getPackageDir
 from collections import OrderedDict
-from lsst.sims.photUtils import Bandpass, Sed
+from .Bandpass import Bandpass
+from .Sed import Sed
 
 __all__ = ["BandpassDict"]
 
