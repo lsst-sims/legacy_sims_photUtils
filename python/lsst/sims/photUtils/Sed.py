@@ -85,7 +85,8 @@ import warnings
 import numpy
 import scipy.interpolate as interpolate
 import gzip
-from lsst.sims.photUtils import LSSTdefaults, PhysicalParameters
+from .LSSTdefaults import LSSTdefaults
+from .PhysicalParameters import PhysicalParameters
 
 __all__ = ["Sed"]
 

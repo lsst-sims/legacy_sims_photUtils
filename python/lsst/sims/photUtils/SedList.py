@@ -3,7 +3,8 @@ import copy
 import numpy
 from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap
-from lsst.sims.photUtils import Bandpass, Sed
+from .Bandpass import Bandpass
+from .Sed import Sed
 
 __all__ = ["SedList"]
 

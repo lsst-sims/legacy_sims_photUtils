@@ -1,7 +1,7 @@
 import numpy
 from .Sed import Sed
 from .Bandpass import Bandpass
-from lsst.sims.photUtils import LSSTdefaults
+import LSSTdefaults
 
 __all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
           "calcM5", "calcSkyCountsPerPixelForM5", "calcGamma", "calcSNR_m5",
