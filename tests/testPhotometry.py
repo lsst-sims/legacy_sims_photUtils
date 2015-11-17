@@ -17,7 +17,7 @@ class photometryUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i',
-                            boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                            boundType='circle',pointingRA=200.0,pointingDec=-30.0,
                             boundLength=1.0, m5 = 25.0)
 
     def tearDown(self):
@@ -37,7 +37,7 @@ class photometryUnitTest(unittest.TestCase):
         """
 
         obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
-                                                 boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                                 boundType='circle',pointingRA=200.0,pointingDec=-30.0,
                                                  boundLength=1.0)
 
         bandpassDir=os.path.join(lsst.utils.getPackageDir('sims_photUtils'),'tests','cartoonSedTestData')
@@ -230,7 +230,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         photParams= PhotometricParameters(sigmaSys=sigmaSys)
 
         bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []
@@ -269,7 +269,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         photParams= PhotometricParameters(sigmaSys=0.0)
 
         bandpassDict = BandpassDict.loadTotalBandpassesFromFiles()
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.bandpasses)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.bandpasses)
         magnitudes = bandpassDict.magListForSed(self.starSED)
 
         skySeds = []

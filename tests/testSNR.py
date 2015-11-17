@@ -182,7 +182,7 @@ class TestSNRmethods(unittest.TestCase):
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
         photParams= PhotometricParameters(sigmaSys=sigmaSys)
 
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.filterNameList)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.filterNameList)
         magnitudes = []
         for bp in self.bpList:
             mag = self.starSED.calcMag(bp)
@@ -230,7 +230,7 @@ class TestSNRmethods(unittest.TestCase):
         m5 = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
         photParams= PhotometricParameters(sigmaSys=0.0)
 
-        obs_metadata = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=45.0, m5=m5, bandpassName=self.filterNameList)
+        obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0, m5=m5, bandpassName=self.filterNameList)
 
         magnitudes = []
         for bp in self.bpList:
