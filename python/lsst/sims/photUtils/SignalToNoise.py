@@ -359,14 +359,12 @@ def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     """
     Calculate magnitude error using the model from equation (5) of arXiv:0805.2366
 
-    @param [in] magnitudes is a numpy array.  Each row is a different bandpass.
-    Each column is a different object, i.e. magnitudes[i][j] is the magnitude of the jth object
-    in the ith bandpass.
+    @param [in] magnitude of the source whose error you want
+    to calculate
 
-    @param [in] bandpasses is a list of Bandpass objects corresponding to the
-    bandpasses in which magnitudes have been calculated
+    @param [in] bandpass (an instantiation of the Bandpass class) in question
 
-    @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
+    @param [in] m5 is the 5-sigma limiting magnitude in that bandpass
 
     @param [in] photParams is an instantiation of the
     PhotometricParameters class that carries details about the
@@ -375,7 +373,7 @@ def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
-    @param [out] is a numpy array of errors in magnitude
+    @param [out] the error associated with the magnitude
     """
 
     snr, gamma = calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=gamma)
