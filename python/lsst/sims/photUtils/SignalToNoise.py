@@ -316,6 +316,7 @@ def calcGamma(bandpass, m5, photParams):
 
     return gamma
 
+
 def calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
