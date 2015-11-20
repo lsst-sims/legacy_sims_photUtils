@@ -108,21 +108,6 @@ class TestSNRmethods(unittest.TestCase):
                         self.hardwareList[0], photParams, FWHMeff=0.7, verbose=True)
 
 
-    def testSNRexceptions(self):
-        """
-        test that calcSNR_m5 raises an exception when arguments are not of the right shape.
-        """
-
-        photParams = PhotometricParameters()
-        shortGamma = numpy.array([1.0, 1.0])
-        shortMagnitudes = numpy.array([22.0, 23.0])
-        magnitudes = 22.0*numpy.ones(6)
-        self.assertRaises(RuntimeError, snr.calcSNR_m5, magnitudes, self.bpList, shortMagnitudes, photParams)
-        self.assertRaises(RuntimeError, snr.calcSNR_m5, shortMagnitudes, self.bpList, magnitudes, photParams)
-        self.assertRaises(RuntimeError, snr.calcSNR_m5, magnitudes, self.bpList, magnitudes, photParams, gamma=shortGamma)
-        signalToNoise, gg = snr.calcSNR_m5(magnitudes, self.bpList, magnitudes, photParams)
-
-
     def testSignalToNoise(self):
         """
         Test that calcSNR_m5 and calcSNR_sed give similar results
@@ -151,25 +136,16 @@ class TestSNRmethods(unittest.TestCase):
             spectrum.readSED_flambda(os.path.join(sedDir, name))
             ff = spectrum.calcFluxNorm(m5[2]-offset[ix], self.bpList[2])
             spectrum.multiplyFluxNorm(ff)
-            magList = []
-            controlList = []
-            magList = []
             for i in range(len(self.bpList)):
-                controlList.append(snr.calcSNR_sed(spectrum, self.bpList[i],
-                                               self.skySed,
-                                               self.hardwareList[i],
-                                               photParams, defaults.FWHMeff(self.filterNameList[i])))
+                control_snr = snr.calcSNR_sed(spectrum, self.bpList[i],
+                                              self.skySed,
+                                              self.hardwareList[i],
+                                              photParams, defaults.FWHMeff(self.filterNameList[i]))
 
-                magList.append(spectrum.calcMag(self.bpList[i]))
+                mag = spectrum.calcMag(self.bpList[i])
 
-            testList, gammaList = snr.calcSNR_m5(numpy.array(magList),
-                                        numpy.array(self.bpList),
-                                        numpy.array(m5),
-                                        photParams)
-
-            for tt, cc in zip(controlList, testList):
-                msg = '%e != %e ' % (tt, cc)
-                self.assertTrue(numpy.abs(tt/cc - 1.0) < 0.001, msg=msg)
+                test_snr, gamma = snr.calcSNR_m5(mag, self.bpList[i], m5[i], photParams)
+                self.assertLess((test_snr-control_snr)/control_snr, 0.001)
 
 
 
