@@ -355,7 +355,7 @@ def calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=None):
     return 1.0/noise, gamma
 
 
-def calcMagError_m5(magnitude, bandpasses, m5, photParams, gamma=None):
+def calcMagError_m5(magnitude, bandpass, m5, photParams, gamma=None):
     """
     Calculate magnitude error using the model from equation (5) of arXiv:0805.2366
 
@@ -376,7 +376,7 @@ def calcMagError_m5(magnitude, bandpasses, m5, photParams, gamma=None):
     @param [out] the error associated with the magnitude
     """
 
-    snr, gamma = calcSNR_m5(magnitude, bandpasses, m5, photParams, gamma=gamma)
+    snr, gamma = calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=gamma)
 
     if photParams.sigmaSys is not None:
         return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2))
