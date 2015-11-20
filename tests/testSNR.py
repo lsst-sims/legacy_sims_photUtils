@@ -82,7 +82,7 @@ class TestSNRmethods(unittest.TestCase):
                 sigma_sed = snr.calcMagError_sed(spectrum, total, self.skySed,
                                                    hardware, photParams, FWHMeff=FWHMeff)
 
-                sigma_m5 = snr.calcMagError_m5(mm, total, m5, photParams)
+                sigma_m5, gamma = snr.calcMagError_m5(mm, total, m5, photParams)
 
                 self.assertAlmostEqual(sigma_m5, sigma_sed, 3)
 
@@ -175,7 +175,7 @@ class TestSNRmethods(unittest.TestCase):
                                        photParams=photParams)
 
 
-            sigma = snr.calcMagError_m5(mm, bp, m5, photParams)
+            sigma, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
 
             snrat = snr.calcSNR_sed(self.starSED, bp, normalizedSkyDummy, hardware,
                                   seeing=LSSTdefaults().FWHMeff(filterName),
@@ -222,7 +222,7 @@ class TestSNRmethods(unittest.TestCase):
                                        FWHMeff=LSSTdefaults().FWHMeff(filterName),
                                        photParams=photParams)
 
-            sigma = snr.calcMagError_m5(mm, bp, m5, photParams)
+            sigma, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
 
 
             snrat = snr.calcSNR_sed(self.starSED, bp, normalizedSkyDummy, hardware,
@@ -282,11 +282,11 @@ class TestSNRmethods(unittest.TestCase):
         m5 = 24.0
         control_list = []
         for mm in mag_list:
-            sig = snr.calcMagError_m5(mm, bp, m5, photParams)
+            sig, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
             control_list.append(sig)
         control_list = numpy.array(control_list)
 
-        test_list = snr.calcMagError_m5(mag_list, bp, m5, photParams)
+        test_list, gamma = snr.calcMagError_m5(mag_list, bp, m5, photParams)
 
         numpy.testing.assert_array_equal(control_list, test_list)
 

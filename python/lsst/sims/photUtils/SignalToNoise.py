@@ -378,6 +378,9 @@ def calcMagError_m5(magnitude, bandpass, m5, photParams, gamma=None):
 
     @param [out] the error associated with the magnitude
 
+    @param [out] gamma is  the calculated gamma parameter for the
+    bandpass used here (in case the user wants to call this method again).
+
     Note: you can also pass in a numpy of arrays calculated in
     the same Bandpass and get anumpy of errors out
     """
@@ -385,9 +388,9 @@ def calcMagError_m5(magnitude, bandpass, m5, photParams, gamma=None):
     snr, gamma = calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=gamma)
 
     if photParams.sigmaSys is not None:
-        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2))
+        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2)), gamma
     else:
-        return magErrorFromSNR(snr)
+        return magErrorFromSNR(snr), gamma
 
 
 def calcSNR_sed(sourceSed, totalbandpass, skysed, hardwarebandpass,
