@@ -249,6 +249,48 @@ class TestSNRmethods(unittest.TestCase):
         self.assertEqual(FWHMeff, (FWHMgeom-0.052)/0.822)
 
 
+    def testSNR_arr(self):
+        """
+        Test that calcSNR_m5 works on numpy arrays of magnitudes
+        """
+        numpy.random.seed(17)
+        mag_list = numpy.random.random_sample(100)*5.0 + 15.0
+
+        photParams = PhotometricParameters()
+        bp = self.bpList[0]
+        m5 = 24.0
+        control_list = []
+        for mm in mag_list:
+            ratio, gamma = snr.calcSNR_m5(mm, bp, m5, photParams)
+            control_list.append(ratio)
+        control_list = numpy.array(control_list)
+
+        test_list, gamma = snr.calcSNR_m5(mag_list, bp, m5, photParams)
+
+        numpy.testing.assert_array_equal(control_list, test_list)
+
+
+    def testError_arr(self):
+        """
+        Test that calcMagError_m5 works on numpy arrays of magnitudes
+        """
+        numpy.random.seed(17)
+        mag_list = numpy.random.random_sample(100)*5.0 + 15.0
+
+        photParams = PhotometricParameters()
+        bp = self.bpList[0]
+        m5 = 24.0
+        control_list = []
+        for mm in mag_list:
+            sig = snr.calcMagError_m5(mm, bp, m5, photParams)
+            control_list.append(sig)
+        control_list = numpy.array(control_list)
+
+        test_list = snr.calcMagError_m5(mag_list, bp, m5, photParams)
+
+        numpy.testing.assert_array_equal(control_list, test_list)
+
+
 def suite():
     utilsTests.init()
     suites = []
