@@ -16,7 +16,7 @@ def FWHMeff2FWHMgeom(FWHMeff):
     FWHMgeom = 0.822*FWHMeff + 0.052
     return FWHMgeom
 
-def FWHMeff2FWHMgeom(FWHMeff):
+def FWHMgeom2FWHMeff(FWHMgeom):
     """
     @param [in] FWHMgeom (the geometric FWHM value, as measured from a typical PSF profile) in arcseconds
 
