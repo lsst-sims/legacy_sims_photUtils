@@ -12,7 +12,7 @@ __all__ = ["setM5",
 
 def setM5(m5target, skysed, totalBandpass, hardware,
           photParams,
-          seeing = None):
+          FWHMeff = None):
     """
     Take an SED representing the sky and normalize it so that
     m5 (the magnitude at which an object is detected in this
@@ -42,7 +42,7 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     PhotometricParameters class that carries details about the
     photometric response of the telescope.
 
-    @param [in] seeing in arcseconds
+    @param [in] FWHMeff in arcseconds
 
     @param [out] returns an instantiation of the Sed class that is the skysed renormalized
     so that m5 has the desired value.
@@ -55,10 +55,10 @@ def setM5(m5target, skysed, totalBandpass, hardware,
     #This is based on the LSST SNR document (v1.2, May 2010)
     #www.astro.washington.edu/users/ivezic/Astr511/LSST_SNRdoc.pdf
 
-    if seeing is None:
-        seeing = LSSTdefaults().seeing('r')
+    if FWHMeff is None:
+        FWHMeff = LSSTdefaults().FWHMeff('r')
 
-    skyCountsTarget = calcSkyCountsPerPixelForM5(m5target, totalBandpass, seeing=seeing,
+    skyCountsTarget = calcSkyCountsPerPixelForM5(m5target, totalBandpass, FWHMeff=FWHMeff,
                                              photParams=photParams)
 
     skySedOut = Sed(wavelen=numpy.copy(skysed.wavelen),

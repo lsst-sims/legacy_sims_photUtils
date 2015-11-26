@@ -49,7 +49,6 @@ class TestSNRmethods(unittest.TestCase):
 
         self.filterNameList = ['u', 'g', 'r', 'i', 'z', 'y']
 
-
     def testMagError(self):
         """
         Make sure that calcMagError_sed and calcMagError_m5
@@ -77,12 +76,12 @@ class TestSNRmethods(unittest.TestCase):
             for total, hardware, filterName in \
             zip(self.bpList, self.hardwareList, self.filterNameList):
 
-                seeing = defaults.seeing(filterName)
+                FWHMeff = defaults.FWHMeff(filterName)
 
-                m5List.append(snr.calcM5(self.skySed, total, hardware, photParams,seeing=seeing))
+                m5List.append(snr.calcM5(self.skySed, total, hardware, photParams,FWHMeff=FWHMeff))
 
                 magSed.append(snr.calcMagError_sed(spectrum, total, self.skySed,
-                                                   hardware, photParams, seeing=seeing))
+                                                   hardware, photParams, FWHMeff=FWHMeff))
 
             magSed = numpy.array(magSed)
 
@@ -106,7 +105,7 @@ class TestSNRmethods(unittest.TestCase):
         spectrum.multiplyFluxNorm(1.0e-9)
 
         snr.calcSNR_sed(spectrum, self.bpList[0], self.skySed,
-                        self.hardwareList[0], photParams, seeing=0.7, verbose=True)
+                        self.hardwareList[0], photParams, FWHMeff=0.7, verbose=True)
 
 
     def testSNRexceptions(self):
@@ -135,7 +134,7 @@ class TestSNRmethods(unittest.TestCase):
         for i in range(len(self.hardwareList)):
             m5.append(snr.calcM5(self.skySed, self.bpList[i],
                       self.hardwareList[i],
-                      photParams, seeing=defaults.seeing(self.filterNameList[i])))
+                      photParams, FWHMeff=defaults.FWHMeff(self.filterNameList[i])))
 
 
         sedDir = lsst.utils.getPackageDir('sims_sed_library')
@@ -159,7 +158,7 @@ class TestSNRmethods(unittest.TestCase):
                 controlList.append(snr.calcSNR_sed(spectrum, self.bpList[i],
                                                self.skySed,
                                                self.hardwareList[i],
-                                               photParams, defaults.seeing(self.filterNameList[i])))
+                                               photParams, defaults.FWHMeff(self.filterNameList[i])))
 
                 magList.append(spectrum.calcMag(self.bpList[i]))
 
@@ -195,7 +194,7 @@ class TestSNRmethods(unittest.TestCase):
             skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[filterName], skyDummy,
                                        bp, hardware,
-                                       seeing=LSSTdefaults().seeing(filterName),
+                                       FWHMeff=LSSTdefaults().FWHMeff(filterName),
                                        photParams=photParams)
 
             skySedList.append(normalizedSkyDummy)
@@ -205,7 +204,7 @@ class TestSNRmethods(unittest.TestCase):
 
         for i in range(len(self.bpList)):
             snrat = snr.calcSNR_sed(self.starSED, self.bpList[i], skySedList[i], self.hardwareList[i],
-                                  seeing=LSSTdefaults().seeing(self.filterNameList[i]),
+                                  FWHMeff=LSSTdefaults().FWHMeff(self.filterNameList[i]),
                                   photParams=PhotometricParameters())
 
             testSNR, gamma = snr.calcSNR_m5(numpy.array([magnitudes[i]]), [self.bpList[i]],
@@ -244,7 +243,7 @@ class TestSNRmethods(unittest.TestCase):
             skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[filterName], skyDummy,
                                        bp, hardware,
-                                       seeing=LSSTdefaults().seeing(filterName),
+                                       FWHMeff=LSSTdefaults().FWHMeff(filterName),
                                        photParams=photParams)
 
             skySedList.append(normalizedSkyDummy)
@@ -255,7 +254,7 @@ class TestSNRmethods(unittest.TestCase):
 
         for i in range(len(self.bpList)):
             snrat = snr.calcSNR_sed(self.starSED, self.bpList[i], skySedList[i], self.hardwareList[i],
-                              seeing=LSSTdefaults().seeing(self.filterNameList[i]),
+                              FWHMeff=LSSTdefaults().FWHMeff(self.filterNameList[i]),
                               photParams=PhotometricParameters())
 
             testSNR, gamma = snr.calcSNR_m5(numpy.array([magnitudes[i]]), [self.bpList[i]],
@@ -269,6 +268,14 @@ class TestSNRmethods(unittest.TestCase):
             msg = '%e is not %e; failed' % (sigmaList[i], control)
 
             self.assertAlmostEqual(sigmaList[i], control, 10, msg=msg)
+
+    def testFWHMconversions(self):
+        FWHMeff = 0.8
+        FWHMgeom = snr.FWHMeff2FWHMgeom(FWHMeff)
+        self.assertEqual(FWHMgeom, (0.822*FWHMeff+0.052))
+        FWHMgeom = 0.8
+        FWHMeff = snr.FWHMgeom2FWHMeff(FWHMgeom)
+        self.assertEqual(FWHMeff, (FWHMgeom-0.052)/0.822)
 
 
 def suite():
