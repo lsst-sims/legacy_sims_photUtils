@@ -3,12 +3,16 @@ from .Sed import Sed
 from .Bandpass import Bandpass
 import LSSTdefaults
 
-__all__ = ["calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
+__all__ = ["FWHmeff2FWHmgeom", "FWHMgeom2FWHMeff",
+           "calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
           "calcM5", "calcSkyCountsPerPixelForM5", "calcGamma", "calcSNR_m5",
           "calcAstrometricError", "magErrorFromSNR", "calcMagError_m5", "calcMagError_sed"]
 
 def FWHMeff2FWHMgeom(FWHMeff):
     """
+    Convert FWHMeff to FWHMgeom.
+    This conversion was calculated by Bo Xin and Zeljko Ivezic (and will be in an update on the LSE-40 and overview papers).
+
     @param [in] FWHMeff (the single-gaussian equivalent FWHM value, appropriate for calcNeff) in arcseconds
 
     @param [out] FWHMgeom (the geometric FWHM value, as measured from a typical PSF profile) in arcseconds
@@ -18,6 +22,9 @@ def FWHMeff2FWHMgeom(FWHMeff):
 
 def FWHMgeom2FWHMeff(FWHMgeom):
     """
+    Convert FWHMgeom to FWHMeff.
+    This conversion was calculated by Bo Xin and Zeljko Ivezic (and will be in an update on the LSE-40 and overview papers).
+
     @param [in] FWHMgeom (the geometric FWHM value, as measured from a typical PSF profile) in arcseconds
 
     @param [out] FWHMeff (the single-gaussian equivalent FWHM value, appropriate for calcNeff) in arcseconds
@@ -27,7 +34,10 @@ def FWHMgeom2FWHMeff(FWHMgeom):
 
 def calcNeff(FWHMeff, platescale):
     """
-    Calculate the effective number of pixels in a single gaussian PSF
+    Calculate the effective number of pixels in a single gaussian PSF.
+    This equation comes from LSE-40, equation 27.
+    https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
+
 
     @param [in] FWHMeff in arcseconds
        (the width of a single-gaussian that produces correct Neff for typical PSF profile)
@@ -35,9 +45,6 @@ def calcNeff(FWHMeff, platescale):
     @param [in] platescale in arcseconds per pixel
 
     @param [out] the effective number of pixels contained in the PSF
-
-    see equation 31 of the SNR document
-    https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
 
     The FWHMeff is a way to represent the equivalent seeing value, if the
     atmosphere could be simply represented as a single gaussian (instead of a more
