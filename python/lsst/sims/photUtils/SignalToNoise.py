@@ -3,7 +3,7 @@ from .Sed import Sed
 from .Bandpass import Bandpass
 import LSSTdefaults
 
-__all__ = ["FWHmeff2FWHmgeom", "FWHMgeom2FWHMeff",
+__all__ = ["FWHMeff2FWHmgeom", "FWHMgeom2FWHMeff",
            "calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
           "calcM5", "calcSkyCountsPerPixelForM5", "calcGamma", "calcSNR_m5",
           "calcAstrometricError", "magErrorFromSNR", "calcMagError_m5", "calcMagError_sed"]
