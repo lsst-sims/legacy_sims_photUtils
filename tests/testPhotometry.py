@@ -183,7 +183,7 @@ class uncertaintyUnitTest(unittest.TestCase):
         for filt in totalDict:
             m5.append(calcM5(skySED, totalDict[filt],
                       hardwareDict[filt],
-                      photParams, seeing=defaults.seeing(filt)))
+                      photParams, FWHMeff=defaults.FWHMeff(filt)))
 
 
         sedDir = lsst.utils.getPackageDir('sims_sed_library')
@@ -207,7 +207,7 @@ class uncertaintyUnitTest(unittest.TestCase):
                 controlList.append(calcSNR_sed(spectrum, totalDict[filt],
                                                skySED,
                                                hardwareDict[filt],
-                                               photParams, defaults.seeing(filt)))
+                                               photParams, defaults.FWHMeff(filt)))
 
                 magList.append(spectrum.calcMag(totalDict[filt]))
 
@@ -240,7 +240,7 @@ class uncertaintyUnitTest(unittest.TestCase):
             skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
-                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                                       FWHMeff=LSSTdefaults().FWHMeff(self.bandpasses[i]),
                                                        photParams=PhotometricParameters())
 
             skySeds.append(normalizedSkyDummy)
@@ -248,7 +248,7 @@ class uncertaintyUnitTest(unittest.TestCase):
 
         for i in range(len(self.bandpasses)):
             snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
-                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                              FWHMeff=LSSTdefaults().FWHMeff(self.bandpasses[i]),
                               photParams=PhotometricParameters())
 
             testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
@@ -279,14 +279,14 @@ class uncertaintyUnitTest(unittest.TestCase):
             skyDummy.readSED_flambda(os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline', 'darksky.dat'))
             normalizedSkyDummy = setM5(obs_metadata.m5[self.bandpasses[i]], skyDummy,
                                                        self.totalBandpasses[i], self.hardwareBandpasses[i],
-                                                       seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                                                       FWHMeff=LSSTdefaults().FWHMeff(self.bandpasses[i]),
                                                        photParams=PhotometricParameters())
 
             skySeds.append(normalizedSkyDummy)
 
         for i in range(len(self.bandpasses)):
             snr = calcSNR_sed(self.starSED, self.totalBandpasses[i], skySeds[i], self.hardwareBandpasses[i],
-                              seeing=LSSTdefaults().seeing(self.bandpasses[i]),
+                              FWHMeff=LSSTdefaults().FWHMeff(self.bandpasses[i]),
                               photParams=PhotometricParameters())
 
             testSNR, gamma = calcSNR_m5(numpy.array([magnitudes[i]]), [self.totalBandpasses[i]],
