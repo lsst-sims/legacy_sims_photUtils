@@ -322,6 +322,7 @@ def calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=None):
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
     @param [in] magnitude of the sources whose signal to noise you are calculating
+    (can be a numpy array)
 
     @param [in] bandpass (an instantiation of the class Bandpass) in which the magnitude
     was calculated
@@ -342,7 +343,7 @@ def calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=None):
     bandpass used here (in case the user wants to call this method again).
 
     Note: You can also pass in a numpy array of magnitudes calculated
-    in the same bandpass and get a numpy array of SNR out
+    in the same bandpass with the same m5 and get a numpy array of SNR out.
     """
 
     if gamma is None:
@@ -364,7 +365,7 @@ def calcMagError_m5(magnitude, bandpass, m5, photParams, gamma=None):
     Calculate magnitude error using the model from equation (5) of arXiv:0805.2366
 
     @param [in] magnitude of the source whose error you want
-    to calculate
+    to calculate (can be a numpy array)
 
     @param [in] bandpass (an instantiation of the Bandpass class) in question
 
@@ -382,8 +383,8 @@ def calcMagError_m5(magnitude, bandpass, m5, photParams, gamma=None):
     @param [out] gamma is  the calculated gamma parameter for the
     bandpass used here (in case the user wants to call this method again).
 
-    Note: you can also pass in a numpy of arrays calculated in
-    the same Bandpass and get anumpy of errors out
+    Note: you can also pass in a numpy of array of magnitudes calculated in
+    the same Bandpass with the same m5 and get a numpy array of errors out.
     """
 
     snr, gamma = calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=gamma)
