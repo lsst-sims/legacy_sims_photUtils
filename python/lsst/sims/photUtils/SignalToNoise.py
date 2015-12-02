@@ -316,18 +316,18 @@ def calcGamma(bandpass, m5, photParams):
 
     return gamma
 
-def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
+
+def calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=None):
     """
     Calculate signal to noise in flux using the model from equation (5) of arXiv:0805.2366
 
-    @param [in] magnitudes is a numpy array.  Each row is a different bandpass.
-    Each column is a different object, i.e. magnitudes[i][j] is the magnitude of the jth object
-    in the ith bandpass.
+    @param [in] magnitude of the sources whose signal to noise you are calculating
+    (can be a numpy array)
 
-    @param [in] bandpasses is a list of Bandpass objects corresponding to the
-    bandpasses in which magnitudes have been calculated
+    @param [in] bandpass (an instantiation of the class Bandpass) in which the magnitude
+    was calculated
 
-    @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
+    @param [in] m5 is the 5-sigma limiting magnitude for the bandpass
 
     @param [in] photParams is an instantiation of the
     PhotometricParameters class that carries details about the
@@ -336,62 +336,40 @@ def calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
-    @param [out] snr is a numpy array of the signal to noise ratio corresponding to
-    the input magnitudes.
+    @param [out] snr is the signal to noise ratio corresponding to
+    the input magnitude.
 
-    @param [out] gamma is a numpy array of the calculated gamma parameters for the
-    bandpasses used here (in case the user wants to call this method again.
+    @param [out] gamma is  the calculated gamma parameter for the
+    bandpass used here (in case the user wants to call this method again).
+
+    Note: You can also pass in a numpy array of magnitudes calculated
+    in the same bandpass with the same m5 and get a numpy array of SNR out.
     """
 
-    if magnitudes.shape[0] != len(bandpasses):
-        raise RuntimeError("Passed %d magnitudes to " % magnitudes.shape[0] + \
-                            " calcSNR_m5; " + \
-                            "passed %d bandpasses" % len(bandpasses))
-
-    if gamma is not None and len(gamma) != len(bandpasses):
-        raise RuntimeError("Passed %d bandpasses to " % len(bandpasses) + \
-                           " calcSNR_m5; " + \
-                           "passed %d gamma parameters" % len(gamma))
-
-    if len(m5) != len(bandpasses):
-        raise RuntimeError("Passed %d bandpasses to " % len(bandpasses) + \
-                           " calcSNR_m5; " + \
-                           "passed %d m5 values" % len(m5))
-
     if gamma is None:
-        gg = []
-        for b, m in zip(bandpasses, m5):
-            gg.append(calcGamma(b, m, photParams=photParams))
-
-        gamma = numpy.array(gg)
+        gamma = calcGamma(bandpass, m5, photParams=photParams)
 
     dummySed = Sed()
-    m5Fluxes = dummySed.fluxFromMag(m5)
-    sourceFluxes = dummySed.fluxFromMag(magnitudes)
+    m5Flux = dummySed.fluxFromMag(m5)
+    sourceFlux = dummySed.fluxFromMag(magnitude)
 
-    noise = []
-    for (gg, mf, ff) in zip(gamma, m5Fluxes, sourceFluxes):
-        fluxRatio = mf/ff
+    fluxRatio = m5Flux/sourceFlux
 
-        noiseSq = (0.04-gg)*fluxRatio+gg*fluxRatio*fluxRatio
+    noise = numpy.sqrt((0.04-gamma)*fluxRatio+gamma*fluxRatio*fluxRatio)
 
-        noise.append(numpy.sqrt(noiseSq))
-
-    return 1.0/numpy.array(noise), gamma
+    return 1.0/noise, gamma
 
 
-def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
+def calcMagError_m5(magnitude, bandpass, m5, photParams, gamma=None):
     """
     Calculate magnitude error using the model from equation (5) of arXiv:0805.2366
 
-    @param [in] magnitudes is a numpy array.  Each row is a different bandpass.
-    Each column is a different object, i.e. magnitudes[i][j] is the magnitude of the jth object
-    in the ith bandpass.
+    @param [in] magnitude of the source whose error you want
+    to calculate (can be a numpy array)
 
-    @param [in] bandpasses is a list of Bandpass objects corresponding to the
-    bandpasses in which magnitudes have been calculated
+    @param [in] bandpass (an instantiation of the Bandpass class) in question
 
-    @param [in] m5 is a numpy.array of 5-sigma limiting magnitudes, one for each bandpass.
+    @param [in] m5 is the 5-sigma limiting magnitude in that bandpass
 
     @param [in] photParams is an instantiation of the
     PhotometricParameters class that carries details about the
@@ -400,15 +378,21 @@ def calcMagError_m5(magnitudes, bandpasses, m5, photParams, gamma=None):
     @param [in] gamma (optional) is the gamma parameter from equation(5) of
     arXiv:0805.2366.  If not provided, this method will calculate it.
 
-    @param [out] is a numpy array of errors in magnitude
+    @param [out] the error associated with the magnitude
+
+    @param [out] gamma is  the calculated gamma parameter for the
+    bandpass used here (in case the user wants to call this method again).
+
+    Note: you can also pass in a numpy of array of magnitudes calculated in
+    the same Bandpass with the same m5 and get a numpy array of errors out.
     """
 
-    snr, gamma = calcSNR_m5(magnitudes, bandpasses, m5, photParams, gamma=gamma)
+    snr, gamma = calcSNR_m5(magnitude, bandpass, m5, photParams, gamma=gamma)
 
     if photParams.sigmaSys is not None:
-        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2))
+        return numpy.sqrt(numpy.power(magErrorFromSNR(snr),2) + numpy.power(photParams.sigmaSys,2)), gamma
     else:
-        return magErrorFromSNR(snr)
+        return magErrorFromSNR(snr), gamma
 
 
 def calcSNR_sed(sourceSed, totalbandpass, skysed, hardwarebandpass,
