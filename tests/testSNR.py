@@ -178,7 +178,7 @@ class TestSNRmethods(unittest.TestCase):
             sigma, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
 
             snrat = snr.calcSNR_sed(self.starSED, bp, normalizedSkyDummy, hardware,
-                                  seeing=LSSTdefaults().FWHMeff(filterName),
+                                  FWHMeff=LSSTdefaults().FWHMeff(filterName),
                                   photParams=PhotometricParameters())
 
             testSNR, gamma = snr.calcSNR_m5(mm, bp, m5, photParams=PhotometricParameters(sigmaSys=0.0))
@@ -226,7 +226,7 @@ class TestSNRmethods(unittest.TestCase):
 
 
             snrat = snr.calcSNR_sed(self.starSED, bp, normalizedSkyDummy, hardware,
-                              seeing=LSSTdefaults().FWHMeff(filterName),
+                              FWHMeff=LSSTdefaults().FWHMeff(filterName),
                               photParams=PhotometricParameters())
 
             testSNR, gamma = snr.calcSNR_m5(mm, bp, m5, photParams=PhotometricParameters(sigmaSys=0.0))
