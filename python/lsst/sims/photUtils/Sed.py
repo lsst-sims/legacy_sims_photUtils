@@ -953,7 +953,9 @@ class Sed(object):
         # Then just use this gridded wavelen/flambda to calculate fnu.
         # Print header.
         if print_header is not None:
-            print >>f, "#", print_header
+            if not print_header.startswith('#'):
+                print_header = '# ' + print_header
+            f.write(print_header)
         # Print standard header info.
         if print_fnu:
             wavelen, fnu = self.flambdaTofnu(wavelen, flambda)

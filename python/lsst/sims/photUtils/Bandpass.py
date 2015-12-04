@@ -457,7 +457,9 @@ class Bandpass:
         f = open(filename, 'w')
         # Print header.
         if print_header is not None:
-            print >>f, "#", print_header
+            if not print_header.startswith('#'):
+                print_header = '#' + print_header
+            f.write(print_header)
         if write_phi:
             if self.phi is None:
                 self.sbTophi()
