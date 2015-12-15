@@ -365,7 +365,8 @@ class Sed(object):
         return need_regrid
 
     def resampleSED(self, wavelen=None, flux=None, wavelen_match=None,
-                    wavelen_min=None, wavelen_max=None, wavelen_step=None, force=False):
+                    wavelen_min=None, wavelen_max=None, wavelen_step=None, force=False,
+                    fill_value=numpy.NaN):
         """
         Resample flux onto grid defined by min/max/step OR another wavelength array.
 
@@ -373,6 +374,9 @@ class Sed(object):
         Method either returns wavelen/flambda (if given those arrays) or updates wavelen/flambda in self.
          If updating self, resets fnu to None.
          Method will first check if resampling needs to be done or not, unless 'force' is True.
+
+        kwarg fill_value indicates what value will be filled into the SED if there is no information
+        in the requested range
         """
         # Check if need resampling:
         if force or (self._needResample(wavelen_match=wavelen_match, wavelen=wavelen, wavelen_min=wavelen_min,
@@ -397,7 +401,7 @@ class Sed(object):
             if (wavelen.max() < wavelen_grid.max()) or (wavelen.min() > wavelen_grid.min()):
                 warnings.warn('There is an area of non-overlap between desired wavelength range (%.2f to %.2f) and sed %s (%.2f to %2.f)' % (wavelen_grid.min(), wavelen_grid.max(), self.name, wavelen.min(), wavelen.max()))
             # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
-            f = interpolate.interp1d(wavelen, flux, bounds_error=False, fill_value=numpy.NaN)
+            f = interpolate.interp1d(wavelen, flux, bounds_error=False, fill_value=fill_value)
             flux_grid = f(wavelen_grid)
             # Update self values if necessary.
             if update_self:
