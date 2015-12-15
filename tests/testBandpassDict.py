@@ -67,12 +67,12 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertEqual(controlName, testName)
 
             for name, bp in zip(nameList, bpList):
-                numpy.testing.assert_array_almost_equal(bp.wavelen, testDict[name].wavelen, 19)
-                numpy.testing.assert_array_almost_equal(bp.sb, testDict[name].sb, 19)
+                numpy.testing.assert_array_almost_equal(bp.wavelen, testDict[name].wavelen, 10)
+                numpy.testing.assert_array_almost_equal(bp.sb, testDict[name].sb, 10)
 
             for bpControl, bpTest in zip(bpList, testDict.values()):
-                numpy.testing.assert_array_almost_equal(bpControl.wavelen, bpTest.wavelen, 19)
-                numpy.testing.assert_array_almost_equal(bpControl.sb, bpTest.sb, 19)
+                numpy.testing.assert_array_almost_equal(bpControl.wavelen, bpTest.wavelen, 10)
+                numpy.testing.assert_array_almost_equal(bpControl.sb, bpTest.sb, 10)
 
 
     def testWavelenMatch(self):
