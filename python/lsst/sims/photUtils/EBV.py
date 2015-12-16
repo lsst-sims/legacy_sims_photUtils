@@ -186,7 +186,7 @@ class EBVbase(object):
     """
 
     #these variables will tell the mixin where to get the dust maps
-    ebvDataDir=os.environ.get("SIMS_DUSTMAPS_DIR")
+    ebvDataDir = os.environ.get("SIMS_MAPS_DIR")
     ebvMapNorthName="DustMaps/SFD_dust_4096_ngp.fits"
     ebvMapSouthName="DustMaps/SFD_dust_4096_sgp.fits"
     ebvMapNorth=None
