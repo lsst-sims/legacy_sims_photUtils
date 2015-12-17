@@ -683,6 +683,18 @@ class TestSelectStarSED(unittest.TestCase):
                 self.assertEqual(names, testMatchingResults[0])
                 np.testing.assert_almost_equal(magNorms, testMatchingResults[1], decimal = magNormStep)
 
+        #Test Null Values option
+        nullMags = np.array(testMags[0])
+        nullMags[0][0] = -99.
+        nullMags[0][4] = -99.
+        nullMags[1][0] = -99.
+        nullMags[1][1] = -99.
+        testMatchingResultsNull = testMatching.findSED(testSEDList[0], nullMags,
+                                                       nullValues = -99., reddening = False)
+        self.assertEqual(testSEDNames[0], testMatchingResultsNull[0])
+        np.testing.assert_almost_equal(testMagNormList[0], testMatchingResultsNull[1],
+                                       decimal = magNormStep)
+
         #Test Error Output
         errMags = np.array((testMags[0][0], testMags[0][0], testMags[0][0], testMags[0][0]))
         errMags[1,1] += 1. #Total MSE will be 2/(4 colors) = 0.5
