@@ -126,7 +126,6 @@ class selectStarSED(matchStar):
             #This is done to handle objects with incomplete magnitude data
             colorRange = np.arange(0, len(starPhot)-1)
             filtNums = np.arange(0, len(starPhot))
-            print catObject
             if np.isnan(np.amin(catObject))==True:
                 colorRange = np.where(np.isnan(catObject)==False)[0]
                 filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm
