@@ -17,7 +17,7 @@ class selectStarSED(matchStar):
 
     def findSED(self, sedList, catMags, catRA = None, catDec = None, mag_error = None,
                 reddening = True, bandpassDict = None, colors = None, nullValues = None,
-                extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263), makeCopy = False):
+                extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263), makeCopy = False, verbose=True):
 
         """
         This will find the SEDs that are the closest match to the magnitudes of a star catalog.
@@ -130,7 +130,8 @@ class selectStarSED(matchStar):
                 colorRange = np.where(np.isnan(catObject)==False)[0]
                 filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm
             if len(colorRange) == 0:
-                print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn)
+                if verbose == True:
+                    print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn)
                 notMatched += 1
                 sedMatches.append(None)
                 magNormMatches.append(None)
