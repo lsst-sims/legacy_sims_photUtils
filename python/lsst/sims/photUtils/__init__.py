@@ -1,3 +1,4 @@
+from .version import *
 from .LSSTdefaults import *
 from .PhysicalParameters import *
 from .Sed import *
