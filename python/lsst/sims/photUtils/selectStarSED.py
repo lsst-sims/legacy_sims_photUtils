@@ -16,8 +16,8 @@ class selectStarSED(matchStar):
     """
 
     def findSED(self, sedList, catMags, catRA = None, catDec = None, mag_error = None,
-                reddening = True, bandpassDict = None, colors = None, 
-                extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263), makeCopy = False):
+                reddening = True, bandpassDict = None, colors = None, nullValues = None,
+                extCoeffs = (4.239, 3.303, 2.285, 1.698, 1.263), makeCopy = False, verbose=True):
 
         """
         This will find the SEDs that are the closest match to the magnitudes of a star catalog.
@@ -26,7 +26,7 @@ class selectStarSED(matchStar):
 
         @param [in] sedList is the set of spectral objects from the models SEDs provided by loaders in rgStar
         in rgUtils.py or other custom loader routine.
-        
+
         @param [in] catMags is an array of the magnitudes of catalog objects to be matched with a model SED.
         It should be organized so that there is one object's magnitudes along each row.
 
@@ -37,23 +37,27 @@ class selectStarSED(matchStar):
         @param [in] mag_error are provided error values for magnitudes in objectMags. If none provided
         then this defaults to 1.0. This should be an array of the same length as objectMags.
 
-        @param [in] reddening is a boolean that determines whether to correct catalog magnitudes for 
+        @param [in] reddening is a boolean that determines whether to correct catalog magnitudes for
         dust in the milky way. By default, it is True.
         If true, this uses calculateEBV from EBV.py to find an EBV value for the object's
         ra and dec coordinates and then uses the coefficients provided by extCoeffs which should come
         from Schlafly and Finkbeiner (2011) for the correct filters and in the same order as provided
         in bandpassDict.
         If false, this means it will not run the dereddening procedure.
-        
+
         @param [in] bandpassDict is a BandpassDict with which to calculate magnitudes. If left
-        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with 
+        equal to None it will by default load the SDSS [u,g,r,i,z] bandpasses and therefore agree with
         default extCoeffs.
-        
-        @param [in] colors is None if you are just providing a list of SED objects to match, but is the 
-        array holding the colors of those SED models (each row should be the colors for one model in the 
+
+        @param [in] colors is None if you are just providing a list of SED objects to match, but is the
+        array holding the colors of those SED models (each row should be the colors for one model in the
         same order as sedList) if you have already calculated the colors.
 
-        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) (ApJ, 737, 103)  coefficients for the 
+        @param [in] nullValues is None by default. This means that your catalog is complete and there is no
+        default value in your catalog for missing data. If you do have a number that indicates missing data
+        then set this parameter to that value and these missing values will be ignored when matching colors.
+
+        @param [in] extCoeffs are the Schlafly and Finkbeiner (2011) (ApJ, 737, 103)  coefficients for the
         given filters from bandpassDict and need to be in the same order as bandpassDict. The default given
         are the SDSS [u,g,r,i,z] values.
 
@@ -63,7 +67,7 @@ class selectStarSED(matchStar):
         @param [out] sedMatches is a list with the name of a model SED that matches most closely to each
         object in the catalog.
 
-        @param [out] magNormMatches are the magnitude normalizations for the given magnitudes and 
+        @param [out] magNormMatches are the magnitude normalizations for the given magnitudes and
         matched SED.
 
         @param [out] matchErrors contains the Mean Squared Error between the colors of each object and
@@ -77,13 +81,17 @@ class selectStarSED(matchStar):
                                             bandpassRoot = 'sdss_')
         else:
             starPhot = bandpassDict
-        
+
         if colors is None:
             modelColors = self.calcBasicColors(sedList, starPhot, makeCopy=makeCopy)
         else:
             modelColors = colors
         #Transpose so that all values for one color are in one row as needed for the matching loop below
         modelColors = np.transpose(modelColors)
+
+        #Set null values to nan so that we will skip them below
+        if nullValues is not None:
+            catMags[np.where(catMags == nullValues)] = np.nan
 
         if reddening == True:
             #Check that catRA and catDec are included
@@ -98,7 +106,7 @@ class selectStarSED(matchStar):
             objMags = self.deReddenMags(ebvVals, catMags, extCoeffs)
         else:
             objMags = catMags
-            
+
         objMags = np.array(objMags)
         matchColors = []
 
@@ -122,7 +130,8 @@ class selectStarSED(matchStar):
                 colorRange = np.where(np.isnan(catObject)==False)[0]
                 filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm
             if len(colorRange) == 0:
-                print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn)
+                if verbose == True:
+                    print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn)
                 notMatched += 1
                 sedMatches.append(None)
                 magNormMatches.append(None)
@@ -133,15 +142,15 @@ class selectStarSED(matchStar):
                     distanceArray += np.power((modelColors[colorNum] - catObject[colorNum]),2)
                 matchedSEDNum = np.nanargmin(distanceArray)
                 sedMatches.append(sedList[matchedSEDNum].name)
-                magNorm = self.calcMagNorm(objMags[numOn], sedList[matchedSEDNum], 
+                magNorm = self.calcMagNorm(objMags[numOn], sedList[matchedSEDNum],
                                            starPhot, filtRange = filtNums)
                 magNormMatches.append(magNorm)
                 matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange)) #Mean Squared Error
             numOn += 1
             if numOn % 10000 == 0:
                 print 'Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags)
-        if numCatMags > 1:        
-            print 'Done Matching. Matched %i of %i catalog objects to SEDs' % (numCatMags-notMatched, 
+        if numCatMags > 1:
+            print 'Done Matching. Matched %i of %i catalog objects to SEDs' % (numCatMags-notMatched,
                                                                                numCatMags)
         if notMatched > 0:
             print '%i objects did not get matched' % (notMatched)
