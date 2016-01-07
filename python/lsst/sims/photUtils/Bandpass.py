@@ -426,7 +426,7 @@ class Bandpass:
         flatsource = Sed()
         flatsource.setFlatSED(wavelen_min=self.wavelen_min, wavelen_max=self.wavelen_max,
                               wavelen_step=self.wavelen_step)
-        adu = flatsource.calcADU(self, photometricParameters=photometricParameters)
+        adu = flatsource.calcADU(self, photParams=photometricParameters)
         # Scale fnu so that adu is 1 count/expTime.
         flatsource.fnu = flatsource.fnu * (1/adu)
         # Now need to calculate AB magnitude of the source with this fnu.
