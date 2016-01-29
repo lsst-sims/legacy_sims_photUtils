@@ -1,5 +1,6 @@
 import numpy as np
 import unittest
+import lsst.utils.tests as utilsTests
 import warnings
 import os
 from lsst.sims.photUtils.Sed import Sed
@@ -88,9 +89,14 @@ class TestApplyIGM(unittest.TestCase):
         testSed.resampleSED(wavelen_match = testTable15Above300[:,0])
         np.testing.assert_allclose(testTable15Above300[:,1], testSed.flambda, 1e-4)
 
+def suite():
+    utilsTests.init()
+    suites = []
+    suites += unittest.makeSuite(TestApplyIGM)
+    return unittest.TestSuite(suites)
+
+def run(shouldExit = False):
+    utilsTests.run(suite(),shouldExit)
+
 if __name__ == "__main__":
-
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestApplyIGM)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
-    unittest.main()
+    run(True)
