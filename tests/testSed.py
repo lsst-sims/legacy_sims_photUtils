@@ -10,6 +10,7 @@ from lsst.sims.photUtils import PhotometricParameters
 
 class TestSedWavelenLimits(unittest.TestCase):
     def setUp(self):
+        warnings.simplefilter('always')
         self.wmin = 500
         self.wmax = 1500
         self.bandpasswavelen = np.arange(self.wmin, self.wmax+.5, 1)
