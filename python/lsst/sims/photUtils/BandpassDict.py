@@ -81,7 +81,7 @@ class BandpassDict(object):
                                 componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                                                  'lens1.dat', 'lens2.dat', 'lens3.dat'],
                                 atmoTransmission=os.path.join(getPackageDir('throughputs'),
-                                                              'baseline','atmos.dat')):
+                                                              'baseline','atmos_std.dat')):
         """
         Load bandpass information from files into BandpassDicts.
         This method will separate the bandpasses into contributions due to instrumentations
@@ -104,7 +104,7 @@ class BandpassDict(object):
         for LSST).  These files are also expected to be stored in filedir
 
         @param [in] atmoTransmission is the absolute path to the file representing the
-        transmissivity of the atmosphere (defaults to baseline/atmos.dat in the LSST
+        transmissivity of the atmosphere (defaults to baseline/atmos_std.dat in the LSST
         'throughputs' package).
 
         @param [out] bandpassDict is a BandpassDict containing the total
