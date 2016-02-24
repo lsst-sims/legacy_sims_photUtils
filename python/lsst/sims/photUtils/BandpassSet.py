@@ -102,7 +102,7 @@ class BandpassSet():
     def setThroughputs_ComponentFiles(self, filterlist=('u', 'g', 'r', 'i', 'z', 'y'),
                                       all_filter_complist = ('detector.dat', 'lens1.dat', 'lens2.dat',
                                                              'lens3.dat', 'm1.dat', 'm2.dat', 'm3.dat',
-                                                             'atmos.dat'),
+                                                             'atmos_std.dat'),
                                       rootdir = "./", verbose=True):
         """Read and build bandpass set from all_filter_complist, using data from directory rootdir.
         Note that with this method, every bandpass will be the same. The point is that then you can
@@ -446,7 +446,7 @@ class BandpassSet():
             drop_peak_blue = self.drop_peak_blue
         # read files for atmosphere and optional comparison throughputs
         if atmos:
-            atmosfile = os.path.join(rootdir, 'atmos.dat')
+            atmosfile = os.path.join(rootdir, 'atmos_std.dat')
             atmosphere = Bandpass()
             atmosphere.readThroughput(atmosfile)
         Xatm=_stdX
