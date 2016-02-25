@@ -549,9 +549,8 @@ class TestSelectGalaxySED(unittest.TestCase):
         testMatchingResultsErrors = testMatching.matchToObserved([errSED], errMags, errRedshifts,
                                                                  reddening = False,
                                                                  bandpassDict = galPhot)
-        print testMatchingResultsErrors
         np.testing.assert_almost_equal(np.array((0.0, 0.4, 2./3.)), testMatchingResultsErrors[2][0:3],
-                                       decimal = 1) #Give a little more leeway due to redshifting effects
+                                       decimal = 2) #Give a little more leeway due to redshifting effects
         self.assertEqual(None, testMatchingResultsErrors[2][3])
 
     @classmethod
