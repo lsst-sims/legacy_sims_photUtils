@@ -244,7 +244,7 @@ class Bandpass:
     def readThroughputList(self, componentList=['detector.dat', 'lens1.dat',
                                                 'lens2.dat', 'lens3.dat',
                                                 'm1.dat', 'm2.dat', 'm3.dat',
-                                                'atmos.dat'],
+                                                'atmos_std.dat'],
                            rootDir = '.',
                            wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
@@ -256,7 +256,7 @@ class Bandpass:
         # ComponentList = names of files in that directory.
         # A typical component list of all files to build final component list, including filter, might be:
         #   componentList=['detector.dat', 'lens1.dat', 'lens2.dat', 'lens3.dat',
-        #                 'm1.dat', 'm2.dat', 'm3.dat', 'atmos.dat', 'ideal_g.dat']
+        #                 'm1.dat', 'm2.dat', 'm3.dat', 'atmos_std.dat', 'ideal_g.dat']
         #
         # Set wavelen limits for this object, if any updates have been given.
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
