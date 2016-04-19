@@ -1,8 +1,6 @@
 import unittest
 import os
-import shutil
 import numpy as np
-import re
 import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.selectStarSED import selectStarSED
@@ -14,7 +12,6 @@ from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils import BandpassDict
-from lsst.sims.utils import SpecMap
 
 class TestMatchBase(unittest.TestCase):
 
