@@ -140,11 +140,13 @@ class TestMatchStar(unittest.TestCase):
         cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
 
     def testDefaults(self):
-        """Make sure that if there are Nones for the init that they load the correct dirs"""
+        """Make sure that if there are Nones for the desired spectra directory
+        that an error message is raised"""
+
         loadTest = matchStar()
-        self.assertEqual(loadTest.kuruczDir, self.kDir)
-        self.assertEqual(loadTest.mltDir, self.mltDir)
-        self.assertEqual(loadTest.wdDir, self.wdDir)
+        self.assertRaises(ValueError, loadTest.loadKuruczSEDs)
+        self.assertRaises(ValueError, loadTest.loadmltSEDs)
+        self.assertRaises(ValueError, loadTest.loadwdSEDs)
 
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
@@ -237,7 +239,9 @@ class TestMatchStar(unittest.TestCase):
         #Test same condition if subset is provided
         testSubsetList = ['bergeron_10000_75.dat_10100.gz', 'bergeron_He_9000_80.dat_9400.gz']
 
-        testSEDsSubsetH, testSEDsSubsetHE = selectStarSED().loadwdSEDs(subset = testSubsetList)
+        testSEDsSubsetH, testSEDsSubsetHE = selectStarSED(wdDir=
+                                                          self.testWDDir).loadwdSEDs(subset=
+                                                                                     testSubsetList)
 
         testNamesSubset = []
         for testH in testSEDsSubsetH:
@@ -271,6 +275,13 @@ class TestMatchGalaxy(unittest.TestCase):
         cls.testSpecDir = 'cartoonSedTestData/galaxySed'
 
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
+
+    def testDefaults(self):
+        """Make sure that if there are Nones for the desired spectra directory
+        that an error message is raised"""
+
+        loadTest = matchGalaxy()
+        self.assertRaises(ValueError, loadTest.loadBC03)
 
     def testLoadBC03(self):
         """Test Loader for Bruzual and Charlot Galaxies"""
@@ -493,8 +504,9 @@ class TestSelectStarSED(unittest.TestCase):
 
     def testReddeningException(self):
         """Test that if reddening=True in matchToObserved CatRA & CatDec are defined or exception is raised"""
-        testException = selectStarSED(sEDDir = self.testSpecDir, kuruczDir = self.testKDir,
-                                      mltDir = self.testMLTDir, wdDir = self.testWDDir)
+        testException = selectStarSED(kuruczDir=self.testKDir,
+                                      mltDir=self.testMLTDir,
+                                      wdDir=self.testWDDir)
         testSEDList = testException.loadKuruczSEDs()
         magnitudes = [[1.0, 2.0, 3.0, 4.0, 5.0], [1.0, 2.0, 3.0, 4.0, 5.0]]
         self.assertRaises(RuntimeError, testException.findSED, testSEDList, magnitudes,
@@ -511,8 +523,9 @@ class TestSelectStarSED(unittest.TestCase):
         imSimBand = Bandpass()
         imSimBand.imsimBandpass()
 
-        testMatching = selectStarSED(sEDDir = self.testSpecDir, kuruczDir = self.testKDir,
-                                     mltDir = self.testMLTDir, wdDir = self.testWDDir)
+        testMatching = selectStarSED(kuruczDir=self.testKDir,
+                                     mltDir=self.testMLTDir,
+                                     wdDir=self.testWDDir)
         testSEDList = []
         testSEDList.append(testMatching.loadKuruczSEDs())
         testSEDList.append(testMatching.loadmltSEDs())

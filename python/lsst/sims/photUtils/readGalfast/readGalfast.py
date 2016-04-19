@@ -166,8 +166,9 @@ class readGalfast():
 
         #If all files exist and are in proper formats then load seds
 
-        selectStarSED0 = selectStarSED(sEDDir = sEDPath, kuruczDir = kuruczPath,
-                                       mltDir = mltPath, wdDir = wdPath)
+        selectStarSED0 = selectStarSED(kuruczDir=kuruczPath,
+                                       mltDir=mltPath,
+                                       wdDir=wdPath)
 
         if kuruczSubset is None:
             kuruczList = selectStarSED0.loadKuruczSEDs()
@@ -352,7 +353,7 @@ class readGalfast():
                                                                          reddening = False,
                                                                          colors = colorDict['H'])
                 sEDNameHE, magNormHE, matchErrorHE = selectStarSED0.findSED(listDict['HE'],
-                                                                            sDSSunred[heIn], 
+                                                                            sDSSunred[heIn],
                                                                             ra[heIn], dec[heIn],
                                                                             reddening = False,
                                                                             colors = colorDict['HE'])
@@ -377,7 +378,7 @@ class readGalfast():
                 chunkMagNorms[heIn] = magNormHE
                 chunkMatchErrors[heIn] = matchErrorHE
                 lsstMagsUnred = []
-                for sedName, sedType, magNorm, matchError in zip(chunkNames, chunkTypes, chunkMagNorms, 
+                for sedName, sedType, magNorm, matchError in zip(chunkNames, chunkTypes, chunkMagNorms,
                                                                  chunkMatchErrors):
                     testSED = Sed()
                     testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen,
@@ -405,7 +406,7 @@ class readGalfast():
                         if inFits == True:
                             sDSS = sDSS[0]
                         outDat = (oID, ra[line], dec[line], gall, galb, coordX,
-                                  coordY, coordZ, chunkNames, 
+                                  coordY, coordZ, chunkNames,
                                   chunkMagNorms, chunkMatchErrors,
                                   lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
                                   lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],
@@ -415,7 +416,7 @@ class readGalfast():
                                   FeH, pop, distKpc, ebv, ebvInf)
                     else:
                         outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line],
-                                  coordY[line], coordZ[line], chunkNames[line], 
+                                  coordY[line], coordZ[line], chunkNames[line],
                                   chunkMagNorms[line], chunkMatchErrors[line],
                                   lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
                                   lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],
