@@ -21,12 +21,7 @@ class TestMatchBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        specMap = SpecMap()
-        specFileStart = 'Exp'
-        for key, val in sorted(specMap.subdir_map.iteritems()):
-            if re.match(key, specFileStart):
-                galSpecDir = str(val)
-        cls.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir + '/')
+        cls.galDir = str('cartoonSedTestData' + '/galaxySed/')
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
     @classmethod
@@ -134,48 +129,15 @@ class TestMatchStar(unittest.TestCase):
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testMatchSEDs we can detect it.
-        specMap = SpecMap()
-        cls._specMapDict = {}
-        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
-        specFileTypes = ['kurucz', 'mlt','wd']
-        for specStart, specKey in zip(specFileStart, specFileTypes):
-            for key, val in sorted(specMap.subdir_map.iteritems()):
-                if re.match(key, specStart):
-                    cls._specMapDict[specKey] = str(val)
 
         cls.kmTestName = 'km99_9999.fits_g99_9999'
         cls.mTestName = 'm99.99Full.dat'
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'testMatchingSpectra'
+        cls.testSpecDir = 'cartoonSedTestData'
         cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
         cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
         cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
-
-        if os.path.exists(cls.testSpecDir):
-            shutil.rmtree(cls.testSpecDir)
-
-        os.makedirs(cls.testKDir)
-        os.mkdir(cls.testMLTDir)
-        os.mkdir(cls.testWDDir)
-        cls.kDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
-        kList = os.listdir(cls.kDir)[0:20]
-        #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(kList,
-                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)],
-                                          np.array(os.listdir(cls.wdDir))[np.arange(-10,11)]):
-            shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
-            shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))
-            shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
-        #Load in extra kurucz to test Logz Readout
-        if 'km01_7000.fits_g40_7140.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'),
-                            str(cls.testKDir + 'km01_7000.fits_g40_7140.gz'))
-        if 'kp01_7000.fits_g40_7240.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'),
-                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))
 
     def testDefaults(self):
         """Make sure that if there are Nones for the init that they load the correct dirs"""
@@ -292,46 +254,21 @@ class TestMatchStar(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls._specMapDict
-        del cls.kDir
-        del cls.mltDir
-        del cls.wdDir
-
-        if os.path.exists(cls.kmTestName):
-            os.unlink(cls.kmTestName)
-
-        if os.path.exists(cls.mTestName):
-            os.unlink(cls.mTestName)
+        del cls.testSpecDir
+        del cls.testKDir
+        del cls.testMLTDir
+        del cls.testWDDir
 
         del cls.kmTestName
         del cls.mTestName
-
-        shutil.rmtree(cls.testSpecDir)
 
 class TestMatchGalaxy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        specMap = SpecMap()
-        specFileStart = 'Exp'
-        for key, val in sorted(specMap.subdir_map.iteritems()):
-            if re.match(key, specFileStart):
-                galSpecDir = str(val)
-        cls.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir + '/')
-
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'testGalaxySEDSpectrum/'
-
-        if os.path.exists(cls.testSpecDir):
-            shutil.rmtree(cls.testSpecDir)
-
-        os.mkdir(cls.testSpecDir)
-
-        galList = os.listdir(cls.galDir)[0:20]
-
-        for galFile in galList:
-            shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
+        cls.testSpecDir = 'cartoonSedTestData/galaxySed'
 
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
@@ -367,35 +304,15 @@ class TestMatchGalaxy(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.galDir
-        del cls.filterList
-
-        shutil.rmtree(cls.testSpecDir)
+        del cls.testSpecDir
 
 class TestSelectGalaxySED(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        specMap = SpecMap()
-        specFileStart = 'Exp'
-        for key, val in sorted(specMap.subdir_map.iteritems()):
-            if re.match(key, specFileStart):
-                galSpecDir = str(val)
-        cls.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir + '/')
-
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'testGalaxySEDSpectrum/'
-
-        if os.path.exists(cls.testSpecDir):
-            shutil.rmtree(cls.testSpecDir)
-
-        os.mkdir(cls.testSpecDir)
-
-        galList = os.listdir(cls.galDir)[0:20]
-
-        for galFile in galList:
-            shutil.copy(str(cls.galDir + galFile), str(cls.testSpecDir + galFile))
+        cls.testSpecDir = 'cartoonSedTestData/galaxySed'
 
     def testMatchToRestFrame(self):
         """Test that Galaxies with no effects added into catalog mags are matched correctly."""
@@ -512,10 +429,10 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMagsRedshift.append(galPhot.magListForSed(getRedshiftMags))
 
         #Will also test in passing of non-default bandpass
-        testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testMags, np.zeros(20),
+        testNoExtNoRedshift = testMatching.matchToObserved(testSEDList, testMags, np.zeros(8),
                                                            reddening = False,
                                                            bandpassDict = galPhot)
-        testMatchingEbvVals = testMatching.matchToObserved(testSEDList, testMagsExt, np.zeros(20),
+        testMatchingEbvVals = testMatching.matchToObserved(testSEDList, testMagsExt, np.zeros(8),
                                                            catRA = testRA, catDec = testDec,
                                                            reddening = True, extCoeffs = extCoeffs,
                                                            bandpassDict = galPhot)
@@ -555,8 +472,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.galDir
-        shutil.rmtree(cls.testSpecDir)
+        del cls.testSpecDir
 
 class TestSelectStarSED(unittest.TestCase):
 
@@ -565,48 +481,15 @@ class TestSelectStarSED(unittest.TestCase):
 
         #Left this in after removing loading SEDs so that we can make sure that if the structure of
         #sims_sed_library changes in a way that affects testMatchSEDs we can detect it.
-        specMap = SpecMap()
-        cls._specMapDict = {}
-        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
-        specFileTypes = ['kurucz', 'mlt','wd']
-        for specStart, specKey in zip(specFileStart, specFileTypes):
-            for key, val in sorted(specMap.subdir_map.iteritems()):
-                if re.match(key, specStart):
-                    cls._specMapDict[specKey] = str(val)
 
         cls.kmTestName = 'km99_9999.fits_g99_9999'
         cls.mTestName = 'm99.99Full.dat'
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'testMatchingSpectra'
+        cls.testSpecDir = 'cartoonSedTestData'
         cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
         cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
         cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
-
-        if os.path.exists(cls.testSpecDir):
-            shutil.rmtree(cls.testSpecDir)
-
-        os.makedirs(cls.testKDir)
-        os.mkdir(cls.testMLTDir)
-        os.mkdir(cls.testWDDir)
-        cls.kDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
-        kList = os.listdir(cls.kDir)[0:3]
-        #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(kList,
-                                          np.array(os.listdir(cls.mltDir))[np.arange(-3,0)],
-                                          np.array(os.listdir(cls.wdDir))[np.arange(-1,2)]):
-            shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
-            shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))
-            shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
-        #Load in extra kurucz to test Logz Readout
-        if 'km01_7000.fits_g40_7140.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'km01_7000.fits_g40_7140.gz'),
-                            str(cls.testKDir + 'km01_7000.fits_g40_7140.gz'))
-        if 'kp01_7000.fits_g40_7240.gz' not in kList:
-            shutil.copyfile(str(cls.kDir + 'kp01_7000.fits_g40_7240.gz'),
-                            str(cls.testKDir + 'kp01_7000.fits_g40_7240.gz'))
 
     def testReddeningException(self):
         """Test that if reddening=True in matchToObserved CatRA & CatDec are defined or exception is raised"""
@@ -747,21 +630,13 @@ class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls._specMapDict
-        del cls.kDir
-        del cls.mltDir
-        del cls.wdDir
-
-        if os.path.exists(cls.kmTestName):
-            os.unlink(cls.kmTestName)
-
-        if os.path.exists(cls.mTestName):
-            os.unlink(cls.mTestName)
+        del cls.testSpecDir
+        del cls.testKDir
+        del cls.testMLTDir
+        del cls.testWDDir
 
         del cls.kmTestName
         del cls.mTestName
-
-        shutil.rmtree(cls.testSpecDir)
 
 def suite():
     utilsTests.init()
