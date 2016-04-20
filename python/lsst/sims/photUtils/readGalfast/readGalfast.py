@@ -130,16 +130,13 @@ class readGalfast():
         @param [in] outFileList is a list of the names of the output files that will be created. If gzipped
         output is desired simply write the filenames with .gz at the end.
 
-        @param [in] kuruczPath is a place to specify a different path to kurucz SED files than the
-        files in the LSST sims_sed_library. If set to None it will default to the LSST library.
-        Will probably be most useful for those who want to use loadGalfast without downloading the
-        entire LSST sims_sed_library which contains much more than just the star SEDs.
+        @param [in] kuruczPath is a place to specify a path to kurucz SED files
 
         @param [in] mltPath is the same as kuruczPath except that it specifies a directory for the
         mlt SEDs
 
-        @param [in] wdPath is the same as the previous two except that it specifies a path to an
-        alternate white dwarf SED directory.
+        @param [in] wdPath is the same as the previous two except that it specifies a path to a
+        white dwarf SED directory.
 
         @param [in] kuruczSubset is a list which provides a subset of the kurucz files within the
         kurucz folder that one wants to use
