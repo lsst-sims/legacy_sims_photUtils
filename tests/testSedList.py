@@ -12,8 +12,7 @@ class SedListTest(unittest.TestCase):
 
     def setUp(self):
         numpy.random.seed(18233)
-        self.sedDir = os.path.join(getPackageDir('sims_sed_library'))
-        self.sedDir = os.path.join(self.sedDir, 'galaxySED')
+        self.sedDir = 'cartoonSedTestData/galaxySed'
         self.sedPossibilities = os.listdir(self.sedDir)
 
     def getListOfSedNames(self, nNames):

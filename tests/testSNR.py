@@ -14,9 +14,7 @@ class TestSNRmethods(unittest.TestCase):
 
     def setUp(self):
 
-        starFileName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),'starSED')
-        starFileName = os.path.join(starFileName, 'kurucz','km20_5750.fits_g40_5790.gz')
-        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),starFileName)
+        starName = 'cartoonSedTestData/starSed/kurucz/km20_5750.fits_g40_5790.gz'
         self.starSED = Sed()
         self.starSED.readSED_flambda(starName)
         imsimband = Bandpass()
@@ -117,8 +115,8 @@ class TestSNRmethods(unittest.TestCase):
                       photParams, FWHMeff=defaults.FWHMeff(self.filterNameList[i])))
 
 
-        sedDir = lsst.utils.getPackageDir('sims_sed_library')
-        sedDir = os.path.join(sedDir, 'starSED', 'kurucz')
+        sedDir = 'cartoonSedTestData/starSed'
+        sedDir = os.path.join(sedDir, 'kurucz')
         fileNameList = os.listdir(sedDir)
 
         numpy.random.seed(42)

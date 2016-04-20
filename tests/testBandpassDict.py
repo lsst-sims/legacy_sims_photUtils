@@ -15,8 +15,7 @@ class BandpassDictTest(unittest.TestCase):
         numpy.random.seed(32)
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
         self.bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
-        self.sedDir = os.path.join(getPackageDir('sims_sed_library'))
-        self.sedDir = os.path.join(self.sedDir, 'galaxySED')
+        self.sedDir = 'cartoonSedTestData/galaxySed'
         self.sedPossibilities = os.listdir(self.sedDir)
 
 
