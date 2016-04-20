@@ -12,13 +12,14 @@ from lsst.sims.photUtils.EBV import EBVbase as ebv
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils import BandpassDict
+from lsst.utils import getPackageDir
 
 class TestMatchBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        cls.galDir = 'cartoonSedTestData/galaxySed/'
+        cls.galDir = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
     @classmethod
@@ -131,10 +132,10 @@ class TestMatchStar(unittest.TestCase):
         cls.mTestName = 'm99.99Full.dat'
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'cartoonSedTestData'
-        cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
-        cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
-        cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
+        cls.testSpecDir = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/starSed/')
+        cls.testKDir = str(cls.testSpecDir + 'kurucz/')
+        cls.testMLTDir = str(cls.testSpecDir + 'mlt/')
+        cls.testWDDir = str(cls.testSpecDir + 'wDs/')
 
     def testDefaults(self):
         """Make sure that if there are Nones for the desired spectra directory
@@ -269,7 +270,7 @@ class TestMatchGalaxy(unittest.TestCase):
     def setUpClass(cls):
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'cartoonSedTestData/galaxySed'
+        cls.testSpecDir = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
 
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
@@ -320,7 +321,7 @@ class TestSelectGalaxySED(unittest.TestCase):
     def setUpClass(cls):
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'cartoonSedTestData/galaxySed'
+        cls.testSpecDir = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
 
     def testMatchToRestFrame(self):
         """Test that Galaxies with no effects added into catalog mags are matched correctly."""
@@ -495,10 +496,10 @@ class TestSelectStarSED(unittest.TestCase):
         cls.mTestName = 'm99.99Full.dat'
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'cartoonSedTestData'
-        cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
-        cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
-        cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
+        cls.testSpecDir = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/starSed/')
+        cls.testKDir = str(cls.testSpecDir + 'kurucz/')
+        cls.testMLTDir = str(cls.testSpecDir + 'mlt/')
+        cls.testWDDir = str(cls.testSpecDir + 'wDs/')
 
     def testReddeningException(self):
         """Test that if reddening=True in matchToObserved CatRA & CatDec are defined or exception is raised"""

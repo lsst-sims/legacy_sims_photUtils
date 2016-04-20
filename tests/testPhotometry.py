@@ -57,8 +57,9 @@ class photometryUnitTest(unittest.TestCase):
         sedObj = Sed()
         phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
 
-        sedFileName = 'cartoonSedTestData/starSed/kurucz'
-        sedFileName = os.path.join(sedFileName,'km20_5750.fits_g40_5790.gz')
+        sedFileName = os.path.join(lsst.utils.getPackageDir('sims_photUtils'),
+                                   'tests/cartoonSedTestData/starSed/')
+        sedFileName = os.path.join(sedFileName,'kurucz','km20_5750.fits_g40_5790.gz')
         ss = Sed()
         ss.readSED_flambda(sedFileName)
 
@@ -114,7 +115,8 @@ class uncertaintyUnitTest(unittest.TestCase):
     """
 
     def setUp(self):
-        starName = 'cartoonSedTestData/starSed/kurucz/km20_5750.fits_g40_5790.gz'
+        starName = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/starSed/')
+        starName = os.path.join(starName, 'kurucz', 'km20_5750.fits_g40_5790.gz')
         self.starSED = Sed()
         self.starSED.readSED_flambda(starName)
         imsimband = Bandpass()

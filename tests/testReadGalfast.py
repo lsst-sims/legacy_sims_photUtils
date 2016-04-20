@@ -8,7 +8,7 @@ import re
 import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
-from lsst.sims.utils import SpecMap
+from lsst.utils import getPackageDir
 
 class TestReadGalfast(unittest.TestCase):
 
@@ -16,7 +16,8 @@ class TestReadGalfast(unittest.TestCase):
     def setUpClass(cls):
 
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'cartoonSedTestData/starSed/'
+        cls.testSpecDir = os.path.join(getPackageDir('sims_photUtils'),
+                                       'tests/cartoonSedTestData/starSed/')
         cls.testKDir = str(cls.testSpecDir + '/kurucz/')
         cls.testMLTDir = str(cls.testSpecDir + '/mlt/')
         cls.testWDDir = str(cls.testSpecDir + '/wDs/')

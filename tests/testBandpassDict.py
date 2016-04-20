@@ -15,7 +15,8 @@ class BandpassDictTest(unittest.TestCase):
         numpy.random.seed(32)
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
         self.bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
-        self.sedDir = 'cartoonSedTestData/galaxySed'
+        self.sedDir = os.path.join(getPackageDir('sims_photUtils'),
+                                   'tests/cartoonSedTestData/starSed/kurucz')
         self.sedPossibilities = os.listdir(self.sedDir)
 
 
@@ -654,7 +655,8 @@ class BandpassDictTest(unittest.TestCase):
         expected result
         """
 
-        fileDir = os.path.join(getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
+        fileDir = os.path.join(getPackageDir('sims_photUtils'),
+                               'tests', 'cartoonSedTestData')
         bandpassNames = ['g', 'z', 'i']
         bandpassRoot='test_bandpass_'
         componentList = ['toy_mirror.dat']

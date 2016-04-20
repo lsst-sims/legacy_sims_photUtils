@@ -18,7 +18,8 @@ class TestApplyIGM(unittest.TestCase):
         #Make sure that if we initialize IGM with new inputs that it is initializing with them
         testIGM = ApplyIGM()
         testSed = Sed()
-        testSed.readSED_flambda('cartoonSedTestData/galaxySed/Burst.10E08.002Z.spec.gz')
+        sedName = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
+        testSed.readSED_flambda(os.path.join(sedName, 'Burst.10E08.002Z.spec.gz'))
         testIGM.applyIGM(1.8, testSed)
         testZmin = 1.8
         testZmax = 2.2
@@ -68,7 +69,8 @@ class TestApplyIGM(unittest.TestCase):
 
         #Test that a warning comes up if input redshift is out of range and that no changes occurs to SED
         testSed = Sed()
-        testSed.readSED_flambda('cartoonSedTestData/galaxySed/Burst.10E08.002Z.spec.gz')
+        sedName = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
+        testSed.readSED_flambda(os.path.join(sedName, 'Burst.10E08.002Z.spec.gz'))
         testFlambda = []
         for fVal in testSed.flambda:
             testFlambda.append(fVal)
