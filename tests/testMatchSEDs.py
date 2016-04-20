@@ -18,7 +18,7 @@ class TestMatchBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.galDir = str('cartoonSedTestData' + '/galaxySed/')
+        cls.galDir = 'cartoonSedTestData/galaxySed/'
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
 
     @classmethod

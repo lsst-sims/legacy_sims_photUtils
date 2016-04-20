@@ -5,7 +5,6 @@ import unittest
 import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.utils import defaultSpecMap
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
@@ -58,7 +57,7 @@ class photometryUnitTest(unittest.TestCase):
         sedObj = Sed()
         phiArray, waveLenStep = sedObj.setupPhiArray(bplist)
 
-        sedFileName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),'starSED','kurucz')
+        sedFileName = 'cartoonSedTestData/starSed/kurucz'
         sedFileName = os.path.join(sedFileName,'km20_5750.fits_g40_5790.gz')
         ss = Sed()
         ss.readSED_flambda(sedFileName)
@@ -115,7 +114,7 @@ class uncertaintyUnitTest(unittest.TestCase):
     """
 
     def setUp(self):
-        starName = os.path.join(lsst.utils.getPackageDir('sims_sed_library'),defaultSpecMap['km20_5750.fits_g40_5790'])
+        starName = 'cartoonSedTestData/starSed/kurucz/km20_5750.fits_g40_5790.gz'
         self.starSED = Sed()
         self.starSED.readSED_flambda(starName)
         imsimband = Bandpass()
