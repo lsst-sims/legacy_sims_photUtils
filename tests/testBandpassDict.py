@@ -16,7 +16,7 @@ class BandpassDictTest(unittest.TestCase):
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
         self.bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
         self.sedDir = os.path.join(getPackageDir('sims_photUtils'),
-                                   'tests/cartoonSedTestData/starSed/kurucz')
+                                   'tests/cartoonSedTestData/galaxySed')
         self.sedPossibilities = os.listdir(self.sedDir)
 
 
