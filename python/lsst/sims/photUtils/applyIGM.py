@@ -41,8 +41,10 @@ class ApplyIGM(object):
         self.zRange = np.arange(zMin, zMax + (zDelta/2.), zDelta)
 
         if self.tablesPresent == False:
-            self.loadTables(str(str(getPackageDir('sims_photUtils')) +
-                            '/python/lsst/sims/photUtils/igm_tables'))
+            table_dir = getPackageDir('sims_photUtils')
+            table_dir = os.path.join(table_dir,
+                                     'python/lsst/sims/photUtils/igm_tables')
+            self.loadTables(table_dir)
 
         self.IGMisInitialized = True
 
