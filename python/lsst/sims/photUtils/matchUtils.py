@@ -7,10 +7,9 @@ Created on Wed Feb 25 14:07:03 2015
 import numpy as np
 import os
 import re
-
+import lsst.utils
 from .Sed import Sed
 from .Bandpass import Bandpass
-import lsst.utils
 from lsst.sims.utils import SpecMap
 
 __all__ = ["matchBase", "matchStar", "matchGalaxy"]
@@ -138,9 +137,13 @@ class matchStar(matchBase):
     the format of those included here.
     """
 
-    def __init__(self, kuruczDir = None, mltDir = None, wdDir = None):
+    def __init__(self, sEDDir=None, kuruczDir=None, mltDir=None, wdDir=None):
 
         """
+        @param [in] sEDDir is a place to specify a different path to a directory that follows the same
+        directory structure as SIMS_SED_LIBRARY. If not specified, this will
+        attempt to default to the SIMS_SED_LIBRARY.
+
         @param [in] kuruczDir is a place to specify a different path to kurucz SED files than the
         files in the LSST sims_sed_library. If set to None it will default to the LSST library.
         Will probably be most useful for those who want to use loadGalfast without downloading the
@@ -152,9 +155,28 @@ class matchStar(matchBase):
         @param [in] wdDir is the same as the previous two except that it specifies a path to an
         alternate white dwarf SED directory.
         """
+        #Use SpecMap to pull the directory locations
+        specMap = SpecMap()
+        self.specMapDict = {}
+        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
+        specFileTypes = ['kurucz', 'mlt', 'wd']
+        for specStart, specKey in zip(specFileStart, specFileTypes):
+            for key, val in sorted(specMap.subdir_map.iteritems()):
+                if re.match(key, specStart):
+                    self.specMapDict[specKey] = str(val)
+
+        if sEDDir is None:
+            try:
+                self.sEDDir = lsst.utils.getPackageDir('sims_sed_library')
+            except:
+                self.sEDDir = None
+        else:
+            self.sEDDir = sEDDir
+
         self.kuruczDir = kuruczDir
         self.mltDir = mltDir
         self.wdDir = wdDir
+
 
     def loadKuruczSEDs(self, subset = None):
         """
@@ -170,7 +192,12 @@ class matchStar(matchBase):
         """
 
         if self.kuruczDir is None:
-            raise ValueError('self.kuruczDir is None. Add path to kurucz directory.')
+            try:
+                self.kuruczDir = str(self.sEDDir + '/' +
+                                     self.specMapDict['kurucz'] + '/')
+            except:
+                raise ValueError(str('self.kuruczDir is None. ' +
+                                     'Add path to kurucz directory.'))
 
         files = []
 
@@ -229,7 +256,12 @@ class matchStar(matchBase):
         """
 
         if self.mltDir is None:
-            raise ValueError('self.mltDir is None. Add path to mlt directory.')
+            try:
+                self.mltDir = str(self.sEDDir + '/' +
+                                  self.specMapDict['mlt'] + '/')
+            except:
+                raise ValueError(str('self.mltDir is None. ' +
+                                     'Add path to mlt directory.'))
 
         files = []
 
@@ -282,7 +314,13 @@ class matchStar(matchBase):
         """
 
         if self.wdDir is None:
-            raise ValueError('self.wdDir is None. Add path to wd directory.')
+            try:
+                self.wdDir = str(self.sEDDir + '/' +
+                                 self.specMapDict['wd'] + '/')
+            except:
+                raise ValueError(str('self.wdDir is None. ' +
+                                     'Add path to wddirectory.'))
+
 
         files = []
 
@@ -332,8 +370,17 @@ class matchGalaxy(matchBase):
         """
         @param [in] galDir is the directory where the galaxy SEDs are stored
         """
+        if galDir is None:
+            # Use SpecMap to pull in directory's location in LSST Stack
+            specMap = SpecMap()
+            specFileStart = 'Exp' #Start of sample BC03 name in sims_sed_library
+            for key, val in sorted(specMap.subdir_map.iteritems()):
+                if re.match(key, specFileStart):
+                    galSpecDir = str(val)
+            self.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir)
+        else:
+            self.galDir = galDir
 
-        self.galDir = galDir
 
     def loadBC03(self, subset = None):
 

@@ -137,15 +137,6 @@ class TestMatchStar(unittest.TestCase):
         cls.testMLTDir = str(cls.testSpecDir + 'mlt/')
         cls.testWDDir = str(cls.testSpecDir + 'wDs/')
 
-    def testDefaults(self):
-        """Make sure that if there are Nones for the desired spectra directory
-        that an error message is raised"""
-
-        loadTest = matchStar()
-        self.assertRaises(ValueError, loadTest.loadKuruczSEDs)
-        self.assertRaises(ValueError, loadTest.loadmltSEDs)
-        self.assertRaises(ValueError, loadTest.loadwdSEDs)
-
     def testLoadKurucz(self):
         """Test SED loading algorithm by making sure SEDs are all accounted for """
         #Test Matching to Kurucz SEDs
@@ -273,13 +264,6 @@ class TestMatchGalaxy(unittest.TestCase):
         cls.testSpecDir = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
 
         cls.filterList = ('u', 'g', 'r', 'i', 'z')
-
-    def testDefaults(self):
-        """Make sure that if there are Nones for the desired spectra directory
-        that an error message is raised"""
-
-        loadTest = matchGalaxy()
-        self.assertRaises(ValueError, loadTest.loadBC03)
 
     def testLoadBC03(self):
         """Test Loader for Bruzual and Charlot Galaxies"""
