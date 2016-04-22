@@ -130,16 +130,13 @@ class readGalfast():
         @param [in] outFileList is a list of the names of the output files that will be created. If gzipped
         output is desired simply write the filenames with .gz at the end.
 
-        @param [in] kuruczPath is a place to specify a different path to kurucz SED files than the
-        files in the LSST sims_sed_library. If set to None it will default to the LSST library.
-        Will probably be most useful for those who want to use loadGalfast without downloading the
-        entire LSST sims_sed_library which contains much more than just the star SEDs.
+        @param [in] kuruczPath is a place to specify a path to kurucz SED files
 
         @param [in] mltPath is the same as kuruczPath except that it specifies a directory for the
         mlt SEDs
 
-        @param [in] wdPath is the same as the previous two except that it specifies a path to an
-        alternate white dwarf SED directory.
+        @param [in] wdPath is the same as the previous two except that it specifies a path to a
+        white dwarf SED directory.
 
         @param [in] kuruczSubset is a list which provides a subset of the kurucz files within the
         kurucz folder that one wants to use
@@ -166,8 +163,9 @@ class readGalfast():
 
         #If all files exist and are in proper formats then load seds
 
-        selectStarSED0 = selectStarSED(sEDDir = sEDPath, kuruczDir = kuruczPath,
-                                       mltDir = mltPath, wdDir = wdPath)
+        selectStarSED0 = selectStarSED(kuruczDir=kuruczPath,
+                                       mltDir=mltPath,
+                                       wdDir=wdPath)
 
         if kuruczSubset is None:
             kuruczList = selectStarSED0.loadKuruczSEDs()
@@ -352,7 +350,7 @@ class readGalfast():
                                                                          reddening = False,
                                                                          colors = colorDict['H'])
                 sEDNameHE, magNormHE, matchErrorHE = selectStarSED0.findSED(listDict['HE'],
-                                                                            sDSSunred[heIn], 
+                                                                            sDSSunred[heIn],
                                                                             ra[heIn], dec[heIn],
                                                                             reddening = False,
                                                                             colors = colorDict['HE'])
@@ -377,7 +375,7 @@ class readGalfast():
                 chunkMagNorms[heIn] = magNormHE
                 chunkMatchErrors[heIn] = matchErrorHE
                 lsstMagsUnred = []
-                for sedName, sedType, magNorm, matchError in zip(chunkNames, chunkTypes, chunkMagNorms, 
+                for sedName, sedType, magNorm, matchError in zip(chunkNames, chunkTypes, chunkMagNorms,
                                                                  chunkMatchErrors):
                     testSED = Sed()
                     testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen,
@@ -405,7 +403,7 @@ class readGalfast():
                         if inFits == True:
                             sDSS = sDSS[0]
                         outDat = (oID, ra[line], dec[line], gall, galb, coordX,
-                                  coordY, coordZ, chunkNames, 
+                                  coordY, coordZ, chunkNames,
                                   chunkMagNorms, chunkMatchErrors,
                                   lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
                                   lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],
@@ -415,7 +413,7 @@ class readGalfast():
                                   FeH, pop, distKpc, ebv, ebvInf)
                     else:
                         outDat = (oID[line], ra[line], dec[line], gall[line], galb[line], coordX[line],
-                                  coordY[line], coordZ[line], chunkNames[line], 
+                                  coordY[line], coordZ[line], chunkNames[line],
                                   chunkMagNorms[line], chunkMatchErrors[line],
                                   lsstMags[line][0], lsstMags[line][1], lsstMags[line][2],
                                   lsstMags[line][3], lsstMags[line][4], lsstMags[line][5],

@@ -8,50 +8,26 @@ import re
 import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
-from lsst.sims.utils import SpecMap
+from lsst.utils import getPackageDir
 
 class TestReadGalfast(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        #Left this in after removing loading SEDs so that we can make sure that if the structure of
-        #sims_sed_library changes in a way that affects testReadGalfast we can detect it.
-        specMap = SpecMap()
-        cls._specMapDict = {}
-        specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
-        specFileTypes = ['kurucz', 'mlt','wd']
-        for specStart, specKey in zip(specFileStart, specFileTypes):
-            for key, val in sorted(specMap.subdir_map.iteritems()):
-                if re.match(key, specStart):
-                    cls._specMapDict[specKey] = str(val)
-
         #Set up Test Spectra Directory
-        cls.testSpecDir = 'testReadGalfastSpectra'
-        cls.testKDir = str(cls.testSpecDir + '/starSED/kurucz/')
-        cls.testMLTDir = str(cls.testSpecDir + '/starSED/mlt/')
-        cls.testWDDir = str(cls.testSpecDir + '/starSED/wDs/')
-
-        if os.path.exists(cls.testSpecDir):
-            shutil.rmtree(cls.testSpecDir)
-
-        os.makedirs(cls.testKDir)
-        os.mkdir(cls.testMLTDir)
-        os.mkdir(cls.testWDDir)
-        cls.kDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['kurucz'] + '/'
-        cls.mltDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['mlt'] + '/'
-        cls.wdDir = lsst.utils.getPackageDir('sims_sed_library') + '/' + cls._specMapDict['wd'] + '/'
-        #Use particular indices to get different types of seds within mlt and wds
-        for kFile, mltFile, wdFile in zip(os.listdir(cls.kDir)[0:20], 
-                                          np.array(os.listdir(cls.mltDir))[np.arange(-10,11)], 
-                                          np.array(os.listdir(cls.wdDir))[np.arange(-10,11)]):
-            shutil.copyfile(str(cls.kDir + kFile), str(cls.testKDir + kFile))
-            shutil.copyfile(str(cls.mltDir + mltFile), str(cls.testMLTDir + mltFile))
-            shutil.copyfile(str(cls.wdDir + wdFile), str(cls.testWDDir + wdFile))
+        cls.testSpecDir = os.path.join(getPackageDir('sims_photUtils'),
+                                       'tests/cartoonSedTestData/starSed/')
+        cls.testKDir = str(cls.testSpecDir + '/kurucz/')
+        cls.testMLTDir = str(cls.testSpecDir + '/mlt/')
+        cls.testWDDir = str(cls.testSpecDir + '/wDs/')
 
     @classmethod
     def tearDownClass(cls):
-        del cls._specMapDict
+        del cls.testSpecDir
+        del cls.testKDir
+        del cls.testMLTDir
+        del cls.testWDDir
 
         if os.path.exists('exampleOutput.txt'):
             os.unlink('exampleOutput.txt')
@@ -70,8 +46,6 @@ class TestReadGalfast(unittest.TestCase):
 
         if os.path.exists('exampleFits.fits'):
              os.unlink('exampleFits.fits')
-
-        shutil.rmtree(cls.testSpecDir)
 
     def testParseGalfast(self):
 
