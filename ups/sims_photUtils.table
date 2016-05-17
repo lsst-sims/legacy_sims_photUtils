@@ -5,5 +5,6 @@ setupRequired(sims_utils)
 setupRequired(python)
 setupRequired(throughputs)
 setupRequired(pyfits)
+setupRequired(astropy)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
