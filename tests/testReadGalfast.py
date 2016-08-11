@@ -3,8 +3,8 @@ import os
 import shutil
 import numpy as np
 import gzip
-import pyfits
 import re
+from astropy.io import fits
 import lsst.utils
 import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
@@ -138,11 +138,11 @@ class TestReadGalfast(unittest.TestCase):
                         [[13.7,  -183.4, -6.2]], [[-20.58, -12.60, 13.02]], [[21.34, -11.26, 13.02]],
                         [[0.037]], [[0.037]],  [[14.350, 12.949, 12.529, 12.381, 12.358]], [[0]]]
         columnFormats = ['2E', '3E', '2E', 'E', 'E', 'E', 'E', '3E', '3E', '3E', 'E', 'E', '5E', 'E']
-        cols = pyfits.ColDefs([pyfits.Column(name = columnNames[0], format = columnFormats[0],
-                                             array = columnArrays[0])])
+        cols = fits.ColDefs([fits.Column(name = columnNames[0], format = columnFormats[0],
+                                         array = columnArrays[0])])
         for colName, colArray, colFormat in zip(columnNames[1:], columnArrays[1:], columnFormats[1:]):
-            cols.add_col(pyfits.Column(name = colName, format = colFormat, array = colArray))
-        exampleTable = pyfits.new_table(cols)
+            cols.add_col(fits.Column(name = colName, format = colFormat, array = colArray))
+        exampleTable = fits.new_table(cols)
         exampleTable.writeto('exampleFits.fits')
         testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
                            ['exampleOutput.txt', 'exampleOutputGzip.txt.gz', 'exampleOutputFits.txt'],

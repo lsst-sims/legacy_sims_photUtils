@@ -1,8 +1,8 @@
 import os
 import gzip
-import pyfits
 import itertools
 import numpy as np
+from astropy.io import fits
 
 import lsst.utils
 from lsst.sims.photUtils.Sed import Sed
@@ -234,7 +234,7 @@ class readGalfast():
                 gzFile = True
                 num_lines = sum(1 for line in gzip.open(filename))
             elif filename.endswith('fits'):
-                hdulist = pyfits.open(filename)
+                hdulist = fits.open(filename)
                 galfastIn = hdulist[1].data
                 num_lines = len(galfastIn)
                 gzFile = False

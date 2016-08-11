@@ -1,7 +1,7 @@
-import pyfits
+import os
 import math
 import numpy
-import os
+from astropy.io import fits
 
 from lsst.sims.utils import _galacticFromEquatorial
 
@@ -24,7 +24,7 @@ class EBVmap(object):
         
     def readMapFits(self, fileName):
         """ read a fits file containing the ebv data"""
-        hdulist = pyfits.open(fileName)
+        hdulist = fits.open(fileName)
         self.header = hdulist[0].header
         self.data = hdulist[0].data
         self.nr = self.data.shape[0]
