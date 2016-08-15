@@ -3,7 +3,7 @@ import numpy
 import os
 import unittest
 import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
@@ -11,6 +11,11 @@ from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, \
                                 calcM5, calcSNR_sed, magErrorFromSNR, BandpassDict
 from lsst.sims.photUtils.utils import setM5
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class photometryUnitTest(unittest.TestCase):
 
@@ -154,16 +159,9 @@ class uncertaintyUnitTest(unittest.TestCase):
         del self.totalBandpasses
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(photometryUnitTest)
-    suites += unittest.makeSuite(uncertaintyUnitTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
