@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import os
 import math
 import numpy
@@ -24,11 +25,19 @@ class EBVmap(object):
         
     def readMapFits(self, fileName):
         """ read a fits file containing the ebv data"""
+<<<<<<< 453d282efbce4ad41a1b217ea277f264a69a86f5
         hdulist = fits.open(fileName)
         self.header = hdulist[0].header
         self.data = hdulist[0].data
         self.nr = self.data.shape[0]
         self.nc = self.data.shape[1]
+=======
+        with pyfits.open(fileName) as hdulist:
+            self.header = hdulist[0].header
+            self.data = hdulist[0].data
+            self.nr = self.data.shape[0]
+            self.nc = self.data.shape[1]
+>>>>>>> use with_statement to make sure EBV map gets closed
 
         #read WCS information
         self.cd11 = self.header['CD1_1']
