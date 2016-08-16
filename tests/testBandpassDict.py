@@ -16,7 +16,7 @@ def setup_module(module):
 class BandpassDictTest(unittest.TestCase):
 
     def setUp(self):
-        np.random.seed(32)
+        self.rng = np.random.RandomState(32)
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
         self.bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
         self.sedDir = os.path.join(getPackageDir('sims_photUtils'),
@@ -26,7 +26,7 @@ class BandpassDictTest(unittest.TestCase):
     def getListOfSedNames(self, nNames):
         return [self.sedPossibilities[ii].replace('.gz', '')
                 for ii in
-                np.random.random_integers(0, len(self.sedPossibilities)-1, nNames)]
+                self.rng.random_integers(0, len(self.sedPossibilities)-1, nNames)]
 
     def getListOfBandpasses(self, nBp):
         """
@@ -35,7 +35,7 @@ class BandpassDictTest(unittest.TestCase):
         Intentionally do so a nonsense order so that we can test
         that order is preserved in the BandpassDict
         """
-        dexList = np.random.random_integers(0, len(self.bandpassPossibilities)-1, nBp)
+        dexList = self.rng.random_integers(0, len(self.bandpassPossibilities)-1, nBp)
         bandpassNameList = []
         bandpassList = []
         for dex in dexList:
@@ -196,10 +196,10 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -249,10 +249,10 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -317,10 +317,10 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # now try a SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -424,10 +424,10 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -477,10 +477,10 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
@@ -545,10 +545,10 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # now try a SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
