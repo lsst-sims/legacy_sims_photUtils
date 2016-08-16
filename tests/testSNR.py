@@ -1,5 +1,5 @@
 import os
-import numpy
+import numpy as np
 import unittest
 import lsst.utils
 import lsst.utils.tests
@@ -71,10 +71,10 @@ class TestSNRmethods(unittest.TestCase):
         magList = []
         for total in self.bpList:
             magList.append(spectrum.calcMag(total))
-        magList = numpy.array(magList)
+        magList = np.array(magList)
 
         #try for different normalizations of the skySED
-        for fNorm in numpy.arange(1.0, 5.0, 1.0):
+        for fNorm in np.arange(1.0, 5.0, 1.0):
             self.skySed.multiplyFluxNorm(fNorm)
 
             for total, hardware, filterName, mm in \
@@ -126,8 +126,8 @@ class TestSNRmethods(unittest.TestCase):
         sedDir = os.path.join(sedDir, 'kurucz')
         fileNameList = os.listdir(sedDir)
 
-        numpy.random.seed(42)
-        offset = numpy.random.random_sample(len(fileNameList))*2.0
+        np.random.seed(42)
+        offset = np.random.random_sample(len(fileNameList))*2.0
 
         for ix, name in enumerate(fileNameList):
             if ix>100:
@@ -191,7 +191,7 @@ class TestSNRmethods(unittest.TestCase):
             self.assertAlmostEqual(snrat, testSNR, 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
                                                                % (snrat, testSNR))
 
-            control = numpy.sqrt(numpy.power(snr.magErrorFromSNR(testSNR),2) + numpy.power(sigmaSys,2))
+            control = np.sqrt(np.power(snr.magErrorFromSNR(testSNR),2) + np.power(sigmaSys,2))
 
             msg = '%e is not %e; failed' % (sigma, control)
 
@@ -258,8 +258,8 @@ class TestSNRmethods(unittest.TestCase):
         """
         Test that calcSNR_m5 works on numpy arrays of magnitudes
         """
-        numpy.random.seed(17)
-        mag_list = numpy.random.random_sample(100)*5.0 + 15.0
+        np.random.seed(17)
+        mag_list = np.random.random_sample(100)*5.0 + 15.0
 
         photParams = PhotometricParameters()
         bp = self.bpList[0]
@@ -268,19 +268,19 @@ class TestSNRmethods(unittest.TestCase):
         for mm in mag_list:
             ratio, gamma = snr.calcSNR_m5(mm, bp, m5, photParams)
             control_list.append(ratio)
-        control_list = numpy.array(control_list)
+        control_list = np.array(control_list)
 
         test_list, gamma = snr.calcSNR_m5(mag_list, bp, m5, photParams)
 
-        numpy.testing.assert_array_equal(control_list, test_list)
+        np.testing.assert_array_equal(control_list, test_list)
 
 
     def testError_arr(self):
         """
         Test that calcMagError_m5 works on numpy arrays of magnitudes
         """
-        numpy.random.seed(17)
-        mag_list = numpy.random.random_sample(100)*5.0 + 15.0
+        np.random.seed(17)
+        mag_list = np.random.random_sample(100)*5.0 + 15.0
 
         photParams = PhotometricParameters()
         bp = self.bpList[0]
@@ -289,11 +289,11 @@ class TestSNRmethods(unittest.TestCase):
         for mm in mag_list:
             sig, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
             control_list.append(sig)
-        control_list = numpy.array(control_list)
+        control_list = np.array(control_list)
 
         test_list, gamma = snr.calcMagError_m5(mag_list, bp, m5, photParams)
 
-        numpy.testing.assert_array_equal(control_list, test_list)
+        np.testing.assert_array_equal(control_list, test_list)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
