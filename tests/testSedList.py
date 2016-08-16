@@ -3,10 +3,14 @@ import unittest
 import os
 import copy
 import numpy
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.photUtils import Bandpass, Sed, SedList
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class SedListTest(unittest.TestCase):
 
@@ -743,16 +747,9 @@ class SedListTest(unittest.TestCase):
             numpy.testing.assert_array_equal(sedControl.fnu, sedTest.fnu)
 
 
-
-
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(SedListTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
