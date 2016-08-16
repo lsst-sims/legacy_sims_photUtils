@@ -320,7 +320,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     def testMatchToRestFrame(self):
         """Test that Galaxies with no effects added into catalog mags are matched correctly."""
-        np.random.seed(42)
+        rng = np.random.RandomState(42)
         galPhot = BandpassDict.loadTotalBandpassesFromFiles()
 
         imSimBand = Bandpass()
@@ -339,7 +339,7 @@ class TestSelectGalaxySED(unittest.TestCase):
             getSEDMags = Sed()
             testSEDNames.append(testSED.name)
             getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
-            testMagNorm = np.round(np.random.uniform(20.0, 22.0), magNormStep)
+            testMagNorm = np.round(rng.uniform(20.0, 22.0), magNormStep)
             testMagNormList.append(testMagNorm)
             fluxNorm = getSEDMags.calcFluxNorm(testMagNorm, imSimBand)
             getSEDMags.multiplyFluxNorm(fluxNorm)
@@ -382,7 +382,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     def testMatchToObserved(self):
         """Test that Galaxy SEDs with extinction or redshift are matched correctly"""
-        np.random.seed(42)
+        rng = np.random.RandomState(42)
         galPhot = BandpassDict.loadTotalBandpassesFromFiles()
 
         imSimBand = Bandpass()
@@ -411,8 +411,8 @@ class TestSelectGalaxySED(unittest.TestCase):
             testMags.append(galPhot.magListForSed(getSEDMags))
 
             # Check Extinction corrections
-            sedRA = np.random.uniform(10, 170)
-            sedDec = np.random.uniform(10, 80)
+            sedRA = rng.uniform(10, 170)
+            sedDec = rng.uniform(10, 80)
             testRA.append(sedRA)
             testDec.append(sedDec)
             raDec = np.array((sedRA, sedDec)).reshape((2, 1))
@@ -422,9 +422,9 @@ class TestSelectGalaxySED(unittest.TestCase):
 
             # Setup magnitudes for testing matching to redshifted values
             getRedshiftMags = Sed()
-            testZ = np.round(np.random.uniform(1.1, 1.3), 3)
+            testZ = np.round(rng.uniform(1.1, 1.3), 3)
             testRedshifts.append(testZ)
-            testMagNorm = np.round(np.random.uniform(20.0, 22.0), magNormStep)
+            testMagNorm = np.round(rng.uniform(20.0, 22.0), magNormStep)
             testMagNormList.append(testMagNorm)
             getRedshiftMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
             getRedshiftMags.redshiftSED(testZ)
@@ -510,7 +510,7 @@ class TestSelectStarSED(unittest.TestCase):
     def testFindSED(self):
         """Pull SEDs from each type and make sure that each SED gets matched to itself.
         Includes testing with extinction and passing in only colors."""
-        np.random.seed(42)
+        rng = np.random.RandomState(42)
         bandpassDir = os.path.join(lsst.utils.getPackageDir('throughputs'), 'sdss')
         starPhot = BandpassDict.loadTotalBandpassesFromFiles(('u', 'g', 'r', 'i', 'z'),
                                                              bandpassDir = bandpassDir,
@@ -543,7 +543,7 @@ class TestSelectStarSED(unittest.TestCase):
                     getSEDMags = Sed()
                     typeSEDNames.append(testSED.name)
                     getSEDMags.setSED(wavelen = testSED.wavelen, flambda = testSED.flambda)
-                    testMagNorm = np.round(np.random.uniform(20.0, 22.0), magNormStep)
+                    testMagNorm = np.round(rng.uniform(20.0, 22.0), magNormStep)
                     typeMagNorms.append(testMagNorm)
                     fluxNorm = getSEDMags.calcFluxNorm(testMagNorm, imSimBand)
                     getSEDMags.multiplyFluxNorm(fluxNorm)
@@ -605,8 +605,8 @@ class TestSelectStarSED(unittest.TestCase):
                                        decimal = magNormStep)
 
         # Test Reddening
-        testRA = np.random.uniform(10, 170, len(testSEDList[0]))
-        testDec = np.random.uniform(10, 80, len(testSEDList[0]))
+        testRA = rng.uniform(10, 170, len(testSEDList[0]))
+        testDec = rng.uniform(10, 80, len(testSEDList[0]))
         extFactor = .5
         raDec = np.array((testRA, testDec))
         ebvVals = ebv().calculateEbv(equatorialCoordinates = raDec)
