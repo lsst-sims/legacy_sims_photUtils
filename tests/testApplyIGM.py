@@ -1,6 +1,6 @@
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import warnings
 import os
 import gzip
@@ -8,6 +8,11 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.applyIGM import ApplyIGM
 from lsst.utils import getPackageDir
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class TestApplyIGM(unittest.TestCase):
 
@@ -96,14 +101,10 @@ class TestApplyIGM(unittest.TestCase):
         testSed.resampleSED(wavelen_match = testTable15Above300[:,0])
         np.testing.assert_allclose(testTable15Above300[:,1], testSed.flambda, 1e-4)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestApplyIGM)
-    return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
