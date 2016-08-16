@@ -3,11 +3,15 @@ import unittest
 import os
 import copy
 import numpy
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.photUtils import Bandpass, Sed, BandpassDict, \
                                 SedList
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class BandpassDictTest(unittest.TestCase):
 
@@ -705,14 +709,9 @@ class BandpassDictTest(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(test.sb, control.sb, 19)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(BandpassDictTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
