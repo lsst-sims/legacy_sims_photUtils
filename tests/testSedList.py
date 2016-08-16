@@ -61,15 +61,15 @@ class SedListTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, internalAvList=internalAvList)
-        self.assertTrue('does not contain internalAvList' in context.exception.message)
+        self.assertIn('does not contain internalAvList', context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, galacticAvList=galacticAvList)
-        self.assertTrue('does not contain galacticAvList' in context.exception.message)
+        self.assertIn('does not contain galacticAvList', context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, redshiftList=redshiftList)
-        self.assertTrue('does not contain redshiftList' in context.exception.message)
+        self.assertIn('does not contain redshiftList', context.exception.message)
 
 
 
@@ -84,11 +84,11 @@ class SedListTest(unittest.TestCase):
         magNormList = np.random.random_sample(nSed)*5.0 + 15.0
         testList = SedList(sedNameList, magNormList)
         self.assertEqual(len(testList), nSed)
-        self.assertTrue(testList.internalAvList is None)
-        self.assertTrue(testList.galacticAvList is None)
-        self.assertTrue(testList.redshiftList is None)
-        self.assertTrue(testList.wavelenMatch is None)
-        self.assertTrue(testList.cosmologicalDimming is True)
+        self.assertIsNone(testList.internalAvList)
+        self.assertIsNone(testList.galacticAvList)
+        self.assertIsNone(testList.redshiftList)
+        self.assertIsNone(testList.wavelenMatch)
+        self.assertTrue(testList.cosmologicalDimming)
 
         imsimBand = Bandpass()
         imsimBand.imsimBandpass()
@@ -108,10 +108,10 @@ class SedListTest(unittest.TestCase):
         magNormList = np.random.random_sample(nSed)*5.0 + 15.0
         internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList)
-        self.assertTrue(testList.galacticAvList is None)
-        self.assertTrue(testList.redshiftList is None)
-        self.assertTrue(testList.wavelenMatch is None)
-        self.assertTrue(testList.cosmologicalDimming is True)
+        self.assertIsNone(testList.galacticAvList)
+        self.assertIsNone(testList.redshiftList)
+        self.assertIsNone(testList.wavelenMatch)
+        self.assertTrue(testList.cosmologicalDimming)
         for avControl, avTest in zip(internalAvList, testList.internalAvList):
             self.assertAlmostEqual(avControl, avTest, 10)
 
@@ -136,9 +136,9 @@ class SedListTest(unittest.TestCase):
         redshiftList = np.random.random_sample(nSed)*5.0
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList)
-        self.assertTrue(testList.galacticAvList is None)
-        self.assertTrue(testList.wavelenMatch is None)
-        self.assertTrue(testList.cosmologicalDimming is True)
+        self.assertIsNone(testList.galacticAvList)
+        self.assertIsNone(testList.wavelenMatch)
+        self.assertTrue(testList.cosmologicalDimming)
         for avControl, avTest in zip(internalAvList, testList.internalAvList):
             self.assertAlmostEqual(avControl, avTest, 10)
 
@@ -169,9 +169,9 @@ class SedListTest(unittest.TestCase):
         redshiftList = np.random.random_sample(nSed)*5.0
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, cosmologicalDimming=False)
-        self.assertTrue(testList.galacticAvList is None)
-        self.assertTrue(testList.wavelenMatch is None)
-        self.assertTrue(testList.cosmologicalDimming is False)
+        self.assertIsNone(testList.galacticAvList)
+        self.assertIsNone(testList.wavelenMatch)
+        self.assertFalse(testList.cosmologicalDimming)
         for avControl, avTest in zip(internalAvList, testList.internalAvList):
             self.assertAlmostEqual(avControl, avTest, 10)
 
@@ -203,8 +203,8 @@ class SedListTest(unittest.TestCase):
         galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, galacticAvList=galacticAvList)
-        self.assertTrue(testList.wavelenMatch is None)
-        self.assertTrue(testList.cosmologicalDimming is True)
+        self.assertIsNone(testList.wavelenMatch)
+        self.assertTrue(testList.cosmologicalDimming)
         for avControl, avTest in zip(internalAvList, testList.internalAvList):
             self.assertAlmostEqual(avControl, avTest, 10)
 
@@ -247,7 +247,7 @@ class SedListTest(unittest.TestCase):
                                  redshiftList=redshiftList, galacticAvList=galacticAvList,
                                  wavelenMatch=wavelen_match)
 
-        self.assertTrue(testList.cosmologicalDimming is True)
+        self.assertTrue(testList.cosmologicalDimming)
         for avControl, avTest in zip(internalAvList, testList.internalAvList):
             self.assertAlmostEqual(avControl, avTest, 10)
 
@@ -348,17 +348,17 @@ class SedListTest(unittest.TestCase):
                         if addIav:
                             self.assertAlmostEqual(internalAvList_1[ix], testList.internalAvList[ix+nSed], 10)
                         else:
-                            self.assertTrue(testList.internalAvList[ix+nSed] is None)
+                            self.assertIsNone(testList.internalAvList[ix+nSed])
 
                         if addGav:
                             self.assertAlmostEqual(galacticAvList_1[ix], testList.galacticAvList[ix+nSed], 10)
                         else:
-                            self.assertTrue(testList.galacticAvList[ix+nSed] is None)
+                            self.assertIsNone(testList.galacticAvList[ix+nSed])
 
                         if addRedshift:
                             self.assertAlmostEqual(redshiftList_1[ix], testList.redshiftList[ix+nSed], 10)
                         else:
-                            self.assertTrue(testList.redshiftList[ix+nSed] is None)
+                            self.assertIsNone(testList.redshiftList[ix+nSed])
 
                     for ix, (name, norm, iav, gav, zz) in \
                       enumerate(zip(sedNameList_0, magNormList_0, internalAvList_0, \
