@@ -1,6 +1,6 @@
 from __future__ import with_statement
 import os
-import numpy
+import numpy as np
 import unittest
 import lsst.utils
 import lsst.utils.tests
@@ -92,7 +92,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
             self.assertEqual(photParams.bandpass, bp)
             self.assertAlmostEqual(photParams.exptime, 15.0, 7)
             self.assertAlmostEqual(photParams.nexp, 2, 7)
-            self.assertAlmostEqual(photParams.effarea/(numpy.pi*(6.5*100/2.0)**2), 1.0, 7)
+            self.assertAlmostEqual(photParams.effarea/(np.pi*(6.5*100/2.0)**2), 1.0, 7)
             self.assertAlmostEqual(photParams.gain, 2.3, 7)
             self.assertAlmostEqual(photParams.darkcurrent, 0.2, 7)
             self.assertAlmostEqual(photParams.othernoise, 4.69, 7)
@@ -112,7 +112,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
         self.assertEqual(photParams.bandpass, None)
         self.assertAlmostEqual(photParams.exptime, 15.0, 7)
         self.assertAlmostEqual(photParams.nexp, 2, 7)
-        self.assertAlmostEqual(photParams.effarea/(numpy.pi*(6.5*100/2.0)**2), 1.0, 7)
+        self.assertAlmostEqual(photParams.effarea/(np.pi*(6.5*100/2.0)**2), 1.0, 7)
         self.assertAlmostEqual(photParams.gain, 2.3, 7)
         self.assertAlmostEqual(photParams.darkcurrent, 0.2, 7)
         self.assertAlmostEqual(photParams.othernoise, 4.69, 7)
