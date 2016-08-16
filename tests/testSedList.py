@@ -15,7 +15,7 @@ def setup_module(module):
 class SedListTest(unittest.TestCase):
 
     def setUp(self):
-        np.random.seed(18233)
+        self.rng = np.random.RandomState(18233)
         self.sedDir = os.path.join(getPackageDir('sims_photUtils'),
                                    'tests/cartoonSedTestData/galaxySed/')
         self.sedPossibilities = os.listdir(self.sedDir)
@@ -23,7 +23,7 @@ class SedListTest(unittest.TestCase):
     def getListOfSedNames(self, nNames):
         return [self.sedPossibilities[ii].replace('.gz','') \
                 for ii in \
-                np.random.random_integers(0, len(self.sedPossibilities)-1, nNames)]
+                self.rng.random_integers(0, len(self.sedPossibilities)-1, nNames)]
 
 
     def testExceptions(self):
@@ -32,10 +32,10 @@ class SedListTest(unittest.TestCase):
         """
         nSed = 10
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, galacticAvList=galacticAvList,
@@ -81,7 +81,7 @@ class SedListTest(unittest.TestCase):
         ############## Try just reading in an normalizing some SEDs
         nSed = 10
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
         testList = SedList(sedNameList, magNormList)
         self.assertEqual(len(testList), nSed)
         self.assertIsNone(testList.internalAvList)
@@ -105,8 +105,8 @@ class SedListTest(unittest.TestCase):
 
         ################# now add an internalAv
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList)
         self.assertIsNone(testList.galacticAvList)
         self.assertIsNone(testList.redshiftList)
@@ -131,9 +131,9 @@ class SedListTest(unittest.TestCase):
 
         ################ now add redshift
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList)
         self.assertIsNone(testList.galacticAvList)
@@ -164,9 +164,9 @@ class SedListTest(unittest.TestCase):
 
         ################# without cosmological dimming
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, cosmologicalDimming=False)
         self.assertIsNone(testList.galacticAvList)
@@ -197,10 +197,10 @@ class SedListTest(unittest.TestCase):
 
         ################ now add galacticAv
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, galacticAvList=galacticAvList)
         self.assertIsNone(testList.wavelenMatch)
@@ -238,10 +238,10 @@ class SedListTest(unittest.TestCase):
 
         ################ now use a wavelen_match
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = np.random.random_sample(nSed)*5.0
-        galacticAvList = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
         testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
                                  redshiftList=redshiftList, galacticAvList=galacticAvList,
@@ -291,10 +291,10 @@ class SedListTest(unittest.TestCase):
         imsimBand.imsimBandpass()
         nSed = 10
         sedNameList_0 = self.getListOfSedNames(nSed)
-        magNormList_0 = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList_0 = np.random.random_sample(nSed)*5.0
-        galacticAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList_0 = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList_0 = self.rng.random_sample(nSed)*5.0
+        galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
         testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0, \
                                  redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
@@ -312,20 +312,20 @@ class SedListTest(unittest.TestCase):
                                              wavelenMatch=wavelen_match)
 
                     sedNameList_1 = self.getListOfSedNames(nSed)
-                    magNormList_1 = np.random.random_sample(nSed)*5.0 + 15.0
+                    magNormList_1 = self.rng.random_sample(nSed)*5.0 + 15.0
 
                     if addIav:
-                        internalAvList_1 = np.random.random_sample(nSed)*0.3 + 0.1
+                        internalAvList_1 = self.rng.random_sample(nSed)*0.3 + 0.1
                     else:
                         internalAvList_1 = None
 
                     if addRedshift:
-                        redshiftList_1 = np.random.random_sample(nSed)*5.0
+                        redshiftList_1 = self.rng.random_sample(nSed)*5.0
                     else:
                         redshiftList_1 = None
 
                     if addGav:
-                        galacticAvList_1 = np.random.random_sample(nSed)*0.3 + 0.1
+                        galacticAvList_1 = self.rng.random_sample(nSed)*0.3 + 0.1
                     else:
                         galacticAvList_1 = None
 
@@ -434,10 +434,10 @@ class SedListTest(unittest.TestCase):
         imsimBand.imsimBandpass()
         nSed = 10
         sedNameList_0 = self.getListOfSedNames(nSed)
-        magNormList_0 = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList_0 = np.random.random_sample(nSed)*5.0
-        galacticAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList_0 = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList_0 = self.rng.random_sample(nSed)*5.0
+        galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
         testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0, \
                                  redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
@@ -445,10 +445,10 @@ class SedListTest(unittest.TestCase):
 
 
         sedNameList_1 = self.getListOfSedNames(nSed)
-        magNormList_1 = list(np.random.random_sample(nSed)*5.0 + 15.0)
-        internalAvList_1 = list(np.random.random_sample(nSed)*0.3 + 0.1)
-        redshiftList_1 = list(np.random.random_sample(nSed)*5.0)
-        galacticAvList_1 = list(np.random.random_sample(nSed)*0.3 + 0.1)
+        magNormList_1 = list(self.rng.random_sample(nSed)*5.0 + 15.0)
+        internalAvList_1 = list(self.rng.random_sample(nSed)*0.3 + 0.1)
+        redshiftList_1 = list(self.rng.random_sample(nSed)*5.0)
+        galacticAvList_1 = list(self.rng.random_sample(nSed)*0.3 + 0.1)
 
         internalAvList_1[0] = None
         redshiftList_1[1] = None
@@ -551,10 +551,10 @@ class SedListTest(unittest.TestCase):
         normalizingBand.readThroughput(os.path.join(getPackageDir('throughputs'),'baseline','total_r.dat'))
         nSed = 10
         sedNameList_0 = self.getListOfSedNames(nSed)
-        magNormList_0 = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList_0 = np.random.random_sample(nSed)*5.0
-        galacticAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList_0 = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList_0 = self.rng.random_sample(nSed)*5.0
+        galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
         testList = SedList(sedNameList_0, magNormList_0,
                            normalizingBandpass=normalizingBand,
@@ -564,13 +564,13 @@ class SedListTest(unittest.TestCase):
 
 
         sedNameList_1 = self.getListOfSedNames(nSed)
-        magNormList_1 = np.random.random_sample(nSed)*5.0 + 15.0
+        magNormList_1 = self.rng.random_sample(nSed)*5.0 + 15.0
 
-        internalAvList_1 = np.random.random_sample(nSed)*0.3 + 0.1
+        internalAvList_1 = self.rng.random_sample(nSed)*0.3 + 0.1
 
-        redshiftList_1 = np.random.random_sample(nSed)*5.0
+        redshiftList_1 = self.rng.random_sample(nSed)*5.0
 
-        galacticAvList_1 = np.random.random_sample(nSed)*0.3 + 0.1
+        galacticAvList_1 = self.rng.random_sample(nSed)*0.3 + 0.1
 
 
         testList.loadSedsFromList(sedNameList_1, magNormList_1,
@@ -652,10 +652,10 @@ class SedListTest(unittest.TestCase):
         imsimBand.imsimBandpass()
         nSed = 10
         sedNameList_0 = self.getListOfSedNames(nSed)
-        magNormList_0 = np.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList_0 = np.random.random_sample(nSed)*5.0
-        galacticAvList_0 = np.random.random_sample(nSed)*0.3 + 0.1
+        magNormList_0 = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList_0 = self.rng.random_sample(nSed)*5.0
+        galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
         testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0, \
                                  redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
@@ -699,10 +699,10 @@ class SedListTest(unittest.TestCase):
         testList.flush()
 
         sedNameList_1 = self.getListOfSedNames(nSed/2)
-        magNormList_1 = np.random.random_sample(nSed/2)*5.0 + 15.0
-        internalAvList_1 = np.random.random_sample(nSed/2)*0.3 + 0.1
-        redshiftList_1 = np.random.random_sample(nSed/2)*5.0
-        galacticAvList_1 = np.random.random_sample(nSed/2)*0.3 + 0.1
+        magNormList_1 = self.rng.random_sample(nSed/2)*5.0 + 15.0
+        internalAvList_1 = self.rng.random_sample(nSed/2)*0.3 + 0.1
+        redshiftList_1 = self.rng.random_sample(nSed/2)*5.0
+        galacticAvList_1 = self.rng.random_sample(nSed/2)*0.3 + 0.1
 
         testList.loadSedsFromList(sedNameList_1, magNormList_1,
                                   internalAvList=internalAvList_1,
