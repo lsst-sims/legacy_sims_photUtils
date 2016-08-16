@@ -3,10 +3,14 @@ import warnings
 import unittest
 import os
 
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class TestSedWavelenLimits(unittest.TestCase):
     def setUp(self):
@@ -118,16 +122,10 @@ class TestSedName(unittest.TestCase):
         self.assertEqual(testsed.name, newname)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestSedWavelenLimits)
-    suites += unittest.makeSuite(TestSedName)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
 
