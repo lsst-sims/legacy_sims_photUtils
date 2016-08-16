@@ -1,10 +1,14 @@
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import numpy
 import scipy
 from lsst.sims.photUtils import CosmologyObject
 from lsst.sims.photUtils.utils import comovingDistanceIntegrand, cosmologicalOmega
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class CosmologyUnitTest(unittest.TestCase):
 
@@ -438,14 +442,9 @@ class CosmologyUnitTest(unittest.TestCase):
                                              testUniverse.Ok(zz))
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(CosmologyUnitTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
