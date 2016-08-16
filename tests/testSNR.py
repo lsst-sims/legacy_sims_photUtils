@@ -2,12 +2,17 @@ import os
 import numpy
 import unittest
 import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.utils import ObservationMetaData
 import lsst.sims.photUtils.SignalToNoise as snr
 from lsst.sims.photUtils import Sed, Bandpass, PhotometricParameters, \
                                 LSSTdefaults
 from lsst.sims.photUtils.utils import setM5
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class TestSNRmethods(unittest.TestCase):
 
@@ -291,14 +296,9 @@ class TestSNRmethods(unittest.TestCase):
         numpy.testing.assert_array_equal(control_list, test_list)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestSNRmethods)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
