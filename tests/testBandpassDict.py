@@ -2,29 +2,31 @@ from __future__ import with_statement
 import unittest
 import os
 import copy
-import numpy
-import lsst.utils.tests as utilsTests
+import numpy as np
+import lsst.utils.tests
 from lsst.utils import getPackageDir
 
-from lsst.sims.photUtils import Bandpass, Sed, BandpassDict, \
-                                SedList
+from lsst.sims.photUtils import Bandpass, Sed, BandpassDict, SedList
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class BandpassDictTest(unittest.TestCase):
 
     def setUp(self):
-        numpy.random.seed(32)
+        self.rng = np.random.RandomState(32)
         self.bandpassPossibilities = ['u', 'g', 'r', 'i', 'z', 'y']
         self.bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
         self.sedDir = os.path.join(getPackageDir('sims_photUtils'),
                                    'tests/cartoonSedTestData/galaxySed')
         self.sedPossibilities = os.listdir(self.sedDir)
 
-
     def getListOfSedNames(self, nNames):
-        return [self.sedPossibilities[ii].replace('.gz','') \
-                for ii in \
-                numpy.random.random_integers(0, len(self.sedPossibilities)-1, nNames)]
-
+        return [self.sedPossibilities[ii].replace('.gz', '')
+                for ii in
+                self.rng.random_integers(0, len(self.sedPossibilities)-1, nNames)]
 
     def getListOfBandpasses(self, nBp):
         """
@@ -33,13 +35,13 @@ class BandpassDictTest(unittest.TestCase):
         Intentionally do so a nonsense order so that we can test
         that order is preserved in the BandpassDict
         """
-        dexList = numpy.random.random_integers(0, len(self.bandpassPossibilities)-1, nBp)
+        dexList = self.rng.random_integers(0, len(self.bandpassPossibilities)-1, nBp)
         bandpassNameList = []
         bandpassList = []
         for dex in dexList:
             name = self.bandpassPossibilities[dex]
             bp = Bandpass()
-            bp.readThroughput(os.path.join(self.bandpassDir,'total_%s.dat' % name))
+            bp.readThroughput(os.path.join(self.bandpassDir, 'total_%s.dat' % name))
             while name in bandpassNameList:
                 name += '0'
             bandpassNameList.append(name)
@@ -47,14 +49,13 @@ class BandpassDictTest(unittest.TestCase):
 
         return bandpassNameList, bandpassList
 
-
     def testInitialization(self):
         """
         Test that all of the member variables of BandpassDict are set
         to the correct value upon construction.
         """
 
-        for nBp in range(3,10,1):
+        for nBp in range(3, 10, 1):
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
 
@@ -67,13 +68,12 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertEqual(controlName, testName)
 
             for name, bp in zip(nameList, bpList):
-                numpy.testing.assert_array_almost_equal(bp.wavelen, testDict[name].wavelen, 10)
-                numpy.testing.assert_array_almost_equal(bp.sb, testDict[name].sb, 10)
+                np.testing.assert_array_almost_equal(bp.wavelen, testDict[name].wavelen, 10)
+                np.testing.assert_array_almost_equal(bp.sb, testDict[name].sb, 10)
 
             for bpControl, bpTest in zip(bpList, testDict.values()):
-                numpy.testing.assert_array_almost_equal(bpControl.wavelen, bpTest.wavelen, 10)
-                numpy.testing.assert_array_almost_equal(bpControl.sb, bpTest.sb, 10)
-
+                np.testing.assert_array_almost_equal(bpControl.wavelen, bpTest.wavelen, 10)
+                np.testing.assert_array_almost_equal(bpControl.sb, bpTest.sb, 10)
 
     def testWavelenMatch(self):
         """
@@ -81,31 +81,30 @@ class BandpassDictTest(unittest.TestCase):
         wavelength grids, they all get sampled to the same wavelength
         grid.
         """
-        dwavList = numpy.arange(5.0,25.0,5.0)
+        dwavList = np.arange(5.0, 25.0, 5.0)
         bpList = []
         bpNameList = []
         for ix, dwav in enumerate(dwavList):
             name = 'bp_%d' % ix
-            wavelen = numpy.arange(10.0, 1500.0, dwav)
-            sb = numpy.exp(-0.5*(numpy.power((wavelen-100.0*ix)/100.0,2)))
+            wavelen = np.arange(10.0, 1500.0, dwav)
+            sb = np.exp(-0.5*(np.power((wavelen-100.0*ix)/100.0, 2)))
             bp = Bandpass(wavelen=wavelen, sb=sb)
             bpList.append(bp)
             bpNameList.append(name)
 
         # First make sure that we have created distinct wavelength grids
         for ix in range(len(bpList)):
-            for iy in range(ix+1,len(bpList)):
-                self.assertTrue(len(bpList[ix].wavelen)!=len(bpList[iy].wavelen))
+            for iy in range(ix+1, len(bpList)):
+                self.assertNotEqual(len(bpList[ix].wavelen), len(bpList[iy].wavelen))
 
         testDict = BandpassDict(bpList, bpNameList)
 
         # Now make sure that the wavelength grids in the dict were resampled, but that
         # the original wavelength grids were not changed
         for ix in range(len(bpList)):
-            numpy.testing.assert_array_almost_equal(testDict.values()[ix].wavelen, testDict.wavelenMatch, 19)
-            if ix!=0:
-                self.assertTrue(len(testDict.wavelenMatch)!=len(bpList[ix].wavelen))
-
+            np.testing.assert_array_almost_equal(testDict.values()[ix].wavelen, testDict.wavelenMatch, 19)
+            if ix != 0:
+                self.assertNotEqual(len(testDict.wavelenMatch), len(bpList[ix].wavelen))
 
     def testPhiArray(self):
         """
@@ -114,13 +113,12 @@ class BandpassDictTest(unittest.TestCase):
         """
 
         for nBp in range(3, 10, 1):
-            nameList, bpList  = self.getListOfBandpasses(nBp)
+            nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
             dummySed = Sed()
             controlPhi, controlWavelenStep = dummySed.setupPhiArray(bpList)
-            numpy.testing.assert_array_almost_equal(controlPhi, testDict.phiArray, 19)
+            np.testing.assert_array_almost_equal(controlPhi, testDict.phiArray, 19)
             self.assertAlmostEqual(controlWavelenStep, testDict.wavelenStep, 10)
-
 
     def testExceptions(self):
         """
@@ -134,8 +132,7 @@ class BandpassDictTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             testDict = BandpassDict(bpList, dummyNameList)
 
-        self.assertTrue('occurs twice' in context.exception.message)
-
+        self.assertIn('occurs twice', context.exception.message)
 
         testDict = BandpassDict(bpList, nameList)
 
@@ -146,15 +143,14 @@ class BandpassDictTest(unittest.TestCase):
             testDict.wavelenStep = 0.9
 
         with self.assertRaises(AttributeError) as context:
-            testDict.wavelenMatch = numpy.arange(10.0,100.0,1.0)
-
+            testDict.wavelenMatch = np.arange(10.0, 100.0, 1.0)
 
     def testMagListForSed(self):
         """
         Test that magListForSed calculates the correct magnitude
         """
 
-        wavelen = numpy.arange(10.0,2000.0,1.0)
+        wavelen = np.arange(10.0, 2000.0, 1.0)
         flux = (wavelen*2.0-5.0)*1.0e-6
         spectrum = Sed(wavelen=wavelen, flambda=flux)
 
@@ -162,7 +158,7 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             magList = testDict.magListForSed(spectrum)
             for ix, (name, bp, magTest) in enumerate(zip(nameList, bpList, magList)):
@@ -174,7 +170,7 @@ class BandpassDictTest(unittest.TestCase):
         Test that magDictForSed calculates the correct magnitude
         """
 
-        wavelen = numpy.arange(10.0,2000.0,1.0)
+        wavelen = np.arange(10.0, 2000.0, 1.0)
         flux = (wavelen*2.0-5.0)*1.0e-6
         spectrum = Sed(wavelen=wavelen, flambda=flux)
 
@@ -182,13 +178,12 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             magDict = testDict.magDictForSed(spectrum)
             for ix, (name, bp) in enumerate(zip(nameList, bpList)):
                 magControl = spectrum.calcMag(bp)
                 self.assertAlmostEqual(magDict[name], magControl, 5)
-
 
     def testMagListForSedList(self):
         """
@@ -201,16 +196,16 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = numpy.random.random_sample(nSed)*5.0
-        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList)
 
         magList = testBpDict.magListForSedList(testSedList)
         self.assertEqual(magList.shape[0], nSed)
@@ -226,10 +221,10 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList,
-                                    wavelenMatch=testBpDict.wavelenMatch)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList,
+                              wavelenMatch=testBpDict.wavelenMatch)
 
         magList = testBpDict.magListForSedList(testSedList)
         self.assertEqual(magList.shape[0], nSed)
@@ -242,7 +237,6 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(testBpDict):
                 mag = dummySed.calcMag(bpList[iy])
                 self.assertAlmostEqual(mag, magList[ix][iy], 2)
-
 
     def testMagArrayForSedList(self):
         """
@@ -255,16 +249,16 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = numpy.random.random_sample(nSed)*5.0
-        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList)
 
         magArray = testBpDict.magArrayForSedList(testSedList)
 
@@ -278,10 +272,10 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList,
-                                    wavelenMatch=testBpDict.wavelenMatch)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList,
+                              wavelenMatch=testBpDict.wavelenMatch)
 
         magArray = testBpDict.magArrayForSedList(testSedList)
 
@@ -292,8 +286,6 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(bpNameList):
                 mag = dummySed.calcMag(bpList[iy])
                 self.assertAlmostEqual(mag, magArray[bp][ix], 2)
-
-
 
     def testIndicesOnMagnitudes(self):
         """
@@ -306,10 +298,10 @@ class BandpassDictTest(unittest.TestCase):
         testBpDict = BandpassDict(bpList, nameList)
 
         # first try it with a single Sed
-        wavelen = numpy.arange(10.0,2000.0,1.0)
+        wavelen = np.arange(10.0, 2000.0, 1.0)
         flux = (wavelen*2.0-5.0)*1.0e-6
         spectrum = Sed(wavelen=wavelen, flambda=flux)
-        indices = [1,2,5]
+        indices = [1, 2, 5]
 
         magList = testBpDict.magListForSed(spectrum, indices=indices)
         ctNaN = 0
@@ -319,22 +311,22 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertAlmostEqual(magTest, magControl, 5)
             else:
                 ctNaN += 1
-                self.assertTrue(numpy.isnan(magTest))
+                np.testing.assert_equal(magTest, np.NaN)
 
         self.assertEqual(ctNaN, 4)
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = numpy.random.random_sample(nSed)*5.0
-        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # now try a SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList)
 
         magList = testBpDict.magListForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
@@ -351,16 +343,16 @@ class BandpassDictTest(unittest.TestCase):
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
                 else:
                     ctNaN += 1
-                    self.assertTrue(numpy.isnan(magList[ix][iy]))
+                    np.testing.assert_equal(magList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList,
-                                    wavelenMatch=testBpDict.wavelenMatch)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList,
+                              wavelenMatch=testBpDict.wavelenMatch)
 
         magList = testBpDict.magListForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
@@ -376,18 +368,17 @@ class BandpassDictTest(unittest.TestCase):
                     mag = dummySed.calcMag(testBpDict[bp])
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
                 else:
-                    ctNaN +=  1
-                    self.assertTrue(numpy.isnan(magList[ix][iy]))
+                    ctNaN += 1
+                    np.testing.assert_equal(magList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
-
 
     def testFluxListForSed(self):
         """
         Test that fluxListForSed calculates the correct fluxes
         """
 
-        wavelen = numpy.arange(10.0,2000.0,1.0)
+        wavelen = np.arange(10.0, 2000.0, 1.0)
         flux = (wavelen*2.0-5.0)*1.0e-6
         spectrum = Sed(wavelen=wavelen, flambda=flux)
 
@@ -395,20 +386,19 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             fluxList = testDict.fluxListForSed(spectrum)
             for ix, (name, bp, fluxTest) in enumerate(zip(nameList, bpList, fluxList)):
                 fluxControl = spectrum.calcFlux(bp)
                 self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 2)
 
-
     def testFluxDictForSed(self):
         """
         Test that fluxDictForSed calculates the correct fluxes
         """
 
-        wavelen = numpy.arange(10.0,2000.0,1.0)
+        wavelen = np.arange(10.0, 2000.0, 1.0)
         flux = (wavelen*2.0-5.0)*1.0e-6
         spectrum = Sed(wavelen=wavelen, flambda=flux)
 
@@ -416,14 +406,12 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             fluxDict = testDict.fluxDictForSed(spectrum)
             for ix, (name, bp) in enumerate(zip(nameList, bpList)):
                 fluxControl = spectrum.calcFlux(bp)
                 self.assertAlmostEqual(fluxDict[name]/fluxControl, 1.0, 2)
-
-
 
     def testFluxListForSedList(self):
         """
@@ -436,16 +424,16 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = numpy.random.random_sample(nSed)*5.0
-        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList)
 
         fluxList = testBpDict.fluxListForSedList(testSedList)
         self.assertEqual(fluxList.shape[0], nSed)
@@ -461,10 +449,10 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList,
-                                    wavelenMatch=testBpDict.wavelenMatch)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList,
+                              wavelenMatch=testBpDict.wavelenMatch)
 
         fluxList = testBpDict.fluxListForSedList(testSedList)
         self.assertEqual(fluxList.shape[0], nSed)
@@ -477,7 +465,6 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(testBpDict):
                 flux = dummySed.calcFlux(bpList[iy])
                 self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
-
 
     def testFluxArrayForSedList(self):
         """
@@ -490,16 +477,16 @@ class BandpassDictTest(unittest.TestCase):
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = numpy.random.random_sample(nSed)*5.0
-        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList)
 
         fluxArray = testBpDict.fluxArrayForSedList(testSedList)
 
@@ -513,10 +500,10 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList,
-                                    wavelenMatch=testBpDict.wavelenMatch)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList,
+                              wavelenMatch=testBpDict.wavelenMatch)
 
         fluxArray = testBpDict.fluxArrayForSedList(testSedList)
 
@@ -527,8 +514,6 @@ class BandpassDictTest(unittest.TestCase):
             for iy, bp in enumerate(bpNameList):
                 flux = dummySed.calcFlux(bpList[iy])
                 self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 2)
-
-
 
     def testIndicesOnFlux(self):
         """
@@ -541,10 +526,10 @@ class BandpassDictTest(unittest.TestCase):
         testBpDict = BandpassDict(bpList, nameList)
 
         # first try it with a single Sed
-        wavelen = numpy.arange(10.0,2000.0,1.0)
+        wavelen = np.arange(10.0, 2000.0, 1.0)
         flux = (wavelen*2.0-5.0)*1.0e-6
         spectrum = Sed(wavelen=wavelen, flambda=flux)
-        indices = [1,2,5]
+        indices = [1, 2, 5]
 
         fluxList = testBpDict.fluxListForSed(spectrum, indices=indices)
         ctNaN = 0
@@ -554,22 +539,22 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 2)
             else:
                 ctNaN += 1
-                self.assertTrue(numpy.isnan(fluxTest))
+                np.testing.assert_equal(fluxTest, np.NaN)
 
         self.assertEqual(ctNaN, 4)
 
         nSed = 20
         sedNameList = self.getListOfSedNames(nSed)
-        magNormList = numpy.random.random_sample(nSed)*5.0 + 15.0
-        internalAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
-        redshiftList = numpy.random.random_sample(nSed)*5.0
-        galacticAvList = numpy.random.random_sample(nSed)*0.3 + 0.1
+        magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
+        internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
+        redshiftList = self.rng.random_sample(nSed)*5.0
+        galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
 
         # now try a SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList)
 
         fluxList = testBpDict.fluxListForSedList(testSedList, indices=indices)
         self.assertEqual(fluxList.shape[0], nSed)
@@ -586,16 +571,16 @@ class BandpassDictTest(unittest.TestCase):
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                 else:
                     ctNaN += 1
-                    self.assertTrue(numpy.isnan(fluxList[ix][iy]))
+                    np.testing.assert_equal(fluxList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
-                                    internalAvList=internalAvList,
-                                    redshiftList=redshiftList,
-                                    galacticAvList=galacticAvList,
-                                    wavelenMatch=testBpDict.wavelenMatch)
+                              internalAvList=internalAvList,
+                              redshiftList=redshiftList,
+                              galacticAvList=galacticAvList,
+                              wavelenMatch=testBpDict.wavelenMatch)
 
         fluxList = testBpDict.fluxListForSedList(testSedList, indices=indices)
         self.assertEqual(fluxList.shape[0], nSed)
@@ -611,11 +596,10 @@ class BandpassDictTest(unittest.TestCase):
                     flux = dummySed.calcFlux(testBpDict[bp])
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                 else:
-                    ctNaN +=  1
-                    self.assertTrue(numpy.isnan(fluxList[ix][iy]))
+                    ctNaN += 1
+                    np.testing.assert_equal(fluxList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
-
 
     def testLoadTotalBandpassesFromFiles(self):
         """
@@ -634,7 +618,7 @@ class BandpassDictTest(unittest.TestCase):
         controlBandpassList = []
         for bpn in bandpassNames:
             dummyBp = Bandpass()
-            dummyBp.readThroughput(os.path.join(bandpassDir,bandpassRoot+bpn+'.dat'))
+            dummyBp.readThroughput(os.path.join(bandpassDir, bandpassRoot+bpn+'.dat'))
             controlBandpassList.append(dummyBp)
 
         wMin = controlBandpassList[0].wavelen[0]
@@ -645,9 +629,8 @@ class BandpassDictTest(unittest.TestCase):
             bp.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
 
         for test, control in zip(bandpassDict.values(), controlBandpassList):
-            numpy.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
-            numpy.testing.assert_array_almost_equal(test.sb, control.sb, 19)
-
+            np.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
+            np.testing.assert_array_almost_equal(test.sb, control.sb, 19)
 
     def testLoadBandpassesFromFiles(self):
         """
@@ -658,7 +641,7 @@ class BandpassDictTest(unittest.TestCase):
         fileDir = os.path.join(getPackageDir('sims_photUtils'),
                                'tests', 'cartoonSedTestData')
         bandpassNames = ['g', 'z', 'i']
-        bandpassRoot='test_bandpass_'
+        bandpassRoot = 'test_bandpass_'
         componentList = ['toy_mirror.dat']
         atmo = os.path.join(fileDir, 'toy_atmo.dat')
 
@@ -687,7 +670,6 @@ class BandpassDictTest(unittest.TestCase):
             dummyBp.readThroughputList(componentList)
             controlBandpassList.append(dummyBp)
 
-
         wMin = controlBandpassList[0].wavelen[0]
         wMax = controlBandpassList[0].wavelen[-1]
         wStep = controlBandpassList[0].wavelen[1]-controlBandpassList[0].wavelen[0]
@@ -697,22 +679,17 @@ class BandpassDictTest(unittest.TestCase):
             hh.resampleBandpass(wavelen_min=wMin, wavelen_max=wMax, wavelen_step=wStep)
 
         for test, control in zip(bandpassDict.values(), controlBandpassList):
-            numpy.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
-            numpy.testing.assert_array_almost_equal(test.sb, control.sb, 19)
+            np.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
+            np.testing.assert_array_almost_equal(test.sb, control.sb, 19)
 
         for test, control in zip(hardwareDict.values(), controlHardwareList):
-            numpy.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
-            numpy.testing.assert_array_almost_equal(test.sb, control.sb, 19)
+            np.testing.assert_array_almost_equal(test.wavelen, control.wavelen, 19)
+            np.testing.assert_array_almost_equal(test.sb, control.sb, 19)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(BandpassDictTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

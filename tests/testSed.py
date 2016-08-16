@@ -1,12 +1,16 @@
 import numpy as np
 import warnings
 import unittest
-import os
 
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class TestSedWavelenLimits(unittest.TestCase):
     def setUp(self):
@@ -42,7 +46,8 @@ class TestSedWavelenLimits(unittest.TestCase):
         print ''
         # Test that no warning is made.
         with warnings.catch_warnings(record=True) as wa:
-            w,f = testsed.resampleSED(wavelen_match=self.testbandpass.wavelen, wavelen=testsed.wavelen, flux=testsed.flambda)
+            w, f = testsed.resampleSED(wavelen_match=self.testbandpass.wavelen,
+                                       wavelen=testsed.wavelen, flux=testsed.flambda)
             self.assertEqual(len(wa), 0)
         np.testing.assert_equal(w, testsed.wavelen)
         np.testing.assert_equal(f, testsed.flambda)
@@ -53,17 +58,17 @@ class TestSedWavelenLimits(unittest.TestCase):
         with warnings.catch_warnings(record=True) as wa:
             testsed.resampleSED(wavelen_match=self.testbandpass.wavelen)
             self.assertEqual(len(wa), 1)
-            self.assertTrue('non-overlap' in str(wa[-1].message))
-        self.assertTrue(np.isnan(testsed.flambda[-1:]))
+            self.assertIn('non-overlap', str(wa[-1].message))
+        np.testing.assert_equal(testsed.flambda[-1:], np.NaN)
         sedwavelen = np.arange(self.wmin+50, self.wmax, 1)
         sedflambda = np.ones(len(sedwavelen))
         testsed = Sed(wavelen=sedwavelen, flambda=sedflambda)
         with warnings.catch_warnings(record=True) as wa:
             testsed.resampleSED(wavelen_match=self.testbandpass.wavelen)
             self.assertEqual(len(wa), 1)
-            self.assertTrue('non-overlap' in str(wa[-1].message))
-        self.assertTrue(np.isnan(testsed.flambda[0]))
-        self.assertTrue(np.isnan(testsed.flambda[49]))
+            self.assertIn('non-overlap', str(wa[-1].message))
+        np.testing.assert_equal(testsed.flambda[0], np.NaN)
+        np.testing.assert_equal(testsed.flambda[49], np.NaN)
 
     def testSedMagErrors(self):
         """Test error handling at mag and adu calculation levels of sed."""
@@ -74,21 +79,21 @@ class TestSedWavelenLimits(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             mag = testsed.calcMag(self.testbandpass)
             self.assertEqual(len(w), 1)
-            self.assertTrue("non-overlap" in str(w[-1].message))
-        self.assertTrue(np.isnan(mag))
+            self.assertIn("non-overlap", str(w[-1].message))
+        np.testing.assert_equal(mag, np.NaN)
         # Test handling in calcADU
         with warnings.catch_warnings(record=True) as w:
             adu = testsed.calcADU(self.testbandpass,
                                   photParams=PhotometricParameters())
             self.assertEqual(len(w), 1)
-            self.assertTrue("non-overlap" in str(w[-1].message))
-        self.assertTrue(np.isnan(adu))
+            self.assertIn("non-overlap", str(w[-1].message))
+        np.testing.assert_equal(adu, np.NaN)
         # Test handling in calcFlux
         with warnings.catch_warnings(record=True) as w:
             flux = testsed.calcFlux(self.testbandpass)
             self.assertEqual(len(w), 1)
-            self.assertTrue("non-overlap" in str(w[-1].message))
-        self.assertTrue(np.isnan(flux))
+            self.assertIn("non-overlap", str(w[-1].message))
+        np.testing.assert_equal(flux, np.NaN)
 
 
 class TestSedName(unittest.TestCase):
@@ -105,7 +110,6 @@ class TestSedName(unittest.TestCase):
         del self.name
         del self.testsed
 
-
     def testSetName(self):
         self.assertEqual(self.testsed.name, self.name)
 
@@ -113,21 +117,15 @@ class TestSedName(unittest.TestCase):
         testsed = Sed(self.testsed.wavelen, self.testsed.flambda, name=self.testsed.name)
         redshift = .2
         testsed.redshiftSED(redshift=redshift)
-        newname = testsed.name + '_Z' + '%.2f' %(redshift)
+        newname = testsed.name + '_Z' + '%.2f' % (redshift)
         testsed.name = newname
         self.assertEqual(testsed.name, newname)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestSedWavelenLimits)
-    suites += unittest.makeSuite(TestSedName)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
 

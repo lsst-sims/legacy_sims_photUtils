@@ -1,16 +1,19 @@
 import os
-import numpy
+import numpy as np
 import unittest
 import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.utils import ObservationMetaData
 import lsst.sims.photUtils.SignalToNoise as snr
-from lsst.sims.photUtils import Sed, Bandpass, PhotometricParameters, \
-                                LSSTdefaults
+from lsst.sims.photUtils import Sed, Bandpass, PhotometricParameters, LSSTdefaults
 from lsst.sims.photUtils.utils import setM5
 
-class TestSNRmethods(unittest.TestCase):
 
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
+class TestSNRmethods(unittest.TestCase):
 
     def setUp(self):
 
@@ -24,11 +27,11 @@ class TestSNRmethods(unittest.TestCase):
         fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
         self.starSED.multiplyFluxNorm(fNorm)
 
-        hardwareDir = os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline')
+        hardwareDir = os.path.join(lsst.utils.getPackageDir('throughputs'), 'baseline')
         componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                          'lens1.dat', 'lens2.dat', 'lens3.dat']
         self.skySed = Sed()
-        self.skySed.readSED_flambda(os.path.join(hardwareDir,'darksky.dat'))
+        self.skySed.readSED_flambda(os.path.join(hardwareDir, 'darksky.dat'))
 
         totalNameList = ['total_u.dat', 'total_g.dat', 'total_r.dat', 'total_i.dat',
                          'total_z.dat', 'total_y.dat']
@@ -57,51 +60,48 @@ class TestSNRmethods(unittest.TestCase):
         defaults = LSSTdefaults()
         photParams = PhotometricParameters()
 
-        #create a cartoon spectrum to test on
+        # create a cartoon spectrum to test on
         spectrum = Sed()
         spectrum.setFlatSED()
         spectrum.multiplyFluxNorm(1.0e-9)
 
-        #find the magnitudes of that spectrum in our bandpasses
+        # find the magnitudes of that spectrum in our bandpasses
         magList = []
         for total in self.bpList:
             magList.append(spectrum.calcMag(total))
-        magList = numpy.array(magList)
+        magList = np.array(magList)
 
-        #try for different normalizations of the skySED
-        for fNorm in numpy.arange(1.0, 5.0, 1.0):
+        # try for different normalizations of the skySED
+        for fNorm in np.arange(1.0, 5.0, 1.0):
             self.skySed.multiplyFluxNorm(fNorm)
 
             for total, hardware, filterName, mm in \
-            zip(self.bpList, self.hardwareList, self.filterNameList, magList):
+                zip(self.bpList, self.hardwareList, self.filterNameList, magList):
 
                 FWHMeff = defaults.FWHMeff(filterName)
 
                 m5 = snr.calcM5(self.skySed, total, hardware, photParams, FWHMeff=FWHMeff)
 
                 sigma_sed = snr.calcMagError_sed(spectrum, total, self.skySed,
-                                                   hardware, photParams, FWHMeff=FWHMeff)
+                                                 hardware, photParams, FWHMeff=FWHMeff)
 
                 sigma_m5, gamma = snr.calcMagError_m5(mm, total, m5, photParams)
 
                 self.assertAlmostEqual(sigma_m5, sigma_sed, 3)
 
-
     def testVerboseSNR(self):
         """
         Make sure that calcSNR_sed has everything it needs to run in verbose mode
         """
-        defaults = LSSTdefaults()
         photParams = PhotometricParameters()
 
-        #create a cartoon spectrum to test on
+        # create a cartoon spectrum to test on
         spectrum = Sed()
         spectrum.setFlatSED()
         spectrum.multiplyFluxNorm(1.0e-9)
 
         snr.calcSNR_sed(spectrum, self.bpList[0], self.skySed,
                         self.hardwareList[0], photParams, FWHMeff=0.7, verbose=True)
-
 
     def testSignalToNoise(self):
         """
@@ -121,11 +121,11 @@ class TestSNRmethods(unittest.TestCase):
         sedDir = os.path.join(sedDir, 'kurucz')
         fileNameList = os.listdir(sedDir)
 
-        numpy.random.seed(42)
-        offset = numpy.random.random_sample(len(fileNameList))*2.0
+        rng = np.random.RandomState(42)
+        offset = rng.random_sample(len(fileNameList))*2.0
 
         for ix, name in enumerate(fileNameList):
-            if ix>100:
+            if ix > 100:
                 break
             spectrum = Sed()
             spectrum.readSED_flambda(os.path.join(sedDir, name))
@@ -142,16 +142,13 @@ class TestSNRmethods(unittest.TestCase):
                 test_snr, gamma = snr.calcSNR_m5(mag, self.bpList[i], m5[i], photParams)
                 self.assertLess((test_snr-control_snr)/control_snr, 0.001)
 
-
-
-
     def testSystematicUncertainty(self):
         """
         Test that systematic uncertainty is added correctly.
         """
         sigmaSys = 0.002
         m5_list = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        photParams= PhotometricParameters(sigmaSys=sigmaSys)
+        photParams = PhotometricParameters(sigmaSys=sigmaSys)
 
         obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0,
                                            m5=m5_list, bandpassName=self.filterNameList)
@@ -159,8 +156,6 @@ class TestSNRmethods(unittest.TestCase):
         for bp in self.bpList:
             mag = self.starSED.calcMag(bp)
             magnitude_list.append(mag)
-
-        skySedList = []
 
         for bp, hardware, filterName, mm, m5 in \
             zip(self.bpList, self.hardwareList, self.filterNameList, magnitude_list, m5_list):
@@ -174,31 +169,30 @@ class TestSNRmethods(unittest.TestCase):
                                        FWHMeff=LSSTdefaults().FWHMeff(filterName),
                                        photParams=photParams)
 
-
             sigma, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
 
             snrat = snr.calcSNR_sed(self.starSED, bp, normalizedSkyDummy, hardware,
-                                  FWHMeff=LSSTdefaults().FWHMeff(filterName),
-                                  photParams=PhotometricParameters())
+                                    FWHMeff=LSSTdefaults().FWHMeff(filterName),
+                                    photParams=PhotometricParameters())
 
             testSNR, gamma = snr.calcSNR_m5(mm, bp, m5, photParams=PhotometricParameters(sigmaSys=0.0))
 
-            self.assertAlmostEqual(snrat, testSNR, 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
-                                                               % (snrat, testSNR))
+            self.assertAlmostEqual(snrat, testSNR, 10,
+                                   msg = 'failed on calcSNR_m5 test %e != %e '
+                                   % (snrat, testSNR))
 
-            control = numpy.sqrt(numpy.power(snr.magErrorFromSNR(testSNR),2) + numpy.power(sigmaSys,2))
+            control = np.sqrt(np.power(snr.magErrorFromSNR(testSNR), 2) + np.power(sigmaSys, 2))
 
             msg = '%e is not %e; failed' % (sigma, control)
 
             self.assertAlmostEqual(sigma, control, 10, msg=msg)
-
 
     def testNoSystematicUncertainty(self):
         """
         Test that systematic uncertainty is handled correctly when set to None.
         """
         m5_list = [23.5, 24.3, 22.1, 20.0, 19.5, 21.7]
-        photParams= PhotometricParameters(sigmaSys=0.0)
+        photParams = PhotometricParameters(sigmaSys=0.0)
 
         obs_metadata = ObservationMetaData(pointingRA=23.0, pointingDec=45.0,
                                            m5=m5_list, bandpassName=self.filterNameList)
@@ -207,8 +201,6 @@ class TestSNRmethods(unittest.TestCase):
         for bp in self.bpList:
             mag = self.starSED.calcMag(bp)
             magnitude_list.append(mag)
-
-        skySedList = []
 
         for bp, hardware, filterName, mm, m5 in \
             zip(self.bpList, self.hardwareList, self.filterNameList, magnitude_list, m5_list):
@@ -224,15 +216,15 @@ class TestSNRmethods(unittest.TestCase):
 
             sigma, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
 
-
             snrat = snr.calcSNR_sed(self.starSED, bp, normalizedSkyDummy, hardware,
-                              FWHMeff=LSSTdefaults().FWHMeff(filterName),
-                              photParams=PhotometricParameters())
+                                    FWHMeff=LSSTdefaults().FWHMeff(filterName),
+                                    photParams=PhotometricParameters())
 
             testSNR, gamma = snr.calcSNR_m5(mm, bp, m5, photParams=PhotometricParameters(sigmaSys=0.0))
 
-            self.assertAlmostEqual(snrat, testSNR, 10, msg = 'failed on calcSNR_m5 test %e != %e ' \
-                                                               % (snrat, testSNR))
+            self.assertAlmostEqual(snrat, testSNR, 10,
+                                   msg = 'failed on calcSNR_m5 test %e != %e '
+                                   % (snrat, testSNR))
 
             control = snr.magErrorFromSNR(testSNR)
 
@@ -248,13 +240,12 @@ class TestSNRmethods(unittest.TestCase):
         FWHMeff = snr.FWHMgeom2FWHMeff(FWHMgeom)
         self.assertEqual(FWHMeff, (FWHMgeom-0.052)/0.822)
 
-
     def testSNR_arr(self):
         """
         Test that calcSNR_m5 works on numpy arrays of magnitudes
         """
-        numpy.random.seed(17)
-        mag_list = numpy.random.random_sample(100)*5.0 + 15.0
+        rng = np.random.RandomState(17)
+        mag_list = rng.random_sample(100)*5.0 + 15.0
 
         photParams = PhotometricParameters()
         bp = self.bpList[0]
@@ -263,19 +254,18 @@ class TestSNRmethods(unittest.TestCase):
         for mm in mag_list:
             ratio, gamma = snr.calcSNR_m5(mm, bp, m5, photParams)
             control_list.append(ratio)
-        control_list = numpy.array(control_list)
+        control_list = np.array(control_list)
 
         test_list, gamma = snr.calcSNR_m5(mag_list, bp, m5, photParams)
 
-        numpy.testing.assert_array_equal(control_list, test_list)
-
+        np.testing.assert_array_equal(control_list, test_list)
 
     def testError_arr(self):
         """
         Test that calcMagError_m5 works on numpy arrays of magnitudes
         """
-        numpy.random.seed(17)
-        mag_list = numpy.random.random_sample(100)*5.0 + 15.0
+        rng = np.random.RandomState(17)
+        mag_list = rng.random_sample(100)*5.0 + 15.0
 
         photParams = PhotometricParameters()
         bp = self.bpList[0]
@@ -284,21 +274,16 @@ class TestSNRmethods(unittest.TestCase):
         for mm in mag_list:
             sig, gamma = snr.calcMagError_m5(mm, bp, m5, photParams)
             control_list.append(sig)
-        control_list = numpy.array(control_list)
+        control_list = np.array(control_list)
 
         test_list, gamma = snr.calcMagError_m5(mag_list, bp, m5, photParams)
 
-        numpy.testing.assert_array_equal(control_list, test_list)
+        np.testing.assert_array_equal(control_list, test_list)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestSNRmethods)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()

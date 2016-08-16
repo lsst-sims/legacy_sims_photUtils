@@ -1,13 +1,17 @@
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import warnings
 import os
 import gzip
-import lsst.utils.tests as utilsTests
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.applyIGM import ApplyIGM
 from lsst.utils import getPackageDir
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class TestApplyIGM(unittest.TestCase):
 
@@ -15,16 +19,16 @@ class TestApplyIGM(unittest.TestCase):
 
         "Test Initialization Method"
 
-        #Make sure that if we initialize IGM with new inputs that it is initializing with them
+        # Make sure that if we initialize IGM with new inputs that it is initializing with them
         testIGM = ApplyIGM()
         testSed = Sed()
-        sedName = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
+        sedName = os.path.join(getPackageDir('sims_photUtils'), 'tests/cartoonSedTestData/galaxySed/')
         testSed.readSED_flambda(os.path.join(sedName, 'Burst.10E08.002Z.spec.gz'))
         testIGM.applyIGM(1.8, testSed)
         testZmin = 1.8
         testZmax = 2.2
-        #Want new values for testing,
-        #so make sure we are not just putting in the same values as are already there
+        # Want new values for testing,
+        # so make sure we are not just putting in the same values as are already there
         self.assertNotEqual(testZmin, testIGM.zMin)
         self.assertNotEqual(testZmax, testIGM.zMax)
         testIGM.initializeIGM(zMin = testZmin, zMax = testZmax)
@@ -37,8 +41,8 @@ class TestApplyIGM(unittest.TestCase):
 
         tableDirectory = str(getPackageDir('sims_photUtils') +
                              '/python/lsst/sims/photUtils/igm_tables')
-        #First make sure that if variance option is turned on but there are no variance files that
-        #the correct error is raised
+        # First make sure that if variance option is turned on but there are no variance files that
+        # the correct error is raised
         testIGM = ApplyIGM()
         testIGM.initializeIGM(zMax = 1.5)
         testMeanLookupTable = gzip.open('MeanLookupTable_zSource1.5.tbl.gz', 'w')
@@ -47,7 +51,7 @@ class TestApplyIGM(unittest.TestCase):
         self.assertRaisesRegexp(IOError, "Cannot find variance tables.", testIGM.loadTables, os.getcwd())
         os.remove('MeanLookupTable_zSource1.5.tbl.gz')
 
-        #Then make sure that the mean lookup tables and var lookup tables all get loaded into proper dicts
+        # Then make sure that the mean lookup tables and var lookup tables all get loaded into proper dicts
         testIGMDicts = ApplyIGM()
         testIGMDicts.initializeIGM()
         testIGMDicts.loadTables(tableDirectory)
@@ -56,20 +60,19 @@ class TestApplyIGM(unittest.TestCase):
         self.assertItemsEqual(testIGMDicts.meanLookups.keys(), redshiftValues)
         self.assertItemsEqual(testIGMDicts.varLookups.keys(), redshiftValues)
 
-        #Finally make sure that if Variance Boolean is false that nothing is passed in to varLookups
+        # Finally make sure that if Variance Boolean is false that nothing is passed in to varLookups
         testIGMVar = ApplyIGM()
         testIGMVar.initializeIGM()
         testIGMVar.loadTables(tableDirectory, varianceTbl = False)
         self.assertEqual(testIGMVar.varLookups, {})
 
-
     def testApplyIGM(self):
 
         """Test application of IGM from Lookup Tables to SED objects"""
 
-        #Test that a warning comes up if input redshift is out of range and that no changes occurs to SED
+        # Test that a warning comes up if input redshift is out of range and that no changes occurs to SED
         testSed = Sed()
-        sedName = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/galaxySed/')
+        sedName = os.path.join(getPackageDir('sims_photUtils'), 'tests/cartoonSedTestData/galaxySed/')
         testSed.readSED_flambda(os.path.join(sedName, 'Burst.10E08.002Z.spec.gz'))
         testFlambda = []
         for fVal in testSed.flambda:
@@ -79,31 +82,27 @@ class TestApplyIGM(unittest.TestCase):
         with warnings.catch_warnings(record=True) as wa:
             testIGM.applyIGM(1.1, testSed)
             self.assertEqual(len(wa), 1)
-            self.assertTrue('IGM Lookup tables' in str(wa[-1].message))
+            self.assertIn('IGM Lookup tables', str(wa[-1].message))
         np.testing.assert_equal(testFlambda, testSed.flambda)
 
-        #Test that lookup table is read in correctly
+        # Test that lookup table is read in correctly
         testTable15 = np.genfromtxt(str(getPackageDir('sims_photUtils') +
                                         '/python/lsst/sims/photUtils/igm_tables/' +
                                         'MeanLookupTable_zSource1.5.tbl.gz'))
         np.testing.assert_equal(testTable15, testIGM.meanLookups['1.5'])
 
-        #Test output by making sure that an incoming sed with flambda = 1.0 everywhere will return the
-        #transmission values of the lookup table as its flambda output
+        # Test output by making sure that an incoming sed with flambda = 1.0 everywhere will return the
+        # transmission values of the lookup table as its flambda output
         testSed.setSED(testSed.wavelen, flambda = np.ones(len(testSed.wavelen)))
         testIGM.applyIGM(1.5, testSed)
-        testTable15Above300 = testTable15[np.where(testTable15[:,0] >= 300.0)]
-        testSed.resampleSED(wavelen_match = testTable15Above300[:,0])
-        np.testing.assert_allclose(testTable15Above300[:,1], testSed.flambda, 1e-4)
+        testTable15Above300 = testTable15[np.where(testTable15[:, 0] >= 300.0)]
+        testSed.resampleSED(wavelen_match = testTable15Above300[:, 0])
+        np.testing.assert_allclose(testTable15Above300[:, 1], testSed.flambda, 1e-4)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestApplyIGM)
-    return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
