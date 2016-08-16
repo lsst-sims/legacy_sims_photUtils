@@ -84,7 +84,7 @@ class TestApplyIGM(unittest.TestCase):
         with warnings.catch_warnings(record=True) as wa:
             testIGM.applyIGM(1.1, testSed)
             self.assertEqual(len(wa), 1)
-            self.assertTrue('IGM Lookup tables' in str(wa[-1].message))
+            self.assertIn('IGM Lookup tables', str(wa[-1].message))
         np.testing.assert_equal(testFlambda, testSed.flambda)
 
         #Test that lookup table is read in correctly
