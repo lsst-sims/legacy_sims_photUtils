@@ -115,51 +115,6 @@ class photometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, ebvObject.calculateEbv)
 
 
-class uncertaintyUnitTest(unittest.TestCase):
-    """
-    Test the calculation of photometric uncertainties
-    """
-
-    def setUp(self):
-        starName = os.path.join(getPackageDir('sims_photUtils'),'tests/cartoonSedTestData/starSed/')
-        starName = os.path.join(starName, 'kurucz', 'km20_5750.fits_g40_5790.gz')
-        self.starSED = Sed()
-        self.starSED.readSED_flambda(starName)
-        imsimband = Bandpass()
-        imsimband.imsimBandpass()
-        fNorm = self.starSED.calcFluxNorm(22.0, imsimband)
-        self.starSED.multiplyFluxNorm(fNorm)
-
-        self.totalBandpasses = []
-        self.hardwareBandpasses = []
-
-        componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
-                         'lens1.dat', 'lens2.dat', 'lens3.dat']
-        hardwareComponents = []
-        for c in componentList:
-            hardwareComponents.append(os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline',c))
-
-        self.bandpasses = ['u', 'g', 'r', 'i', 'z', 'y']
-        for b in self.bandpasses:
-            filterName = os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','filter_%s.dat' % b)
-            components = hardwareComponents + [filterName]
-            bandpassDummy = Bandpass()
-            bandpassDummy.readThroughputList(components)
-            self.hardwareBandpasses.append(bandpassDummy)
-            components = components + [os.path.join(lsst.utils.getPackageDir('throughputs'),'baseline','atmos.dat')]
-            bandpassDummy = Bandpass()
-            bandpassDummy.readThroughputList(components)
-            self.totalBandpasses.append(bandpassDummy)
-
-
-
-    def tearDown(self):
-        del self.starSED
-        del self.bandpasses
-        del self.hardwareBandpasses
-        del self.totalBandpasses
-
-
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
