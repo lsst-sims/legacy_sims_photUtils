@@ -154,9 +154,12 @@ class TestReadGalfast(unittest.TestCase):
                            kuruczPath = self.testKDir,
                            mltPath = self.testMLTDir,
                            wdPath = self.testWDDir)
-        self.assertTrue(os.path.isfile('exampleOutput.txt'))
-        self.assertTrue(os.path.isfile('exampleOutputGzip.txt.gz'))
-        self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
+        self.assertTrue(os.path.isfile('exampleOutput.txt'),
+                        msg='file exampleOutput.txt was not created')
+        self.assertTrue(os.path.isfile('exampleOutputGzip.txt.gz'),
+                        msg='file exampleOutputGzip.txt.gz was not created')
+        self.assertTrue(os.path.isfile('exampleOutputFits.txt'),
+                        msg='file exampleOutputFits.txt was not created')
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
