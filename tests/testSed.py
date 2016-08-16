@@ -57,17 +57,17 @@ class TestSedWavelenLimits(unittest.TestCase):
         with warnings.catch_warnings(record=True) as wa:
             testsed.resampleSED(wavelen_match=self.testbandpass.wavelen)
             self.assertEqual(len(wa), 1)
-            self.assertTrue('non-overlap' in str(wa[-1].message))
-        self.assertTrue(np.isnan(testsed.flambda[-1:]))
+            self.assertIn('non-overlap', str(wa[-1].message))
+        np.testing.assert_equal(testsed.flambda[-1:], np.NaN)
         sedwavelen = np.arange(self.wmin+50, self.wmax, 1)
         sedflambda = np.ones(len(sedwavelen))
         testsed = Sed(wavelen=sedwavelen, flambda=sedflambda)
         with warnings.catch_warnings(record=True) as wa:
             testsed.resampleSED(wavelen_match=self.testbandpass.wavelen)
             self.assertEqual(len(wa), 1)
-            self.assertTrue('non-overlap' in str(wa[-1].message))
-        self.assertTrue(np.isnan(testsed.flambda[0]))
-        self.assertTrue(np.isnan(testsed.flambda[49]))
+            self.assertIn('non-overlap', str(wa[-1].message))
+        np.testing.assert_equal(testsed.flambda[0], np.NaN)
+        np.testing.assert_equal(testsed.flambda[49], np.NaN)
 
     def testSedMagErrors(self):
         """Test error handling at mag and adu calculation levels of sed."""
@@ -78,21 +78,21 @@ class TestSedWavelenLimits(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             mag = testsed.calcMag(self.testbandpass)
             self.assertEqual(len(w), 1)
-            self.assertTrue("non-overlap" in str(w[-1].message))
-        self.assertTrue(np.isnan(mag))
+            self.assertIn("non-overlap", str(w[-1].message))
+        np.testing.assert_equal(mag, np.NaN)
         # Test handling in calcADU
         with warnings.catch_warnings(record=True) as w:
             adu = testsed.calcADU(self.testbandpass,
                                   photParams=PhotometricParameters())
             self.assertEqual(len(w), 1)
-            self.assertTrue("non-overlap" in str(w[-1].message))
-        self.assertTrue(np.isnan(adu))
+            self.assertIn("non-overlap", str(w[-1].message))
+        np.testing.assert_equal(adu, np.NaN)
         # Test handling in calcFlux
         with warnings.catch_warnings(record=True) as w:
             flux = testsed.calcFlux(self.testbandpass)
             self.assertEqual(len(w), 1)
-            self.assertTrue("non-overlap" in str(w[-1].message))
-        self.assertTrue(np.isnan(flux))
+            self.assertIn("non-overlap", str(w[-1].message))
+        np.testing.assert_equal(flux, np.NaN)
 
 
 class TestSedName(unittest.TestCase):
