@@ -8,9 +8,7 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
-from lsst.sims.photUtils import LSSTdefaults, PhotometricParameters, calcSNR_m5, \
-                                calcM5, calcSNR_sed, magErrorFromSNR, BandpassDict
-from lsst.sims.photUtils.utils import setM5
+from lsst.sims.photUtils import BandpassDict
 
 
 def setup_module(module):
@@ -21,12 +19,12 @@ class photometryUnitTest(unittest.TestCase):
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i',
-                            boundType='circle',pointingRA=200.0,pointingDec=-30.0,
-                            boundLength=1.0, m5 = 25.0)
+                                                boundType='circle',
+                                                pointingRA=200.0, pointingDec=-30.0,
+                                                boundLength=1.0, m5 = 25.0)
 
     def tearDown(self):
         del self.obs_metadata
-
 
     def testAlternateBandpassesStars(self):
         """
@@ -40,23 +38,20 @@ class photometryUnitTest(unittest.TestCase):
         LSST bandpasses.
         """
 
-        obs_metadata_pointed=ObservationMetaData(mjd=2013.23,
-                                                 boundType='circle',pointingRA=200.0,pointingDec=-30.0,
-                                                 boundLength=1.0)
+        bandpassDir = os.path.join(lsst.utils.getPackageDir('sims_photUtils'), 'tests', 'cartoonSedTestData')
 
-        bandpassDir=os.path.join(lsst.utils.getPackageDir('sims_photUtils'),'tests','cartoonSedTestData')
-
-        cartoon_dict = BandpassDict.loadTotalBandpassesFromFiles(['u','g','r','i','z'],bandpassDir = bandpassDir,
-                                                                 bandpassRoot = 'test_bandpass_')
+        cartoon_dict = BandpassDict.loadTotalBandpassesFromFiles(['u', 'g', 'r', 'i', 'z'],
+                                                                 bandpassDir=bandpassDir,
+                                                                 bandpassRoot='test_bandpass_')
 
         testBandPasses = {}
-        keys = ['u','g','r','i','z']
+        keys = ['u', 'g', 'r', 'i', 'z']
 
         bplist = []
 
         for kk in keys:
             testBandPasses[kk] = Bandpass()
-            testBandPasses[kk].readThroughput(os.path.join(bandpassDir,"test_bandpass_%s.dat" % kk))
+            testBandPasses[kk].readThroughput(os.path.join(bandpassDir, "test_bandpass_%s.dat" % kk))
             bplist.append(testBandPasses[kk])
 
         sedObj = Sed()
@@ -64,7 +59,7 @@ class photometryUnitTest(unittest.TestCase):
 
         sedFileName = os.path.join(lsst.utils.getPackageDir('sims_photUtils'),
                                    'tests/cartoonSedTestData/starSed/')
-        sedFileName = os.path.join(sedFileName,'kurucz','km20_5750.fits_g40_5790.gz')
+        sedFileName = os.path.join(sedFileName, 'kurucz', 'km20_5750.fits_g40_5790.gz')
         ss = Sed()
         ss.readSED_flambda(sedFileName)
 
@@ -81,9 +76,7 @@ class photometryUnitTest(unittest.TestCase):
         self.assertEqual(len(mags), len(testMags))
         self.assertGreater(len(mags), 0)
         for j in range(len(mags)):
-            self.assertAlmostEqual(mags[j],testMags[j],10)
-
-
+            self.assertAlmostEqual(mags[j], testMags[j], 10)
 
     def testEBV(self):
 
@@ -99,19 +92,20 @@ class photometryUnitTest(unittest.TestCase):
             gLat.append(-0.5*np.pi+i*np.pi/10.0)
             gLon.append(i*2.0*np.pi/10.0)
 
-            equatorialCoordinates=np.array([ra,dec])
-            galacticCoordinates=np.array([gLon,gLat])
+            equatorialCoordinates = np.array([ra, dec])
+            galacticCoordinates = np.array([gLon, gLat])
 
         ebvOutput = ebvObject.calculateEbv(equatorialCoordinates=equatorialCoordinates)
-        self.assertEqual(len(ebvOutput),len(ra))
+        self.assertEqual(len(ebvOutput), len(ra))
 
         ebvOutput = ebvObject.calculateEbv(galacticCoordinates=galacticCoordinates)
-        self.assertEqual(len(ebvOutput),len(gLon))
+        self.assertEqual(len(ebvOutput), len(gLon))
         self.assertGreater(len(ebvOutput), 0)
 
         self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=equatorialCoordinates,
-        galacticCoordinates=galacticCoordinates)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=None, galacticCoordinates=None)
+                          galacticCoordinates=galacticCoordinates)
+        self.assertRaises(RuntimeError, ebvObject.calculateEbv,
+                          equatorialCoordinates=None, galacticCoordinates=None)
         self.assertRaises(RuntimeError, ebvObject.calculateEbv)
 
 
