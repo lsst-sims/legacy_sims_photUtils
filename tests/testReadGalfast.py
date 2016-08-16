@@ -6,9 +6,14 @@ import gzip
 import re
 from astropy.io import fits
 import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.photUtils.readGalfast.readGalfast import readGalfast
 from lsst.utils import getPackageDir
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class TestReadGalfast(unittest.TestCase):
 
@@ -153,13 +158,9 @@ class TestReadGalfast(unittest.TestCase):
         self.assertTrue(os.path.isfile('exampleOutputGzip.txt.gz'))
         self.assertTrue(os.path.isfile('exampleOutputFits.txt'))
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestReadGalfast)
-    return unittest.TestSuite(suites)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
