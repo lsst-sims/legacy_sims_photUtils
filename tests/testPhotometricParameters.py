@@ -3,10 +3,14 @@ import os
 import numpy
 import unittest
 import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 from lsst.sims.photUtils import Bandpass, Sed, PhotometricParameters, \
                                 PhysicalParameters
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class PhotometricParametersUnitTest(unittest.TestCase):
 
@@ -287,15 +291,9 @@ class PhysicalParametersUnitTest(unittest.TestCase):
 
         self.assertEqual(success, 0, msg=msg)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(PhotometricParametersUnitTest)
-    suites += unittest.makeSuite(PhysicalParametersUnitTest)
-    return unittest.TestSuite(suites)
-
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
