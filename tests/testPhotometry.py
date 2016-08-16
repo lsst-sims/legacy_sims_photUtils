@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 import os
 import unittest
@@ -77,7 +77,7 @@ class photometryUnitTest(unittest.TestCase):
 
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
-        mags = -2.5*numpy.log10(numpy.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
+        mags = -2.5*np.log10(np.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
         self.assertTrue(len(mags)==len(testMags))
         self.assertTrue(len(mags)>0)
         for j in range(len(mags)):
@@ -93,14 +93,14 @@ class photometryUnitTest(unittest.TestCase):
         gLat = []
         gLon = []
         for i in range(10):
-            ra.append(i*2.0*numpy.pi/10.0)
-            dec.append(i*numpy.pi/10.0)
+            ra.append(i*2.0*np.pi/10.0)
+            dec.append(i*np.pi/10.0)
 
-            gLat.append(-0.5*numpy.pi+i*numpy.pi/10.0)
-            gLon.append(i*2.0*numpy.pi/10.0)
+            gLat.append(-0.5*np.pi+i*np.pi/10.0)
+            gLon.append(i*2.0*np.pi/10.0)
 
-            equatorialCoordinates=numpy.array([ra,dec])
-            galacticCoordinates=numpy.array([gLon,gLat])
+            equatorialCoordinates=np.array([ra,dec])
+            galacticCoordinates=np.array([gLon,gLat])
 
         ebvOutput = ebvObject.calculateEbv(equatorialCoordinates=equatorialCoordinates)
         self.assertEqual(len(ebvOutput),len(ra))
