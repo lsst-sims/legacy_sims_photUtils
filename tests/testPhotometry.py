@@ -78,8 +78,8 @@ class photometryUnitTest(unittest.TestCase):
         ss.resampleSED(wavelen_match = bplist[0].wavelen)
         ss.flambdaTofnu()
         mags = -2.5*np.log10(np.sum(phiArray*ss.fnu, axis=1)*waveLenStep) - ss.zp
-        self.assertTrue(len(mags)==len(testMags))
-        self.assertTrue(len(mags)>0)
+        self.assertEqual(len(mags), len(testMags))
+        self.assertGreater(len(mags), 0)
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j],testMags[j],10)
 
