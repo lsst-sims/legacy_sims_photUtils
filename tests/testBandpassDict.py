@@ -99,7 +99,7 @@ class BandpassDictTest(unittest.TestCase):
         # First make sure that we have created distinct wavelength grids
         for ix in range(len(bpList)):
             for iy in range(ix+1,len(bpList)):
-                self.assertTrue(len(bpList[ix].wavelen)!=len(bpList[iy].wavelen))
+                self.assertNotEqual(len(bpList[ix].wavelen), len(bpList[iy].wavelen))
 
         testDict = BandpassDict(bpList, bpNameList)
 
@@ -108,7 +108,7 @@ class BandpassDictTest(unittest.TestCase):
         for ix in range(len(bpList)):
             np.testing.assert_array_almost_equal(testDict.values()[ix].wavelen, testDict.wavelenMatch, 19)
             if ix!=0:
-                self.assertTrue(len(testDict.wavelenMatch)!=len(bpList[ix].wavelen))
+                self.assertNotEqual(len(testDict.wavelenMatch), len(bpList[ix].wavelen))
 
 
     def testPhiArray(self):
@@ -138,7 +138,7 @@ class BandpassDictTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             testDict = BandpassDict(bpList, dummyNameList)
 
-        self.assertTrue('occurs twice' in context.exception.message)
+        self.assertIn('occurs twice', context.exception.message)
 
 
         testDict = BandpassDict(bpList, nameList)
@@ -166,7 +166,7 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             magList = testDict.magListForSed(spectrum)
             for ix, (name, bp, magTest) in enumerate(zip(nameList, bpList, magList)):
@@ -186,7 +186,7 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             magDict = testDict.magDictForSed(spectrum)
             for ix, (name, bp) in enumerate(zip(nameList, bpList)):
@@ -323,7 +323,7 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertAlmostEqual(magTest, magControl, 5)
             else:
                 ctNaN += 1
-                self.assertTrue(np.isnan(magTest))
+                np.testing.assert_equal(magTest, np.NaN)
 
         self.assertEqual(ctNaN, 4)
 
@@ -355,7 +355,7 @@ class BandpassDictTest(unittest.TestCase):
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
                 else:
                     ctNaN += 1
-                    self.assertTrue(np.isnan(magList[ix][iy]))
+                    np.testing.assert_equal(magList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -381,7 +381,7 @@ class BandpassDictTest(unittest.TestCase):
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
                 else:
                     ctNaN +=  1
-                    self.assertTrue(np.isnan(magList[ix][iy]))
+                    np.testing.assert_equal(magList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -399,7 +399,7 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             fluxList = testDict.fluxListForSed(spectrum)
             for ix, (name, bp, fluxTest) in enumerate(zip(nameList, bpList, fluxList)):
@@ -420,7 +420,7 @@ class BandpassDictTest(unittest.TestCase):
 
             nameList, bpList = self.getListOfBandpasses(nBp)
             testDict = BandpassDict(bpList, nameList)
-            self.assertFalse(len(testDict.values()[0].wavelen)==len(spectrum.wavelen))
+            self.assertNotEqual(len(testDict.values()[0].wavelen), len(spectrum.wavelen))
 
             fluxDict = testDict.fluxDictForSed(spectrum)
             for ix, (name, bp) in enumerate(zip(nameList, bpList)):
@@ -558,7 +558,7 @@ class BandpassDictTest(unittest.TestCase):
                 self.assertAlmostEqual(fluxTest/fluxControl, 1.0, 2)
             else:
                 ctNaN += 1
-                self.assertTrue(np.isnan(fluxTest))
+                np.testing.assert_equal(fluxTest, np.NaN)
 
         self.assertEqual(ctNaN, 4)
 
@@ -590,7 +590,7 @@ class BandpassDictTest(unittest.TestCase):
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                 else:
                     ctNaN += 1
-                    self.assertTrue(np.isnan(fluxList[ix][iy]))
+                    np.testing.assert_equal(fluxList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -616,7 +616,7 @@ class BandpassDictTest(unittest.TestCase):
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                 else:
                     ctNaN +=  1
-                    self.assertTrue(np.isnan(fluxList[ix][iy]))
+                    np.testing.assert_equal(fluxList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
