@@ -1,12 +1,12 @@
 import numpy as np
 import warnings
 import unittest
-import os
 
 import lsst.utils.tests
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
+
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -46,7 +46,8 @@ class TestSedWavelenLimits(unittest.TestCase):
         print ''
         # Test that no warning is made.
         with warnings.catch_warnings(record=True) as wa:
-            w,f = testsed.resampleSED(wavelen_match=self.testbandpass.wavelen, wavelen=testsed.wavelen, flux=testsed.flambda)
+            w, f = testsed.resampleSED(wavelen_match=self.testbandpass.wavelen,
+                                       wavelen=testsed.wavelen, flux=testsed.flambda)
             self.assertEqual(len(wa), 0)
         np.testing.assert_equal(w, testsed.wavelen)
         np.testing.assert_equal(f, testsed.flambda)
@@ -109,7 +110,6 @@ class TestSedName(unittest.TestCase):
         del self.name
         del self.testsed
 
-
     def testSetName(self):
         self.assertEqual(self.testsed.name, self.name)
 
@@ -117,7 +117,7 @@ class TestSedName(unittest.TestCase):
         testsed = Sed(self.testsed.wavelen, self.testsed.flambda, name=self.testsed.name)
         redshift = .2
         testsed.redshiftSED(redshift=redshift)
-        newname = testsed.name + '_Z' + '%.2f' %(redshift)
+        newname = testsed.name + '_Z' + '%.2f' % (redshift)
         testsed.name = newname
         self.assertEqual(testsed.name, newname)
 
