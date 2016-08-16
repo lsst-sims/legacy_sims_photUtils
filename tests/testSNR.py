@@ -126,8 +126,8 @@ class TestSNRmethods(unittest.TestCase):
         sedDir = os.path.join(sedDir, 'kurucz')
         fileNameList = os.listdir(sedDir)
 
-        np.random.seed(42)
-        offset = np.random.random_sample(len(fileNameList))*2.0
+        rng = np.random.RandomState(42)
+        offset = rng.random_sample(len(fileNameList))*2.0
 
         for ix, name in enumerate(fileNameList):
             if ix>100:
@@ -258,8 +258,8 @@ class TestSNRmethods(unittest.TestCase):
         """
         Test that calcSNR_m5 works on numpy arrays of magnitudes
         """
-        np.random.seed(17)
-        mag_list = np.random.random_sample(100)*5.0 + 15.0
+        rng = np.random.RandomState(17)
+        mag_list = rng.random_sample(100)*5.0 + 15.0
 
         photParams = PhotometricParameters()
         bp = self.bpList[0]
@@ -279,8 +279,8 @@ class TestSNRmethods(unittest.TestCase):
         """
         Test that calcMagError_m5 works on numpy arrays of magnitudes
         """
-        np.random.seed(17)
-        mag_list = np.random.random_sample(100)*5.0 + 15.0
+        rng = np.random.RandomState(17)
+        mag_list = rng.random_sample(100)*5.0 + 15.0
 
         photParams = PhotometricParameters()
         bp = self.bpList[0]
