@@ -2,7 +2,7 @@ import unittest
 import os
 import numpy as np
 import lsst.utils
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.sims.photUtils.selectStarSED import selectStarSED
 from lsst.sims.photUtils.selectGalaxySED import selectGalaxySED
 from lsst.sims.photUtils.matchUtils import matchBase
@@ -13,6 +13,11 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils import BandpassDict
 from lsst.utils import getPackageDir
+
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
 
 class TestMatchBase(unittest.TestCase):
 
@@ -634,17 +639,10 @@ class TestSelectStarSED(unittest.TestCase):
         del cls.kmTestName
         del cls.mTestName
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(TestMatchBase)
-    suites += unittest.makeSuite(TestMatchStar)
-    suites += unittest.makeSuite(TestMatchGalaxy)
-    suites += unittest.makeSuite(TestSelectGalaxySED)
-    suites += unittest.makeSuite(TestSelectStarSED)
-    return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
-    utilsTests.run(suite(),shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
+
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
