@@ -66,7 +66,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
             PhotometricParameters(bandpass='x')
 
         for name in expectedMessage:
-            self.assertTrue(expectedMessage[name] in context.exception.message)
+            self.assertIn(expectedMessage[name], context.exception.message)
 
         for name1 in expectedMessage:
             for name2 in expectedMessage:
@@ -76,9 +76,9 @@ class PhotometricParametersUnitTest(unittest.TestCase):
 
                 for name3 in expectedMessage:
                     if name3 not in setParameters:
-                        self.assertTrue(expectedMessage[name3] in context.exception.message)
+                        self.assertIn(expectedMessage[name3], context.exception.message)
                     else:
-                        self.assertTrue(expectedMessage[name3] not in context.exception.message)
+                        self.assertNotIn(expectedMessage[name3], context.exception.message)
 
 
 
@@ -223,7 +223,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
 
         test = testSed.calcADU(testBandpass, photParams=testCase)
 
-        self.assertTrue(control>0.0)
+        self.assertGreater(control, 0.0)
         self.assertEqual(control, 0.5*test)
 
 
