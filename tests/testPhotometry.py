@@ -107,6 +107,7 @@ class photometryUnitTest(unittest.TestCase):
 
         ebvOutput = ebvObject.calculateEbv(galacticCoordinates=galacticCoordinates)
         self.assertEqual(len(ebvOutput),len(gLon))
+        self.assertGreater(len(ebvOutput), 0)
 
         self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=equatorialCoordinates,
         galacticCoordinates=galacticCoordinates)
