@@ -1,8 +1,12 @@
+from __future__ import with_statement
 import numpy as np
 import warnings
 import unittest
+import gzip
+import os
 
 import lsst.utils.tests
+from  lsst.utils import getPackageDir
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
@@ -120,6 +124,50 @@ class TestSedName(unittest.TestCase):
         newname = testsed.name + '_Z' + '%.2f' % (redshift)
         testsed.name = newname
         self.assertEqual(testsed.name, newname)
+
+
+class ReadSedTestCase(unittest.TestCase):
+
+    def test_read_sed_flambda(self):
+        """
+        Test how readSED_flambda handles the reading of SED filenames
+        when we fail to correctly specify their gzipped state.
+        """
+        scratch_dir = os.path.join(getPackageDir("sims_photUtils"),
+                                   "tests", "scratchSpace")
+
+        rng = np.random.RandomState(88)
+        zipped_name = os.path.join(scratch_dir, "zipped_sed.txt.gz")
+        unzipped_name = os.path.join(scratch_dir, "unzipped_sed.txt")
+        if os.path.exists(zipped_name):
+            os.unlink(zipped_name)
+        if os.path.exists(unzipped_name):
+            os.unlink(unzipped_name)
+        wv = np.arange(100.0, 1000.0, 10.0)
+        flux = rng.random_sample(len(wv))
+        with gzip.open(zipped_name, "w") as output_file:
+            for ww, ff in zip(wv, flux):
+                output_file.write("%e %e\n" % (ww, ff))
+        with open(unzipped_name, "w") as output_file:
+            for ww, ff in zip(wv, flux):
+                output_file.write("%e %e\n" % (ww, ff))
+
+        ss = Sed()
+        ss.readSED_flambda(zipped_name)
+        ss.readSED_flambda(zipped_name[:-3])
+        ss.readSED_flambda(unzipped_name)
+        ss.readSED_flambda(unzipped_name+'.gz')
+
+        # make sure an error is raised when you try to read
+        # a file that does not exist
+        with self.assertRaises(IOError) as context:
+            ss.readSED_flambda(os.path.join(scratch_dir, "nonsense.txt"))
+        self.assertIn("sed file", context.exception.message)
+
+        if os.path.exists(zipped_name):
+            os.unlink(zipped_name)
+        if os.path.exists(unzipped_name):
+            os.unlink(unzipped_name)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

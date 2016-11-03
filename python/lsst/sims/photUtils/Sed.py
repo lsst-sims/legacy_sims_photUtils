@@ -83,6 +83,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 
 import warnings
 import numpy
+import sys
 import scipy.interpolate as interpolate
 import gzip
 from .LSSTdefaults import LSSTdefaults
@@ -178,20 +179,30 @@ class Sed(object):
         """
         # Try to open data file.
         # ASSUME that if filename ends with '.gz' that the file is gzipped. Otherwise, regular file.
+        if filename.endswith('.gz'):
+            gzipped_filename = filename
+            unzipped_filename = filename[:-3]
+        else:
+            gzipped_filename = filename + '.gz'
+            unzipped_filename = filename
+
         try:
-            if filename.endswith('.gz'):
-                f = gzip.open(filename, 'r')
-            else:
-                f = open(filename, 'r')
-        #if the above fails, look for the file with and without the gz
+            f = gzip.open(gzipped_filename, 'r')
         except IOError:
             try:
-                if filename.endswith(".gz"):
-                    f = open(filename[:-3], 'r')
-                else:
-                    f = gzip.open(filename+".gz", 'r')
-            except IOError:
-                raise IOError("The sed file %s does not exist" %(filename))
+                f = open(unzipped_filename, 'r')
+            except Exception as e:
+                # append our message to the message of the error that was actually raised
+                # code taken form
+                # http://stackoverflow.com/questions/6062576/adding-information-to-an-exception
+                new_exception = type(e)(str(e) +
+                                       "\n\nError reading sed file %s; "
+                                       "it may not exist, "
+                                       "or be improperly formatted "
+                                       "(if the file name ends in .gz it should be gzipped; "
+                                       "if not, it should just be a text file)" % filename)
+                raise type(e), new_exception, sys.exc_info()[2]
+
         # Read source SED from file - lambda, flambda should be first two columns in the file.
         # lambda should be in nm and flambda should be in ergs/cm2/s/nm
         sourcewavelen = []
