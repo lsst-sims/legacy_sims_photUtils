@@ -116,6 +116,49 @@ class Sed(object):
             self.setSED(wavelen, flambda=flambda, fnu=fnu, name=name)
         return
 
+    def __eq__(self, other):
+        if self.name != other.name:
+            return False
+        if self.zp != other.zp:
+            return False
+        if not numpy.isnan(self.badval):
+            if self.badval != other.badval:
+                return False
+        else:
+            if not numpy.isnan(other.badval):
+                return False
+        if self.fnu is not None and other.fnu is None:
+            return False
+        if self.fnu is None and other.fnu is not None:
+            return False
+        if self.fnu is not None:
+            try:
+                numpy.testing.assert_array_equal(self.fnu, other.fnu)
+            except:
+                return False
+
+        if self.flambda is None and other.flambda is not None:
+            return False
+        if other.flambda is not None and self.flambda is None:
+            return False
+        if self.flambda is not None:
+            try:
+                numpy.testing.assert_array_equal(self.flambda, other.flambda)
+            except:
+                return False
+
+        if self.wavelen is None and other.wavelen is not None:
+            return False
+        if self.wavelen is not None and other.wavelen is None:
+            return False
+        if self.wavelen is not None:
+            try:
+                numpy.testing.assert_array_equal(self.wavelen, other.wavelen)
+            except:
+                return False
+
+        return True
+
     ### Methods for getters and setters.
 
     def setSED(self, wavelen, flambda=None, fnu=None, name='FromArray'):

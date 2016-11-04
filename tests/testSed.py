@@ -126,7 +126,7 @@ class TestSedName(unittest.TestCase):
         self.assertEqual(testsed.name, newname)
 
 
-class ReadSedTestCase(unittest.TestCase):
+class SedBasicFunctionsTestCase(unittest.TestCase):
 
     def test_read_sed_flambda(self):
         """
@@ -168,6 +168,25 @@ class ReadSedTestCase(unittest.TestCase):
             os.unlink(zipped_name)
         if os.path.exists(unzipped_name):
             os.unlink(unzipped_name)
+
+    def test_eq(self):
+        """
+        Test that __eq__ in Sed works correctly
+        """
+        sed_dir = os.path.join(getPackageDir('sims_sed_library'), 'starSED', 'kurucz')
+        list_of_seds = os.listdir(sed_dir)
+        sedname1 = os.path.join(sed_dir, list_of_seds[0])
+        sedname2 = os.path.join(sed_dir, list_of_seds[1])
+        ss1 = Sed()
+        ss1.readSED_flambda(sedname1)
+        ss2 = Sed()
+        ss2.readSED_flambda(sedname2)
+        ss3 = Sed()
+        ss3.readSED_flambda(sedname1)
+        self.assertFalse(ss1 == ss2)
+        self.assertTrue(ss1 == ss3)
+        ss3.flambdaTofnu()
+        self.assertFalse(ss1 == ss3)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
