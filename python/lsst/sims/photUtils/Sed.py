@@ -88,19 +88,43 @@ import sys
 import scipy.interpolate as interpolate
 import gzip
 import pickle
+import os
 from .LSSTdefaults import LSSTdefaults
 from .PhysicalParameters import PhysicalParameters
 
 
-__all__ = ["Sed"]
+__all__ = ["Sed", "validate_sed_cache"]
 
 
 class sed_unpickler(pickle.Unpickler):
 
+    _allowed_obj = (("numpy", "ndarray"),
+                    ("numpy", "dtype"),
+                    ("numpy.core.multiarray", "_reconstruct"))
+
     def find_class(self, module, name):
-        raise RuntimeError("Cannot call find_class() with sed_unpickler "
-                           "this is for security reasons\n"
-                           "https://docs.python.org/3.1/library/pickle.html#pickle-restrict")
+        allowed = False
+        for _module, _name in self._allowed_obj:
+            if module == _module and name==_name:
+                allowed = True
+                break
+
+        if not allowed:
+            raise RuntimeError("Cannot call find_class() on %s, %s with sed_unpickler " % (module, name)
+                               + "this is for security reasons\n"
+                               + "https://docs.python.org/3.1/library/pickle.html#pickle-restrict")
+
+        if module == "numpy":
+            if name == "ndarray":
+                return getattr(numpy, name)
+            elif name == "dtype":
+                return getattr(numpy, name)
+            else:
+                raise RuntimeError("sed_unpickler not meant to load numpy.%s" % name)
+        elif module == "numpy.core.multiarray":
+            return getattr(numpy.core.multiarray, name)
+        else:
+            raise RuntimeError("sed_unpickler cannot handle module %s" % module)
 
 
 _global_sed_cache = None
@@ -112,10 +136,51 @@ try:
     with open(_global_sed_cache_name, 'rb') as input_file:
         _global_sed_cache = sed_unpickler(input_file).load()
 
-    assert isinstance(_global_sed_cache, dict)
+    if not isinstance(_global_sed_cache, dict):
+        _global_sed_cache = None
 except:
-    pass
+    raise
 
+
+def validate_sed_cache():
+    """
+    Verifies that the pickled SED cache exists, is a dict, and contains
+    an entry for every SED in starSED/ and galaxySED.  Does nothing if so,
+    raises a RuntimeError if false.
+
+    We are doing this here so that sims_sed_library does not have to depend
+    on any lsst testing software (in which case, users would have to get
+    a new copy of sims_sed_library every time the upstream software changed).
+
+    We are doing this through a method (rather than giving users access to
+    _global_sed_cache) so that users do not accidentally ruin _global_sed_cache.
+    """
+    global _global_sed_cache
+    if _global_sed_cache is None:
+        print _global_sed_cache
+        raise RuntimeError("_global_sed_cache does not exist")
+    if not isinstance(_global_sed_cache, dict):
+        raise RuntimeError("_global_sed_cache is a %s; not a dict"
+                           % str(type(_global_sed_cache)))
+    sed_dir = getPackageDir('sims_sed_library')
+    sub_dir_list = ['galaxySED', 'starSED']
+    file_ct = 0
+    for sub_dir in sub_dir_list:
+        tree = os.walk(os.path.join(sed_dir, sub_dir))
+        for entry in tree:
+            local_dir = entry[0]
+            file_list = entry[2]
+            for file_name in file_list:
+                if file_name.endswith('.gz'):
+                    full_name = os.path.join(sed_dir, sub_dir, local_dir, file_name)
+                    if full_name not in _global_sed_cache:
+                        raise RuntimeError("%s is not in _global_sed_cache"
+                                           % full_name)
+                    file_ct += 1
+    if file_ct == 0:
+        raise RuntimeError("There were not files in _global_sed_cache")
+
+    return
 
 class Sed(object):
     """Class for holding and utilizing spectral energy distributions (SEDs)"""
@@ -263,9 +328,9 @@ class Sed(object):
             if gzipped_filename in _global_sed_cache:
                 cached_source = _global_sed_cache[gzipped_filename]
             elif unzipped_filename in _global_sed_cache:
-                cached_source = _global_sed_cache[gzipped_filename]
+                cached_source = _global_sed_cache[unzipped_filename]
 
-            if source is not None:
+            if cached_source is not None:
                 sourcewavelen = cached_source[0]
                 sourceflambda = cached_source[1]
 

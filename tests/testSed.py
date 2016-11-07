@@ -8,6 +8,7 @@ import os
 import lsst.utils.tests
 from  lsst.utils import getPackageDir
 import lsst.sims.photUtils.Sed as Sed
+from lsst.sims.photUtils import validate_sed_cache
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
 
@@ -198,6 +199,13 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
 class CacheTestCase(unittest.TestCase):
 
     longMessage = True
+
+    def test_cache_validity(self):
+        """
+        Just run validate_sed_cache() to make sure that the pickled
+        SED cache was correctly loaded.
+        """
+        validate_sed_cache()
 
     def test_cached_versus_uncached(self):
         """
