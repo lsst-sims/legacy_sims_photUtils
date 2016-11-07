@@ -183,10 +183,16 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         ss2.readSED_flambda(sedname2)
         ss3 = Sed()
         ss3.readSED_flambda(sedname1)
+
         self.assertFalse(ss1 == ss2)
+        self.assertTrue(ss1 != ss2)
         self.assertTrue(ss1 == ss3)
+        self.assertFalse(ss1 != ss3)
+
         ss3.flambdaTofnu()
+
         self.assertFalse(ss1 == ss3)
+        self.assertTrue(ss1 != ss3)
 
 
 class CacheTestCase(unittest.TestCase):

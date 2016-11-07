@@ -185,6 +185,9 @@ class Sed(object):
 
         return True
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     ### Methods for getters and setters.
 
     def setSED(self, wavelen, flambda=None, fnu=None, name='FromArray'):
