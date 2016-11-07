@@ -86,10 +86,21 @@ import numpy
 import sys
 import scipy.interpolate as interpolate
 import gzip
+import pickle
 from .LSSTdefaults import LSSTdefaults
 from .PhysicalParameters import PhysicalParameters
 
+
 __all__ = ["Sed"]
+
+
+def sed_unpickler(pickle.Unpickler):
+
+    def find_class(self, module, name):
+        raise RuntimeError("Cannot call find_class() with sed_unpickler "
+                           "this is for security reasons\n"
+                           "https://docs.python.org/3.1/library/pickle.html#pickle-restrict")
+
 
 class Sed(object):
     """Class for holding and utilizing spectral energy distributions (SEDs)"""
