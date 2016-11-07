@@ -81,6 +81,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 
 """
 
+from __future__ import with_statement
 import warnings
 import numpy
 import sys
@@ -94,12 +95,26 @@ from .PhysicalParameters import PhysicalParameters
 __all__ = ["Sed"]
 
 
-def sed_unpickler(pickle.Unpickler):
+class sed_unpickler(pickle.Unpickler):
 
     def find_class(self, module, name):
         raise RuntimeError("Cannot call find_class() with sed_unpickler "
                            "this is for security reasons\n"
                            "https://docs.python.org/3.1/library/pickle.html#pickle-restrict")
+
+
+_global_sed_cache = None
+try:
+    from lsst.utils import getPackageDir
+    _global_sed_cache_name = os.path.join(getPackageDir('sims_sed_library'),
+                                          'sedCacheDir', 'sed_cache.p')
+
+    with open(_global_sed_cache_name, 'rb') as input_file:
+        _global_sed_cache = sed_unpickler(input_file).load()
+
+    assert isinstance(_global_sed_cache, dict)
+except:
+    pass
 
 
 class Sed(object):
@@ -240,34 +255,47 @@ class Sed(object):
             gzipped_filename = filename + '.gz'
             unzipped_filename = filename
 
-        try:
-            f = gzip.open(gzipped_filename, 'r')
-        except IOError:
-            try:
-                f = open(unzipped_filename, 'r')
-            except Exception as e:
-                # append our message to the message of the error that was actually raised
-                # code taken form
-                # http://stackoverflow.com/questions/6062576/adding-information-to-an-exception
-                new_exception = type(e)(str(e) +
-                                       "\n\nError reading sed file %s; "
-                                       "it may not exist, "
-                                       "or be improperly formatted "
-                                       "(if the file name ends in .gz it should be gzipped; "
-                                       "if not, it should just be a text file)" % filename)
-                raise type(e), new_exception, sys.exc_info()[2]
+        cached_source = None
+        if _global_sed_cache is not None:
+            if gzipped_filename in _global_sed_cache:
+                cached_source = _global_sed_cache[gzipped_filename]
+            elif unzipped_filename in _global_sed_cache:
+                cached_source = _global_sed_cache[gzipped_filename]
 
-        # Read source SED from file - lambda, flambda should be first two columns in the file.
-        # lambda should be in nm and flambda should be in ergs/cm2/s/nm
-        sourcewavelen = []
-        sourceflambda = []
-        for line in f:
-            if line.startswith("#"):
-                continue
-            values = line.split()
-            sourcewavelen.append(float(values[0]))
-            sourceflambda.append(float(values[1]))
-        f.close()
+            if source is not None:
+                sourcewavelen = cached_source[0]
+                sourceflambda = cached_source[1]
+
+        if cached_source is None:
+            try:
+                f = gzip.open(gzipped_filename, 'r')
+            except IOError:
+                try:
+                    f = open(unzipped_filename, 'r')
+                except Exception as e:
+                    # append our message to the message of the error that was actually raised
+                    # code taken form
+                    # http://stackoverflow.com/questions/6062576/adding-information-to-an-exception
+                    new_exception = type(e)(str(e) +
+                                           "\n\nError reading sed file %s; "
+                                           "it may not exist, "
+                                           "or be improperly formatted "
+                                           "(if the file name ends in .gz it should be gzipped; "
+                                           "if not, it should just be a text file)" % filename)
+                    raise type(e), new_exception, sys.exc_info()[2]
+
+            # Read source SED from file - lambda, flambda should be first two columns in the file.
+            # lambda should be in nm and flambda should be in ergs/cm2/s/nm
+            sourcewavelen = []
+            sourceflambda = []
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                values = line.split()
+                sourcewavelen.append(float(values[0]))
+                sourceflambda.append(float(values[1]))
+            f.close()
+
         self.wavelen = numpy.array(sourcewavelen)
         self.flambda = numpy.array(sourceflambda)
         self.fnu = None

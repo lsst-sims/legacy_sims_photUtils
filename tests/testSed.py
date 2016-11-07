@@ -189,6 +189,30 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         self.assertFalse(ss1 == ss3)
 
 
+class CacheTestCase(unittest.TestCase):
+
+    def test_cached_versus_uncached(self):
+        """
+        Verify that loading an SED from the pickled cache give identical
+        results to loading the same SED from ASCII
+        """
+        sed_dir = os.path.join(getPackageDir('sims_sed_library'),
+                               'starSED', 'kurucz')
+
+        dtype = np.dtype([('wavelen', float), ('flambda', float)])
+
+        sed_name_list = os.listdir(sed_dir)
+        for ix in range(5):
+            full_name = os.path.join(sed_dir, sed_name_list[ix])
+            from_np = np.genfromtxt(full_name, dtype=dtype)
+            ss_cache = Sed()
+            ss_cache.readSED_flambda(full_name)
+            ss_uncache  = Sed(wavelen=from_np['wavelen'],
+                              flambda=from_np['flambda'],
+                              name=full_name)
+            self.assertEqual(ss_cache, ss_uncache)
+
+
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
