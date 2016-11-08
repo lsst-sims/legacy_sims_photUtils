@@ -128,6 +128,8 @@ class TestSedName(unittest.TestCase):
 
 class SedBasicFunctionsTestCase(unittest.TestCase):
 
+    longMessage = True
+
     def test_read_sed_flambda(self):
         """
         Test how readSED_flambda handles the reading of SED filenames
@@ -193,6 +195,32 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
 
         self.assertFalse(ss1 == ss3)
         self.assertTrue(ss1 != ss3)
+
+    def test_cache(self):
+        """
+        Verify that loading an SED from the cache gives identical
+        results to loading the same SED from ASCII (since we are
+        not calling cache_LSST_seds(), as soon as we load an SED
+        with readSED_flambda, it should get stored in the
+        _global_misc_sed_cache)
+        """
+        sed_dir = os.path.join(getPackageDir('sims_sed_library'),
+                               'starSED', 'kurucz')
+
+        dtype = np.dtype([('wavelen', float), ('flambda', float)])
+
+        sed_name_list = os.listdir(sed_dir)
+        msg = ('An SED loaded from the cache is not '
+               'identical to the same SED loaded from disk')
+        for ix in range(5):
+            full_name = os.path.join(sed_dir, sed_name_list[ix])
+            from_np = np.genfromtxt(full_name, dtype=dtype)
+            ss_uncache = Sed()
+            ss_uncache.readSED_flambda(full_name)
+            ss_cache  = Sed()
+            ss_cache.readSED_flambda(full_name)
+
+            self.assertEqual(ss_cache, ss_uncache, msg=msg)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
