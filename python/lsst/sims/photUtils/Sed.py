@@ -487,8 +487,8 @@ class Sed(object):
                 cached_source = _global_misc_sed_cache[unzipped_filename]
 
         if cached_source is not None:
-            sourcewavelen = cached_source[0]
-            sourceflambda = cached_source[1]
+            sourcewavelen = numpy.copy(cached_source[0])
+            sourceflambda = numpy.copy(cached_source[1])
 
         if cached_source is None:
             try:
