@@ -204,7 +204,7 @@ def _compare_cached_versus_uncached():
             raise SedCacheError(msg)
 
 
-def _generate_sed_cache(cache_name):
+def _generate_sed_cache(cache_dir, cache_name):
     """
     Read all of the SEDs from sims_sed_library into a dict.
     Pickle the dict and store it in
@@ -212,7 +212,8 @@ def _generate_sed_cache(cache_name):
 
     Parameters
     ----------
-    The name of the file in which to store the pickled dict
+    cache_dir is the directory where the cache will be created
+    cache_name is the name of the cache to be created
 
     Returns
     -------
@@ -240,8 +241,13 @@ def _generate_sed_cache(cache_name):
                     except:
                         pass
 
-    with open(cache_name, "wb") as file_handle:
+    with open(os.path.join(cache_dir, cache_name), "wb") as file_handle:
         pickle.dump(cache, file_handle)
+
+    # record the specific sims_sed_library directory being cached so that
+    # a new cache will be generated if sims_sed_library gets updated
+    with open(os.path.join(cache_dir, "cache_version.txt"), "w") as file_handle:
+        file_handle.write("%s %s" % (sed_root, cache_name))
 
     return cache
 
@@ -265,9 +271,8 @@ def cache_LSST_seds():
 
     global _global_sed_cache
     try:
-        sed_cache_name = os.path.join(getPackageDir('sims_photUtils'),
-                                      'cacheDir', 'lsst_sed_cache.p')
-
+        sed_cache_dir = os.path.join(getPackageDir('sims_photUtils'), 'cacheDir')
+        sed_cache_name = os.path.join('lsst_sed_cache.p')
         sed_dir = getPackageDir('sims_sed_library')
 
     except:
@@ -276,12 +281,32 @@ def cache_LSST_seds():
               "stack. You cannot generate and load the cache of LSST SEDs")
         return
 
-    if not os.path.exists(sed_cache_name):
-        cache = _generate_sed_cache(sed_cache_name)
+    must_generate = False
+    if not os.path.exists(os.path.join(sed_cache_dir, sed_cache_name)):
+        must_generate = True
+    if not os.path.exists(os.path.join(sed_cache_dir, "cache_version.txt")):
+        must_generate = True
+    else:
+        with open(os.path.join(sed_cache_dir, "cache_version.txt"), "r") as input_file:
+            lines = input_file.readlines()
+            if len(lines) != 1:
+                must_generate = True
+            else:
+                info = lines[0].split()
+                if len(info) != 2:
+                     must_generate = True
+                elif info[0] != sed_dir:
+                    must_generate = True
+                elif info[1] != sed_cache_name:
+                    must_generate = True
+
+    if must_generate:
+        print "creating cache of LSST SEDs"
+        cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
         _global_sed_cache = cache
     else:
 
-        with open(sed_cache_name, 'rb') as input_file:
+        with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
             _global_sed_cache = sed_unpickler(input_file).load()
 
     # Now that we have generated/loaded the cache, we must run tests
