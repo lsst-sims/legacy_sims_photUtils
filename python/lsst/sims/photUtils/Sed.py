@@ -101,6 +101,9 @@ __all__ = ["Sed", "cache_LSST_seds"]
 
 _global_lsst_sed_cache = None
 
+# a cache for ASCII files read-in by the user
+_global_misc_sed_cache = None
+
 
 class SedCacheError(Exception):
     pass
@@ -458,6 +461,9 @@ class Sed(object):
 
         Does not resample wavelen/flambda onto grid; leave fnu=None.
         """
+        global _global_lsst_sed_cache
+        global _global_misc_sed_cache
+
         # Try to open data file.
         # ASSUME that if filename ends with '.gz' that the file is gzipped. Otherwise, regular file.
         if filename.endswith('.gz'):
@@ -474,9 +480,15 @@ class Sed(object):
             elif unzipped_filename in _global_lsst_sed_cache:
                 cached_source = _global_lsst_sed_cache[unzipped_filename]
 
-            if cached_source is not None:
-                sourcewavelen = cached_source[0]
-                sourceflambda = cached_source[1]
+        if cached_source is None and _global_misc_sed_cache is not None:
+            if gzipped_filename in _global_misc_sed_cache:
+                cached_source = _global_misc_sed_cache[gzipped_filename]
+            if unzipped_filename in _global_misc_sed_cache:
+                cached_source = _global_misc_sed_cache[unzipped_filename]
+
+        if cached_source is not None:
+            sourcewavelen = cached_source[0]
+            sourceflambda = cached_source[1]
 
         if cached_source is None:
             try:
@@ -507,9 +519,15 @@ class Sed(object):
                 sourcewavelen.append(float(values[0]))
                 sourceflambda.append(float(values[1]))
             f.close()
+            sourcewavelen = numpy.array(sourcewavelen)
+            sourceflambda = numpy.array(sourceflambda)
+            if _global_misc_sed_cache is None:
+                _global_misc_sed_cache = {}
+            _global_misc_sed_cache[filename] = (numpy.copy(sourcewavelen),
+                                                numpy.copy(sourceflambda))
 
-        self.wavelen = numpy.array(sourcewavelen)
-        self.flambda = numpy.array(sourceflambda)
+        self.wavelen = sourcewavelen
+        self.flambda = sourceflambda
         self.fnu = None
         if name is None:
             self.name = filename
