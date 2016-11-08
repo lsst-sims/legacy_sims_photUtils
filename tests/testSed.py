@@ -222,6 +222,21 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
 
             self.assertEqual(ss_cache, ss_uncache, msg=msg)
 
+        # test that modifications to an SED don't get pushed
+        # to the cache
+        full_name = os.path.join(sed_dir, sed_name_list[0])
+        ss1 = Sed()
+        ss1.readSED_flambda(full_name)
+        ss2 = Sed()
+        ss2.readSED_flambda(full_name)
+        ss2.flambda *= 2.0
+        ss3 = Sed()
+        ss3.readSED_flambda(full_name)
+        msg = "Changes to SED made it into the cache"
+        self.assertEqual(ss1, ss3, msg=msg)
+        self.assertNotEqual(ss1, ss2, msg=msg)
+        self.assertNotEqual(ss2, ss3, msg=msg)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
