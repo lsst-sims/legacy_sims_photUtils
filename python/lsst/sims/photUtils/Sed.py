@@ -99,7 +99,7 @@ except:
 __all__ = ["Sed", "cache_LSST_seds"]
 
 
-_global_sed_cache = None
+_global_lsst_sed_cache = None
 
 
 class SedCacheError(Exception):
@@ -148,14 +148,15 @@ def _validate_sed_cache():
     a new copy of sims_sed_library every time the upstream software changed).
 
     We are doing this through a method (rather than giving users access to
-    _global_sed_cache) so that users do not accidentally ruin _global_sed_cache.
+    _global_lsst_sed_cache) so that users do not accidentally ruin
+    _global_lsst_sed_cache.
     """
-    global _global_sed_cache
-    if _global_sed_cache is None:
-        raise SedCacheError("_global_sed_cache does not exist")
-    if not isinstance(_global_sed_cache, dict):
-        raise SedCacheError("_global_sed_cache is a %s; not a dict"
-                           % str(type(_global_sed_cache)))
+    global _global_lsst_sed_cache
+    if _global_lsst_sed_cache is None:
+        raise SedCacheError("_global_lsst_sed_cache does not exist")
+    if not isinstance(_global_lsst_sed_cache, dict):
+        raise SedCacheError("_global_lsst_sed_cache is a %s; not a dict"
+                           % str(type(_global_lsst_sed_cache)))
     sed_dir = getPackageDir('sims_sed_library')
     sub_dir_list = ['galaxySED', 'starSED']
     file_ct = 0
@@ -167,12 +168,12 @@ def _validate_sed_cache():
             for file_name in file_list:
                 if file_name.endswith('.gz'):
                     full_name = os.path.join(sed_dir, sub_dir, local_dir, file_name)
-                    if full_name not in _global_sed_cache:
-                        raise SedCacheError("%s is not in _global_sed_cache"
+                    if full_name not in _global_lsst_sed_cache:
+                        raise SedCacheError("%s is not in _global_lsst_sed_cache"
                                            % full_name)
                     file_ct += 1
     if file_ct == 0:
-        raise SedCacheError("There were not files in _global_sed_cache")
+        raise SedCacheError("There were not files in _global_lsst_sed_cache")
 
     return
 
@@ -269,7 +270,7 @@ def cache_LSST_seds():
     to generate and about 51 seconds to load on a 2014 Mac Book Pro.
     """
 
-    global _global_sed_cache
+    global _global_lsst_sed_cache
     try:
         sed_cache_dir = os.path.join(getPackageDir('sims_photUtils'), 'cacheDir')
         sed_cache_name = os.path.join('lsst_sed_cache.p')
@@ -303,15 +304,15 @@ def cache_LSST_seds():
     if must_generate:
         print "creating cache of LSST SEDs"
         cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
-        _global_sed_cache = cache
+        _global_lsst_sed_cache = cache
     else:
 
         with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
-            _global_sed_cache = sed_unpickler(input_file).load()
+            _global_lsst_sed_cache = sed_unpickler(input_file).load()
 
     # Now that we have generated/loaded the cache, we must run tests
     # to make sure that the cache is correctly constructed.  If these
-    # fail, _global_sed_cache will be set to 'None' and the code will
+    # fail, _global_lsst_sed_cache will be set to 'None' and the code will
     # continue running.
     try:
         _validate_sed_cache()
@@ -319,7 +320,7 @@ def cache_LSST_seds():
     except SedCacheError as ee:
         print ee.message
         print "Cannot use cache of LSST SEDs"
-        _global_sed_cache = None
+        _global_lsst_sed_cache = None
         pass
 
     return
@@ -467,11 +468,11 @@ class Sed(object):
             unzipped_filename = filename
 
         cached_source = None
-        if _global_sed_cache is not None:
-            if gzipped_filename in _global_sed_cache:
-                cached_source = _global_sed_cache[gzipped_filename]
-            elif unzipped_filename in _global_sed_cache:
-                cached_source = _global_sed_cache[unzipped_filename]
+        if _global_lsst_sed_cache is not None:
+            if gzipped_filename in _global_lsst_sed_cache:
+                cached_source = _global_lsst_sed_cache[gzipped_filename]
+            elif unzipped_filename in _global_lsst_sed_cache:
+                cached_source = _global_lsst_sed_cache[unzipped_filename]
 
             if cached_source is not None:
                 sourcewavelen = cached_source[0]
