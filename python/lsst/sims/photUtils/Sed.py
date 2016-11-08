@@ -91,9 +91,19 @@ import pickle
 import os
 from .LSSTdefaults import LSSTdefaults
 from .PhysicalParameters import PhysicalParameters
+try:
+    from lsst.utils import getPackageDir
+except:
+    pass
+
+__all__ = ["Sed", "cache_LSST_seds"]
 
 
-__all__ = ["Sed", "validate_sed_cache"]
+_global_sed_cache = None
+
+
+class SedCacheError(Exception):
+    pass
 
 
 class sed_unpickler(pickle.Unpickler):
@@ -127,22 +137,7 @@ class sed_unpickler(pickle.Unpickler):
             raise RuntimeError("sed_unpickler cannot handle module %s" % module)
 
 
-_global_sed_cache = None
-try:
-    from lsst.utils import getPackageDir
-    _global_sed_cache_name = os.path.join(getPackageDir('sims_sed_library'),
-                                          'sedCacheDir', 'sed_cache.p')
-
-    with open(_global_sed_cache_name, 'rb') as input_file:
-        _global_sed_cache = sed_unpickler(input_file).load()
-
-    if not isinstance(_global_sed_cache, dict):
-        _global_sed_cache = None
-except:
-    raise
-
-
-def validate_sed_cache():
+def _validate_sed_cache():
     """
     Verifies that the pickled SED cache exists, is a dict, and contains
     an entry for every SED in starSED/ and galaxySED.  Does nothing if so,
@@ -157,10 +152,9 @@ def validate_sed_cache():
     """
     global _global_sed_cache
     if _global_sed_cache is None:
-        print _global_sed_cache
-        raise RuntimeError("_global_sed_cache does not exist")
+        raise SedCacheError("_global_sed_cache does not exist")
     if not isinstance(_global_sed_cache, dict):
-        raise RuntimeError("_global_sed_cache is a %s; not a dict"
+        raise SedCacheError("_global_sed_cache is a %s; not a dict"
                            % str(type(_global_sed_cache)))
     sed_dir = getPackageDir('sims_sed_library')
     sub_dir_list = ['galaxySED', 'starSED']
@@ -174,13 +168,137 @@ def validate_sed_cache():
                 if file_name.endswith('.gz'):
                     full_name = os.path.join(sed_dir, sub_dir, local_dir, file_name)
                     if full_name not in _global_sed_cache:
-                        raise RuntimeError("%s is not in _global_sed_cache"
+                        raise SedCacheError("%s is not in _global_sed_cache"
                                            % full_name)
                     file_ct += 1
     if file_ct == 0:
-        raise RuntimeError("There were not files in _global_sed_cache")
+        raise SedCacheError("There were not files in _global_sed_cache")
 
     return
+
+def _compare_cached_versus_uncached():
+    """
+    Verify that loading an SED from the pickled cache give identical
+    results to loading the same SED from ASCII
+    """
+    sed_dir = os.path.join(getPackageDir('sims_sed_library'),
+                           'starSED', 'kurucz')
+
+    dtype = numpy.dtype([('wavelen', float), ('flambda', float)])
+
+    sed_name_list = os.listdir(sed_dir)
+    msg = ('An SED loaded from the pickled cache is not '
+           'identical to the same SED loaded from ASCII; '
+           'it is possible that the pickled cache was incorrectly '
+           'created in sims_sed_library')
+    for ix in range(5):
+        full_name = os.path.join(sed_dir, sed_name_list[ix])
+        from_np = numpy.genfromtxt(full_name, dtype=dtype)
+        ss_cache = Sed()
+        ss_cache.readSED_flambda(full_name)
+        ss_uncache  = Sed(wavelen=from_np['wavelen'],
+                          flambda=from_np['flambda'],
+                          name=full_name)
+
+        if not ss_cache == ss_uncache:
+            raise SedCacheError(msg)
+
+
+def _generate_sed_cache(cache_name):
+    """
+    Read all of the SEDs from sims_sed_library into a dict.
+    Pickle the dict and store it in
+    sims_photUtils/cacheDir/lsst_sed_cache.p
+
+    Parameters
+    ----------
+    The name of the file in which to store the pickled dict
+
+    Returns
+    -------
+    The dict of SEDs (keyed to their full file name)
+    """
+    sed_root = getPackageDir('sims_sed_library')
+    dtype = numpy.dtype([('wavelen', float), ('flambda', float)])
+
+    sub_dir_list = ['agnSED', 'flatSED', 'ssmSED', 'starSED', 'galaxySED']
+
+    cache = {}
+
+    for sub_dir in sub_dir_list:
+        dir_tree = os.walk(os.path.join(sed_root, sub_dir))
+        for sub_tree in dir_tree:
+            dir_name = sub_tree[0]
+            file_list = sub_tree[2]
+
+            for file_name in file_list:
+                if file_name.endswith('.gz'):
+                    try:
+                        full_name = os.path.join(dir_name, file_name)
+                        data = numpy.genfromtxt(full_name, dtype=dtype)
+                        cache[full_name] = (data['wavelen'], data['flambda'])
+                    except:
+                        pass
+
+    with open(cache_name, "wb") as file_handle:
+        pickle.dump(cache, file_handle)
+
+    return cache
+
+
+def cache_LSST_seds():
+    """
+    Read all of the SEDs in sims_sed_library into a dict.  Pickle the dict
+    and store it in sims_photUtils/cacheDir/lsst_sed_cache.p for future use.
+
+    After the file has initially been created, the next time you run this script,
+    it will just use pickle to load the dict.
+
+    Once the dict is loaded, Sed.readSED_flambda() will be able to read any
+    LSST-shipped SED directly from memory, rather than using I/O to read it
+    from an ASCII file stored on disk.
+
+    Note: the dict of cached SEDs will take up about 5GB on disk.  Once loaded,
+    the cache will take up about 1.5GB of memory.  The cache takes about 14 minutes
+    to generate and about 51 seconds to load on a 2014 Mac Book Pro.
+    """
+
+    global _global_sed_cache
+    try:
+        sed_cache_name = os.path.join(getPackageDir('sims_photUtils'),
+                                      'cacheDir', 'lsst_sed_cache.p')
+
+        sed_dir = getPackageDir('sims_sed_library')
+
+    except:
+        raise
+        print("You did not install sims_photUtils with the full LSST simulations "
+              "stack. You cannot generate and load the cache of LSST SEDs")
+        return
+
+    if not os.path.exists(sed_cache_name):
+        cache = _generate_sed_cache(sed_cache_name)
+        _global_sed_cache = cache
+    else:
+
+        with open(sed_cache_name, 'rb') as input_file:
+            _global_sed_cache = sed_unpickler(input_file).load()
+
+    # Now that we have generated/loaded the cache, we must run tests
+    # to make sure that the cache is correctly constructed.  If these
+    # fail, _global_sed_cache will be set to 'None' and the code will
+    # continue running.
+    try:
+        _validate_sed_cache()
+        _compare_cached_versus_uncached()
+    except SedCacheError as ee:
+        print ee.message
+        print "Cannot use cache of LSST SEDs"
+        _global_sed_cache = None
+        pass
+
+    return
+
 
 class Sed(object):
     """Class for holding and utilizing spectral energy distributions (SEDs)"""

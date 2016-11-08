@@ -8,7 +8,6 @@ import os
 import lsst.utils.tests
 from  lsst.utils import getPackageDir
 import lsst.sims.photUtils.Sed as Sed
-from lsst.sims.photUtils import validate_sed_cache
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
 
@@ -194,45 +193,6 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
 
         self.assertFalse(ss1 == ss3)
         self.assertTrue(ss1 != ss3)
-
-
-class CacheTestCase(unittest.TestCase):
-
-    longMessage = True
-
-    def test_cache_validity(self):
-        """
-        Just run validate_sed_cache() to make sure that the pickled
-        SED cache was correctly loaded.
-        """
-        validate_sed_cache()
-
-    def test_cached_versus_uncached(self):
-        """
-        Verify that loading an SED from the pickled cache give identical
-        results to loading the same SED from ASCII
-        """
-        sed_dir = os.path.join(getPackageDir('sims_sed_library'),
-                               'starSED', 'kurucz')
-
-        dtype = np.dtype([('wavelen', float), ('flambda', float)])
-
-        sed_name_list = os.listdir(sed_dir)
-        msg = ('An SED loaded from the pickled cache is not '
-               'identical to the same SED loaded from ASCII; '
-               'it is possible that the pickled cache was incorrectly '
-               'created in sims_sed_library')
-        for ix in range(5):
-            full_name = os.path.join(sed_dir, sed_name_list[ix])
-            from_np = np.genfromtxt(full_name, dtype=dtype)
-            ss_cache = Sed()
-            ss_cache.readSED_flambda(full_name)
-            ss_uncache  = Sed(wavelen=from_np['wavelen'],
-                              flambda=from_np['flambda'],
-                              name=full_name)
-
-            self.assertTrue(ss_cache == ss_uncache, msg=msg)
-            self.assertFalse(ss_cache != ss_uncache, msg=msg)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
