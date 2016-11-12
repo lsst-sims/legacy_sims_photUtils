@@ -349,7 +349,7 @@ class BandpassDictTest(unittest.TestCase):
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(magList[ix][iy], np.NaN)
-                    np.testing.assert_equal(magList[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
