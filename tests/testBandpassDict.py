@@ -329,8 +329,12 @@ class BandpassDictTest(unittest.TestCase):
                               galacticAvList=galacticAvList)
 
         magList = testBpDict.magListForSedList(testSedList, indices=indices)
+        magArray = testBpDict.magArrayForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
+        self.assertEqual(magArray.shape[0], nSed)
+        for bpname in testBpDict:
+            self.assertEqual(len(magArray[bpname]), nSed)
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -341,8 +345,10 @@ class BandpassDictTest(unittest.TestCase):
                 if iy in indices:
                     mag = dummySed.calcMag(testBpDict[bp])
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[ix][iy], 2)
                 else:
                     ctNaN += 1
+                    np.testing.assert_equal(magList[ix][iy], np.NaN)
                     np.testing.assert_equal(magList[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
@@ -355,8 +361,12 @@ class BandpassDictTest(unittest.TestCase):
                               wavelenMatch=testBpDict.wavelenMatch)
 
         magList = testBpDict.magListForSedList(testSedList, indices=indices)
+        magArray = testBpDict.magArrayForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
+        self.assertEqual(magArray.shape[0], nSed)
+        for bpname in testBpDict:
+            self.assertEqual(len(magArray[bpname]), nSed)
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -367,9 +377,11 @@ class BandpassDictTest(unittest.TestCase):
                 if iy in indices:
                     mag = dummySed.calcMag(testBpDict[bp])
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[ix][iy], 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(magList[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[ix][iy], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
