@@ -346,10 +346,12 @@ class BandpassDictTest(unittest.TestCase):
                     mag = dummySed.calcMag(testBpDict[bp])
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
                     self.assertAlmostEqual(mag, magArray[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[bp][ix], 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(magList[ix][iy], np.NaN)
                     np.testing.assert_equal(magArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -378,10 +380,12 @@ class BandpassDictTest(unittest.TestCase):
                     mag = dummySed.calcMag(testBpDict[bp])
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
                     self.assertAlmostEqual(mag, magArray[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[bp][ix], 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(magList[ix][iy], np.NaN)
                     np.testing.assert_equal(magArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -586,10 +590,12 @@ class BandpassDictTest(unittest.TestCase):
                     flux = dummySed.calcFlux(testBpDict[bp])
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                     self.assertAlmostEqual(flux/fluxArray[ix][iy], 1.0, 2)
+                    self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(fluxList[ix][iy], np.NaN)
                     np.testing.assert_equal(fluxArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(fluxArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -618,10 +624,12 @@ class BandpassDictTest(unittest.TestCase):
                     flux = dummySed.calcFlux(testBpDict[bp])
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
                     self.assertAlmostEqual(flux/fluxArray[ix][iy], 1.0, 2)
+                    self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(fluxList[ix][iy], np.NaN)
                     np.testing.assert_equal(fluxArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(fluxArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
