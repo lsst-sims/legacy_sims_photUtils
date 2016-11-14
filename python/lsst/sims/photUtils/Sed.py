@@ -85,6 +85,7 @@ from __future__ import with_statement
 import warnings
 import numpy
 import sys
+import time
 import scipy.interpolate as interpolate
 import gzip
 import pickle
@@ -232,6 +233,17 @@ def _generate_sed_cache(cache_dir, cache_name):
 
     cache = {}
 
+    total_files = 0
+    for sub_dir in sub_dir_list:
+        dir_tree = os.walk(os.path.join(sed_root, sub_dir))
+        for sub_tree in dir_tree:
+            total_files += len([name for name in sub_tree[2] if name.endswith('.gz')])
+
+    t_start = time.time()
+    print "This could take about 15 minutes."
+    print "Note: not all SED files are the same size. "
+    print "Do not expect the loading rate to be uniform.\n"
+
     for sub_dir in sub_dir_list:
         dir_tree = os.walk(os.path.join(sed_root, sub_dir))
         for sub_tree in dir_tree:
@@ -244,11 +256,23 @@ def _generate_sed_cache(cache_dir, cache_name):
                         full_name = os.path.join(dir_name, file_name)
                         data = numpy.genfromtxt(full_name, dtype=dtype)
                         cache[full_name] = (data['wavelen'], data['flambda'])
+                        #print len(cache), total_files/20, len(cache)%(total_files/20)
+                        if len(cache) % (total_files/20) == 0:
+                            if len(cache) > total_files/20:
+                                sys.stdout.write('\r')
+                            sys.stdout.write('loaded %d of %d files in about %.2f seconds'
+                                             % (len(cache), total_files, time.time()-t_start))
+                            sys.stdout.flush()
                     except:
                         pass
 
+    print '\n'
+
     with open(os.path.join(cache_dir, cache_name), "wb") as file_handle:
         pickle.dump(cache, file_handle)
+
+    print 'LSST SED cache saved to:\n'
+    print '%s' % os.path.join(cache_dir, cache_name)
 
     # record the specific sims_sed_library directory being cached so that
     # a new cache will be generated if sims_sed_library gets updated
@@ -308,7 +332,6 @@ def cache_LSST_seds():
 
     if must_generate:
         print "\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
-        print "This could take about 15 minutes\n"
         cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
         _global_lsst_sed_cache = cache
     else:
