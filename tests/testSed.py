@@ -214,7 +214,6 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
                'identical to the same SED loaded from disk')
         for ix in range(5):
             full_name = os.path.join(sed_dir, sed_name_list[ix])
-            from_np = np.genfromtxt(full_name, dtype=dtype)
             ss_uncache = Sed()
             ss_uncache.readSED_flambda(full_name)
             ss_cache  = Sed()
