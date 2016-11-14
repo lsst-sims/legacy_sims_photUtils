@@ -307,11 +307,12 @@ def cache_LSST_seds():
                     must_generate = True
 
     if must_generate:
-        print "creating cache of LSST SEDs in: %s" % os.path.join(sed_cache_dir, sed_cache_name)
+        print "\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
+        print "This could take about 15 minutes\n"
         cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
         _global_lsst_sed_cache = cache
     else:
-        print "opening cache of LSST SEDs in: %s" % os.path.join(sed_cache_dir, sed_cache_name)
+        print "\nOpening cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
         with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
             _global_lsst_sed_cache = sed_unpickler(input_file).load()
 
