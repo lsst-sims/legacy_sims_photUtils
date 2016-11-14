@@ -194,7 +194,9 @@ def _compare_cached_versus_uncached():
     msg = ('An SED loaded from the pickled cache is not '
            'identical to the same SED loaded from ASCII; '
            'it is possible that the pickled cache was incorrectly '
-           'created in sims_sed_library')
+           'created in sims_sed_library\n\n'
+           'Try removing the cache file (the name should hav been printed '
+           'to stdout above) and re-running sims_photUtils.cache_LSST_seds()')
     for ix in range(5):
         full_name = os.path.join(sed_dir, sed_name_list[ix])
         from_np = numpy.genfromtxt(full_name, dtype=dtype)
@@ -305,11 +307,11 @@ def cache_LSST_seds():
                     must_generate = True
 
     if must_generate:
-        print "creating cache of LSST SEDs"
+        print "creating cache of LSST SEDs in: %s" % os.path.join(sed_cache_dir, sed_cache_name)
         cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
         _global_lsst_sed_cache = cache
     else:
-
+        print "opening cache of LSST SEDs in: %s" % os.path.join(sed_cache_dir, sed_cache_name)
         with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
             _global_lsst_sed_cache = sed_unpickler(input_file).load()
 
