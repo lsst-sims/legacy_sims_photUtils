@@ -6,7 +6,7 @@ import gzip
 import os
 
 import lsst.utils.tests
-from  lsst.utils import getPackageDir
+from lsst.utils import getPackageDir
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
@@ -207,8 +207,6 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         sed_dir = os.path.join(getPackageDir('sims_sed_library'),
                                'starSED', 'kurucz')
 
-        dtype = np.dtype([('wavelen', float), ('flambda', float)])
-
         sed_name_list = os.listdir(sed_dir)
         msg = ('An SED loaded from the cache is not '
                'identical to the same SED loaded from disk')
@@ -216,7 +214,7 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
             full_name = os.path.join(sed_dir, sed_name_list[ix])
             ss_uncache = Sed()
             ss_uncache.readSED_flambda(full_name)
-            ss_cache  = Sed()
+            ss_cache = Sed()
             ss_cache.readSED_flambda(full_name)
 
             self.assertEqual(ss_cache, ss_uncache, msg=msg)
