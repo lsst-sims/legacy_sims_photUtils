@@ -1,8 +1,12 @@
+from __future__ import with_statement
 import numpy as np
 import warnings
 import unittest
+import gzip
+import os
 
 import lsst.utils.tests
+from lsst.utils import getPackageDir
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
@@ -120,6 +124,115 @@ class TestSedName(unittest.TestCase):
         newname = testsed.name + '_Z' + '%.2f' % (redshift)
         testsed.name = newname
         self.assertEqual(testsed.name, newname)
+
+
+class SedBasicFunctionsTestCase(unittest.TestCase):
+
+    longMessage = True
+
+    def test_read_sed_flambda(self):
+        """
+        Test how readSED_flambda handles the reading of SED filenames
+        when we fail to correctly specify their gzipped state.
+        """
+        scratch_dir = os.path.join(getPackageDir("sims_photUtils"),
+                                   "tests", "scratchSpace")
+
+        rng = np.random.RandomState(88)
+        zipped_name = os.path.join(scratch_dir, "zipped_sed.txt.gz")
+        unzipped_name = os.path.join(scratch_dir, "unzipped_sed.txt")
+        if os.path.exists(zipped_name):
+            os.unlink(zipped_name)
+        if os.path.exists(unzipped_name):
+            os.unlink(unzipped_name)
+        wv = np.arange(100.0, 1000.0, 10.0)
+        flux = rng.random_sample(len(wv))
+        with gzip.open(zipped_name, "w") as output_file:
+            for ww, ff in zip(wv, flux):
+                output_file.write("%e %e\n" % (ww, ff))
+        with open(unzipped_name, "w") as output_file:
+            for ww, ff in zip(wv, flux):
+                output_file.write("%e %e\n" % (ww, ff))
+
+        ss = Sed()
+        ss.readSED_flambda(zipped_name)
+        ss.readSED_flambda(zipped_name[:-3])
+        ss.readSED_flambda(unzipped_name)
+        ss.readSED_flambda(unzipped_name+'.gz')
+
+        # make sure an error is raised when you try to read
+        # a file that does not exist
+        with self.assertRaises(IOError) as context:
+            ss.readSED_flambda(os.path.join(scratch_dir, "nonsense.txt"))
+        self.assertIn("sed file", context.exception.message)
+
+        if os.path.exists(zipped_name):
+            os.unlink(zipped_name)
+        if os.path.exists(unzipped_name):
+            os.unlink(unzipped_name)
+
+    def test_eq(self):
+        """
+        Test that __eq__ in Sed works correctly
+        """
+        sed_dir = os.path.join(getPackageDir('sims_sed_library'), 'starSED', 'kurucz')
+        list_of_seds = os.listdir(sed_dir)
+        sedname1 = os.path.join(sed_dir, list_of_seds[0])
+        sedname2 = os.path.join(sed_dir, list_of_seds[1])
+        ss1 = Sed()
+        ss1.readSED_flambda(sedname1)
+        ss2 = Sed()
+        ss2.readSED_flambda(sedname2)
+        ss3 = Sed()
+        ss3.readSED_flambda(sedname1)
+
+        self.assertFalse(ss1 == ss2)
+        self.assertTrue(ss1 != ss2)
+        self.assertTrue(ss1 == ss3)
+        self.assertFalse(ss1 != ss3)
+
+        ss3.flambdaTofnu()
+
+        self.assertFalse(ss1 == ss3)
+        self.assertTrue(ss1 != ss3)
+
+    def test_cache(self):
+        """
+        Verify that loading an SED from the cache gives identical
+        results to loading the same SED from ASCII (since we are
+        not calling cache_LSST_seds(), as soon as we load an SED
+        with readSED_flambda, it should get stored in the
+        _global_misc_sed_cache)
+        """
+        sed_dir = os.path.join(getPackageDir('sims_sed_library'),
+                               'starSED', 'kurucz')
+
+        sed_name_list = os.listdir(sed_dir)
+        msg = ('An SED loaded from the cache is not '
+               'identical to the same SED loaded from disk')
+        for ix in range(5):
+            full_name = os.path.join(sed_dir, sed_name_list[ix])
+            ss_uncache = Sed()
+            ss_uncache.readSED_flambda(full_name)
+            ss_cache = Sed()
+            ss_cache.readSED_flambda(full_name)
+
+            self.assertEqual(ss_cache, ss_uncache, msg=msg)
+
+        # test that modifications to an SED don't get pushed
+        # to the cache
+        full_name = os.path.join(sed_dir, sed_name_list[0])
+        ss1 = Sed()
+        ss1.readSED_flambda(full_name)
+        ss2 = Sed()
+        ss2.readSED_flambda(full_name)
+        ss2.flambda *= 2.0
+        ss3 = Sed()
+        ss3.readSED_flambda(full_name)
+        msg = "Changes to SED made it into the cache"
+        self.assertEqual(ss1, ss3, msg=msg)
+        self.assertNotEqual(ss1, ss2, msg=msg)
+        self.assertNotEqual(ss2, ss3, msg=msg)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

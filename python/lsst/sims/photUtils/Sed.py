@@ -81,14 +81,279 @@ order as the bandpasses) of this SED in each of those bandpasses.
 
 """
 
+from __future__ import with_statement
 import warnings
 import numpy
+import sys
+import time
 import scipy.interpolate as interpolate
 import gzip
+import pickle
+import os
 from .LSSTdefaults import LSSTdefaults
 from .PhysicalParameters import PhysicalParameters
+try:
+    from lsst.utils import getPackageDir
+except:
+    pass
 
-__all__ = ["Sed"]
+__all__ = ["Sed", "cache_LSST_seds"]
+
+
+_global_lsst_sed_cache = None
+
+# a cache for ASCII files read-in by the user
+_global_misc_sed_cache = None
+
+
+class SedCacheError(Exception):
+    pass
+
+
+class sed_unpickler(pickle.Unpickler):
+
+    _allowed_obj = (("numpy", "ndarray"),
+                    ("numpy", "dtype"),
+                    ("numpy.core.multiarray", "_reconstruct"))
+
+    def find_class(self, module, name):
+        allowed = False
+        for _module, _name in self._allowed_obj:
+            if module == _module and name==_name:
+                allowed = True
+                break
+
+        if not allowed:
+            raise RuntimeError("Cannot call find_class() on %s, %s with sed_unpickler " % (module, name)
+                               + "this is for security reasons\n"
+                               + "https://docs.python.org/3.1/library/pickle.html#pickle-restrict")
+
+        if module == "numpy":
+            if name == "ndarray":
+                return getattr(numpy, name)
+            elif name == "dtype":
+                return getattr(numpy, name)
+            else:
+                raise RuntimeError("sed_unpickler not meant to load numpy.%s" % name)
+        elif module == "numpy.core.multiarray":
+            return getattr(numpy.core.multiarray, name)
+        else:
+            raise RuntimeError("sed_unpickler cannot handle module %s" % module)
+
+
+def _validate_sed_cache():
+    """
+    Verifies that the pickled SED cache exists, is a dict, and contains
+    an entry for every SED in starSED/ and galaxySED.  Does nothing if so,
+    raises a RuntimeError if false.
+
+    We are doing this here so that sims_sed_library does not have to depend
+    on any lsst testing software (in which case, users would have to get
+    a new copy of sims_sed_library every time the upstream software changed).
+
+    We are doing this through a method (rather than giving users access to
+    _global_lsst_sed_cache) so that users do not accidentally ruin
+    _global_lsst_sed_cache.
+    """
+    global _global_lsst_sed_cache
+    if _global_lsst_sed_cache is None:
+        raise SedCacheError("_global_lsst_sed_cache does not exist")
+    if not isinstance(_global_lsst_sed_cache, dict):
+        raise SedCacheError("_global_lsst_sed_cache is a %s; not a dict"
+                           % str(type(_global_lsst_sed_cache)))
+    sed_dir = getPackageDir('sims_sed_library')
+    sub_dir_list = ['galaxySED', 'starSED']
+    file_ct = 0
+    for sub_dir in sub_dir_list:
+        tree = os.walk(os.path.join(sed_dir, sub_dir))
+        for entry in tree:
+            local_dir = entry[0]
+            file_list = entry[2]
+            for file_name in file_list:
+                if file_name.endswith('.gz'):
+                    full_name = os.path.join(sed_dir, sub_dir, local_dir, file_name)
+                    if full_name not in _global_lsst_sed_cache:
+                        raise SedCacheError("%s is not in _global_lsst_sed_cache"
+                                           % full_name)
+                    file_ct += 1
+    if file_ct == 0:
+        raise SedCacheError("There were not files in _global_lsst_sed_cache")
+
+    return
+
+def _compare_cached_versus_uncached():
+    """
+    Verify that loading an SED from the pickled cache give identical
+    results to loading the same SED from ASCII
+    """
+    sed_dir = os.path.join(getPackageDir('sims_sed_library'),
+                           'starSED', 'kurucz')
+
+    dtype = numpy.dtype([('wavelen', float), ('flambda', float)])
+
+    sed_name_list = os.listdir(sed_dir)
+    msg = ('An SED loaded from the pickled cache is not '
+           'identical to the same SED loaded from ASCII; '
+           'it is possible that the pickled cache was incorrectly '
+           'created in sims_sed_library\n\n'
+           'Try removing the cache file (the name should hav been printed '
+           'to stdout above) and re-running sims_photUtils.cache_LSST_seds()')
+    for ix in range(5):
+        full_name = os.path.join(sed_dir, sed_name_list[ix])
+        from_np = numpy.genfromtxt(full_name, dtype=dtype)
+        ss_cache = Sed()
+        ss_cache.readSED_flambda(full_name)
+        ss_uncache  = Sed(wavelen=from_np['wavelen'],
+                          flambda=from_np['flambda'],
+                          name=full_name)
+
+        if not ss_cache == ss_uncache:
+            raise SedCacheError(msg)
+
+
+def _generate_sed_cache(cache_dir, cache_name):
+    """
+    Read all of the SEDs from sims_sed_library into a dict.
+    Pickle the dict and store it in
+    sims_photUtils/cacheDir/lsst_sed_cache.p
+
+    Parameters
+    ----------
+    cache_dir is the directory where the cache will be created
+    cache_name is the name of the cache to be created
+
+    Returns
+    -------
+    The dict of SEDs (keyed to their full file name)
+    """
+    sed_root = getPackageDir('sims_sed_library')
+    dtype = numpy.dtype([('wavelen', float), ('flambda', float)])
+
+    sub_dir_list = ['agnSED', 'flatSED', 'ssmSED', 'starSED', 'galaxySED']
+
+    cache = {}
+
+    total_files = 0
+    for sub_dir in sub_dir_list:
+        dir_tree = os.walk(os.path.join(sed_root, sub_dir))
+        for sub_tree in dir_tree:
+            total_files += len([name for name in sub_tree[2] if name.endswith('.gz')])
+
+    t_start = time.time()
+    print "This could take about 15 minutes."
+    print "Note: not all SED files are the same size. "
+    print "Do not expect the loading rate to be uniform.\n"
+
+    for sub_dir in sub_dir_list:
+        dir_tree = os.walk(os.path.join(sed_root, sub_dir))
+        for sub_tree in dir_tree:
+            dir_name = sub_tree[0]
+            file_list = sub_tree[2]
+
+            for file_name in file_list:
+                if file_name.endswith('.gz'):
+                    try:
+                        full_name = os.path.join(dir_name, file_name)
+                        data = numpy.genfromtxt(full_name, dtype=dtype)
+                        cache[full_name] = (data['wavelen'], data['flambda'])
+                        #print len(cache), total_files/20, len(cache)%(total_files/20)
+                        if len(cache) % (total_files/20) == 0:
+                            if len(cache) > total_files/20:
+                                sys.stdout.write('\r')
+                            sys.stdout.write('loaded %d of %d files in about %.2f seconds'
+                                             % (len(cache), total_files, time.time()-t_start))
+                            sys.stdout.flush()
+                    except:
+                        pass
+
+    print '\n'
+
+    with open(os.path.join(cache_dir, cache_name), "wb") as file_handle:
+        pickle.dump(cache, file_handle)
+
+    print 'LSST SED cache saved to:\n'
+    print '%s' % os.path.join(cache_dir, cache_name)
+
+    # record the specific sims_sed_library directory being cached so that
+    # a new cache will be generated if sims_sed_library gets updated
+    with open(os.path.join(cache_dir, "cache_version.txt"), "w") as file_handle:
+        file_handle.write("%s %s" % (sed_root, cache_name))
+
+    return cache
+
+
+def cache_LSST_seds():
+    """
+    Read all of the SEDs in sims_sed_library into a dict.  Pickle the dict
+    and store it in sims_photUtils/cacheDir/lsst_sed_cache.p for future use.
+
+    After the file has initially been created, the next time you run this script,
+    it will just use pickle to load the dict.
+
+    Once the dict is loaded, Sed.readSED_flambda() will be able to read any
+    LSST-shipped SED directly from memory, rather than using I/O to read it
+    from an ASCII file stored on disk.
+
+    Note: the dict of cached SEDs will take up about 5GB on disk.  Once loaded,
+    the cache will take up about 1.5GB of memory.  The cache takes about 14 minutes
+    to generate and about 51 seconds to load on a 2014 Mac Book Pro.
+    """
+
+    global _global_lsst_sed_cache
+    try:
+        sed_cache_dir = os.path.join(getPackageDir('sims_photUtils'), 'cacheDir')
+        sed_cache_name = os.path.join('lsst_sed_cache.p')
+        sed_dir = getPackageDir('sims_sed_library')
+
+    except:
+        raise
+        print("You did not install sims_photUtils with the full LSST simulations "
+              "stack. You cannot generate and load the cache of LSST SEDs")
+        return
+
+    must_generate = False
+    if not os.path.exists(os.path.join(sed_cache_dir, sed_cache_name)):
+        must_generate = True
+    if not os.path.exists(os.path.join(sed_cache_dir, "cache_version.txt")):
+        must_generate = True
+    else:
+        with open(os.path.join(sed_cache_dir, "cache_version.txt"), "r") as input_file:
+            lines = input_file.readlines()
+            if len(lines) != 1:
+                must_generate = True
+            else:
+                info = lines[0].split()
+                if len(info) != 2:
+                     must_generate = True
+                elif info[0] != sed_dir:
+                    must_generate = True
+                elif info[1] != sed_cache_name:
+                    must_generate = True
+
+    if must_generate:
+        print "\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
+        cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
+        _global_lsst_sed_cache = cache
+    else:
+        print "\nOpening cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
+        with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
+            _global_lsst_sed_cache = sed_unpickler(input_file).load()
+
+    # Now that we have generated/loaded the cache, we must run tests
+    # to make sure that the cache is correctly constructed.  If these
+    # fail, _global_lsst_sed_cache will be set to 'None' and the code will
+    # continue running.
+    try:
+        _validate_sed_cache()
+        _compare_cached_versus_uncached()
+    except SedCacheError as ee:
+        print ee.message
+        print "Cannot use cache of LSST SEDs"
+        _global_lsst_sed_cache = None
+        pass
+
+    return
+
 
 class Sed(object):
     """Class for holding and utilizing spectral energy distributions (SEDs)"""
@@ -114,6 +379,52 @@ class Sed(object):
                 name = 'FromArray'
             self.setSED(wavelen, flambda=flambda, fnu=fnu, name=name)
         return
+
+    def __eq__(self, other):
+        if self.name != other.name:
+            return False
+        if self.zp != other.zp:
+            return False
+        if not numpy.isnan(self.badval):
+            if self.badval != other.badval:
+                return False
+        else:
+            if not numpy.isnan(other.badval):
+                return False
+        if self.fnu is not None and other.fnu is None:
+            return False
+        if self.fnu is None and other.fnu is not None:
+            return False
+        if self.fnu is not None:
+            try:
+                numpy.testing.assert_array_equal(self.fnu, other.fnu)
+            except:
+                return False
+
+        if self.flambda is None and other.flambda is not None:
+            return False
+        if other.flambda is not None and self.flambda is None:
+            return False
+        if self.flambda is not None:
+            try:
+                numpy.testing.assert_array_equal(self.flambda, other.flambda)
+            except:
+                return False
+
+        if self.wavelen is None and other.wavelen is not None:
+            return False
+        if self.wavelen is not None and other.wavelen is None:
+            return False
+        if self.wavelen is not None:
+            try:
+                numpy.testing.assert_array_equal(self.wavelen, other.wavelen)
+            except:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     ### Methods for getters and setters.
 
@@ -176,35 +487,73 @@ class Sed(object):
 
         Does not resample wavelen/flambda onto grid; leave fnu=None.
         """
+        global _global_lsst_sed_cache
+        global _global_misc_sed_cache
+
         # Try to open data file.
         # ASSUME that if filename ends with '.gz' that the file is gzipped. Otherwise, regular file.
-        try:
-            if filename.endswith('.gz'):
-                f = gzip.open(filename, 'r')
-            else:
-                f = open(filename, 'r')
-        #if the above fails, look for the file with and without the gz
-        except IOError:
+        if filename.endswith('.gz'):
+            gzipped_filename = filename
+            unzipped_filename = filename[:-3]
+        else:
+            gzipped_filename = filename + '.gz'
+            unzipped_filename = filename
+
+        cached_source = None
+        if _global_lsst_sed_cache is not None:
+            if gzipped_filename in _global_lsst_sed_cache:
+                cached_source = _global_lsst_sed_cache[gzipped_filename]
+            elif unzipped_filename in _global_lsst_sed_cache:
+                cached_source = _global_lsst_sed_cache[unzipped_filename]
+
+        if cached_source is None and _global_misc_sed_cache is not None:
+            if gzipped_filename in _global_misc_sed_cache:
+                cached_source = _global_misc_sed_cache[gzipped_filename]
+            if unzipped_filename in _global_misc_sed_cache:
+                cached_source = _global_misc_sed_cache[unzipped_filename]
+
+        if cached_source is not None:
+            sourcewavelen = numpy.copy(cached_source[0])
+            sourceflambda = numpy.copy(cached_source[1])
+
+        if cached_source is None:
             try:
-                if filename.endswith(".gz"):
-                    f = open(filename[:-3], 'r')
-                else:
-                    f = gzip.open(filename+".gz", 'r')
+                f = gzip.open(gzipped_filename, 'r')
             except IOError:
-                raise IOError("The sed file %s does not exist" %(filename))
-        # Read source SED from file - lambda, flambda should be first two columns in the file.
-        # lambda should be in nm and flambda should be in ergs/cm2/s/nm
-        sourcewavelen = []
-        sourceflambda = []
-        for line in f:
-            if line.startswith("#"):
-                continue
-            values = line.split()
-            sourcewavelen.append(float(values[0]))
-            sourceflambda.append(float(values[1]))
-        f.close()
-        self.wavelen = numpy.array(sourcewavelen)
-        self.flambda = numpy.array(sourceflambda)
+                try:
+                    f = open(unzipped_filename, 'r')
+                except Exception as e:
+                    # append our message to the message of the error that was actually raised
+                    # code taken form
+                    # http://stackoverflow.com/questions/6062576/adding-information-to-an-exception
+                    new_exception = type(e)(str(e) +
+                                           "\n\nError reading sed file %s; "
+                                           "it may not exist, "
+                                           "or be improperly formatted "
+                                           "(if the file name ends in .gz it should be gzipped; "
+                                           "if not, it should just be a text file)" % filename)
+                    raise type(e), new_exception, sys.exc_info()[2]
+
+            # Read source SED from file - lambda, flambda should be first two columns in the file.
+            # lambda should be in nm and flambda should be in ergs/cm2/s/nm
+            sourcewavelen = []
+            sourceflambda = []
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                values = line.split()
+                sourcewavelen.append(float(values[0]))
+                sourceflambda.append(float(values[1]))
+            f.close()
+            sourcewavelen = numpy.array(sourcewavelen)
+            sourceflambda = numpy.array(sourceflambda)
+            if _global_misc_sed_cache is None:
+                _global_misc_sed_cache = {}
+            _global_misc_sed_cache[filename] = (numpy.copy(sourcewavelen),
+                                                numpy.copy(sourceflambda))
+
+        self.wavelen = sourcewavelen
+        self.flambda = sourceflambda
         self.fnu = None
         if name is None:
             self.name = filename
