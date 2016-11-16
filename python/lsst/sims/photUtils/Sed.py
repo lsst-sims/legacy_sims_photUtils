@@ -481,6 +481,58 @@ class Sed(object):
         self.name = name
         return
 
+    def read_close_SED(self, teff, feH, logg):
+        """
+        Check the cached Kuruz models and load the model closest to the input stellar parameters
+        """
+        global _global_lsst_sed_cache
+
+        # Load the cache if it hasn't been done
+        if _global_lsst_sed_cache is None:
+            cache_LSST_seds()
+        # Build an array with all the files in the cache
+        if not hasattr(self, 'param_combos'):
+            kurucz_files = [filename for filename
+                            in _global_lsst_sed_cache if ('kurucz' in filename) &
+                            ('_g' in os.path.basename(filename))]
+            self.param_combos = numpy.zeros(len(kurucz_files),
+                                            dtype=zip(['filename', 'teff', 'feH', 'logg'],
+                                                      ['|S200', float, float, float]))
+            for i, filename in enumerate(kurucz_files):
+                self.param_combos['filename'][i] = filename
+                filename = os.path.basename(filename)
+                if filename[1] == 'm':
+                    sign = -1
+                else:
+                    sign = 1
+                logz = sign*float(filename.split('_')[0][2:])/10.
+                self.param_combos['feH'][i] = logz
+                logg_temp = float(filename.split('g')[1].split('_')[0])
+                self.param_combos['logg'][i] = logg_temp
+                teff_temp = float(filename.split('_')[-1].split('.')[0])
+                self.param_combos['teff'][i] = teff_temp
+            self.param_combos = numpy.sort(self.param_combos, order=['teff', 'feH', 'logg'])
+
+        # Lookup the closest match. Prob a faster way to do this.
+        teff_diff = numpy.abs(self.param_combos['teff'] - teff)
+        g1 = numpy.where(teff_diff == teff_diff.min())[0]
+        feH_diff = numpy.abs(self.param_combos['feH'][g1] - feH)
+        g2 = numpy.where(feH_diff == feH_diff.min())[0]
+        logg_diff = numpy.abs(self.param_combos['logg'][g1][g2] - logg)
+        g3 = numpy.where(logg_diff == logg_diff.min())[0]
+        fileMatch = self.param_combos['filename'][g1][g2][g3]
+        if numpy.size(fileMatch > 1):
+            fileMatch = fileMatch[0]
+
+        # Record what paramters were actually loaded
+        self.teff = self.param_combos['teff'][g1][g2][g3]
+        self.feH = self.param_combos['feH'][g1][g2][g3]
+        self.logg = self.param_combos['logg'][g1][g2][g3]
+
+        # Read in the matching file
+        self.readSED_flambda(fileMatch)
+
+
     def readSED_flambda(self, filename, name=None):
         """
         Read a file containing [lambda Flambda] (lambda in nm) (Flambda erg/cm^2/s/nm).
