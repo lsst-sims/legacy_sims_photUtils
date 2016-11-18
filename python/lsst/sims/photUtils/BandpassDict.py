@@ -355,7 +355,7 @@ class BandpassDict(object):
         @param [out] output_array is a dtyped numpy array of magnitudes (see above).
         """
 
-        magList = self.magListForSedList(sedList, indices=None)
+        magList = self.magListForSedList(sedList, indices=indices)
 
         dtype = numpy.dtype([(bp, numpy.float) for bp in self._bandpassDict.keys()])
 
@@ -563,7 +563,7 @@ class BandpassDict(object):
         http://www.lsst.org/scientists/scibook
         """
 
-        fluxList = self.fluxListForSedList(sedList, indices=None)
+        fluxList = self.fluxListForSedList(sedList, indices=indices)
 
         dtype = numpy.dtype([(bp, numpy.float) for bp in self._bandpassDict.keys()])
 

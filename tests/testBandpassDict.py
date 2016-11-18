@@ -329,8 +329,12 @@ class BandpassDictTest(unittest.TestCase):
                               galacticAvList=galacticAvList)
 
         magList = testBpDict.magListForSedList(testSedList, indices=indices)
+        magArray = testBpDict.magArrayForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
+        self.assertEqual(magArray.shape[0], nSed)
+        for bpname in testBpDict:
+            self.assertEqual(len(magArray[bpname]), nSed)
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -341,9 +345,13 @@ class BandpassDictTest(unittest.TestCase):
                 if iy in indices:
                     mag = dummySed.calcMag(testBpDict[bp])
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[bp][ix], 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(magList[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -355,8 +363,12 @@ class BandpassDictTest(unittest.TestCase):
                               wavelenMatch=testBpDict.wavelenMatch)
 
         magList = testBpDict.magListForSedList(testSedList, indices=indices)
+        magArray = testBpDict.magArrayForSedList(testSedList, indices=indices)
         self.assertEqual(magList.shape[0], nSed)
         self.assertEqual(magList.shape[1], nBandpasses)
+        self.assertEqual(magArray.shape[0], nSed)
+        for bpname in testBpDict:
+            self.assertEqual(len(magArray[bpname]), nSed)
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -367,9 +379,13 @@ class BandpassDictTest(unittest.TestCase):
                 if iy in indices:
                     mag = dummySed.calcMag(testBpDict[bp])
                     self.assertAlmostEqual(mag, magList[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[ix][iy], 2)
+                    self.assertAlmostEqual(mag, magArray[bp][ix], 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(magList[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(magArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -557,8 +573,12 @@ class BandpassDictTest(unittest.TestCase):
                               galacticAvList=galacticAvList)
 
         fluxList = testBpDict.fluxListForSedList(testSedList, indices=indices)
+        fluxArray = testBpDict.fluxArrayForSedList(testSedList, indices=indices)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
+        self.assertEqual(fluxArray.shape[0], nSed)
+        for bpname in testBpDict:
+            self.assertEqual(len(fluxArray[bpname]), nSed)
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -569,9 +589,13 @@ class BandpassDictTest(unittest.TestCase):
                 if iy in indices:
                     flux = dummySed.calcFlux(testBpDict[bp])
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
+                    self.assertAlmostEqual(flux/fluxArray[ix][iy], 1.0, 2)
+                    self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(fluxList[ix][iy], np.NaN)
+                    np.testing.assert_equal(fluxArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(fluxArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
@@ -583,8 +607,12 @@ class BandpassDictTest(unittest.TestCase):
                               wavelenMatch=testBpDict.wavelenMatch)
 
         fluxList = testBpDict.fluxListForSedList(testSedList, indices=indices)
+        fluxArray = testBpDict.fluxArrayForSedList(testSedList, indices=indices)
         self.assertEqual(fluxList.shape[0], nSed)
         self.assertEqual(fluxList.shape[1], nBandpasses)
+        self.assertEqual(fluxArray.shape[0], nSed)
+        for bpname in testBpDict:
+            self.assertEqual(len(fluxArray[bpname]), nSed)
 
         for ix, sedObj in enumerate(testSedList):
             dummySed = Sed(wavelen=copy.deepcopy(sedObj.wavelen),
@@ -595,9 +623,13 @@ class BandpassDictTest(unittest.TestCase):
                 if iy in indices:
                     flux = dummySed.calcFlux(testBpDict[bp])
                     self.assertAlmostEqual(flux/fluxList[ix][iy], 1.0, 2)
+                    self.assertAlmostEqual(flux/fluxArray[ix][iy], 1.0, 2)
+                    self.assertAlmostEqual(flux/fluxArray[bp][ix], 1.0, 2)
                 else:
                     ctNaN += 1
                     np.testing.assert_equal(fluxList[ix][iy], np.NaN)
+                    np.testing.assert_equal(fluxArray[ix][iy], np.NaN)
+                    np.testing.assert_equal(fluxArray[bp][ix], np.NaN)
 
             self.assertEqual(ctNaN, 4)
 
