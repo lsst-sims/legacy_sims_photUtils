@@ -82,12 +82,6 @@ class SedList(object):
         self._file_dir = fileDir
         self._cosmological_dimming = cosmologicalDimming
 
-        #self._unique_sed_dict will store all of the unique SED files that have been
-        #loaded.  If an object requires an SED that has already been loaded,
-        #it will just copy it from the dict.
-        self._unique_sed_dict = {}
-        self._unique_sed_dict['None'] = Sed()
-
         if normalizingBandpass is None:
             normalizingBandpass = Bandpass()
             normalizingBandpass.imsimBandpass()
@@ -192,28 +186,16 @@ class SedList(object):
                 else:
                     self._redshift_list += list(redshiftList)
 
+        temp_sed_list = []
+        for sedName, magNorm in zip(sedNameList, magNormList):
+            sed = Sed()
 
-        for sedName in sedNameList:
-
-            if sedName not in self._unique_sed_dict:
-                sed = Sed()
+            if sedName != "None":
                 if self._spec_map is not None:
                     sed.readSED_flambda(os.path.join(self._file_dir, self._spec_map[sedName]))
                 else:
                     sed.readSED_flambda(os.path.join(self._file_dir, sedName))
 
-                self._unique_sed_dict[sedName]=sed
-
-        #now that we have loaded and copied all of the necessary SEDs,
-        #we can apply magNorms
-        temp_sed_list = []
-        for sedName, magNorm in zip(sedNameList, magNormList):
-
-            ss = self._unique_sed_dict[sedName]
-
-            sed=Sed(wavelen=ss.wavelen,flambda=ss.flambda,fnu=ss.fnu, name=ss.name)
-
-            if sedName != "None":
                 fNorm = sed.calcFluxNorm(magNorm, self._normalizing_bandpass)
                 sed.multiplyFluxNorm(fNorm)
 
@@ -322,9 +304,6 @@ class SedList(object):
     def flush(self):
         """
         Delete all SEDs stored in this SedList.
-
-        However, self._unique_sed_dict still retains memory of all the raw Seds
-        read in by this object.
         """
         self._initialized = False
         self._sed_list = []
