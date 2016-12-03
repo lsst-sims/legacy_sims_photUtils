@@ -5,7 +5,6 @@ import copy
 import numpy as np
 import lsst.utils.tests
 from lsst.utils import getPackageDir
-
 from lsst.sims.photUtils import Bandpass, Sed, BandpassDict, SedList
 
 
