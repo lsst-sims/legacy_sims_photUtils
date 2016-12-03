@@ -1162,6 +1162,32 @@ class Sed(object):
         fluxnorm = numpy.power(10, (-0.4*dmag))
         return fluxnorm
 
+    def calcFluxNorm_imsimBandpass(self, magmatch):
+        """
+        Calculate the flux normalizing factor necessary to achieve a given magnitude
+        in the imsim bandpass (a delta function at 500nm).
+
+        Parameters
+        ----------
+        magmatch is the magnitude desired in the imsim bandpass
+
+        Returns
+        -------
+        a scalar by which the flux of this SED needs to be multiplied to
+        achieve magmatch
+        """
+        phi = 10.0  # because sb=1.0 at 500nm and 0 everywhere else
+                    # and dlambda is 0.1 (recall that
+                    # phi = sb/lambda/(integral(dlambda sb/lambda))
+        if self.fnu is None:
+            self.flambdaToFnu()
+        fnu = numpy.interp(500.0, self.wavelen, self.fnu)
+        flux = fnu*phi*0.1
+        mag = -2.5*numpy.log10(flux) - self.zp
+        dmag = magmatch - mag
+        fluxnorm = numpy.power(10, (-0.4*dmag))
+        return fluxnorm
+
     def multiplyFluxNorm(self, fluxNorm, wavelen=None, fnu=None):
         """
         Multiply wavelen/fnu (or self.wavelen/fnu) by fluxnorm.

@@ -234,6 +234,33 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         self.assertNotEqual(ss1, ss2, msg=msg)
         self.assertNotEqual(ss2, ss3, msg=msg)
 
+    def test_norm(self):
+        """
+        Test that the special test case calcFluxNorm_imsimBandpass
+        returns the same value as calling calcFluxNorm actually
+        passing in the imsim Bandpass
+        """
+
+        bp = Bandpass()
+        bp.imsimBandpass()
+
+        rng = np.random.RandomState(1123)
+        wavelen = np.arange(300.0, 2000.0, 0.17)
+
+        for ix in range(10):
+            flux = rng.random_sample(len(wavelen))*100.0
+            sed = Sed()
+            sed.setSED(wavelen=wavelen, flambda=flux)
+            magmatch = rng.random_sample()*5.0 + 10.0
+
+            control = sed.calcFluxNorm(magmatch, bp)
+            test = sed.calcFluxNorm_imsimBandpass(magmatch)
+
+            # something about how interpolation is done in Sed means
+            # that the values don't come out exactly equal.  They come
+            # out equal to 8 seignificant digits, though.
+            self.assertAlmostEqual(control/test, 1.0, 8)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
