@@ -82,10 +82,6 @@ class SedList(object):
         self._file_dir = fileDir
         self._cosmological_dimming = cosmologicalDimming
 
-        if normalizingBandpass is None:
-            normalizingBandpass = Bandpass()
-            normalizingBandpass.imsimBandpass()
-
         self._normalizing_bandpass = normalizingBandpass
 
         self._sed_list = []
@@ -196,7 +192,10 @@ class SedList(object):
                 else:
                     sed.readSED_flambda(os.path.join(self._file_dir, sedName))
 
-                fNorm = sed.calcFluxNorm(magNorm, self._normalizing_bandpass)
+                if self._normalizing_bandpass is not None:
+                    fNorm = sed.calcFluxNorm(magNorm, self._normalizing_bandpass)
+                else:
+                    fNorm = sed.calcFluxNorm_imsimBandpass(magNorm)
                 sed.multiplyFluxNorm(fNorm)
 
             temp_sed_list.append(sed)
