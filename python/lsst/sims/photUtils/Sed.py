@@ -747,8 +747,15 @@ class Sed(object):
                 warnings.warn('There is an area of non-overlap between desired wavelength range (%.2f to %.2f) and sed %s (%.2f to %.2f)'
                               % (wavelen_grid.min(), wavelen_grid.max(), self.name, wavelen.min(), wavelen.max()))
             # Do the interpolation of wavelen/flux onto grid. (type/len failures will die here).
-            f = interpolate.interp1d(wavelen, flux, bounds_error=False, fill_value=numpy.NaN)
-            flux_grid = f(wavelen_grid)
+            if wavelen[0] > wavelen_grid[0] or wavelen[-1]<wavelen_grid[-1]:
+                f = interpolate.interp1d(wavelen, flux, bounds_error=False, fill_value=numpy.NaN)
+                flux_grid = f(wavelen_grid)
+            else:
+                valid_dexes = numpy.where(numpy.logical_and(wavelen>=wavelen_grid[0], wavelen<=wavelen_grid[-1]))
+                w_valid = wavelen[valid_dexes]
+                f_valid = flux[valid_dexes]
+                flux_grid = numpy.interp(wavelen_grid, wavelen, flux)
+
             # Update self values if necessary.
             if update_self:
                 self.wavelen = wavelen_grid
