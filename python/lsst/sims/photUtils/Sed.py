@@ -1180,7 +1180,7 @@ class Sed(object):
                     # and dlambda is 0.1 (recall that
                     # phi = sb/lambda/(integral(dlambda sb/lambda))
         if self.fnu is None:
-            self.flambdaToFnu()
+            self.flambdaTofnu()
         fnu = numpy.interp(500.0, self.wavelen, self.fnu)
         flux = fnu*phi*0.1
         mag = -2.5*numpy.log10(flux) - self.zp
