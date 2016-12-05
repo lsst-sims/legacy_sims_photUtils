@@ -5,6 +5,7 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import defaultSpecMap
 from .Bandpass import Bandpass
 from .Sed import Sed
+from lsst.sims.photUtils import getImsimFluxNorm
 
 __all__ = ["SedList"]
 
@@ -195,7 +196,8 @@ class SedList(object):
                 if self._normalizing_bandpass is not None:
                     fNorm = sed.calcFluxNorm(magNorm, self._normalizing_bandpass)
                 else:
-                    fNorm = sed.calcFluxNorm_imsimBandpass(magNorm)
+                    fNorm = getImsimFluxNorm(sed, magNorm)
+
                 sed.multiplyFluxNorm(fNorm)
 
             temp_sed_list.append(sed)
