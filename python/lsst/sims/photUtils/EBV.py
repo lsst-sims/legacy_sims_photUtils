@@ -3,9 +3,11 @@ import math
 import numpy
 from astropy.io import fits
 
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import _galacticFromEquatorial
 
 __all__ = ["EBVmap", "EBVbase"]
+
 
 def interp1D(z1 , z2, offset):
     """ 1D interpolation on a grid"""
@@ -14,19 +16,21 @@ def interp1D(z1 , z2, offset):
 
     return zPrime
 
-
             
 class EBVmap(object):
     '''Class  for describing a map of EBV
 
     Images are read in from a fits file and assume a ZEA projection
     '''
-        
+
     def readMapFits(self, fileName):
         """ read a fits file containing the ebv data"""
-        hdulist = fits.open(fileName)
-        self.header = hdulist[0].header
-        self.data = hdulist[0].data
+
+        self._file_name = fileName
+
+        self.hdulist = fits.open(fileName)
+        self.header = self.hdulist[0].header
+        self.data = self.hdulist[0].data
         self.nr = self.data.shape[0]
         self.nc = self.data.shape[1]
 
@@ -191,8 +195,15 @@ class EBVbase(object):
     ebvMapSouthName="DustMaps/SFD_dust_4096_sgp.fits"
     ebvMapNorth=None
     ebvMapSouth=None
+
+    # A dict to hold every open instance of an EBVmap.
+    # Since this is being declared outside of the constructor,
+    # it will be a class member, which means that, every time
+    # an EBVmap is added to the cache, all EBVBase instances will
+    # know about it.
+    _ebv_map_cache = {}
     
-        #the set_xxxx routines below will allow the user to point elsewhere for the dust maps
+    #the set_xxxx routines below will allow the user to point elsewhere for the dust maps
     def set_ebvMapNorth(self,word):
         """
         This allows the user to pick a new northern SFD map file
@@ -206,19 +217,35 @@ class EBVbase(object):
         self.ebvMapSouthName=word
     
     #these routines will load the dust maps for the galactic north and south hemispheres
+    def _load_ebv_map(self, file_name):
+        """
+        Load the EBV map specified by file_name.  If that map has already been loaded,
+        just return the map stored in self._ebv_map_cache.  If it must be loaded, store
+        it in the cache.
+        """
+        if file_name in self._ebv_map_cache:
+            return self._ebv_map_cache[file_name]
+
+        ebv_map = EBVmap()
+        ebv_map.readMapFits(file_name)
+        self._ebv_map_cache[file_name] = ebv_map
+        return ebv_map
+
     def load_ebvMapNorth(self):
         """
         This will load the northern SFD map
         """
-        self.ebvMapNorth=EBVmap()
-        self.ebvMapNorth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapNorthName))
+        file_name = os.path.join(self.ebvDataDir,self.ebvMapNorthName)
+        self.ebvMapNorth = self._load_ebv_map(file_name)
+        return None
     
     def load_ebvMapSouth(self):
         """
         This will load the southern SFD map
         """
-        self.ebvMapSouth=EBVmap()
-        self.ebvMapSouth.readMapFits(os.path.join(self.ebvDataDir,self.ebvMapSouthName))
+        file_name = os.path.join(self.ebvDataDir,self.ebvMapSouthName)
+        self.ebvMapSouth = self._load_ebv_map(file_name)
+        return None
     
     def calculateEbv(self, galacticCoordinates=None, equatorialCoordinates=None, northMap=None, southMap=None, 
                      interp=False):
@@ -255,7 +282,7 @@ class EBVbase(object):
                raise RuntimeError("Must specify coordinates in calculateEbv")
 
             galacticCoordinates = numpy.array(_galacticFromEquatorial(equatorialCoordinates[0,:],equatorialCoordinates[1,:]))
-            
+                    
         if northMap is None:
             if self.ebvMapNorth is None:
                 self.load_ebvMapNorth()
@@ -295,3 +322,6 @@ class EBVbase(object):
  
             
         return ebv
+
+
+sims_clean_up.targets.append(EBVbase._ebv_map_cache)
