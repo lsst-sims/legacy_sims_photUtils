@@ -30,7 +30,7 @@ def getImsimFluxNorm(sed, magmatch):
     if not hasattr(getImsimFluxNorm, 'imsim_wavelen'):
         bp = Bandpass()
         bp.imsimBandpass()
-        non_zero_dex = np.where(bp.sb>0.0)[0][0]
+        non_zero_dex = np.where(bp.sb > 0.0)[0][0]
         getImsimFluxNorm.imsim_wavelen = bp.wavelen[non_zero_dex]
 
     if sed.fnu is None:
