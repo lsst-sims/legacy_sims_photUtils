@@ -13,6 +13,7 @@ from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils import BandpassDict
 from lsst.utils import getPackageDir
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 
 
 def setup_module(module):
@@ -29,6 +30,7 @@ class TestMatchBase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         del cls.galDir
         del cls.filterList
 
@@ -256,6 +258,7 @@ class TestMatchStar(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         del cls.testSpecDir
         del cls.testKDir
         del cls.testMLTDir
@@ -307,6 +310,7 @@ class TestMatchGalaxy(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         del cls.testSpecDir
 
 
@@ -477,6 +481,7 @@ class TestSelectGalaxySED(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         del cls.testSpecDir
 
 
@@ -636,6 +641,7 @@ class TestSelectStarSED(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        sims_clean_up()
         del cls.testSpecDir
         del cls.testKDir
         del cls.testMLTDir

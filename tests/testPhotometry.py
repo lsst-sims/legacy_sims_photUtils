@@ -5,6 +5,7 @@ import unittest
 import lsst.utils
 import lsst.utils.tests
 from lsst.sims.utils import ObservationMetaData
+from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
 from lsst.sims.photUtils.EBV import EBVbase
@@ -16,6 +17,10 @@ def setup_module(module):
 
 
 class photometryUnitTest(unittest.TestCase):
+
+    @classmethod
+    def tearDownClass(cls):
+        sims_clean_up()
 
     def setUp(self):
         self.obs_metadata = ObservationMetaData(mjd=52000.7, bandpassName='i',

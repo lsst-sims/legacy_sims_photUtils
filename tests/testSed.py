@@ -235,6 +235,7 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         self.assertNotEqual(ss2, ss3, msg=msg)
 
 
+
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
