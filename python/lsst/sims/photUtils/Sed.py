@@ -91,12 +91,13 @@ import gzip
 import pickle
 import os
 from .PhysicalParameters import PhysicalParameters
+import warnings
 try:
     from lsst.utils import getPackageDir
 except:
     pass
 
-__all__ = ["Sed", "cache_LSST_seds"]
+__all__ = ["Sed", "cache_LSST_seds", "read_close_Kuruz"]
 
 
 _global_lsst_sed_cache = None
@@ -1429,3 +1430,79 @@ class Sed(object):
         fluxes = self.manyFluxCalc(phiarray, wavelen_step, observedBandpassInd)
         mags = -2.5*numpy.log10(fluxes) - self.zp
         return mags
+
+
+def read_close_Kuruz(teff, feH, logg):
+    """
+    Check the cached Kuruz models and load the model closest to the input stellar parameters.
+    Parameters are matched in order of Teff, feH, and logg. 
+
+    Parameters
+    ----------
+    teff : float
+        Effective temperature of the stellar template. Reasonable range is 3830-11,100 K.
+    feH : float
+        Metallicity [Fe/H] of stellar template. Values in range -5 to 1.
+    logg : float
+       Log of the surface gravity for the stellar template. Values in range 0. to 50.
+
+    Returns
+    -------
+    sed : Sed Object
+        The SED of the closest matching stellar template
+    paramDict : dict
+        Dictionary of the teff, feH, logg that were actually loaded
+
+    """
+    global _global_lsst_sed_cache
+
+    # Load the cache if it hasn't been done
+    if _global_lsst_sed_cache is None:
+        cache_LSST_seds()
+    # Build an array with all the files in the cache
+    if not hasattr(read_close_Kuruz, 'param_combos'):
+        kurucz_files = [filename for filename
+                        in _global_lsst_sed_cache if ('kurucz' in filename) &
+                        ('_g' in os.path.basename(filename))]
+        read_close_Kuruz.param_combos = numpy.zeros(len(kurucz_files),
+                                                    dtype=zip(['filename', 'teff', 'feH', 'logg'],
+                                                              ['|S200', float, float, float]))
+        for i, filename in enumerate(kurucz_files):
+            read_close_Kuruz.param_combos['filename'][i] = filename
+            filename = os.path.basename(filename)
+            if filename[1] == 'm':
+                sign = -1
+            else:
+                sign = 1
+            logz = sign*float(filename.split('_')[0][2:])/10.
+            read_close_Kuruz.param_combos['feH'][i] = logz
+            logg_temp = float(filename.split('g')[1].split('_')[0])
+            read_close_Kuruz.param_combos['logg'][i] = logg_temp
+            teff_temp = float(filename.split('_')[-1].split('.')[0])
+            read_close_Kuruz.param_combos['teff'][i] = teff_temp
+        read_close_Kuruz.param_combos = numpy.sort(read_close_Kuruz.param_combos,
+                                                   order=['teff', 'feH', 'logg'])
+
+    # Lookup the closest match. Prob a faster way to do this.
+    teff_diff = numpy.abs(read_close_Kuruz.param_combos['teff'] - teff)
+    g1 = numpy.where(teff_diff == teff_diff.min())[0]
+    feH_diff = numpy.abs(read_close_Kuruz.param_combos['feH'][g1] - feH)
+    g2 = numpy.where(feH_diff == feH_diff.min())[0]
+    logg_diff = numpy.abs(read_close_Kuruz.param_combos['logg'][g1][g2] - logg)
+    g3 = numpy.where(logg_diff == logg_diff.min())[0]
+    fileMatch = read_close_Kuruz.param_combos['filename'][g1][g2][g3]
+    if numpy.size(fileMatch > 1):
+        warnings.warn('Multiple close files')
+        fileMatch = fileMatch[0]
+
+    # Record what paramters were actually loaded
+    teff = read_close_Kuruz.param_combos['teff'][g1][g2][g3][0]
+    feH = read_close_Kuruz.param_combos['feH'][g1][g2][g3][0]
+    logg = read_close_Kuruz.param_combos['logg'][g1][g2][g3][0]
+
+    # Read in the matching file
+    sed = Sed()
+    sed.readSED_flambda(fileMatch)
+    return sed, {'teff': teff, 'feH': feH, 'logg': logg}
+
+
