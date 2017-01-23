@@ -44,7 +44,7 @@ class SedLibraryContents(unittest.TestCase):
         for file_name in list_of_files:
             full_name = os.path.join(target_dir, file_name)
             msg = 'failed on %s'  % full_name
-            self.assertGreater(os.path.getsize(full_name), 5*kb,
+            self.assertGreater(os.path.getsize(full_name), min_size*kb,
                                msg=msg)
 
 
@@ -56,11 +56,11 @@ class SedLibraryContents(unittest.TestCase):
         self.verify_dir('galaxySED', 959)
         self.verify_dir('agnSED', 1)
         self.verify_dir('igm', 30)
-        self.verify_dir('cepheid_lc', 5, minsize=5.0)
+        self.verify_dir('cepheid_lc', 5, min_size=5.0)
         self.verify_dir('flatSED', 1)
         self.verify_dir('eb_lc', 1842)
         self.verify_dir('mflare', 50)
-        self.verify_dir('microlens/bh_binary_source', min_size=0.0)
+        self.verify_dir('microlens/bh_binary_source', 71, min_size=0.001)
         self.verify_dir('rrly_lc/RRab', 758)
         self.verify_dir('rrly_lc/RRc', 208)
         self.verify_dir('ssmSED', 26, min_size=9)
