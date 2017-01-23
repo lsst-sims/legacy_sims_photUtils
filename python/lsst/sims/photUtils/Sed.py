@@ -97,7 +97,7 @@ try:
 except:
     pass
 
-__all__ = ["Sed", "cache_LSST_seds", "read_close_Kuruz"]
+__all__ = ["Sed", "cache_LSST_seds", "read_close_Kurucz"]
 
 
 _global_lsst_sed_cache = None
@@ -1486,19 +1486,19 @@ def read_close_Kurucz(teff, feH, logg):
     # Lookup the closest match. Prob a faster way to do this.
     teff_diff = numpy.abs(read_close_Kurucz.param_combos['teff'] - teff)
     g1 = numpy.where(teff_diff == teff_diff.min())[0]
-    feH_diff = numpy.abs(read_close_Kuruz.param_combos['feH'][g1] - feH)
+    feH_diff = numpy.abs(read_close_Kurucz.param_combos['feH'][g1] - feH)
     g2 = numpy.where(feH_diff == feH_diff.min())[0]
-    logg_diff = numpy.abs(read_close_Kuruz.param_combos['logg'][g1][g2] - logg)
+    logg_diff = numpy.abs(read_close_Kurucz.param_combos['logg'][g1][g2] - logg)
     g3 = numpy.where(logg_diff == logg_diff.min())[0]
-    fileMatch = read_close_Kuruz.param_combos['filename'][g1][g2][g3]
+    fileMatch = read_close_Kurucz.param_combos['filename'][g1][g2][g3]
     if numpy.size(fileMatch > 1):
         warnings.warn('Multiple close files')
         fileMatch = fileMatch[0]
 
     # Record what paramters were actually loaded
-    teff = read_close_Kuruz.param_combos['teff'][g1][g2][g3][0]
-    feH = read_close_Kuruz.param_combos['feH'][g1][g2][g3][0]
-    logg = read_close_Kuruz.param_combos['logg'][g1][g2][g3][0]
+    teff = read_close_Kurucz.param_combos['teff'][g1][g2][g3][0]
+    feH = read_close_Kurucz.param_combos['feH'][g1][g2][g3][0]
+    logg = read_close_Kurucz.param_combos['logg'][g1][g2][g3][0]
 
     # Read in the matching file
     sed = Sed()
