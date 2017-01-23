@@ -4,7 +4,7 @@
 # depends on sims_sed_library, so this is where we are putting the unit test.
 
 import unittest
-import  os
+import os
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
@@ -32,7 +32,7 @@ class SedLibraryContents(unittest.TestCase):
 
         min_size is the size (in kb) that we demand all files be greater than
         """
-        msg='failed on %s ' % dir_name
+        msg = 'failed on %s ' % dir_name
         kb = 1024
 
         target_dir = os.path.join(getPackageDir('sims_sed_library'),
@@ -43,10 +43,9 @@ class SedLibraryContents(unittest.TestCase):
 
         for file_name in list_of_files:
             full_name = os.path.join(target_dir, file_name)
-            msg = 'failed on %s'  % full_name
+            msg = 'failed on %s' % full_name
             self.assertGreater(os.path.getsize(full_name), min_size*kb,
                                msg=msg)
-
 
     def test_directories(self):
         self.verify_dir('starSED/kurucz', 4885)
