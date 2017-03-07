@@ -229,12 +229,12 @@ class readGalfast(object):
 
         for filename, outFile in zip(filenameList, outFileList):
             if filename.endswith('.txt'):
-                galfastIn = open(filename, 'r')
+                galfastIn = open(filename, 'rt')
                 inFits = False
                 gzFile = False
                 num_lines = sum(1 for line in open(filename))
             elif filename.endswith('.gz'):
-                galfastIn = gzip.open(filename, 'r')
+                galfastIn = gzip.open(filename, 'rt')
                 inFits = False
                 gzFile = True
                 num_lines = sum(1 for line in gzip.open(filename))
