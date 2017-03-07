@@ -83,6 +83,10 @@ order as the bandpasses) of this SED in each of those bandpasses.
 
 from __future__ import with_statement
 from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import warnings
 import numpy
 import sys
@@ -1466,8 +1470,8 @@ def read_close_Kurucz(teff, feH, logg):
                         in _global_lsst_sed_cache if ('kurucz' in filename) &
                         ('_g' in os.path.basename(filename))]
         read_close_Kurucz.param_combos = numpy.zeros(len(kurucz_files),
-                                                    dtype=zip(['filename', 'teff', 'feH', 'logg'],
-                                                              ['|S200', float, float, float]))
+                                                    dtype=[('filename', str, 200), ('teff', float),
+                                                           ('feH', float), ('logg', float)])
         for i, filename in enumerate(kurucz_files):
             read_close_Kurucz.param_combos['filename'][i] = filename
             filename = os.path.basename(filename)

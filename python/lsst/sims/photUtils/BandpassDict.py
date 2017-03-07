@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import object
 import copy
 import numpy
 import os
@@ -39,6 +41,7 @@ class BandpassDict(object):
         with those Bandpasses.  These will be used as keys for the BandpassDict.
         """
         self._bandpassDict = OrderedDict()
+        self._wavelen_match = None
         for bandpassName, bandpass in zip(bandpassNameList, bandpassList):
 
             if bandpassName in self._bandpassDict:
@@ -46,10 +49,11 @@ class BandpassDict(object):
                                    + "to BandpassDict")
 
             self._bandpassDict[bandpassName] = copy.deepcopy(bandpass)
+            if self._wavelen_match is None:
+                self._wavelen_match = self._bandpassDict[bandpassName].wavelen
 
         dummySed = Sed()
-        self._phiArray, self._wavelenStep = dummySed.setupPhiArray(self._bandpassDict.values())
-        self._wavelen_match = self._bandpassDict.values()[0].wavelen
+        self._phiArray, self._wavelenStep = dummySed.setupPhiArray(list(self._bandpassDict.values()))
 
 
     def __getitem__(self, bandpass):
@@ -66,11 +70,17 @@ class BandpassDict(object):
 
 
     def values(self):
-        return self._bandpassDict.values()
+        """
+        Returns a list of the BandpassDict's values.
+        """
+        return list(self._bandpassDict.values())
 
 
     def keys(self):
-        return self._bandpassDict.keys()
+        """
+        Returns a list of the BandpassDict's keys.
+        """
+        return list(self._bandpassDict.keys())
 
 
     @classmethod
@@ -235,7 +245,7 @@ class BandpassDict(object):
             # self._wavelen_match
             if sedobj._needResample(wavelen_match=self._wavelen_match):
                 dummySed = Sed(wavelen=sedobj.wavelen, flambda=sedobj.flambda)
-                dummySed.resampleSED(force=True, wavelen_match=self._bandpassDict.values()[0].wavelen)
+                dummySed.resampleSED(force=True, wavelen_match=self._wavelen_match)
             else:
                 dummySed = sedobj
 
@@ -427,7 +437,7 @@ class BandpassDict(object):
             # self._wavelen_match
             if sedobj._needResample(wavelen_match=self._wavelen_match):
                 dummySed = Sed(wavelen=sedobj.wavelen, flambda=sedobj.flambda)
-                dummySed.resampleSED(force=True, wavelen_match=self._bandpassDict.values()[0].wavelen)
+                dummySed.resampleSED(force=True, wavelen_match=self._wavelen_match)
             else:
                 dummySed = sedobj
 

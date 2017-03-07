@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import range
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 

@@ -1,3 +1,4 @@
+from builtins import object
 import numpy
 
 __all__ = ["LSSTdefaults"]

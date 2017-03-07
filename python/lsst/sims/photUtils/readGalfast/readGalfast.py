@@ -1,4 +1,8 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import gzip
 import itertools
@@ -13,7 +17,7 @@ from lsst.sims.photUtils import BandpassDict
 
 __all__ = ["readGalfast"]
 
-class readGalfast():
+class readGalfast(object):
 
     def parseGalfast(self, headerLine):
 

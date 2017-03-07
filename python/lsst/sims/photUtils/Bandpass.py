@@ -57,6 +57,8 @@ Methods:
 
 """
 from __future__ import print_function
+from builtins import range
+from builtins import object
 import os
 import warnings
 import numpy
@@ -68,7 +70,7 @@ from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calcul
 __all__ = ["Bandpass"]
 
 
-class Bandpass:
+class Bandpass(object):
     """
     Class for holding and utilizing telescope bandpasses.
     """

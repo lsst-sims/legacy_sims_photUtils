@@ -15,6 +15,7 @@ from __future__ import print_function
 # the same wavelength grid as the bandpass before starting any calculations, this would increase
 # the time requirements. 
 
+from builtins import range
 import os
 import random
 

@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import object
 import os
 import numpy
 from astropy.io import fits

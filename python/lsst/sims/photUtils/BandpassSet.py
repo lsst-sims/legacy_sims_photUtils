@@ -41,6 +41,9 @@
 from __future__ import print_function
 
 
+from builtins import zip
+from builtins import range
+from builtins import object
 import os
 import copy
 import numpy as np
@@ -59,7 +62,7 @@ WAVELEN_STEP = 0.1  # step size in wavelength grid (nm)
 # figure format to save output figures, if desired. (can choose 'png' or 'eps' or 'pdf' or a few others). 
 figformat = 'png'
 
-class BandpassSet():
+class BandpassSet(object):
     """ Set up a dictionary of a set of bandpasses (multi-filters).
     Run various engineering tests or visualizations."""
     
@@ -69,8 +72,8 @@ class BandpassSet():
 
     def setBandpassSet(self, bpDict, bpDictlist=('u', 'g', 'r', 'i', 'z','y'), verbose=True):
         """Simply set throughputs from a pre-made dictionary."""
-        if len(bpDictlist) != len(bpDict.keys()):
-            bpDictList = bpDict.keys()
+        if len(bpDictlist) != len(list(bpDict.keys())):
+            bpDictList = list(bpDict.keys())
         self.bandpass = copy.deepcopy(bpDict)
         self.filterlist = copy.deepcopy(bpDictlist)
         return

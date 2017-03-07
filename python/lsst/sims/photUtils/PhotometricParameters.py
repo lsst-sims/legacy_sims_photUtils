@@ -1,8 +1,9 @@
+from builtins import object
 import numpy
 
 __all__ = ["PhotometricParameters"]
 
-class DefaultPhotometricParameters:
+class DefaultPhotometricParameters(object):
     """
     This class will just contain a bunch of dict which store
     the default PhotometricParameters for LSST Bandpasses

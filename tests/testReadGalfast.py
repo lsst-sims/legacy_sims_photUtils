@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import str
 import unittest
 import os
 import gzip
