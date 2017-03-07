@@ -543,13 +543,14 @@ class Sed(object):
             # lambda should be in nm and flambda should be in ergs/cm2/s/nm
             sourcewavelen = []
             sourceflambda = []
-            for line in f:
+            f_lines = f.readlines()
+            f.close()
+            for line in f_lines:
                 if line.startswith("#"):
                     continue
                 values = line.split()
                 sourcewavelen.append(float(values[0]))
                 sourceflambda.append(float(values[1]))
-            f.close()
             sourcewavelen = numpy.array(sourcewavelen)
             sourceflambda = numpy.array(sourceflambda)
             if _global_misc_sed_cache is None:
