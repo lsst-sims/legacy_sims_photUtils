@@ -65,8 +65,14 @@ class TestApplyIGM(unittest.TestCase):
         redshiftValues = ['1.5', '1.6', '1.7', '1.8', '1.9', '2.0',
                           '2.1', '2.2', '2.3', '2.4', '2.5',
                           '2.6', '2.7', '2.8', '2.9']
-        self.assertItemsEqual(list(testIGMDicts.meanLookups.keys()), redshiftValues)
-        self.assertItemsEqual(list(testIGMDicts.varLookups.keys()), redshiftValues)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(list(testIGMDicts.meanLookups.keys()), redshiftValues)
+            self.assertItemsEqual(list(testIGMDicts.varLookups.keys()), redshiftValues)
+        else:
+            self.assertCountEqual(list(testIGMDicts.meanLookups.keys()), redshiftValues)
+            self.assertCountEqual(list(testIGMDicts.varLookups.keys()), redshiftValues)
 
         # Finally make sure that if Variance Boolean is false that
         # nothing is passed in to varLookups
