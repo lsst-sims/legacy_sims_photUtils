@@ -51,7 +51,7 @@ class TestApplyIGM(unittest.TestCase):
         # there are no variance files that the correct error is raised
         testIGM = ApplyIGM()
         testIGM.initializeIGM(zMax = 1.5)
-        with gzip.open('MeanLookupTable_zSource1.5.tbl.gz', mode='w') as testMeanLookupTable:
+        with gzip.open('MeanLookupTable_zSource1.5.tbl.gz', 'wt') as testMeanLookupTable:
             testMeanLookupTable.write('300.0        0.9999\n')
         self.assertRaisesRegexp(IOError, "Cannot find variance tables.",
                                 testIGM.loadTables, os.getcwd())
