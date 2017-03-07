@@ -527,17 +527,17 @@ class Sed(object):
             except IOError:
                 try:
                     f = open(unzipped_filename, 'r')
-                except Exception as e:
-                    # append our message to the message of the error that was actually raised
-                    # code taken form
-                    # http://stackoverflow.com/questions/6062576/adding-information-to-an-exception
-                    new_exception = type(e)(str(e) +
-                                            "\n\nError reading sed file %s; "
-                                            "it may not exist, "
-                                            "or be improperly formatted "
-                                            "(if the file name ends in .gz it should be gzipped; "
-                                            "if not, it should just be a text file)" % filename)
-                    raise type(e), new_exception, sys.exc_info()[2]
+                except Exception as err:
+                    # see
+                    # http://stackoverflow.com/questions/
+                    # 9157210/how-do-i-raise-the-same-exception-with-a-custom-message-in-python
+                    err.message = err.message + \
+                                            "\n\nError reading sed file %s; " \
+                                            "it may not exist, " \
+                                            "or be improperly formatted " \
+                                            "(if the file name ends in .gz it should be gzipped; " \
+                                            "if not, it should just be a text file)" % filename
+                    raise
 
             # Read source SED from file - lambda, flambda should be first two columns in the file.
             # lambda should be in nm and flambda should be in ergs/cm2/s/nm
