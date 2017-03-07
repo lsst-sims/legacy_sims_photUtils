@@ -25,7 +25,7 @@ class SedListTest(unittest.TestCase):
     def getListOfSedNames(self, nNames):
         return [self.sedPossibilities[ii].replace('.gz', '')
                 for ii in
-                self.rng.random_integers(0, len(self.sedPossibilities)-1, nNames)]
+                self.rng.randint(0, len(self.sedPossibilities)-1, nNames)]
 
     def testExceptions(self):
         """

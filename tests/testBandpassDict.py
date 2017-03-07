@@ -27,7 +27,7 @@ class BandpassDictTest(unittest.TestCase):
     def getListOfSedNames(self, nNames):
         return [self.sedPossibilities[ii].replace('.gz', '')
                 for ii in
-                self.rng.random_integers(0, len(self.sedPossibilities)-1, nNames)]
+                self.rng.randint(0, len(self.sedPossibilities)-1, nNames)]
 
     def getListOfBandpasses(self, nBp):
         """
@@ -36,7 +36,7 @@ class BandpassDictTest(unittest.TestCase):
         Intentionally do so a nonsense order so that we can test
         that order is preserved in the BandpassDict
         """
-        dexList = self.rng.random_integers(0, len(self.bandpassPossibilities)-1, nBp)
+        dexList = self.rng.randint(0, len(self.bandpassPossibilities)-1, nBp)
         bandpassNameList = []
         bandpassList = []
         for dex in dexList:
