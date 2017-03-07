@@ -265,7 +265,7 @@ class readGalfast(object):
                     else:
                         header_length += 1
             print('Total objects = %i' % (num_lines - header_length))
-            numChunks = ((num_lines-header_length)/chunkSize) + 1
+            numChunks = ((num_lines-header_length)//chunkSize) + 1
 
             for chunk in range(0,numChunks):
                 if chunk == numChunks-1:
