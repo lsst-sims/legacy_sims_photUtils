@@ -25,6 +25,9 @@ class EBVmap(object):
     Images are read in from a fits file and assume a ZEA projection
     '''
 
+    def __del__(self):
+        self.hdulist.close()
+
     def readMapFits(self, fileName):
         """ read a fits file containing the ebv data"""
 
