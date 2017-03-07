@@ -129,7 +129,7 @@ class TestReadGalfast(unittest.TestCase):
         exampleIn.close()
 
         # Then gzipped. Also testing multiple lines in catalog.
-        exampleGzipIn = gzip.open('gzipExample.txt.gz', 'w')
+        exampleGzipIn = gzip.open('gzipExample.txt.gz', 'wt')
         exampleGzipIn.write(inHeader)
         exampleGzipIn.write(testComment)
         exampleGzipIn.write(inData)
