@@ -359,8 +359,8 @@ class readGalfast(object):
                                                                             ra[heIn], dec[heIn],
                                                                             reddening = False,
                                                                             colors = colorDict['HE'])
-                chunkNames = np.empty(readSize, dtype = 'S32')
-                chunkTypes = np.empty(readSize, dtype = 'S8')
+                chunkNames = np.empty(readSize, dtype = 'S32').astype(str)
+                chunkTypes = np.empty(readSize, dtype = 'S8').astype(str)
                 chunkMagNorms = np.zeros(readSize)
                 chunkMatchErrors = np.zeros(readSize)
                 chunkNames[kIn] = sEDNameK
