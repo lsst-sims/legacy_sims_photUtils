@@ -168,7 +168,7 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         # a file that does not exist
         with self.assertRaises(IOError) as context:
             ss.readSED_flambda(os.path.join(scratch_dir, "nonsense.txt"))
-        self.assertIn("sed file", context.exception.message)
+        self.assertIn("sed file", context.exception.args[0])
 
         if os.path.exists(zipped_name):
             os.unlink(zipped_name)

@@ -534,12 +534,12 @@ class Sed(object):
                     # see
                     # http://stackoverflow.com/questions/
                     # 9157210/how-do-i-raise-the-same-exception-with-a-custom-message-in-python
-                    err.message = err.message + \
-                                            "\n\nError reading sed file %s; " \
-                                            "it may not exist, " \
-                                            "or be improperly formatted " \
-                                            "(if the file name ends in .gz it should be gzipped; " \
-                                            "if not, it should just be a text file)" % filename
+                    err.args = (err.args[0] + \
+                                "\n\nError reading sed file %s; " % filename \
+                                + "it may not exist, " \
+                                + "or be improperly formatted " \
+                                + "(if the file name ends in .gz it should be gzipped; " \
+                                + "if not, it should just be a text file)", err.args[1:])
                     raise
 
             sourcewavelen = data['wavelen']
