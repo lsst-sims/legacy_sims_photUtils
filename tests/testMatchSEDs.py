@@ -164,7 +164,12 @@ class TestMatchStar(unittest.TestCase):
         testNames = []
         for testSED in testSEDs:
             testNames.append(testSED.name)
-        self.assertItemsEqual(testKuruczList, testNames)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testKuruczList, testNames)
+        else:
+            self.assertCountEqual(testKuruczList, testNames)
 
         # Test same condition if subset is provided
         testSubsetList = ['km01_7000.fits_g40_7140.gz', 'kp01_7000.fits_g40_7240.gz']
@@ -180,7 +185,13 @@ class TestMatchStar(unittest.TestCase):
             testSubsetLogZ.append(testSED.logZ)
             testSubsetLogG.append(testSED.logg)
             testSubsetTemp.append(testSED.temp)
-        self.assertItemsEqual(testSubsetList, testSubsetNames)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testSubsetList, testSubsetNames)
+        else:
+            self.assertCountEqual(testSubsetList, testSubsetNames)
+
         self.assertEqual(testSubsetLogZ, [-0.1, 0.1])  # Test both pos. and neg. get in right
         self.assertEqual(testSubsetLogG, [4.0, 4.0])  # Test storage of logg and temp
         self.assertEqual(testSubsetTemp, [7140, 7240])
@@ -205,7 +216,12 @@ class TestMatchStar(unittest.TestCase):
         testNames = []
         for testSED in testSEDs:
             testNames.append(testSED.name)
-        self.assertItemsEqual(testMLTList, testNames)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testMLTList, testNames)
+        else:
+            self.assertCountEqual(testMLTList, testNames)
 
         # Next make sure that correct subset loads if subset is provided
         testSubsetList = testMLTList[0:2]
@@ -213,7 +229,12 @@ class TestMatchStar(unittest.TestCase):
         testSubsetNames = []
         for testSED in testSEDsubset:
             testSubsetNames.append(testSED.name)
-        self.assertItemsEqual(testSubsetList, testSubsetNames)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testSubsetList, testSubsetNames)
+        else:
+            self.assertCountEqual(testSubsetList, testSubsetNames)
 
         # Test that attributes have been assigned
         for testSED in testSEDsubset:
@@ -237,7 +258,12 @@ class TestMatchStar(unittest.TestCase):
         testWDList = os.listdir(self.testWDDir)
 
         # First make sure that all SEDs are correctly accounted for if no subset provided
-        self.assertItemsEqual(testNames, testWDList)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testNames, testWDList)
+        else:
+            self.assertCountEqual(testNames, testWDList)
 
         # Test same condition if subset is provided
         testSubsetList = ['bergeron_10000_75.dat_10100.gz', 'bergeron_He_9000_80.dat_9400.gz']
@@ -253,7 +279,11 @@ class TestMatchStar(unittest.TestCase):
             testNamesSubset.append(testHE.name)
 
         # Next make sure that correct subset loads if subset is provided
-        self.assertItemsEqual(testNamesSubset, testSubsetList)
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testNamesSubset, testSubsetList)
+        else:
+            self.assertCountEqual(testNamesSubset, testSubsetList)
 
         # Make sure that the names get separated into correct wd type
         self.assertEqual(testSEDsSubsetH[0].name, testSubsetList[0])
@@ -294,7 +324,12 @@ class TestMatchGalaxy(unittest.TestCase):
         testNames = []
         for testSED in testSEDs:
             testNames.append(testSED.name)
-        self.assertItemsEqual(testGalList, testNames)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testGalList, testNames)
+        else:
+            self.assertCountEqual(testGalList, testNames)
 
         # Test same condition if a subset is provided
         testSubsetList = testGalList[0:2]
@@ -302,7 +337,12 @@ class TestMatchGalaxy(unittest.TestCase):
         testSubsetNames = []
         for testSED in testSEDsubset:
             testSubsetNames.append(testSED.name)
-        self.assertItemsEqual(testSubsetList, testSubsetNames)
+
+        # Python 3 replaces assertItemsEqual() with assertCountEqual()
+        if hasattr(self, 'assertItemsEqual'):
+            self.assertItemsEqual(testSubsetList, testSubsetNames)
+        else:
+            self.assertCountEqual(testSubsetList, testSubsetNames)
 
         # Test that attributes have been assigned
         for testSED in testSEDsubset:
