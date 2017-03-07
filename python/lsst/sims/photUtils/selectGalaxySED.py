@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import numpy as np
 
@@ -83,7 +84,7 @@ class selectGalaxySED(matchGalaxy):
                 colorRange = np.where(np.isnan(catObject)==False)[0]
                 filtNums = np.unique([colorRange, colorRange+1]) #To pick out right filters in calcMagNorm
             if len(colorRange) == 0:
-                print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn)
+                print('Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn))
                 notMatched += 1
                 sedMatches.append(None)
                 magNormMatches.append(None)
@@ -100,11 +101,11 @@ class selectGalaxySED(matchGalaxy):
                 matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange))
             numOn += 1
             if numOn % 10000 == 0:
-                print 'Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags)
+                print('Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags))
 
-        print 'Done Matching. Matched %i of %i catalog objects to SEDs' % (numCatMags-notMatched, numCatMags)
+        print('Done Matching. Matched %i of %i catalog objects to SEDs' % (numCatMags-notMatched, numCatMags))
         if notMatched > 0:
-            print '%i objects did not get matched' % (notMatched)
+            print('%i objects did not get matched' % (notMatched))
 
         return sedMatches, magNormMatches, matchErrors
 
@@ -202,11 +203,11 @@ class selectGalaxySED(matchGalaxy):
         numOn = 0
         notMatched = 0
         lastRedshift = -100
-        print 'Starting Matching. Arranged by redshift value.'
+        print('Starting Matching. Arranged by redshift value.')
         for redshift in redshiftRange:
 
             if numRedshifted % 10 == 0:
-                print '%i out of %i redshifts gone through' % (numRedshifted, len(redshiftRange))
+                print('%i out of %i redshifts gone through' % (numRedshifted, len(redshiftRange)))
             numRedshifted += 1
 
             colorSet = []
@@ -231,8 +232,8 @@ class selectGalaxySED(matchGalaxy):
                         colorRange = np.where(np.isnan(matchColors)==False)[0]
                         filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm
                     if len(colorRange) == 0:
-                        print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' \
-                              % (currentIndex)
+                        print('Could not match object #%i. No magnitudes for two adjacent bandpasses.' \
+                              % (currentIndex))
                         notMatched += 1
                         #Don't need to assign 'None' here in result array, b/c 'None' is default value
                     else:
@@ -252,9 +253,9 @@ class selectGalaxySED(matchGalaxy):
                     break
             lastRedshift = redshift
 
-        print 'Done Matching. Matched %i of %i catalog objects to SEDs' % (len(catMags)-notMatched, 
-                                                                           len(catMags))
+        print('Done Matching. Matched %i of %i catalog objects to SEDs' % (len(catMags)-notMatched,
+                                                                           len(catMags)))
         if notMatched > 0:
-            print '%i objects did not get matched.' % (notMatched)
+            print('%i objects did not get matched.' % (notMatched))
 
         return sedMatches, magNormMatches, matchErrors

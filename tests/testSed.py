@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from __future__ import print_function
 import numpy as np
 import warnings
 import unittest
@@ -47,7 +48,7 @@ class TestSedWavelenLimits(unittest.TestCase):
         sedwavelen = np.arange(self.wmin, self.wmax+.5, 1)
         sedflambda = np.ones(len(sedwavelen))
         testsed = Sed(wavelen=sedwavelen, flambda=sedflambda)
-        print ''
+        print('')
         # Test that no warning is made.
         with warnings.catch_warnings(record=True) as wa:
             w, f = testsed.resampleSED(wavelen_match=self.testbandpass.wavelen,

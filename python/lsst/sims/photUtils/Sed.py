@@ -82,6 +82,7 @@ order as the bandpasses) of this SED in each of those bandpasses.
 """
 
 from __future__ import with_statement
+from __future__ import print_function
 import warnings
 import numpy
 import sys
@@ -241,9 +242,9 @@ def _generate_sed_cache(cache_dir, cache_name):
             total_files += len([name for name in sub_tree[2] if name.endswith('.gz')])
 
     t_start = time.time()
-    print "This could take about 15 minutes."
-    print "Note: not all SED files are the same size. "
-    print "Do not expect the loading rate to be uniform.\n"
+    print("This could take about 15 minutes.")
+    print("Note: not all SED files are the same size. ")
+    print("Do not expect the loading rate to be uniform.\n")
 
     for sub_dir in sub_dir_list:
         dir_tree = os.walk(os.path.join(sed_root, sub_dir))
@@ -266,13 +267,13 @@ def _generate_sed_cache(cache_dir, cache_name):
                     except:
                         pass
 
-    print '\n'
+    print('\n')
 
     with open(os.path.join(cache_dir, cache_name), "wb") as file_handle:
         pickle.dump(cache, file_handle)
 
-    print 'LSST SED cache saved to:\n'
-    print '%s' % os.path.join(cache_dir, cache_name)
+    print('LSST SED cache saved to:\n')
+    print('%s' % os.path.join(cache_dir, cache_name))
 
     # record the specific sims_sed_library directory being cached so that
     # a new cache will be generated if sims_sed_library gets updated
@@ -331,11 +332,11 @@ def cache_LSST_seds():
                     must_generate = True
 
     if must_generate:
-        print "\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
+        print("\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name))
         cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
         _global_lsst_sed_cache = cache
     else:
-        print "\nOpening cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
+        print("\nOpening cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name))
         with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
             _global_lsst_sed_cache = sed_unpickler(input_file).load()
 
@@ -347,8 +348,8 @@ def cache_LSST_seds():
         _validate_sed_cache()
         _compare_cached_versus_uncached()
     except SedCacheError as ee:
-        print ee.message
-        print "Cannot use cache of LSST SEDs"
+        print(ee.message)
+        print("Cannot use cache of LSST SEDs")
         _global_lsst_sed_cache = None
         pass
 
@@ -1316,15 +1317,15 @@ class Sed(object):
         # Print standard header info.
         if print_fnu:
             wavelen, fnu = self.flambdaTofnu(wavelen, flambda)
-            print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)   Fnu(Jansky)"
+            print("# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)   Fnu(Jansky)", file=f)
         else:
-            print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)"
+            print("# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)", file=f)
         for i in range(0, len(wavelen), 1):
             if print_fnu:
                 fnu = self.flambdaTofnu(wavelen=wavelen, flambda=flambda)
-                print >> f, wavelen[i], flambda[i], fnu[i]
+                print(wavelen[i], flambda[i], fnu[i], file=f)
             else:
-                print >> f, "%.2f %.7g" % (wavelen[i], flambda[i])
+                print("%.2f %.7g" % (wavelen[i], flambda[i]), file=f)
         # Done writing, close file.
         f.close()
         return

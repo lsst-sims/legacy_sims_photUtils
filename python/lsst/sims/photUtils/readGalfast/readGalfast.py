@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import gzip
 import itertools
@@ -100,7 +101,7 @@ class readGalfast():
             elif len(title) < 1: pass
             elif title.isspace(): pass
             else:
-                raise RuntimeError, '*** Unknown field: %s' % (title)
+                raise RuntimeError('*** Unknown field: %s' % (title))
         return galfastDict
 
     def convDMtoKpc(self, DM):
@@ -153,13 +154,13 @@ class readGalfast():
         for filename in filenameList:
             #Make sure input file exists and is readable format before doing anything else
             if os.path.isfile(filename) == False:
-                raise RuntimeError, '*** File does not exist'
+                raise RuntimeError('*** File does not exist')
 
             #Process various possible galfast outputs
             if filename.endswith(('.txt', '.gz', '.fits')):
                 continue
             else:
-                raise RuntimeError, str('*** Unsupported File Format in file: ' + str(filename))
+                raise RuntimeError(str('*** Unsupported File Format in file: ' + str(filename)))
 
         #If all files exist and are in proper formats then load seds
 
@@ -259,7 +260,7 @@ class readGalfast():
                         header_status = False
                     else:
                         header_length += 1
-            print 'Total objects = %i' % (num_lines - header_length)
+            print('Total objects = %i' % (num_lines - header_length))
             numChunks = ((num_lines-header_length)/chunkSize) + 1
 
             for chunk in range(0,numChunks):
@@ -422,4 +423,4 @@ class readGalfast():
                                   pml[line], pmb[line], vRadlb[line], vR[line], vPhi[line], vZ[line],
                                   FeH[line], pop[line], distKpc[line], ebv[line], ebvInf[line])
                     fOut.write(outFmt % outDat)
-                print 'Chunk Num Done = %i out of %i' % (chunk+1, numChunks)
+                print('Chunk Num Done = %i out of %i' % (chunk+1, numChunks))

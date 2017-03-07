@@ -1,3 +1,4 @@
+from __future__ import print_function
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 
@@ -99,9 +100,9 @@ for i in range(len(starskeys)):
     tmpstar.multiplyFluxNorm(fluxnorm[i])
     mags[i] = tmpstar.manyMagCalc(phiArray, dlambda)
 
-print "#sedname mag_u  mag_g   mag_r   mag_i   mag_z   mag_y"
+print("#sedname mag_u  mag_g   mag_r   mag_i   mag_z   mag_y")
 for i in range(len(starskeys)):
-    print "%s  %.4f %.4f %.4f %.4f %.4f %.4f" %(starskeys[i], mags[i][0], mags[i][1],
+    print("%s  %.4f %.4f %.4f %.4f %.4f %.4f" %(starskeys[i], mags[i][0], mags[i][1],
                                                 mags[i][2], mags[i][3], mags[i][4],
-                                                mags[i][5])
+                                                mags[i][5]))
 

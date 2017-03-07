@@ -1,3 +1,4 @@
+from __future__ import print_function
 # 11/15/2010
 # lynne jones
 # simple example of calculating the colors of a set of varying temperature
@@ -47,7 +48,7 @@ writestring = writestring + " LSST:"
 for i in range(len(lsstflist)-1):
     col = "%s-%s " %(lsstflist[i], lsstflist[i+1])
     writestring = writestring + col
-print writestring
+print(writestring)
 
 # calculate colors
 temperatures = numpy.arange(3000, 30000, 1000, dtype='float')
@@ -75,6 +76,6 @@ for temperature in temperatures:
     for i in range(len(lsstflist)-1):
         col = lsstmag[lsstflist[i]] - lsstmag[lsstflist[i+1]]
         writestring = writestring + "%.3f " %(col)    
-    print writestring
+    print(writestring)
 
 

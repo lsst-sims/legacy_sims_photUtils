@@ -4,6 +4,7 @@ from astropy.io import fits
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import _galacticFromEquatorial
+from functools import reduce
 
 __all__ = ["EBVmap", "EBVbase"]
 

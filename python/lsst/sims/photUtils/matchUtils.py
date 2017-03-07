@@ -4,6 +4,7 @@ Created on Wed Feb 25 14:07:03 2015
 
 @author: Bryce Kalmbach
 """
+from __future__ import print_function
 import numpy as np
 import os
 import re
@@ -215,7 +216,7 @@ class matchStar(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: Kurucz SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: Kurucz SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()
@@ -279,7 +280,7 @@ class matchStar(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: MLT SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: MLT SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()
@@ -339,7 +340,7 @@ class matchStar(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: WD SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: WD SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()
@@ -414,7 +415,7 @@ class matchGalaxy(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()

@@ -1,3 +1,4 @@
+from __future__ import print_function
 #
 
 import os
@@ -29,7 +30,7 @@ for f in filterlist:
     lsstbp[f] = Bandpass()
     lsstbp[f].readThroughput(os.path.join(bpdir, 'total_'+f+'.dat'), wavelen_step=wavelen_step)
 dt, t = dtime(t)
-print "Reading %d filters took %f s" %(len(filterlist), dt)
+print("Reading %d filters took %f s" %(len(filterlist), dt))
 
 wavelen_min = lsstbp[filterlist[0]].wavelen.min()
 wavelen_max = lsstbp[filterlist[0]].wavelen.max() - wavelen_step
@@ -47,7 +48,7 @@ for gal in gallist:
     gals[gal].readSED_flambda(os.path.join(galdir,gal))
 
 dt, t = dtime(t)
-print "Reading %d galaxy seds took %f s" %(len(gallist), dt)
+print("Reading %d galaxy seds took %f s" %(len(gallist), dt))
 
 
 # Check on resampling - want all galaxy seds to have the same wavelength range (not necessarily same as the bandpass). 
@@ -55,14 +56,14 @@ if ((gals[gallist[0]].wavelen.min() < 30) & (gals[gallist[0]].wavelen.max() > 20
     # If true, then gals[gallist[0]] is okay to use as a template -- this ought to be true.
     wavelen_match = gals[gallist[0]].wavelen
 else:
-    print "Had to use simple wavelength array for matching"
+    print("Had to use simple wavelength array for matching")
     wavelen_match = numpy.arange(30, 2200, 0.1, dtype='float')
 for gal in gallist:
     if gals[gal].needResample(wavelen_match = wavelen_match):
         gals[gal].resampleSED(wavelen_match = wavelen_match)
 
 dt, t = dtime(t)
-print "Checking (and potentially doing) resampling took %f s" %(dt)
+print("Checking (and potentially doing) resampling took %f s" %(dt))
 
 # Generate fake redshift and dust info for 10,000 'galaxies' that would be returned from galaxy info query.
 # Although we have only 960 galaxy seds, we will likely want to calculate magnitudes for many more galaxies.
@@ -76,7 +77,7 @@ gal_name = numpy.array(gal_name, dtype='int')
 fluxnorm = (numpy.random.rand(num_gal) + 2) * 1e-14
 
 dt, t = dtime(t)
-print "Picking random numbers for ebv/redshift, etc took %f s" %(dt)
+print("Picking random numbers for ebv/redshift, etc took %f s" %(dt))
 
 # First - start 'regular' (but slightly slower) method of calculating magnitudes for galaxies, for comparison.
 # If you're only calculating magnitudes for a few galaxies, this might actually be just as fast and
@@ -110,8 +111,8 @@ for i in range(num_gal):
     for f in filterlist:
         mags1[f][i] = tmpgal.calcMag(lsstbp[f])
 dt, t = dtime(t)
-print "Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies took %f s" \
-      %(len(filterlist), num_gal, dt)
+print("Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies took %f s" \
+      %(len(filterlist), num_gal, dt))
 
 # For next test: want to also do all the same steps, but in an optimized form. This means
 # doing some things that Sed does 'behind the scenes' explicitly, but also means the code may be a little
@@ -150,8 +151,8 @@ for i in range(num_gal):
         mags2[f][i] = tmpmags[j]
         j = j+1
 dt, t = dtime(t)
-print "Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies optimized way took %f s" \
-      %(len(filterlist), num_gal, dt)
+print("Calculating dust/redshift/dust/fluxnorm/%d magnitudes for %d galaxies optimized way took %f s" \
+      %(len(filterlist), num_gal, dt))
 
 
 # Check for differences in magnitudes.
@@ -161,17 +162,17 @@ colors = ['m', 'g', 'r', 'b', 'k', 'y']
 i = 0
 diff = {}
 for f in filterlist:
-   print len(mags1[f]), len(mags2[f])
+   print(len(mags1[f]), len(mags2[f]))
    diff[f] = numpy.zeros(num_gal, dtype='float')
    flags = numpy.isfinite(mags2[f])
    if (flags.any() == 'False'):
-      print "Found %d finite magnitudes out of %d in optimized mags %s" %(len(flags[0]), len(mags2[f]), f)
+      print("Found %d finite magnitudes out of %d in optimized mags %s" %(len(flags[0]), len(mags2[f]), f))
    flags = numpy.isfinite(mags1[f])
    if (flags.any() == 'False'):
-      print "Found %d finite magnitudes out of %d in non-optimized mags %s" %(len(flags[0]), len(mags1[f]), f)
+      print("Found %d finite magnitudes out of %d in non-optimized mags %s" %(len(flags[0]), len(mags1[f]), f))
    diff[f] = numpy.fabs(mags1[f] - mags2[f])
    condition  = (diff[f]>0.01)
-   print f, diff[f][condition], redshifts[condition], fluxnorm[condition], mags1[f][condition], mags2[f][condition]
+   print(f, diff[f][condition], redshifts[condition], fluxnorm[condition], mags1[f][condition], mags2[f][condition])
    #print f, diff[f].min(), diff[f].max(), mags1[f].max(), mags2[f].max(), len(mags1[f]), len(mags2[f])
    pylab.plot(mags1[f], mags2[f], colors[i]+'.')
    i = i + 1

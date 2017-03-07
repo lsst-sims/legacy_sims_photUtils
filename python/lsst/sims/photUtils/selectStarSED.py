@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import numpy as np
 import warnings
@@ -131,7 +132,7 @@ class selectStarSED(matchStar):
                 filtNums = np.unique([colorRange, colorRange+1]) #Pick right filters in calcMagNorm
             if len(colorRange) == 0:
                 if verbose == True:
-                    print 'Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn)
+                    print('Could not match object #%i. No magnitudes for two adjacent bandpasses.' % (numOn))
                 notMatched += 1
                 sedMatches.append(None)
                 magNormMatches.append(None)
@@ -148,11 +149,11 @@ class selectStarSED(matchStar):
                 matchErrors.append(distanceArray[matchedSEDNum]/len(colorRange)) #Mean Squared Error
             numOn += 1
             if numOn % 10000 == 0:
-                print 'Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags)
+                print('Matched %i of %i catalog objects to SEDs' % (numOn-notMatched, numCatMags))
         if numCatMags > 1:
-            print 'Done Matching. Matched %i of %i catalog objects to SEDs' % (numCatMags-notMatched,
-                                                                               numCatMags)
+            print('Done Matching. Matched %i of %i catalog objects to SEDs' % (numCatMags-notMatched,
+                                                                               numCatMags))
         if notMatched > 0:
-            print '%i objects did not get matched' % (notMatched)
+            print('%i objects did not get matched' % (notMatched))
 
         return sedMatches, magNormMatches, matchErrors

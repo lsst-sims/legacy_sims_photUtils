@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 import copy
@@ -84,8 +85,8 @@ if __name__ == "__main__":
                                sedtype='white_dwarf', verbose=False)
     quasars = SedSet.SedSet(rootdir="/Users/rhiannonjones/seds/quasar", sedtype='quasar')
     quasars.redshiftSEDS(redshiftlim=[0, 2.51], redshiftstep=0.1)
-    print "Read %d kurucz models, %d whitedwarf models, and %d quasars" %(len(kurucz.sedlist), len(whitedwarf.sedlist),
-                                                                          len(quasars.sedlist))
+    print("Read %d kurucz models, %d whitedwarf models, and %d quasars" %(len(kurucz.sedlist), len(whitedwarf.sedlist),
+                                                                          len(quasars.sedlist)))
     
     savefigs=True
     figformat='png'

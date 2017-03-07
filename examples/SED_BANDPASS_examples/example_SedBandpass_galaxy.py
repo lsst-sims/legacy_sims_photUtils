@@ -1,3 +1,4 @@
+from __future__ import print_function
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 
@@ -87,7 +88,7 @@ for i in range(len(galaxykeys)):
 
 
 # show results
-print "#sedname      fluxnorm     redshift  ebv_gal   ebv_mw  magnitude "
+print("#sedname      fluxnorm     redshift  ebv_gal   ebv_mw  magnitude ")
 for i in range(len(galaxykeys)):
-    print "%s %.5g  %.3f %.5f %.5f %.5f" %(galaxykeys[i], fluxnorm[i], redshifts[i], ebv_gal[i], ebv_mw[i], mags[i])
+    print("%s %.5g  %.3f %.5f %.5f %.5f" %(galaxykeys[i], fluxnorm[i], redshifts[i], ebv_gal[i], ebv_mw[i], mags[i]))
     

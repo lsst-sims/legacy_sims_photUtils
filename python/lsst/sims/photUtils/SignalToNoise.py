@@ -1,7 +1,9 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy
 from .Sed import Sed
 from .Bandpass import Bandpass
-import LSSTdefaults
+from . import LSSTdefaults
 
 __all__ = ["FWHMeff2FWHMgeom", "FWHMgeom2FWHMeff",
            "calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
@@ -445,13 +447,13 @@ def calcSNR_sed(sourceSed, totalbandpass, skysed, hardwarebandpass,
         neff = calcNeff(FWHMeff, photParams.platescale)
         noise_instr_sq = calcInstrNoiseSq(photParams)
 
-        print "For Nexp %.1f of time %.1f: " % (photParams.nexp, photParams.exptime)
-        print "Counts from source: %.2f  Counts from sky: %.2f" %(sourcecounts, skycounts)
-        print "FWHMeff: %.2f('')  Neff pixels: %.3f(pix)" %(FWHMeff, neff)
-        print "Noise from sky: %.2f Noise from instrument: %.2f" \
-            %(numpy.sqrt(noise_sky_sq), numpy.sqrt(noise_instr_sq))
-        print "Noise from source: %.2f" %(numpy.sqrt(noise_source_sq))
-        print " Total Signal: %.2f   Total Noise: %.2f    SNR: %.2f" %(sourcecounts, noise, snr)
+        print("For Nexp %.1f of time %.1f: " % (photParams.nexp, photParams.exptime))
+        print("Counts from source: %.2f  Counts from sky: %.2f" %(sourcecounts, skycounts))
+        print("FWHMeff: %.2f('')  Neff pixels: %.3f(pix)" %(FWHMeff, neff))
+        print("Noise from sky: %.2f Noise from instrument: %.2f" \
+            %(numpy.sqrt(noise_sky_sq), numpy.sqrt(noise_instr_sq)))
+        print("Noise from source: %.2f" %(numpy.sqrt(noise_source_sq)))
+        print(" Total Signal: %.2f   Total Noise: %.2f    SNR: %.2f" %(sourcecounts, noise, snr))
         # Return the signal to noise value.
     return snr
 

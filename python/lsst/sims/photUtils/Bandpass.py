@@ -56,6 +56,7 @@ Methods:
  writeThroughput : utility to write bandpass information to file
 
 """
+from __future__ import print_function
 import os
 import warnings
 import numpy
@@ -463,14 +464,14 @@ class Bandpass:
         if write_phi:
             if self.phi is None:
                 self.sbTophi()
-            print >>f, "# Wavelength(nm)  Throughput(0-1)   Phi"
+            print("# Wavelength(nm)  Throughput(0-1)   Phi", file=f)
         else:
-            print >>f, "# Wavelength(nm)  Throughput(0-1)"
+            print("# Wavelength(nm)  Throughput(0-1)", file=f)
         # Loop through data, printing out to file.
         for i in range(0, len(self.wavelen), 1):
             if write_phi:
-                print >> f, self.wavelen[i], self.sb[i], self.phi[i]
+                print(self.wavelen[i], self.sb[i], self.phi[i], file=f)
             else:
-                print >> f, self.wavelen[i], self.sb[i]
+                print(self.wavelen[i], self.sb[i], file=f)
         f.close()
         return

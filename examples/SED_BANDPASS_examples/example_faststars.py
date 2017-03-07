@@ -1,3 +1,4 @@
+from __future__ import print_function
 #
 
 # CONCLUSION: don't  bother using bandpass's manyMagCalc function. Use Sed's instead.
@@ -42,7 +43,7 @@ for f in filterlist:
     lsstbp[f] = Bandpass()
     lsstbp[f].readThroughput(os.path.join(bpdir, 'total_'+f+'.dat'), wavelen_step=wavelen_step)
 dt, t = dtime(t)
-print "Reading %d filters took %f s" %(len(filterlist), dt)
+print("Reading %d filters took %f s" %(len(filterlist), dt))
 
 # Read in a set of star seds. 
 # Replace stardir with your root galaxy sed directory.
@@ -57,7 +58,7 @@ for star in starlist:
     stars[star].readSED_flambda(os.path.join(stardir,star))
 
 dt, t = dtime(t)
-print "Reading %d star seds took %f s" %(len(starlist), dt)
+print("Reading %d star seds took %f s" %(len(starlist), dt))
 
 # Check on resampling - want all seds to have the same wavelength range and it can match the
 # bandpass wavelength grid because we're not redshifting the stars.
@@ -68,9 +69,9 @@ for star in starlist:
         resampled = True
 dt, t = dtime(t)
 if resampled:
-    print "Checking for (and doing) resampling took %f s" %(dt)
+    print("Checking for (and doing) resampling took %f s" %(dt))
 else:
-    print "Checking for (but not doing any) resampling took %f s" %(dt)
+    print("Checking for (but not doing any) resampling took %f s" %(dt))
 
 # Okay, now decide how many stars to include in this 'chunk'.
 # We will assign the star seds above randomly to each star within this chunk (to simulate getting
@@ -86,7 +87,7 @@ star_name = numpy.array(star_name, dtype='int')
 fluxnorm = (numpy.random.rand(num_star) + 2) * 1e-14
 
 dt, t = dtime(t)
-print "Picking random numbers for dust/fluxnorm/sed id  took %f s" %(dt)
+print("Picking random numbers for dust/fluxnorm/sed id  took %f s" %(dt))
 
 # First - start 'regular' (but slightly slower) method of calculating magnitudes for stars, for comparison.
 # If you're only calculating magnitudes for a few stars, this might actually be just as fast and
@@ -118,8 +119,8 @@ for i in range(num_star):
     for f in filterlist:
         mags1[f][i] = tmpstar.calcMag(lsstbp[f])
 dt, t = dtime(t)
-print "Calculating dust/fluxnorm/%d magnitudes with some smart usage for %d stars took %f s" \
-      %(len(filterlist), num_star, dt)
+print("Calculating dust/fluxnorm/%d magnitudes with some smart usage for %d stars took %f s" \
+      %(len(filterlist), num_star, dt))
 
 
 # Test Sed.manyMagCalc : 
@@ -149,8 +150,8 @@ for i in range(num_star):
         mags2[f][i] = tmpmags[j]
         j = j+1
 dt, t = dtime(t)
-print "Calculating dust/fluxnorm/%d magnitudes for %d stars optimized with Sed.manyMagCalc took %f s" \
-      %(len(filterlist), num_star, dt)
+print("Calculating dust/fluxnorm/%d magnitudes for %d stars optimized with Sed.manyMagCalc took %f s" \
+      %(len(filterlist), num_star, dt))
 
 
 """
@@ -261,10 +262,10 @@ diff1 = {}
 for f in filterlist:
     flags = numpy.isfinite(mags1[f])
     if (flags.any() == 'False'):
-        print "Found %d finite magnitudes out of %d in non-optimized mags %s" %(len(flags[0]), len(mags1[f]), f)
+        print("Found %d finite magnitudes out of %d in non-optimized mags %s" %(len(flags[0]), len(mags1[f]), f))
     flags = numpy.isfinite(mags2[f])
     if (flags.any() == 'False'):
-        print "Found %d finite magnitudes out of %d in optimized mags2 %s" %(len(flags[0]), len(mags2[f]), f)
+        print("Found %d finite magnitudes out of %d in optimized mags2 %s" %(len(flags[0]), len(mags2[f]), f))
     #flags = numpy.isfinite(mags3[f])
     #if (flags.any() == 'False'):
     #    print "Found %d finite magnitudes out of %d in optimized mags3 %s" %(len(flags[0]), len(mags3[f]), f)
@@ -272,7 +273,7 @@ for f in filterlist:
     #diff2[f] = numpy.zeros(num_star, dtype='float')
     diff1[f] = numpy.abs(mags1[f] - mags2[f])
     #diff2[f] = numpy.abs(mags1[f] - mags3[f])
-    print "In ", f, " mags2 max :", diff1[f].max()#, " mags3 max: ", diff2[f].max()
+    print("In ", f, " mags2 max :", diff1[f].max())#, " mags3 max: ", diff2[f].max()
     #condition  = (diff1[f]>0.01)
     #print f, diff1[f][condition], mags1[f][condition], mags2[f][condition]
     #condition  = (diff2[f]>0.01)
