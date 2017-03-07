@@ -63,7 +63,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
             PhotometricParameters(bandpass='x')
 
         for name in expectedMessage:
-            self.assertIn(expectedMessage[name], context.exception.message)
+            self.assertIn(expectedMessage[name], context.exception.args[0])
 
         for name1 in expectedMessage:
             for name2 in expectedMessage:
@@ -73,9 +73,9 @@ class PhotometricParametersUnitTest(unittest.TestCase):
 
                 for name3 in expectedMessage:
                     if name3 not in setParameters:
-                        self.assertIn(expectedMessage[name3], context.exception.message)
+                        self.assertIn(expectedMessage[name3], context.exception.args[0])
                     else:
-                        self.assertNotIn(expectedMessage[name3], context.exception.message)
+                        self.assertNotIn(expectedMessage[name3], context.exception.args[0])
 
     def testDefaults(self):
         """

@@ -61,15 +61,15 @@ class SedListTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, internalAvList=internalAvList)
-        self.assertIn('does not contain internalAvList', context.exception.message)
+        self.assertIn('does not contain internalAvList', context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, galacticAvList=galacticAvList)
-        self.assertIn('does not contain galacticAvList', context.exception.message)
+        self.assertIn('does not contain galacticAvList', context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, redshiftList=redshiftList)
-        self.assertIn('does not contain redshiftList', context.exception.message)
+        self.assertIn('does not contain redshiftList', context.exception.args[0])
 
     def testSetUp(self):
         """

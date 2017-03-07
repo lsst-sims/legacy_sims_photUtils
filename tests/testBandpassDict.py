@@ -136,7 +136,7 @@ class BandpassDictTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             testDict = BandpassDict(bpList, dummyNameList)
 
-        self.assertIn('occurs twice', context.exception.message)
+        self.assertIn('occurs twice', context.exception.args[0])
 
         testDict = BandpassDict(bpList, nameList)
 
