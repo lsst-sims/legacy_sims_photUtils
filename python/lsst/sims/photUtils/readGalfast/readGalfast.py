@@ -359,8 +359,8 @@ class readGalfast(object):
                                                                             ra[heIn], dec[heIn],
                                                                             reddening = False,
                                                                             colors = colorDict['HE'])
-                chunkNames = np.empty(readSize, dtype = 'S32').astype(str)
-                chunkTypes = np.empty(readSize, dtype = 'S8').astype(str)
+                chunkNames = np.empty(readSize, dtype = 'S32')
+                chunkTypes = np.empty(readSize, dtype = 'S8')
                 chunkMagNorms = np.zeros(readSize)
                 chunkMatchErrors = np.zeros(readSize)
                 chunkNames[kIn] = sEDNameK
@@ -380,7 +380,9 @@ class readGalfast(object):
                 chunkMagNorms[heIn] = magNormHE
                 chunkMatchErrors[heIn] = matchErrorHE
                 lsstMagsUnred = []
-                for sedName, sedType, magNorm, matchError in zip(chunkNames, chunkTypes, chunkMagNorms,
+                for sedName, sedType, magNorm, matchError in zip(chunkNames.astype(str),
+                                                                 chunkTypes.astype(str),
+                                                                 chunkMagNorms,
                                                                  chunkMatchErrors):
                     testSED = Sed()
                     testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen,
