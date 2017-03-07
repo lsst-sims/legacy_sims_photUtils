@@ -522,11 +522,14 @@ class Sed(object):
             sourceflambda = numpy.copy(cached_source[1])
 
         if cached_source is None:
+            # Read source SED from file - lambda, flambda should be first two columns in the file.
+            # lambda should be in nm and flambda should be in ergs/cm2/s/nm
+            dtype = numpy.dtype([('wavelen', float), ('flambda', float)])
             try:
-                f = gzip.open(gzipped_filename, 'r')
+                data = numpy.genfromtxt(gzipped_filename, dtype=dtype)
             except IOError:
                 try:
-                    f = open(unzipped_filename, 'r')
+                    data = numpy.genfromtxt(unzipped_filename, dtype=dtype)
                 except Exception as err:
                     # see
                     # http://stackoverflow.com/questions/
@@ -539,20 +542,9 @@ class Sed(object):
                                             "if not, it should just be a text file)" % filename
                     raise
 
-            # Read source SED from file - lambda, flambda should be first two columns in the file.
-            # lambda should be in nm and flambda should be in ergs/cm2/s/nm
-            sourcewavelen = []
-            sourceflambda = []
-            f_lines = f.readlines()
-            f.close()
-            for line in f_lines:
-                if line.startswith("#"):
-                    continue
-                values = line.split()
-                sourcewavelen.append(float(values[0]))
-                sourceflambda.append(float(values[1]))
-            sourcewavelen = numpy.array(sourcewavelen)
-            sourceflambda = numpy.array(sourceflambda)
+            sourcewavelen = data['wavelen']
+            sourceflambda = data['flambda']
+
             if _global_misc_sed_cache is None:
                 _global_misc_sed_cache = {}
             _global_misc_sed_cache[filename] = (numpy.copy(sourcewavelen),
