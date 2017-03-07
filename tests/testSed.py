@@ -151,10 +151,10 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
             os.unlink(unzipped_name)
         wv = np.arange(100.0, 1000.0, 10.0)
         flux = rng.random_sample(len(wv))
-        with gzip.open(zipped_name, "w") as output_file:
+        with gzip.open(zipped_name, "wt") as output_file:
             for ww, ff in zip(wv, flux):
                 output_file.write("%e %e\n" % (ww, ff))
-        with open(unzipped_name, "w") as output_file:
+        with open(unzipped_name, "wt") as output_file:
             for ww, ff in zip(wv, flux):
                 output_file.write("%e %e\n" % (ww, ff))
 
