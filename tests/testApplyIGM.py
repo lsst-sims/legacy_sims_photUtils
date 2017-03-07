@@ -1,3 +1,4 @@
+from __future__ import with_statement
 from builtins import str
 import numpy as np
 import unittest
@@ -50,10 +51,8 @@ class TestApplyIGM(unittest.TestCase):
         # there are no variance files that the correct error is raised
         testIGM = ApplyIGM()
         testIGM.initializeIGM(zMax = 1.5)
-        testMeanLookupTable = gzip.open('MeanLookupTable_zSource1.5.tbl.gz',
-                                        'w')
-        testMeanLookupTable.write('300.0        0.9999')
-        testMeanLookupTable.close()
+        with gzip.open('MeanLookupTable_zSource1.5.tbl.gz', 'w') as testMeanLookupTable:
+            testMeanLookupTable.write('300.0        0.9999\n')
         self.assertRaisesRegexp(IOError, "Cannot find variance tables.",
                                 testIGM.loadTables, os.getcwd())
         os.remove('MeanLookupTable_zSource1.5.tbl.gz')
