@@ -246,9 +246,9 @@ class readGalfast(object):
                 inFits = True
 
             if outFile.endswith('.txt'):
-                fOut = open(outFile, 'w')
+                fOut = open(outFile, 'wt')
             elif outFile.endswith('.gz'):
-                fOut = gzip.open(outFile, 'w')
+                fOut = gzip.open(outFile, 'wt')
             fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, magNorm, ' +\
                        'LSSTugrizy, SDSSugriz, absSDSSr, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
