@@ -281,7 +281,7 @@ def _generate_sed_cache(cache_dir, cache_name):
 
     # record the specific sims_sed_library directory being cached so that
     # a new cache will be generated if sims_sed_library gets updated
-    with open(os.path.join(cache_dir, "cache_version.txt"), "w") as file_handle:
+    with open(os.path.join(cache_dir, "cache_version_%d.txt" % sys.version_info.major), "w") as file_handle:
         file_handle.write("%s %s" % (sed_root, cache_name))
 
     return cache
@@ -307,7 +307,7 @@ def cache_LSST_seds():
     global _global_lsst_sed_cache
     try:
         sed_cache_dir = os.path.join(getPackageDir('sims_photUtils'), 'cacheDir')
-        sed_cache_name = os.path.join('lsst_sed_cache.p')
+        sed_cache_name = os.path.join('lsst_sed_cache_%d.p' % sys.version_info.major)
         sed_dir = getPackageDir('sims_sed_library')
 
     except:
@@ -319,10 +319,10 @@ def cache_LSST_seds():
     must_generate = False
     if not os.path.exists(os.path.join(sed_cache_dir, sed_cache_name)):
         must_generate = True
-    if not os.path.exists(os.path.join(sed_cache_dir, "cache_version.txt")):
+    if not os.path.exists(os.path.join(sed_cache_dir, "cache_version_%d.txt" % sys.version_info.major)):
         must_generate = True
     else:
-        with open(os.path.join(sed_cache_dir, "cache_version.txt"), "r") as input_file:
+        with open(os.path.join(sed_cache_dir, "cache_version_%d.txt" % sys.version_info.major), "r") as input_file:
             lines = input_file.readlines()
             if len(lines) != 1:
                 must_generate = True
