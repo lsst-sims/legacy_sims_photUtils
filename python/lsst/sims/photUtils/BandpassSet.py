@@ -38,8 +38,12 @@
  of LSST filters (i.e. do they meet the filter leak requirements?)
  or plotting the filters (i.e. plotFilters). 
 """ 
+from __future__ import print_function
 
 
+from builtins import zip
+from builtins import range
+from builtins import object
 import os
 import copy
 import numpy as np
@@ -58,7 +62,7 @@ WAVELEN_STEP = 0.1  # step size in wavelength grid (nm)
 # figure format to save output figures, if desired. (can choose 'png' or 'eps' or 'pdf' or a few others). 
 figformat = 'png'
 
-class BandpassSet():
+class BandpassSet(object):
     """ Set up a dictionary of a set of bandpasses (multi-filters).
     Run various engineering tests or visualizations."""
     
@@ -68,8 +72,8 @@ class BandpassSet():
 
     def setBandpassSet(self, bpDict, bpDictlist=('u', 'g', 'r', 'i', 'z','y'), verbose=True):
         """Simply set throughputs from a pre-made dictionary."""
-        if len(bpDictlist) != len(bpDict.keys()):
-            bpDictList = bpDict.keys()
+        if len(bpDictlist) != len(list(bpDict.keys())):
+            bpDictList = list(bpDict.keys())
         self.bandpass = copy.deepcopy(bpDict)
         self.filterlist = copy.deepcopy(bpDictlist)
         return
@@ -85,7 +89,7 @@ class BandpassSet():
             filename = os.path.join(rootdir, rootname+f+rootsuffix)
             # read filter throughput and set up Sb/Phi and zeropoint
             if verbose:
-                print "Reading throughput file %s" %(filename)
+                print("Reading throughput file %s" %(filename))
             # Initialize bandpass object.
             bandpass[f] = Bandpass()
             # Read the throughput curve, sampling onto grid of wavelen min/max/step.
@@ -118,7 +122,7 @@ class BandpassSet():
             complist.append(os.path.join(rootdir, cp))
         for f in filterlist:
             if verbose:
-                print "Reading throughput curves ", complist, " for filter ", f
+                print("Reading throughput curves ", complist, " for filter ", f)
             # Initialize bandpass object.
             bandpass[f] = Bandpass()
             bandpass[f].readThroughputList(complist, wavelen_min=WAVELEN_MIN,
@@ -151,13 +155,13 @@ class BandpassSet():
         headerline = "#Wavelen(nm) "
         for filter in self.filterlist:
             headerline = headerline + "  phi_"  + filter
-        print >>file, headerline
+        print(headerline, file=file)
         # print data
         for i in range(0, len(self.bandpass[self.filterlist[0]].wavelen), 1):
             outline = "%.2f " %(self.bandpass[self.filterlist[0]].wavelen[i])
             for f in self.filterlist:
                 outline = outline + " %.6g " %(self.bandpass[f].phi[i])
-            print >>file, outline
+            print(outline, file=file)
         file.close()
         return
 
@@ -184,9 +188,9 @@ class BandpassSet():
         self.effsb = effsb
         self.effphi = effphi
         if verbose:
-            print "Filter  Eff_Sb   Eff_phi"
+            print("Filter  Eff_Sb   Eff_phi")
             for f in self.filterlist:
-                print " %s      %.3f  %.3f" %(f, self.effsb[f], effphi[f])
+                print(" %s      %.3f  %.3f" %(f, self.effsb[f], effphi[f]))
         return
 
     def calcZeroPoints(self, gain=1.0, verbose=True):
@@ -194,10 +198,10 @@ class BandpassSet():
         exptime = 15   # Default exposure time.
         effarea = np.pi*(6.5*100/2.0)**2   # Default effective area of primary mirror. 
         zpt = {}
-        print "Filter Zeropoint"
+        print("Filter Zeropoint")
         for f in self.filterlist:
             zpt[f] = self.bandpass[f].calcZP_t(expTime=exptime, effarea=effarea, gain=gain)
-            print " %s     %.3f" %(f, zpt[f])
+            print(" %s     %.3f" %(f, zpt[f]))
         return
 
     def calcFilterEdges(self, drop_peak=0.1, drop_percent=50, verbose=True):
@@ -262,16 +266,16 @@ class BandpassSet():
                     break
         # Print output to screen.
         if verbose:
-            print "Filter  MaxThruput EffWavelen  %.3f%s_max(blue)  %.3f%s_max(red)  %.3f%s_abs(blue)  %.3f%s_abs(red)" \
-                %(drop_peak, "%", drop_peak, "%", drop_percent, "%", drop_percent, "%")
+            print("Filter  MaxThruput EffWavelen  %.3f%s_max(blue)  %.3f%s_max(red)  %.3f%s_abs(blue)  %.3f%s_abs(red)" \
+                %(drop_peak, "%", drop_peak, "%", drop_percent, "%", drop_percent, "%"))
             for f in self.filterlist:
-                print "%4s   %10.4f %10.4f  %12.2f  %12.2f  %12.2f  %12.2f" \
+                print("%4s   %10.4f %10.4f  %12.2f  %12.2f  %12.2f  %12.2f" \
                     % (f, maxthruput[f], 
                        effsb[f],  
                        drop_peak_blue[f], 
                        drop_peak_red[f],
                        drop_perc_blue[f], 
-                       drop_perc_red[f])
+                       drop_perc_red[f]))
         # Set values (dictionaries keyed by filterlist).
         self.drop_peak_red = drop_peak_red
         self.drop_peak_blue = drop_peak_blue
@@ -316,8 +320,8 @@ class BandpassSet():
         colors = ('m', 'b', 'g', 'y', 'r', 'k', 'c')
         colorindex = 0
         for f in filterlist: 
-            print "====="
-            print "Analyzing %s filter" %(f)
+            print("=====")
+            print("Analyzing %s filter" %(f))
             # find wavelength range in use.
             minwavelen = bandpass[f].wavelen.min()
             maxwavelen = bandpass[f].wavelen.max()
@@ -338,20 +342,20 @@ class BandpassSet():
                          (bandpass[f].wavelen<=drop_peak_blue[f]))
             temporary = bandpass[f].sb[condition]
             sumthruput_outside_bandpass = temporary.sum()
-            print "Total transmission through filter: %s" %(totaltrans)
-            print "Transmission outside of filter edges (drop_peak): %f" %(sumthruput_outside_bandpass)
+            print("Total transmission through filter: %s" %(totaltrans))
+            print("Transmission outside of filter edges (drop_peak): %f" %(sumthruput_outside_bandpass))
             # Calculate percentage of out of band transmission to in-band transmission
             out_of_band_perc = sumthruput_outside_bandpass / totaltrans * 100.0
-            print "Ratio of total out-of-band to in-band transmission: %f%s" \
-                %(out_of_band_perc, "%")
+            print("Ratio of total out-of-band to in-band transmission: %f%s" \
+                %(out_of_band_perc, "%"))
             infotext = "Out-of-band/in-band transmission %.3f%s" \
                 %(out_of_band_perc, '%')
             if out_of_band_perc > out_of_band_limit: 
-                print " Does not meet SRD-This is more than %.4f%s of throughput outside the bandpass %s" \
-                      %(out_of_band_limit, '%', f)
+                print(" Does not meet SRD-This is more than %.4f%s of throughput outside the bandpass %s" \
+                      %(out_of_band_limit, '%', f))
             else:
-                print " Meets SRD - This is less than %.4f%s of total throughput outside bandpass" \
-                      %(out_of_band_limit, '%')
+                print(" Meets SRD - This is less than %.4f%s of total throughput outside bandpass" \
+                      %(out_of_band_limit, '%'))
             # calculate transmission in each 10nm interval.
             sb_10nm = np.zeros(len(bandpass[f].sb), dtype='float')
             gapsize_10nm = 10.0 # wavelen gap in nm
@@ -377,9 +381,9 @@ class BandpassSet():
                 maxsb_10nm = sb_10nm.max()
                 maxwavelen_10nm = bandpass[f].wavelen[np.where(sb_10nm==sb_10nm.max())]
             if meet_SRD==False:
-                print "Does not meet SRD - %s has at least one region not meeting the 10nm SRD filter leak requirement (max is %f%s of peak transmission at %.1f A)" %(f, maxsb_10nm, "%", maxwavelen_10nm)
+                print("Does not meet SRD - %s has at least one region not meeting the 10nm SRD filter leak requirement (max is %f%s of peak transmission at %.1f A)" %(f, maxsb_10nm, "%", maxwavelen_10nm))
             else:
-                print "10nm limit within SRD."
+                print("10nm limit within SRD.")
             if makeplot:
                 # make plot for this filter
                 plt.figure()

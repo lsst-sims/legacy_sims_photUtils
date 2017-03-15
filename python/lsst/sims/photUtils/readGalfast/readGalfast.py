@@ -1,3 +1,8 @@
+from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import gzip
 import itertools
@@ -12,7 +17,7 @@ from lsst.sims.photUtils import BandpassDict
 
 __all__ = ["readGalfast"]
 
-class readGalfast():
+class readGalfast(object):
 
     def parseGalfast(self, headerLine):
 
@@ -100,7 +105,7 @@ class readGalfast():
             elif len(title) < 1: pass
             elif title.isspace(): pass
             else:
-                raise RuntimeError, '*** Unknown field: %s' % (title)
+                raise RuntimeError('*** Unknown field: %s' % (title))
         return galfastDict
 
     def convDMtoKpc(self, DM):
@@ -153,13 +158,13 @@ class readGalfast():
         for filename in filenameList:
             #Make sure input file exists and is readable format before doing anything else
             if os.path.isfile(filename) == False:
-                raise RuntimeError, '*** File does not exist'
+                raise RuntimeError('*** File does not exist')
 
             #Process various possible galfast outputs
             if filename.endswith(('.txt', '.gz', '.fits')):
                 continue
             else:
-                raise RuntimeError, str('*** Unsupported File Format in file: ' + str(filename))
+                raise RuntimeError(str('*** Unsupported File Format in file: ' + str(filename)))
 
         #If all files exist and are in proper formats then load seds
 
@@ -224,12 +229,12 @@ class readGalfast():
 
         for filename, outFile in zip(filenameList, outFileList):
             if filename.endswith('.txt'):
-                galfastIn = open(filename, 'r')
+                galfastIn = open(filename, 'rt')
                 inFits = False
                 gzFile = False
                 num_lines = sum(1 for line in open(filename))
             elif filename.endswith('.gz'):
-                galfastIn = gzip.open(filename, 'r')
+                galfastIn = gzip.open(filename, 'rt')
                 inFits = False
                 gzFile = True
                 num_lines = sum(1 for line in gzip.open(filename))
@@ -241,9 +246,9 @@ class readGalfast():
                 inFits = True
 
             if outFile.endswith('.txt'):
-                fOut = open(outFile, 'w')
+                fOut = open(outFile, 'wt')
             elif outFile.endswith('.gz'):
-                fOut = gzip.open(outFile, 'w')
+                fOut = gzip.open(outFile, 'wt')
             fOut.write('#oID, ra, dec, gall, galb, coordX, coordY, coordZ, sEDName, magNorm, ' +\
                        'LSSTugrizy, SDSSugriz, absSDSSr, pmRA, pmDec, vRad, pml, pmb, vRadlb, ' +\
                        'vR, vPhi, vZ, FeH, pop, distKpc, ebv, ebvInf\n')
@@ -259,8 +264,8 @@ class readGalfast():
                         header_status = False
                     else:
                         header_length += 1
-            print 'Total objects = %i' % (num_lines - header_length)
-            numChunks = ((num_lines-header_length)/chunkSize) + 1
+            print('Total objects = %i' % (num_lines - header_length))
+            numChunks = ((num_lines-header_length)//chunkSize) + 1
 
             for chunk in range(0,numChunks):
                 if chunk == numChunks-1:
@@ -375,7 +380,9 @@ class readGalfast():
                 chunkMagNorms[heIn] = magNormHE
                 chunkMatchErrors[heIn] = matchErrorHE
                 lsstMagsUnred = []
-                for sedName, sedType, magNorm, matchError in zip(chunkNames, chunkTypes, chunkMagNorms,
+                for sedName, sedType, magNorm, matchError in zip(chunkNames.astype(str),
+                                                                 chunkTypes.astype(str),
+                                                                 chunkMagNorms,
                                                                  chunkMatchErrors):
                     testSED = Sed()
                     testSED.setSED(listDict[sedType][positionDict[sedName]].wavelen,
@@ -422,4 +429,4 @@ class readGalfast():
                                   pml[line], pmb[line], vRadlb[line], vR[line], vPhi[line], vZ[line],
                                   FeH[line], pop[line], distKpc[line], ebv[line], ebvInf[line])
                     fOut.write(outFmt % outDat)
-                print 'Chunk Num Done = %i out of %i' % (chunk+1, numChunks)
+                print('Chunk Num Done = %i out of %i' % (chunk+1, numChunks))

@@ -1,9 +1,12 @@
+from builtins import zip
+from builtins import object
 import os
 import numpy
 from astropy.io import fits
 
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.utils import _galacticFromEquatorial
+from functools import reduce
 
 __all__ = ["EBVmap", "EBVbase"]
 
@@ -21,6 +24,9 @@ class EBVmap(object):
 
     Images are read in from a fits file and assume a ZEA projection
     '''
+
+    def __del__(self):
+        self.hdulist.close()
 
     def readMapFits(self, fileName):
         """ read a fits file containing the ebv data"""

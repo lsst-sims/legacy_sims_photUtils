@@ -1,4 +1,8 @@
 from __future__ import with_statement
+from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
 import numpy as np
 import warnings
 import unittest
@@ -47,7 +51,7 @@ class TestSedWavelenLimits(unittest.TestCase):
         sedwavelen = np.arange(self.wmin, self.wmax+.5, 1)
         sedflambda = np.ones(len(sedwavelen))
         testsed = Sed(wavelen=sedwavelen, flambda=sedflambda)
-        print ''
+        print('')
         # Test that no warning is made.
         with warnings.catch_warnings(record=True) as wa:
             w, f = testsed.resampleSED(wavelen_match=self.testbandpass.wavelen,
@@ -147,10 +151,10 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
             os.unlink(unzipped_name)
         wv = np.arange(100.0, 1000.0, 10.0)
         flux = rng.random_sample(len(wv))
-        with gzip.open(zipped_name, "w") as output_file:
+        with gzip.open(zipped_name, "wt") as output_file:
             for ww, ff in zip(wv, flux):
                 output_file.write("%e %e\n" % (ww, ff))
-        with open(unzipped_name, "w") as output_file:
+        with open(unzipped_name, "wt") as output_file:
             for ww, ff in zip(wv, flux):
                 output_file.write("%e %e\n" % (ww, ff))
 
@@ -164,7 +168,7 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         # a file that does not exist
         with self.assertRaises(IOError) as context:
             ss.readSED_flambda(os.path.join(scratch_dir, "nonsense.txt"))
-        self.assertIn("sed file", context.exception.message)
+        self.assertIn("sed file", context.exception.args[0])
 
         if os.path.exists(zipped_name):
             os.unlink(zipped_name)

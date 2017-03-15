@@ -1,4 +1,6 @@
 from __future__ import with_statement
+from builtins import zip
+from builtins import range
 import unittest
 import os
 import numpy as np
@@ -23,7 +25,7 @@ class SedListTest(unittest.TestCase):
     def getListOfSedNames(self, nNames):
         return [self.sedPossibilities[ii].replace('.gz', '')
                 for ii in
-                self.rng.random_integers(0, len(self.sedPossibilities)-1, nNames)]
+                self.rng.randint(0, len(self.sedPossibilities)-1, nNames)]
 
     def testExceptions(self):
         """
@@ -59,15 +61,15 @@ class SedListTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, internalAvList=internalAvList)
-        self.assertIn('does not contain internalAvList', context.exception.message)
+        self.assertIn('does not contain internalAvList', context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, galacticAvList=galacticAvList)
-        self.assertIn('does not contain galacticAvList', context.exception.message)
+        self.assertIn('does not contain galacticAvList', context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, redshiftList=redshiftList)
-        self.assertIn('does not contain redshiftList', context.exception.message)
+        self.assertIn('does not contain redshiftList', context.exception.args[0])
 
     def testSetUp(self):
         """
@@ -676,11 +678,11 @@ class SedListTest(unittest.TestCase):
 
         testList.flush()
 
-        sedNameList_1 = self.getListOfSedNames(nSed/2)
-        magNormList_1 = self.rng.random_sample(nSed/2)*5.0 + 15.0
-        internalAvList_1 = self.rng.random_sample(nSed/2)*0.3 + 0.1
-        redshiftList_1 = self.rng.random_sample(nSed/2)*5.0
-        galacticAvList_1 = self.rng.random_sample(nSed/2)*0.3 + 0.1
+        sedNameList_1 = self.getListOfSedNames(nSed//2)
+        magNormList_1 = self.rng.random_sample(nSed//2)*5.0 + 15.0
+        internalAvList_1 = self.rng.random_sample(nSed//2)*0.3 + 0.1
+        redshiftList_1 = self.rng.random_sample(nSed//2)*5.0
+        galacticAvList_1 = self.rng.random_sample(nSed//2)*0.3 + 0.1
 
         testList.loadSedsFromList(sedNameList_1, magNormList_1,
                                   internalAvList=internalAvList_1,

@@ -4,6 +4,11 @@ Created on Wed Feb 25 14:07:03 2015
 
 @author: Bryce Kalmbach
 """
+from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import numpy as np
 import os
 import re
@@ -14,7 +19,7 @@ from lsst.sims.utils import SpecMap
 
 __all__ = ["matchBase", "matchStar", "matchGalaxy"]
 
-class matchBase():
+class matchBase(object):
 
     """
     This class is designed to provide methods that will be useful to both selectStarSED and selectGalaxySED.
@@ -58,7 +63,7 @@ class matchBase():
         imSimBand.imsimBandpass()
         zp = -2.5*np.log10(3631)  #Note using default AB zeropoint
         flux_obs = np.power(10,(objectMags + zp)/(-2.5))
-        sedTest.resampleSED(wavelen_match=bandpassDict.values()[0].wavelen)
+        sedTest.resampleSED(wavelen_match=bandpassDict.wavelenMatch)
         sedTest.flambdaTofnu()
         flux_model = sedTest.manyFluxCalc(bandpassDict.phiArray, bandpassDict.wavelenStep)
         if filtRange is not None:
@@ -161,7 +166,7 @@ class matchStar(matchBase):
         specFileStart = ['kp', 'burrows', 'bergeron'] #The beginning of filenames of different SED types
         specFileTypes = ['kurucz', 'mlt', 'wd']
         for specStart, specKey in zip(specFileStart, specFileTypes):
-            for key, val in sorted(specMap.subdir_map.iteritems()):
+            for key, val in sorted(specMap.subdir_map.items()):
                 if re.match(key, specStart):
                     self.specMapDict[specKey] = str(val)
 
@@ -215,7 +220,7 @@ class matchStar(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: Kurucz SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: Kurucz SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()
@@ -279,7 +284,7 @@ class matchStar(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: MLT SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: MLT SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()
@@ -339,7 +344,7 @@ class matchStar(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: WD SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: WD SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()
@@ -374,7 +379,7 @@ class matchGalaxy(matchBase):
             # Use SpecMap to pull in directory's location in LSST Stack
             specMap = SpecMap()
             specFileStart = 'Exp' #Start of sample BC03 name in sims_sed_library
-            for key, val in sorted(specMap.subdir_map.iteritems()):
+            for key, val in sorted(specMap.subdir_map.items()):
                 if re.match(key, specFileStart):
                     galSpecDir = str(val)
             self.galDir = str(lsst.utils.getPackageDir('sims_sed_library') + '/' + galSpecDir)
@@ -414,7 +419,7 @@ class matchGalaxy(matchBase):
 
         for fileName in files:
             if numOn % 100 == 0:
-                print 'Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles)
+                print('Loading %i of %i: BC Galaxy SEDs' % (numOn, numFiles))
 
             try:
                 spec = Sed()
