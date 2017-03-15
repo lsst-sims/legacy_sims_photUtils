@@ -678,11 +678,11 @@ class SedListTest(unittest.TestCase):
 
         testList.flush()
 
-        sedNameList_1 = self.getListOfSedNames(nSed/2)
-        magNormList_1 = self.rng.random_sample(nSed/2)*5.0 + 15.0
-        internalAvList_1 = self.rng.random_sample(nSed/2)*0.3 + 0.1
-        redshiftList_1 = self.rng.random_sample(nSed/2)*5.0
-        galacticAvList_1 = self.rng.random_sample(nSed/2)*0.3 + 0.1
+        sedNameList_1 = self.getListOfSedNames(nSed//2)
+        magNormList_1 = self.rng.random_sample(nSed//2)*5.0 + 15.0
+        internalAvList_1 = self.rng.random_sample(nSed//2)*0.3 + 0.1
+        redshiftList_1 = self.rng.random_sample(nSed//2)*5.0
+        galacticAvList_1 = self.rng.random_sample(nSed//2)*0.3 + 0.1
 
         testList.loadSedsFromList(sedNameList_1, magNormList_1,
                                   internalAvList=internalAvList_1,
