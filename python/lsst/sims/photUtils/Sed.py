@@ -536,10 +536,7 @@ class Sed(object):
                     # 9157210/how-do-i-raise-the-same-exception-with-a-custom-message-in-python
                     new_args = [err.args[0] + \
                                 "\n\nError reading sed file %s; " % filename \
-                                + "it may not exist, " \
-                                + "or be improperly formatted " \
-                                + "(if the file name ends in .gz it should be gzipped; " \
-                                + "if not, it should just be a text file)"]
+                                + "it may not exist."]
                     for aa in err.args[1:]:
                         new_args.append(aa)
                     err.args = tuple(new_args)
