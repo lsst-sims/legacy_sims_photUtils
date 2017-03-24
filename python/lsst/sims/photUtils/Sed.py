@@ -311,7 +311,6 @@ def cache_LSST_seds():
         sed_dir = getPackageDir('sims_sed_library')
 
     except:
-        raise
         print("You did not install sims_photUtils with the full LSST simulations "
               "stack. You cannot generate and load the cache of LSST SEDs")
         return
