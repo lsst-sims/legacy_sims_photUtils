@@ -150,7 +150,7 @@ class TestReadGalfast(unittest.TestCase):
                                          array = columnArrays[0])])
         for colName, colArray, colFormat in zip(columnNames[1:], columnArrays[1:], columnFormats[1:]):
             cols.add_col(fits.Column(name = colName, format = colFormat, array = colArray))
-        exampleTable = fits.new_table(cols)
+        exampleTable = fits.BinTableHDU.from_columns(cols)
         exampleTable.writeto('exampleFits.fits')
         testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
                            ['exampleOutput.txt', 'exampleOutputGzip.txt.gz', 'exampleOutputFits.txt'],
