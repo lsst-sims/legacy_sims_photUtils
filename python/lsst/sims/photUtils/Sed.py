@@ -1461,8 +1461,9 @@ def read_close_Kurucz(teff, feH, logg):
         kurucz_files = [filename for filename
                         in _global_lsst_sed_cache if ('kurucz' in filename) &
                         ('_g' in os.path.basename(filename))]
+        kurucz_files = list(set(kurucz_files))
         read_close_Kurucz.param_combos = numpy.zeros(len(kurucz_files),
-                                                    dtype=[('filename', str, 200), ('teff', float),
+                                                    dtype=[('filename', ('|U200')), ('teff', float),
                                                            ('feH', float), ('logg', float)])
         for i, filename in enumerate(kurucz_files):
             read_close_Kurucz.param_combos['filename'][i] = filename
