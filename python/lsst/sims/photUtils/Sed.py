@@ -287,7 +287,7 @@ def _generate_sed_cache(cache_dir, cache_name):
     return cache
 
 
-def cache_LSST_seds():
+def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
     """
     Read all of the SEDs in sims_sed_library into a dict.  Pickle the dict
     and store it in sims_photUtils/cacheDir/lsst_sed_cache.p for future use.
@@ -302,6 +302,16 @@ def cache_LSST_seds():
     Note: the dict of cached SEDs will take up about 5GB on disk.  Once loaded,
     the cache will take up about 1.5GB of memory.  The cache takes about 14 minutes
     to generate and about 51 seconds to load on a 2014 Mac Book Pro.
+
+    Parameters (optional)
+    ---------------------
+    wavelen_min a float
+
+    wavelen_max a float
+
+    if either of these are not None, then every SED in the cache will be
+    truncated to only include the wavelength range (in nm) between
+    min_wavelen and max_wavelen
     """
 
     global _global_lsst_sed_cache
@@ -355,6 +365,21 @@ def cache_LSST_seds():
         print("Cannot use cache of LSST SEDs")
         _global_lsst_sed_cache = None
         pass
+
+    if min_wavelen is not None or max_wavelen is not None:
+        if min_wavelen is None:
+            min_wavelen = 0.0
+        if max_wavelen is None:
+            max_wavelen = numpy.inf
+
+        new_cache = {}
+        for file_name in _global_lsst_sed_cache:
+            wav, fl = _global_lsst_sed_cache.pop(file_name)
+            valid_dexes = numpy.where(numpy.logical_and(wav >= wavelen_min,
+                                                        wav <= wavelen_max))
+            new_cache[file_name] = (wav[valid_dexes], fl[valid_dexes])
+
+            _global_lsst_sed_cache = new_cache
 
     return
 
