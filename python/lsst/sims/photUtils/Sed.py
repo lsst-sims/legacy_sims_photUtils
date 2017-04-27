@@ -1432,7 +1432,7 @@ class Sed(object):
 def read_close_Kurucz(teff, feH, logg):
     """
     Check the cached Kurucz models and load the model closest to the input stellar parameters.
-    Parameters are matched in order of Teff, feH, and logg. 
+    Parameters are matched in order of Teff, feH, and logg.
 
     Parameters
     ----------
