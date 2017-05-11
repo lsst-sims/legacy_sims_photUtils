@@ -376,7 +376,8 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
             wavelen_max = numpy.inf
 
         new_cache = {}
-        for file_name in _global_lsst_sed_cache:
+        list_of_sed_names = list(_global_lsst_sed_cache.keys())
+        for file_name in list_of_sed_names:
             wav, fl = _global_lsst_sed_cache.pop(file_name)
             valid_dexes = numpy.where(numpy.logical_and(wav >= wavelen_min,
                                                         wav <= wavelen_max))
