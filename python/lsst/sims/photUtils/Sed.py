@@ -311,7 +311,7 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
 
     if either of these are not None, then every SED in the cache will be
     truncated to only include the wavelength range (in nm) between
-    min_wavelen and max_wavelen
+    wavelen_min and wavelen_max
     """
 
     global _global_lsst_sed_cache
@@ -369,11 +369,11 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
         _global_lsst_sed_cache = None
         pass
 
-    if min_wavelen is not None or max_wavelen is not None:
-        if min_wavelen is None:
-            min_wavelen = 0.0
-        if max_wavelen is None:
-            max_wavelen = numpy.inf
+    if waveln_min is not None or wavelen_max is not None:
+        if wavelen_min is None:
+            wavelen_min = 0.0
+        if wavelen_max is None:
+            wavelen_max = numpy.inf
 
         new_cache = {}
         for file_name in _global_lsst_sed_cache:
