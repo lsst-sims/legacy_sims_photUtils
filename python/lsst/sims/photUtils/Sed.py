@@ -369,7 +369,7 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
         _global_lsst_sed_cache = None
         pass
 
-    if waveln_min is not None or wavelen_max is not None:
+    if wavelen_min is not None or wavelen_max is not None:
         if wavelen_min is None:
             wavelen_min = 0.0
         if wavelen_max is None:
