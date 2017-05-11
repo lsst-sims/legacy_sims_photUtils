@@ -383,7 +383,7 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
                                                         wav <= wavelen_max))
             new_cache[file_name] = (wav[valid_dexes], fl[valid_dexes])
 
-            _global_lsst_sed_cache = new_cache
+        _global_lsst_sed_cache = new_cache
 
     return
 
