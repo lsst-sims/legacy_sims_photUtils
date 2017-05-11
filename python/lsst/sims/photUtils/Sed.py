@@ -316,7 +316,7 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
 
     global _global_lsst_sed_cache
     try:
-        sed_cache_dir = os.path.join(getPackageDir('sims_photUtils'), 'cacheDir')
+        sed_cache_dir = os.path.join(getPackageDir('sims_sed_library'), 'lsst_sed_cache_dir')
         sed_cache_name = os.path.join('lsst_sed_cache_%d.p' % sys.version_info.major)
         sed_dir = getPackageDir('sims_sed_library')
 
@@ -324,6 +324,9 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
         print("You did not install sims_photUtils with the full LSST simulations "
               "stack. You cannot generate and load the cache of LSST SEDs")
         return
+
+    if not os.path.exists(sed_cache_dir):
+        os.mkdir(sed_cache_dir)
 
     must_generate = False
     if not os.path.exists(os.path.join(sed_cache_dir, sed_cache_name)):
