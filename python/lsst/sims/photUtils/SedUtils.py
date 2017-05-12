@@ -36,6 +36,14 @@ def getImsimFluxNorm(sed, magmatch):
     if sed.fnu is None:
         sed.flambdaTofnu()
 
+    if (getImsimFluxNorm.imsim_wavelen < sed.wavelen.min() or
+        getImsimFluxNorm.imsim_wavelen > sed.wavelen.max()):
+
+        raise RuntimeError("Cannot normalize sed "
+                           "at wavelength of %e nm\n" % getImsimFluxNorm.imsim_wavelen
+                           + "The SED does not cover that wavelength\n"
+                           + "(Covers %e < lambda %e)" % (sed.wavelen.min(), sed.wavelen.max()))
+
     mag = -2.5*np.log10(np.interp(getImsimFluxNorm.imsim_wavelen, sed.wavelen, sed.fnu)) - sed.zp
     dmag = magmatch - mag
     return np.power(10, (-0.4*dmag))
