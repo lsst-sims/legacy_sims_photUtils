@@ -287,7 +287,7 @@ def _generate_sed_cache(cache_dir, cache_name):
     return cache
 
 
-def cache_LSST_seds():
+def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
     """
     Read all of the SEDs in sims_sed_library into a dict.  Pickle the dict
     and store it in sims_photUtils/cacheDir/lsst_sed_cache.p for future use.
@@ -302,11 +302,21 @@ def cache_LSST_seds():
     Note: the dict of cached SEDs will take up about 5GB on disk.  Once loaded,
     the cache will take up about 1.5GB of memory.  The cache takes about 14 minutes
     to generate and about 51 seconds to load on a 2014 Mac Book Pro.
+
+    Parameters (optional)
+    ---------------------
+    wavelen_min a float
+
+    wavelen_max a float
+
+    if either of these are not None, then every SED in the cache will be
+    truncated to only include the wavelength range (in nm) between
+    wavelen_min and wavelen_max
     """
 
     global _global_lsst_sed_cache
     try:
-        sed_cache_dir = os.path.join(getPackageDir('sims_photUtils'), 'cacheDir')
+        sed_cache_dir = os.path.join(getPackageDir('sims_sed_library'), 'lsst_sed_cache_dir')
         sed_cache_name = os.path.join('lsst_sed_cache_%d.p' % sys.version_info.major)
         sed_dir = getPackageDir('sims_sed_library')
 
@@ -314,6 +324,9 @@ def cache_LSST_seds():
         print("You did not install sims_photUtils with the full LSST simulations "
               "stack. You cannot generate and load the cache of LSST SEDs")
         return
+
+    if not os.path.exists(sed_cache_dir):
+        os.mkdir(sed_cache_dir)
 
     must_generate = False
     if not os.path.exists(os.path.join(sed_cache_dir, sed_cache_name)):
@@ -355,6 +368,22 @@ def cache_LSST_seds():
         print("Cannot use cache of LSST SEDs")
         _global_lsst_sed_cache = None
         pass
+
+    if wavelen_min is not None or wavelen_max is not None:
+        if wavelen_min is None:
+            wavelen_min = 0.0
+        if wavelen_max is None:
+            wavelen_max = numpy.inf
+
+        new_cache = {}
+        list_of_sed_names = list(_global_lsst_sed_cache.keys())
+        for file_name in list_of_sed_names:
+            wav, fl = _global_lsst_sed_cache.pop(file_name)
+            valid_dexes = numpy.where(numpy.logical_and(wav >= wavelen_min,
+                                                        wav <= wavelen_max))
+            new_cache[file_name] = (wav[valid_dexes], fl[valid_dexes])
+
+        _global_lsst_sed_cache = new_cache
 
     return
 
@@ -1432,7 +1461,7 @@ class Sed(object):
 def read_close_Kurucz(teff, feH, logg):
     """
     Check the cached Kurucz models and load the model closest to the input stellar parameters.
-    Parameters are matched in order of Teff, feH, and logg. 
+    Parameters are matched in order of Teff, feH, and logg.
 
     Parameters
     ----------
