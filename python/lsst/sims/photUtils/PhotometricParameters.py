@@ -29,42 +29,44 @@ class DefaultPhotometricParameters(object):
 
     bandpassNames = ['u', 'g', 'r', 'i', 'z', 'y', 'any']
 
+    def makeDict(value,
+                 bandpassNames = ('u', 'g', 'r', 'i', 'z', 'y', 'any')):
+        newdict = {}
+        for f in bandpassNames:
+            newdict[f] = value
+        return newdict
+
     # exposure time in seconds
-    exptime = {'u':15.0, 'g':15.0, 'r':15.0, 'i':15.0, 'z':15.0, 'y':15.0,
-               'any':15.0}
+    exptimeSec = 15.0
+    exptime = makeDict(exptimeSec)
 
     # number of exposures
-    nexp = {'u':2, 'g':2, 'r':2, 'i':2, 'z':2, 'y':2,
-            'any':2}
+    nexpN = 2
+    nexp = makeDict(nexpN)
 
     # effective area in cm^2
-    effarea = {'u': 3.31830724e5,
-               'g': 3.31830724e5,
-               'r': 3.31830724e5,
-               'i': 3.31830724e5,
-               'z': 3.31830724e5,
-               'y': 3.31830724e5,
-               'any': 3.31830724e5}
+    effareaCm2 = numpy.pi * (6.423/2.*100)**2
+    effarea = makeDict(effareaCm2)
 
     # electrons per ADU
-    gain = {'u':2.3, 'g':2.3, 'r':2.3, 'i':2.3, 'z':2.3, 'y':2.3,
-            'any':2.3}
+    gainADU = 2.3
+    gain = makeDict(gainADU)
 
     # electrons per pixel per exposure
-    readnoise = {'u':5.0, 'g':5.0, 'r':5.0, 'i':5.0, 'z':5.0, 'y':5.0,
-                 'any':5.0}
+    readnoiseE = 8.5
+    readnoise = makeDict(readnoiseE)
 
     # electrons per pixel per second
-    darkcurrent = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2,
-                   'any':0.2}
+    darkcurrentE = 0.2
+    darkcurrent = makeDict(darkcurrentE)
 
     # electrons per pixel per exposure
-    othernoise = {'u':4.69, 'g':4.69, 'r':4.69, 'i':4.69, 'z':4.69, 'y':4.69,
-                  'any':4.69}
+    othernoiseE = 0.0
+    othernoise = makeDict(othernoiseE)
 
     # arcseconds per pixel
-    platescale = {'u':0.2, 'g':0.2, 'r':0.2, 'i':0.2, 'z':0.2, 'y':0.2,
-                  'any':0.2}
+    platescaleAS = 0.2
+    platescqqqlsale = makeDict(platescaleAS)
 
     # systematic squared error in magnitudes
     # see Table 14 of the SRD document
@@ -123,9 +125,9 @@ class PhotometricParameters(object):
 
         # readnoise, darkcurrent and othernoise are measured in electrons.
         # This is taken from the specifications document LSE-30 on Docushare
-        # Section 3.4.2.3 states that the total noise per pixel shall be 12.7 electrons
+        # Section 3.4.2.3 states that the total noise per pixel shall be 12.7 electrons per visit
         # which the defaults sum to (remember to multply darkcurrent by the number
-        # of seconds in an exposure=15).
+        # of seconds in an exposure=15). [9 e- per 15 second exposure]
 
         self._exptime = None
         self._nexp = None
@@ -136,6 +138,7 @@ class PhotometricParameters(object):
         self._readnoise = None
         self._darkcurrent = None
         self._othernoise = None
+
 
         self._bandpass = bandpass
         defaults = DefaultPhotometricParameters()
