@@ -66,7 +66,7 @@ class DefaultPhotometricParameters(object):
 
     # arcseconds per pixel
     platescaleAS = 0.2
-    platescqqqlsale = makeDict(platescaleAS)
+    platescale = makeDict(platescaleAS)
 
     # systematic squared error in magnitudes
     # see Table 14 of the SRD document
