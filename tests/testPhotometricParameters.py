@@ -90,7 +90,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
             self.assertAlmostEqual(photParams.effarea/(np.pi*(6.423*100/2.0)**2), 1.0, 7)
             self.assertAlmostEqual(photParams.gain, 2.3, 7)
             self.assertAlmostEqual(photParams.darkcurrent, 0.2, 7)
-            self.assertAlmostEqual(photParams.readnoise, 8.5, 7)
+            self.assertAlmostEqual(photParams.readnoise, 8.8, 7)
             self.assertAlmostEqual(photParams.othernoise, 0, 7)
             self.assertAlmostEqual(photParams.platescale, 0.2, 7)
             if bp not in ['u', 'z', 'y']:
@@ -110,7 +110,7 @@ class PhotometricParametersUnitTest(unittest.TestCase):
         self.assertAlmostEqual(photParams.effarea/(np.pi*(6.423*100/2.0)**2), 1.0, 7)
         self.assertAlmostEqual(photParams.gain, 2.3, 7)
         self.assertAlmostEqual(photParams.darkcurrent, 0.2, 7)
-        self.assertAlmostEqual(photParams.readnoise, 8.5, 7)
+        self.assertAlmostEqual(photParams.readnoise, 8.8, 7)
         self.assertAlmostEqual(photParams.othernoise, 0, 7)
         self.assertAlmostEqual(photParams.platescale, 0.2, 7)
         self.assertAlmostEqual(photParams.sigmaSys, 0.005, 7)
