@@ -53,7 +53,7 @@ class DefaultPhotometricParameters(object):
     gain = makeDict(gainADU)
 
     # electrons per pixel per exposure
-    readnoiseE = 8.5
+    readnoiseE = 8.8
     readnoise = makeDict(readnoiseE)
 
     # electrons per pixel per second
