@@ -105,59 +105,60 @@ class TestReadGalfast(unittest.TestCase):
         self.assertRaises(RuntimeError, testRG.loadGalfast, ['notarealfile.dat'], ['noOutput.txt'])
 
         # Write example files and then load in and make sure example output files are created
-        # First .txt
-        exampleIn = open('example.txt', 'w')
-        inHeader = '# lb[2] radec[2] XYZ[3] absSDSSr{alias=M1;alias=absmag;band=SDSSr;} DM comp FeH ' +\
-                   'vcyl[3] pmlb[3] pmradec[3] Am AmInf SDSSugriz[5]{class=magnitude;fieldNames=0:SDSSu,' +\
-                   '1:SDSSg,2:SDSSr,3:SDSSi,4:SDSSz;} SDSSugrizPhotoFlags{class=flags;} \n'
-        testComment = '# Comment\n'
-        inData = '   1.79371816  -89.02816704   11.92064832  -27.62775082       7.15       0.22   ' +\
-                 '-421.87   8.126   4.366   0 -0.095    13.7  -183.4    -6.2   -20.58   -12.60    ' +\
-                 '13.02    21.34   -11.26    13.02  0.037  0.037  14.350  12.949  12.529  12.381  12.358 0\n'
-        exampleIn.write(inHeader)
-        exampleIn.write(testComment)
-        exampleIn.write(inData)
-        exampleIn.close()
+        with lsst.utils.tests.getTempFilePath('.in.txt') as inTxtName:
+            with lsst.utils.tests.getTempFilePath('.in.txt.gz') as inGzipName:
+                with lsst.utils.tests.getTempFilePath('.in.fits') as inFitsName:
 
-        # Then gzipped. Also testing multiple lines in catalog.
-        exampleGzipIn = gzip.open('gzipExample.txt.gz', 'wt')
-        exampleGzipIn.write(inHeader)
-        exampleGzipIn.write(testComment)
-        exampleGzipIn.write(inData)
-        exampleGzipIn.write(inData)
-        exampleGzipIn.close()
+                    # First write .txt
+                    with open(inTxtName, 'w') as exampleIn:
+                        inHeader = '# lb[2] radec[2] XYZ[3] absSDSSr{alias=M1;alias=absmag;band=SDSSr;} DM comp FeH ' +\
+                                   'vcyl[3] pmlb[3] pmradec[3] Am AmInf SDSSugriz[5]{class=magnitude;fieldNames=0:SDSSu,' +\
+                                   '1:SDSSg,2:SDSSr,3:SDSSi,4:SDSSz;} SDSSugrizPhotoFlags{class=flags;} \n'
+                        testComment = '# Comment\n'
+                        inData = '   1.79371816  -89.02816704   11.92064832  -27.62775082       7.15       0.22   ' +\
+                                 '-421.87   8.126   4.366   0 -0.095    13.7  -183.4    -6.2   -20.58   -12.60    ' +\
+                                 '13.02    21.34   -11.26    13.02  0.037  0.037  14.350  12.949  12.529  12.381  12.358 0\n'
+                        exampleIn.write(inHeader)
+                        exampleIn.write(testComment)
+                        exampleIn.write(inData)
 
-        # Finally a fits file, but first make sure to remove pre-existing file
+                    # Then gzipped. Also testing multiple lines in catalog.
+                    with gzip.open(inGzipName, 'wt') as exampleGzipIn:
+                        exampleGzipIn.write(inHeader)
+                        exampleGzipIn.write(testComment)
+                        exampleGzipIn.write(inData)
+                        exampleGzipIn.write(inData)
 
-        columnNames = ['lb', 'XYZ', 'radec', 'absSDSSr', 'DM', 'comp', 'FeH', 'vcyl', 'pmlb', 'pmradec',
-                       'Am', 'AmInf', 'SDSSugriz', 'SDSSugrizPhotoFlags']
-        columnArrays = [[[1.79371816, -89.02816704]], [[7.15, 0.22, -421.87]],
-                        [[11.92064832, -27.62775082]], [[8.126]], [[4.366]], [[0]], [[-0.095]],
-                        [[13.7, -183.4, -6.2]], [[-20.58, -12.60, 13.02]], [[21.34, -11.26, 13.02]],
-                        [[0.037]], [[0.037]], [[14.350, 12.949, 12.529, 12.381, 12.358]], [[0]]]
-        columnFormats = ['2E', '3E', '2E', 'E', 'E', 'E', 'E', '3E', '3E', '3E', 'E', 'E', '5E', 'E']
-        cols = fits.ColDefs([fits.Column(name = columnNames[0], format = columnFormats[0],
-                                         array = columnArrays[0])])
-        for colName, colArray, colFormat in zip(columnNames[1:], columnArrays[1:], columnFormats[1:]):
-            cols.add_col(fits.Column(name = colName, format = colFormat, array = colArray))
-        exampleTable = fits.BinTableHDU.from_columns(cols)
+                    # Finally a fits file, but first make sure to remove pre-existing file
+                    columnNames = ['lb', 'XYZ', 'radec', 'absSDSSr', 'DM', 'comp', 'FeH', 'vcyl', 'pmlb', 'pmradec',
+                                   'Am', 'AmInf', 'SDSSugriz', 'SDSSugrizPhotoFlags']
+                    columnArrays = [[[1.79371816, -89.02816704]], [[7.15, 0.22, -421.87]],
+                                    [[11.92064832, -27.62775082]], [[8.126]], [[4.366]], [[0]], [[-0.095]],
+                                    [[13.7, -183.4, -6.2]], [[-20.58, -12.60, 13.02]], [[21.34, -11.26, 13.02]],
+                                    [[0.037]], [[0.037]], [[14.350, 12.949, 12.529, 12.381, 12.358]], [[0]]]
+                    columnFormats = ['2E', '3E', '2E', 'E', 'E', 'E', 'E', '3E', '3E', '3E', 'E', 'E', '5E', 'E']
+                    cols = fits.ColDefs([fits.Column(name = columnNames[0], format = columnFormats[0],
+                                                     array = columnArrays[0])])
+                    for colName, colArray, colFormat in zip(columnNames[1:], columnArrays[1:], columnFormats[1:]):
+                        cols.add_col(fits.Column(name = colName, format = colFormat, array = colArray))
+                    exampleTable = fits.BinTableHDU.from_columns(cols)
 
-        exampleTable.writeto('exampleFits.fits')
+                    exampleTable.writeto(inFitsName)
 
-        with lsst.utils.tests.getTempFilePath('.fits.txt') as fitsTxtOutName:
-            with lsst.utils.tests.getTempFilePath('.txt') as txtOutName:
-                with lsst.utils.tests.getTempFilePath('.gz') as gzipOutName:
-                    testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
-                                       [txtOutName, gzipOutName, fitsTxtOutName],
-                                       kuruczPath = self.testKDir,
-                                       mltPath = self.testMLTDir,
-                                       wdPath = self.testWDDir)
-                    self.assertTrue(os.path.isfile(txtOutName),
-                                    msg='file exampleOutput.txt was not created')
-                    self.assertTrue(os.path.isfile(gzipOutName),
-                                    msg='file exampleOutputGzip.txt.gz was not created')
-                    self.assertTrue(os.path.isfile(fitsTxtOutName),
-                                    msg='file exampleOutputFits.txt was not created')
+                    with lsst.utils.tests.getTempFilePath('.fits.txt') as outFitsName:
+                        with lsst.utils.tests.getTempFilePath('.txt') as outTxtName:
+                            with lsst.utils.tests.getTempFilePath('.gz') as outGzipName:
+                                testRG.loadGalfast([inTxtName, inGzipName, inFitsName],
+                                                   [outTxtName, outGzipName, outFitsName],
+                                                   kuruczPath = self.testKDir,
+                                                   mltPath = self.testMLTDir,
+                                                   wdPath = self.testWDDir)
+                                self.assertTrue(os.path.isfile(outTxtName),
+                                                msg='file .txt output file was not created')
+                                self.assertTrue(os.path.isfile(outGzipName),
+                                                msg='file gzip output file was not created')
+                                self.assertTrue(os.path.isfile(outFitsName),
+                                                msg='file fit.txt output file was not created')
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
