@@ -34,15 +34,6 @@ class TestReadGalfast(unittest.TestCase):
         del cls.testMLTDir
         del cls.testWDDir
 
-        if os.path.exists('exampleOutput.txt'):
-            os.unlink('exampleOutput.txt')
-
-        if os.path.exists('exampleOutputGzip.txt.gz'):
-            os.unlink('exampleOutputGzip.txt.gz')
-
-        if os.path.exists('exampleOutputFits.txt'):
-            os.unlink('exampleOutputFits.txt')
-
         if os.path.exists('example.txt'):
             os.unlink('example.txt')
 
@@ -137,8 +128,7 @@ class TestReadGalfast(unittest.TestCase):
         exampleGzipIn.close()
 
         # Finally a fits file, but first make sure to remove pre-existing file
-        if os.path.isfile('exampleFits.fits'):
-            os.remove('exampleFits.fits')
+
         columnNames = ['lb', 'XYZ', 'radec', 'absSDSSr', 'DM', 'comp', 'FeH', 'vcyl', 'pmlb', 'pmradec',
                        'Am', 'AmInf', 'SDSSugriz', 'SDSSugrizPhotoFlags']
         columnArrays = [[[1.79371816, -89.02816704]], [[7.15, 0.22, -421.87]],
@@ -151,18 +141,23 @@ class TestReadGalfast(unittest.TestCase):
         for colName, colArray, colFormat in zip(columnNames[1:], columnArrays[1:], columnFormats[1:]):
             cols.add_col(fits.Column(name = colName, format = colFormat, array = colArray))
         exampleTable = fits.BinTableHDU.from_columns(cols)
+
         exampleTable.writeto('exampleFits.fits')
-        testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
-                           ['exampleOutput.txt', 'exampleOutputGzip.txt.gz', 'exampleOutputFits.txt'],
-                           kuruczPath = self.testKDir,
-                           mltPath = self.testMLTDir,
-                           wdPath = self.testWDDir)
-        self.assertTrue(os.path.isfile('exampleOutput.txt'),
-                        msg='file exampleOutput.txt was not created')
-        self.assertTrue(os.path.isfile('exampleOutputGzip.txt.gz'),
-                        msg='file exampleOutputGzip.txt.gz was not created')
-        self.assertTrue(os.path.isfile('exampleOutputFits.txt'),
-                        msg='file exampleOutputFits.txt was not created')
+
+        with lsst.utils.tests.getTempFilePath('.fits.txt') as fitsTxtOutName:
+            with lsst.utils.tests.getTempFilePath('.txt') as txtOutName:
+                with lsst.utils.tests.getTempFilePath('.gz') as gzipOutName:
+                    testRG.loadGalfast(['example.txt', 'gzipExample.txt.gz', 'exampleFits.fits'],
+                                       [txtOutName, gzipOutName, fitsTxtOutName],
+                                       kuruczPath = self.testKDir,
+                                       mltPath = self.testMLTDir,
+                                       wdPath = self.testWDDir)
+                    self.assertTrue(os.path.isfile(txtOutName),
+                                    msg='file exampleOutput.txt was not created')
+                    self.assertTrue(os.path.isfile(gzipOutName),
+                                    msg='file exampleOutputGzip.txt.gz was not created')
+                    self.assertTrue(os.path.isfile(fitsTxtOutName),
+                                    msg='file exampleOutputFits.txt was not created')
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
