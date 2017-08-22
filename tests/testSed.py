@@ -17,20 +17,12 @@ import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
 
+
 ROOT = os.path.abspath(os.path.dirname(__file__))
-SCRATCH_DIR = None
 
 
 def setup_module(module):
-    global SCRATCH_DIR
     lsst.utils.tests.init()
-    SCRATCH_DIR = tempfile.mkdtemp(dir=ROOT, prefix='scratchSpace-')
-
-
-def teardown_module(module):
-    global SCRATCH_DIR
-    if os.path.exists(SCRATCH_DIR):
-        shutil.rmtree(SCRATCH_DIR)
 
 
 class TestSedWavelenLimits(unittest.TestCase):
@@ -153,11 +145,12 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         when we fail to correctly specify their gzipped state.
         """
 
-        global SCRATCH_DIR
+        scratch_dir = tempfile.mkdtemp(prefix='test_read_sed_flambda',
+                                       dir=ROOT)
 
         rng = np.random.RandomState(88)
-        zipped_name = os.path.join(SCRATCH_DIR, "zipped_sed.txt.gz")
-        unzipped_name = os.path.join(SCRATCH_DIR, "unzipped_sed.txt")
+        zipped_name = os.path.join(scratch_dir, "zipped_sed.txt.gz")
+        unzipped_name = os.path.join(scratch_dir, "unzipped_sed.txt")
         if os.path.exists(zipped_name):
             os.unlink(zipped_name)
         if os.path.exists(unzipped_name):
@@ -180,13 +173,11 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         # make sure an error is raised when you try to read
         # a file that does not exist
         with self.assertRaises(IOError) as context:
-            ss.readSED_flambda(os.path.join(SCRATCH_DIR, "nonsense.txt"))
+            ss.readSED_flambda(os.path.join(scratch_dir, "nonsense.txt"))
         self.assertIn("sed file", context.exception.args[0])
 
-        if os.path.exists(zipped_name):
-            os.unlink(zipped_name)
-        if os.path.exists(unzipped_name):
-            os.unlink(unzipped_name)
+        if os.path.exists(scratch_dir):
+            shutil.rmtree(scratch_dir)
 
     def test_eq(self):
         """
@@ -257,7 +248,5 @@ class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
 if __name__ == "__main__":
-    setup_module(None)
-    unittest.main(exit=False)
-    teardown_module(None)
-
+    lsst.utils.tests.init()
+    unittest.main()
