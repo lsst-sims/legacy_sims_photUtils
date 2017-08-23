@@ -34,15 +34,6 @@ class TestReadGalfast(unittest.TestCase):
         del cls.testMLTDir
         del cls.testWDDir
 
-        if os.path.exists('example.txt'):
-            os.unlink('example.txt')
-
-        if os.path.exists('gzipExample.txt.gz'):
-            os.unlink('gzipExample.txt.gz')
-
-        if os.path.exists('exampleFits.fits'):
-            os.unlink('exampleFits.fits')
-
     def testParseGalfast(self):
 
         """Test Read-in of Galfast Header"""
