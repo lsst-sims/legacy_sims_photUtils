@@ -8,12 +8,17 @@ import warnings
 import unittest
 import gzip
 import os
+import tempfile
+import shutil
 
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 import lsst.sims.photUtils.Sed as Sed
 import lsst.sims.photUtils.Bandpass as Bandpass
 from lsst.sims.photUtils import PhotometricParameters
+
+
+ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def setup_module(module):
@@ -139,8 +144,9 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         Test how readSED_flambda handles the reading of SED filenames
         when we fail to correctly specify their gzipped state.
         """
-        scratch_dir = os.path.join(getPackageDir("sims_photUtils"),
-                                   "tests", "scratchSpace")
+
+        scratch_dir = tempfile.mkdtemp(prefix='test_read_sed_flambda',
+                                       dir=ROOT)
 
         rng = np.random.RandomState(88)
         zipped_name = os.path.join(scratch_dir, "zipped_sed.txt.gz")
@@ -170,10 +176,8 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
             ss.readSED_flambda(os.path.join(scratch_dir, "nonsense.txt"))
         self.assertIn("sed file", context.exception.args[0])
 
-        if os.path.exists(zipped_name):
-            os.unlink(zipped_name)
-        if os.path.exists(unzipped_name):
-            os.unlink(unzipped_name)
+        if os.path.exists(scratch_dir):
+            shutil.rmtree(scratch_dir)
 
     def test_eq(self):
         """
@@ -246,4 +250,3 @@ class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
 if __name__ == "__main__":
     lsst.utils.tests.init()
     unittest.main()
-
