@@ -25,7 +25,7 @@ sed -
 
 Class data:
 wavelen (nm)
-flambda (ergs/cm^s/s/nm)
+flambda (ergs/cm^2/s/nm)
 fnu (Jansky)
 zp  (basically translates to units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz))
 the name of the sed file
