@@ -1128,6 +1128,29 @@ class Sed(object):
         mag = self.magFromFlux(flux)
         return mag
 
+    def calcErgs(self, bandpass):
+        """
+        Calculate the flux in ergs/s/cm^2 passing through the bandpass
+
+        Parameters
+        ----------
+        bandpass is an instantiation of the Bandpass class
+
+        Returns
+        -------
+        The flux of the current SED through the bandpass in ergs/s/cm^2
+        """
+        wavelen, flambda = self.resampleSED(wavelen=self.wavelen,
+                                            flux=self.flambda,
+                                            wavelen_match=bandpass.wavelen)
+
+        dlambda = wavelen[1]-wavelen[0]
+
+        # use the trapezoid rule
+        energy = (0.5*(flambda[1:]*bandpass.sb[1:] +
+                       flambda[:-1]*bandpass.sb[:-1])*dlambda).sum()
+        return energy
+
     def calcFlux(self, bandpass, wavelen=None, fnu=None):
         """
         Calculate the F_b (integrated flux of an object, **above the atmosphere**), using phi.
