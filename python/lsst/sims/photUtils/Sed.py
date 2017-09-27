@@ -596,7 +596,7 @@ class Sed(object):
         # Try to open the data file.
         try:
             if filename.endswith('.gz'):
-                f = gzip.open(filename, 'r')
+                f = gzip.open(filename, 'rt')
             else:
                 f = open(filename, 'r')
         # if the above fails, look for the file with and without the gz
@@ -605,7 +605,7 @@ class Sed(object):
                 if filename.endswith(".gz"):
                     f = open(filename[:-3], 'r')
                 else:
-                    f = gzip.open(filename+".gz", 'r')
+                    f = gzip.open(filename+".gz", 'rt')
             except IOError:
                 raise IOError("The throughput file %s does not exist" % (filename))
         # Read source SED from file - lambda, fnu should be first two columns in the file.
