@@ -201,7 +201,7 @@ class Bandpass(object):
         # Filename is single file, now try to open file and read data.
         try:
             if filename.endswith('.gz'):
-                f = gzip.open(filename, 'r')
+                f = gzip.open(filename, 'rt')
             else:
                 f = open(filename, 'r')
         except IOError:
@@ -209,7 +209,7 @@ class Bandpass(object):
                 if filename.endswith('.gz'):
                     f = open(filename[:-3], 'r')
                 else:
-                    f = gzip.open(filename+'.gz', 'r')
+                    f = gzip.open(filename+'.gz', 'rt')
             except IOError:
                 raise IOError('The throughput file %s does not exist' %(filename))
         # The throughput file should have wavelength(A), throughput(Sb) as first two columns.
@@ -241,7 +241,8 @@ class Bandpass(object):
         if self.needResample():
             self.resampleBandpass()
         if self.sb.sum() < 1e-300:
-            raise Exception("Bandpass data from %s has no throughput in desired grid range %f, %f" %(filename, wavelen_min, wavelen_max))
+            raise Exception("Bandpass data from %s has no throughput in "
+                            "desired grid range %f, %f" %(filename, wavelen_min, wavelen_max))
         return
 
     def readThroughputList(self, componentList=['detector.dat', 'lens1.dat',
