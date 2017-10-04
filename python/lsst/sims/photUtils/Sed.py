@@ -1167,16 +1167,24 @@ class Sed(object):
 
     def calcFlux(self, bandpass, wavelen=None, fnu=None):
         """
-        Calculate the F_b (integrated flux of an object, **above the atmosphere**), using phi.
+        Integrate the specific flux density of the object over the normalized response
+        curve of a bandpass, giving a flux in Janskys (10^-23 ergs/s/cm^2/Hz) through
+        the normalized response curve, as detailed in Section 4.1 of the LSST design
+        document LSE-180 and Section 2.6 of the LSST Science Book
+        (http://ww.lsst.org/scientists/scibook).  This flux in Janskys (which is usually
+        though of as a unit of specific flux density), should be considered a weighted
+        average of the specific flux density over the normalized response curve of the
+        bandpass.  Because we are using the normalized response curve (phi in LSE-180),
+        this quantity will depend only on the shape of the response curve, not its
+        absolute normalization.
+
+        Note: the way that the normalized response curve has been defined (see equation
+        5 of LSE-180) is appropriate for photon-counting detectors, not calorimeters.
 
         Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
+
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
            (temporary values of these are used).
-
-        Note on units: Fluxes calculated this way will be the flux density integrated over the
-        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
-
-        http://www.lsst.org/scientists/scibook
         """
         use_self = self._checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function.
