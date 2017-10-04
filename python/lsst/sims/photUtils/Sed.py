@@ -1130,7 +1130,21 @@ class Sed(object):
 
     def calcErgs(self, bandpass):
         """
-        Calculate the flux in ergs/s/cm^2 passing through the bandpass
+        Integrate the SED over a bandpass directly.  If self.flambda
+        is in ergs/s/cm^2/nm and bandpass.sb is the unitless probability
+        that a photon of a given wavelength will pass through the system,
+        this method will return the ergs/s/cm^2 of the source observed
+        through that bandpass (i.e. it will return the integral
+
+        \int self.flambda(lambda) * bandpass.sb(lambda) * dlambda
+
+        This is to be contrasted with self.calcFlux(), which returns
+        the integral of the source's specific flux density over the
+        normalized response function of bandpass, giving a flux in
+        Janskys (10^-23 erg/cm^2/s/Hz), which should be though of as
+        a weighted average of the specific flux density of the source
+        over the normalized response function, as detailed in Section
+        4.1 of the LSST design document LSE-180.
 
         Parameters
         ----------
