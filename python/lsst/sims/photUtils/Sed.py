@@ -1090,44 +1090,6 @@ class Sed(object):
 
         return -2.5*numpy.log10(flux) - self.zp
 
-    def calcMag(self, bandpass, wavelen=None, fnu=None):
-        """
-        Calculate the AB magnitude of an object, using phi the normalized system response.
-
-        Can pass wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
-        Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
-         (but only temporary values of these are used).
-         """
-        # Note - the behavior in this first section might be considered a little odd.
-        # However, I felt calculating a magnitude should not (unexpectedly) regrid your
-        # wavelen/flambda information if you were using self., as this is not obvious from the "outside".
-        # To preserve 'user logic', the wavelen/flambda of self are left untouched. Unfortunately
-        # this means, this method can be used inefficiently if calculating many magnitudes with
-        # the same sed and same bandpass region - in that case, use self.synchronizeSED() with
-        # the wavelen min/max/step set to the bandpass min/max/step first ..
-        # then you can calculate multiple magnitudes much more efficiently!
-        use_self = self._checkUseSelf(wavelen, fnu)
-        # Use self values if desired, otherwise use values passed to function.
-        if use_self:
-            # Calculate fnu if required.
-            if self.fnu is None:
-                self.flambdaTofnu()
-            wavelen = self.wavelen
-            fnu = self.fnu
-        # Continue with magnitude calculation.
-        # Put bandpass and wavelen/fnu are on the same grid.
-        wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
-        # Calculate bandpass phi value if required.
-        if bandpass.phi is None:
-            bandpass.sbTophi()
-        # Calculate flux in bandpass and then AB magnitude.
-        dlambda = wavelen[1] - wavelen[0]
-        flux = (fnu*bandpass.phi).sum() * dlambda
-        if flux < 1e-300:
-            raise Exception("This SED has no flux within this bandpass.")
-        mag = self.magFromFlux(flux)
-        return mag
-
     def calcErgs(self, bandpass):
         """
         Integrate the SED over a bandpass directly.  If self.flambda
@@ -1186,6 +1148,14 @@ class Sed(object):
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
            (temporary values of these are used).
         """
+        # Note - the behavior in this first section might be considered a little odd.
+        # However, I felt calculating a magnitude should not (unexpectedly) regrid your
+        # wavelen/flambda information if you were using self., as this is not obvious from the "outside".
+        # To preserve 'user logic', the wavelen/flambda of self are left untouched. Unfortunately
+        # this means, this method can be used inefficiently if calculating many magnitudes with
+        # the same sed and same bandpass region - in that case, use self.synchronizeSED() with
+        # the wavelen min/max/step set to the bandpass min/max/step first ..
+        # then you can calculate multiple magnitudes much more efficiently!
         use_self = self._checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function.
         if use_self:
@@ -1203,6 +1173,20 @@ class Sed(object):
         dlambda = wavelen[1] - wavelen[0]
         flux = (fnu*bandpass.phi).sum() * dlambda
         return flux
+
+    def calcMag(self, bandpass, wavelen=None, fnu=None):
+        """
+        Calculate the AB magnitude of an object, using phi the normalized system response.
+
+        Can pass wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
+        Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
+         (but only temporary values of these are used).
+         """
+        flux = self.calcFlux(bandpass, wavelen=wavelen, fnu=fnu)
+        if flux < 1e-300:
+            raise Exception("This SED has no flux within this bandpass.")
+        mag = self.magFromFlux(flux)
+        return mag
 
     def calcFluxNorm(self, magmatch, bandpass, wavelen=None, fnu=None):
         """
