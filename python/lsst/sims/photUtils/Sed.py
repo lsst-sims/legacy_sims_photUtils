@@ -1176,7 +1176,8 @@ class Sed(object):
 
     def calcMag(self, bandpass, wavelen=None, fnu=None):
         """
-        Calculate the AB magnitude of an object, using phi the normalized system response.
+        Calculate the AB magnitude of an object using the normalized system response (phi from Section
+        4.1 of the LSST design document LSE-180).
 
         Can pass wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
