@@ -325,6 +325,25 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
             msg = '\ntemp: %e\nergs: %e\nergs_truth: %e' % (temp,ergs, ergs_truth)
             self.assertAlmostEqual(ergs/ergs_truth, 0.25, 3, msg=msg)
 
+    def test_mags_vs_flux(self):
+        """
+        Verify that the relationship between Sed.calcMag() and Sed.calcFlux()
+        is as expected
+        """
+        wavelen = np.arange(100.0, 1500.0, 1.0)
+        flambda = np.exp(-0.5*np.power((wavelen-500.0)/100.0,2))
+        sb = (wavelen-100.0)/1400.0
+
+        ss = Sed(wavelen=wavelen, flambda=flambda)
+        bp = Bandpass(wavelen=wavelen, sb=sb)
+
+        mag = ss.calcMag(bp)
+        flux = ss.calcFlux(bp)
+
+        self.assertAlmostEqual(ss.magFromFlux(flux)/mag, 1.0, 10)
+        self.assertAlmostEqual(ss.fluxFromMag(mag)/flux, 1.0, 10)
+
+
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
