@@ -242,6 +242,106 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         self.assertNotEqual(ss1, ss2, msg=msg)
         self.assertNotEqual(ss2, ss3, msg=msg)
 
+    def test_calcErgs(self):
+        """
+        Test that calcErgs actually calculates the flux of a source in
+        ergs/s/cm^2 by running it on black bodies with flat bandpasses
+        and comparing to the Stefan-Boltzmann law.
+        """
+
+        boltzmann_k = 1.3807e-16  # in ergs/Kelvin
+        planck_h = 6.6261e-27  # in cm^2*g/s
+        speed_of_light = 2.9979e10  # in cm/s
+        stefan_boltzmann_sigma = 5.6705e-5  # in ergs/cm^2/s/Kelvin
+
+        wavelen_arr = np.arange(10.0, 200000.0, 10.0)  # in nm
+        bp = Bandpass(wavelen=wavelen_arr, sb=np.ones(len(wavelen_arr)))
+
+        log10_bb_factor = np.log10(2.0) + np.log10(planck_h)
+        log10_bb_factor += 2.0*np.log10(speed_of_light)
+        log10_bb_factor -= 5.0*(np.log10(wavelen_arr) - 7.0)  # convert wavelen to cm
+
+        for temp in np.arange(1000.0, 7000.0, 250.0):
+            log10_exp_arg = np.log10(planck_h) + np.log10(speed_of_light)
+            log10_exp_arg -= (np.log10(wavelen_arr) - 7.0)
+            log10_exp_arg -= (np.log10(boltzmann_k) + np.log10(temp))
+
+            exp_arg = np.power(10.0, log10_exp_arg)
+            log10_bose_factor = -1.0*np.log10(np.exp(exp_arg)-1.0)
+
+            # the -7.0 below is because, otherwise, flambda will be in
+            # ergs/s/cm^2/cm and we want ergs/s/cm^2/nm
+            #
+            # the np.pi comes from the integral in the 'Stefan-Boltzmann'
+            # section of
+            # https://en.wikipedia.org/wiki/Planck%27s_law#Stefan.E2.80.93Boltzmann_law
+            #
+            bb_flambda = np.pi*np.power(10.0, log10_bb_factor+log10_bose_factor-7.0)
+
+            sed = Sed(wavelen=wavelen_arr, flambda=bb_flambda)
+            ergs = sed.calcErgs(bp)
+
+            log10_ergs = np.log10(stefan_boltzmann_sigma) + 4.0*np.log10(temp)
+            ergs_truth = np.power(10.0, log10_ergs)
+
+            msg = '\ntemp:%e\nergs: %e\nergs_truth: %e' % (temp, ergs, ergs_truth)
+            self.assertAlmostEqual(ergs/ergs_truth, 1.0, 3, msg=msg)
+
+        # Now test it on a bandpass with throughput=0.25 and an wavelength
+        # array that is not the same as the SED
+
+        wavelen_arr = np.arange(10.0, 100000.0, 146.0)  # in nm
+        bp = Bandpass(wavelen=wavelen_arr, sb=0.25*np.ones(len(wavelen_arr)))
+
+        wavelen_arr = np.arange(5.0, 200000.0, 17.0)
+
+        log10_bb_factor = np.log10(2.0) + np.log10(planck_h)
+        log10_bb_factor += 2.0*np.log10(speed_of_light)
+        log10_bb_factor -= 5.0*(np.log10(wavelen_arr) - 7.0)  # convert wavelen to cm
+
+        for temp in np.arange(1000.0, 7000.0, 250.0):
+            log10_exp_arg = np.log10(planck_h) + np.log10(speed_of_light)
+            log10_exp_arg -= (np.log10(wavelen_arr) - 7.0)
+            log10_exp_arg -= (np.log10(boltzmann_k) + np.log10(temp))
+
+            exp_arg = np.power(10.0, log10_exp_arg)
+            log10_bose_factor = -1.0*np.log10(np.exp(exp_arg)-1.0)
+
+            # the -7.0 below is because, otherwise, flambda will be in
+            # ergs/s/cm^2/cm and we want ergs/s/cm^2/nm
+            #
+            # the np.pi comes from the integral in the 'Stefan-Boltzmann'
+            # section of
+            # https://en.wikipedia.org/wiki/Planck%27s_law#Stefan.E2.80.93Boltzmann_law
+            #
+            bb_flambda = np.pi*np.power(10.0, log10_bb_factor+log10_bose_factor-7.0)
+
+            sed = Sed(wavelen=wavelen_arr, flambda=bb_flambda)
+            ergs = sed.calcErgs(bp)
+
+            log10_ergs = np.log10(stefan_boltzmann_sigma) + 4.0*np.log10(temp)
+            ergs_truth = np.power(10.0, log10_ergs)
+
+            msg = '\ntemp: %e\nergs: %e\nergs_truth: %e' % (temp,ergs, ergs_truth)
+            self.assertAlmostEqual(ergs/ergs_truth, 0.25, 3, msg=msg)
+
+    def test_mags_vs_flux(self):
+        """
+        Verify that the relationship between Sed.calcMag() and Sed.calcFlux()
+        is as expected
+        """
+        wavelen = np.arange(100.0, 1500.0, 1.0)
+        flambda = np.exp(-0.5*np.power((wavelen-500.0)/100.0,2))
+        sb = (wavelen-100.0)/1400.0
+
+        ss = Sed(wavelen=wavelen, flambda=flambda)
+        bp = Bandpass(wavelen=wavelen, sb=sb)
+
+        mag = ss.calcMag(bp)
+        flux = ss.calcFlux(bp)
+
+        self.assertAlmostEqual(ss.magFromFlux(flux)/mag, 1.0, 10)
+        self.assertAlmostEqual(ss.fluxFromMag(mag)/flux, 1.0, 10)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

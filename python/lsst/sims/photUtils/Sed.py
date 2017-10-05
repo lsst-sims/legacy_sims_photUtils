@@ -25,7 +25,7 @@ sed -
 
 Class data:
 wavelen (nm)
-flambda (ergs/cm^s/s/nm)
+flambda (ergs/cm^2/s/nm)
 fnu (Jansky)
 zp  (basically translates to units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz))
 the name of the sed file
@@ -1090,14 +1090,64 @@ class Sed(object):
 
         return -2.5*numpy.log10(flux) - self.zp
 
-    def calcMag(self, bandpass, wavelen=None, fnu=None):
+    def calcErgs(self, bandpass):
         """
-        Calculate the AB magnitude of an object, using phi the normalized system response.
+        Integrate the SED over a bandpass directly.  If self.flambda
+        is in ergs/s/cm^2/nm and bandpass.sb is the unitless probability
+        that a photon of a given wavelength will pass through the system,
+        this method will return the ergs/s/cm^2 of the source observed
+        through that bandpass (i.e. it will return the integral
 
-        Can pass wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
+        \int self.flambda(lambda) * bandpass.sb(lambda) * dlambda
+
+        This is to be contrasted with self.calcFlux(), which returns
+        the integral of the source's specific flux density over the
+        normalized response function of bandpass, giving a flux in
+        Janskys (10^-23 erg/cm^2/s/Hz), which should be though of as
+        a weighted average of the specific flux density of the source
+        over the normalized response function, as detailed in Section
+        4.1 of the LSST design document LSE-180.
+
+        Parameters
+        ----------
+        bandpass is an instantiation of the Bandpass class
+
+        Returns
+        -------
+        The flux of the current SED through the bandpass in ergs/s/cm^2
+        """
+        wavelen, flambda = self.resampleSED(wavelen=self.wavelen,
+                                            flux=self.flambda,
+                                            wavelen_match=bandpass.wavelen)
+
+        dlambda = wavelen[1]-wavelen[0]
+
+        # use the trapezoid rule
+        energy = (0.5*(flambda[1:]*bandpass.sb[1:] +
+                       flambda[:-1]*bandpass.sb[:-1])*dlambda).sum()
+        return energy
+
+    def calcFlux(self, bandpass, wavelen=None, fnu=None):
+        """
+        Integrate the specific flux density of the object over the normalized response
+        curve of a bandpass, giving a flux in Janskys (10^-23 ergs/s/cm^2/Hz) through
+        the normalized response curve, as detailed in Section 4.1 of the LSST design
+        document LSE-180 and Section 2.6 of the LSST Science Book
+        (http://ww.lsst.org/scientists/scibook).  This flux in Janskys (which is usually
+        though of as a unit of specific flux density), should be considered a weighted
+        average of the specific flux density over the normalized response curve of the
+        bandpass.  Because we are using the normalized response curve (phi in LSE-180),
+        this quantity will depend only on the shape of the response curve, not its
+        absolute normalization.
+
+        Note: the way that the normalized response curve has been defined (see equation
+        5 of LSE-180) is appropriate for photon-counting detectors, not calorimeters.
+
+        Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
+
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
-         (but only temporary values of these are used).
-         """
+           (temporary values of these are used).
+        """
         # Note - the behavior in this first section might be considered a little odd.
         # However, I felt calculating a magnitude should not (unexpectedly) regrid your
         # wavelen/flambda information if you were using self., as this is not obvious from the "outside".
@@ -1106,41 +1156,6 @@ class Sed(object):
         # the same sed and same bandpass region - in that case, use self.synchronizeSED() with
         # the wavelen min/max/step set to the bandpass min/max/step first ..
         # then you can calculate multiple magnitudes much more efficiently!
-        use_self = self._checkUseSelf(wavelen, fnu)
-        # Use self values if desired, otherwise use values passed to function.
-        if use_self:
-            # Calculate fnu if required.
-            if self.fnu is None:
-                self.flambdaTofnu()
-            wavelen = self.wavelen
-            fnu = self.fnu
-        # Continue with magnitude calculation.
-        # Put bandpass and wavelen/fnu are on the same grid.
-        wavelen, fnu = self.resampleSED(wavelen, fnu, wavelen_match=bandpass.wavelen)
-        # Calculate bandpass phi value if required.
-        if bandpass.phi is None:
-            bandpass.sbTophi()
-        # Calculate flux in bandpass and then AB magnitude.
-        dlambda = wavelen[1] - wavelen[0]
-        flux = (fnu*bandpass.phi).sum() * dlambda
-        if flux < 1e-300:
-            raise Exception("This SED has no flux within this bandpass.")
-        mag = self.magFromFlux(flux)
-        return mag
-
-    def calcFlux(self, bandpass, wavelen=None, fnu=None):
-        """
-        Calculate the F_b (integrated flux of an object, **above the atmosphere**), using phi.
-
-        Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
-        Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
-           (temporary values of these are used).
-
-        Note on units: Fluxes calculated this way will be the flux density integrated over the
-        weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
-
-        http://www.lsst.org/scientists/scibook
-        """
         use_self = self._checkUseSelf(wavelen, fnu)
         # Use self values if desired, otherwise use values passed to function.
         if use_self:
@@ -1158,6 +1173,21 @@ class Sed(object):
         dlambda = wavelen[1] - wavelen[0]
         flux = (fnu*bandpass.phi).sum() * dlambda
         return flux
+
+    def calcMag(self, bandpass, wavelen=None, fnu=None):
+        """
+        Calculate the AB magnitude of an object using the normalized system response (phi from Section
+        4.1 of the LSST design document LSE-180).
+
+        Can pass wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
+        Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
+         (but only temporary values of these are used).
+         """
+        flux = self.calcFlux(bandpass, wavelen=wavelen, fnu=fnu)
+        if flux < 1e-300:
+            raise Exception("This SED has no flux within this bandpass.")
+        mag = self.magFromFlux(flux)
+        return mag
 
     def calcFluxNorm(self, magmatch, bandpass, wavelen=None, fnu=None):
         """
