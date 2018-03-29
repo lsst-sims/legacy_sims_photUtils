@@ -9,6 +9,3 @@ from .PhotometricParameters import *
 from .SignalToNoise import *
 from .applyIGM import *
 from .CosmologyObject import *
-from .matchUtils import *
-from .selectStarSED import *
-from .selectGalaxySED import *
