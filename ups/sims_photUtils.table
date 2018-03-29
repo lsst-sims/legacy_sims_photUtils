@@ -1,5 +1,4 @@
 setupRequired(utils)
-setupRequired(sims_maps)
 setupRequired(sims_utils)
 setupRequired(python)
 setupRequired(throughputs)
