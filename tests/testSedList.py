@@ -38,8 +38,11 @@ class SedListTest(unittest.TestCase):
         redshiftList = self.rng.random_sample(nSed)*5.0
         galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
-        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
-                           redshiftList=redshiftList, galacticAvList=galacticAvList,
+        testList = SedList(sedNameList, magNormList,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList,
+                           redshiftList=redshiftList,
+                           galacticAvList=galacticAvList,
                            wavelenMatch=wavelen_match)
 
         with self.assertRaises(AttributeError) as context:
@@ -57,7 +60,7 @@ class SedListTest(unittest.TestCase):
         with self.assertRaises(AttributeError) as context:
             testList.galacticAvList = [1.9]
 
-        testList = SedList(sedNameList, magNormList)
+        testList = SedList(sedNameList, magNormList, fileDir=self.sedDir)
 
         with self.assertRaises(RuntimeError) as context:
             testList.loadSedsFromList(sedNameList, magNormList, internalAvList=internalAvList)
@@ -80,7 +83,7 @@ class SedListTest(unittest.TestCase):
         nSed = 10
         sedNameList = self.getListOfSedNames(nSed)
         magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
-        testList = SedList(sedNameList, magNormList)
+        testList = SedList(sedNameList, magNormList, fileDir=self.sedDir)
         self.assertEqual(len(testList), nSed)
         self.assertIsNone(testList.internalAvList)
         self.assertIsNone(testList.galacticAvList)
@@ -105,7 +108,9 @@ class SedListTest(unittest.TestCase):
         sedNameList = self.getListOfSedNames(nSed)
         magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
         internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
-        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList)
+        testList = SedList(sedNameList, magNormList,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList)
         self.assertIsNone(testList.galacticAvList)
         self.assertIsNone(testList.redshiftList)
         self.assertIsNone(testList.wavelenMatch)
@@ -131,7 +136,9 @@ class SedListTest(unittest.TestCase):
         magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
         internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         redshiftList = self.rng.random_sample(nSed)*5.0
-        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList,
                            redshiftList=redshiftList)
         self.assertIsNone(testList.galacticAvList)
         self.assertIsNone(testList.wavelenMatch)
@@ -164,7 +171,9 @@ class SedListTest(unittest.TestCase):
         magNormList = self.rng.random_sample(nSed)*5.0 + 15.0
         internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         redshiftList = self.rng.random_sample(nSed)*5.0
-        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList,
                            redshiftList=redshiftList, cosmologicalDimming=False)
         self.assertIsNone(testList.galacticAvList)
         self.assertIsNone(testList.wavelenMatch)
@@ -198,7 +207,9 @@ class SedListTest(unittest.TestCase):
         internalAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         redshiftList = self.rng.random_sample(nSed)*5.0
         galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
-        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList,
                            redshiftList=redshiftList, galacticAvList=galacticAvList)
         self.assertIsNone(testList.wavelenMatch)
         self.assertTrue(testList.cosmologicalDimming)
@@ -239,7 +250,9 @@ class SedListTest(unittest.TestCase):
         redshiftList = self.rng.random_sample(nSed)*5.0
         galacticAvList = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
-        testList = SedList(sedNameList, magNormList, internalAvList=internalAvList,
+        testList = SedList(sedNameList, magNormList,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList,
                            redshiftList=redshiftList, galacticAvList=galacticAvList,
                            wavelenMatch=wavelen_match)
 
@@ -291,7 +304,9 @@ class SedListTest(unittest.TestCase):
         redshiftList_0 = self.rng.random_sample(nSed)*5.0
         galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
-        testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0,
+        testList = SedList(sedNameList_0, magNormList_0,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList_0,
                            redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
                            wavelenMatch=wavelen_match)
 
@@ -301,7 +316,9 @@ class SedListTest(unittest.TestCase):
             for addRedshift in [True, False]:
                 for addGav in [True, False]:
 
-                    testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0,
+                    testList = SedList(sedNameList_0, magNormList_0,
+                                       fileDir=self.sedDir,
+                                       internalAvList=internalAvList_0,
                                        redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
                                        wavelenMatch=wavelen_match)
 
@@ -429,7 +446,9 @@ class SedListTest(unittest.TestCase):
         redshiftList_0 = self.rng.random_sample(nSed)*5.0
         galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
-        testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0,
+        testList = SedList(sedNameList_0, magNormList_0,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList_0,
                            redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
                            wavelenMatch=wavelen_match)
 
@@ -543,6 +562,7 @@ class SedListTest(unittest.TestCase):
         galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
         testList = SedList(sedNameList_0, magNormList_0,
+                           fileDir=self.sedDir,
                            normalizingBandpass=normalizingBand,
                            internalAvList=internalAvList_0,
                            redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
@@ -639,7 +659,9 @@ class SedListTest(unittest.TestCase):
         redshiftList_0 = self.rng.random_sample(nSed)*5.0
         galacticAvList_0 = self.rng.random_sample(nSed)*0.3 + 0.1
         wavelen_match = np.arange(300.0, 1500.0, 10.0)
-        testList = SedList(sedNameList_0, magNormList_0, internalAvList=internalAvList_0,
+        testList = SedList(sedNameList_0, magNormList_0,
+                           fileDir=self.sedDir,
+                           internalAvList=internalAvList_0,
                            redshiftList=redshiftList_0, galacticAvList=galacticAvList_0,
                            wavelenMatch=wavelen_match)
 
