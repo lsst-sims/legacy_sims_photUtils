@@ -7,5 +7,4 @@ from .BandpassDict import *
 from .SedList import *
 from .PhotometricParameters import *
 from .SignalToNoise import *
-from .applyIGM import *
 from .CosmologyObject import *
