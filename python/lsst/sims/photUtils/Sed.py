@@ -262,8 +262,8 @@ def _generate_sed_cache(cache_dir, cache_name):
                         full_name = os.path.join(dir_name, file_name)
                         data = numpy.genfromtxt(full_name, dtype=dtype)
                         cache[full_name] = (data['wavelen'], data['flambda'])
-                        if len(cache) % (total_files/20) == 0:
-                            if len(cache) > total_files/20:
+                        if len(cache) % (total_files//20) == 0:
+                            if len(cache) > total_files//20:
                                 sys.stdout.write('\r')
                             sys.stdout.write('loaded %d of %d files in about %.2f seconds'
                                              % (len(cache), total_files, time.time()-t_start))
