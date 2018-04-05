@@ -183,7 +183,8 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         """
         Test that __eq__ in Sed works correctly
         """
-        sed_dir = os.path.join(getPackageDir('sims_sed_library'), 'starSED', 'kurucz')
+        sed_dir = os.path.join(getPackageDir('sims_photUtils'), 'tests',
+                               'cartoonSedTestData', 'starSed', 'kurucz')
         list_of_seds = os.listdir(sed_dir)
         sedname1 = os.path.join(sed_dir, list_of_seds[0])
         sedname2 = os.path.join(sed_dir, list_of_seds[1])
@@ -212,8 +213,8 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         with readSED_flambda, it should get stored in the
         _global_misc_sed_cache)
         """
-        sed_dir = os.path.join(getPackageDir('sims_sed_library'),
-                               'starSED', 'kurucz')
+        sed_dir = os.path.join(getPackageDir('sims_photUtils'), 'tests',
+                               'cartoonSedTestData', 'starSed', 'kurucz')
 
         sed_name_list = os.listdir(sed_dir)
         msg = ('An SED loaded from the cache is not '

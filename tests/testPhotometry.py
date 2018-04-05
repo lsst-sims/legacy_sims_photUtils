@@ -9,7 +9,6 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils.CodeUtilities import sims_clean_up
 from lsst.sims.photUtils.Bandpass import Bandpass
 from lsst.sims.photUtils.Sed import Sed
-from lsst.sims.photUtils.EBV import EBVbase
 from lsst.sims.photUtils import BandpassDict
 
 
@@ -83,36 +82,6 @@ class photometryUnitTest(unittest.TestCase):
         self.assertGreater(len(mags), 0)
         for j in range(len(mags)):
             self.assertAlmostEqual(mags[j], testMags[j], 10)
-
-    def testEBV(self):
-
-        ebvObject = EBVbase()
-        ra = []
-        dec = []
-        gLat = []
-        gLon = []
-        for i in range(10):
-            ra.append(i*2.0*np.pi/10.0)
-            dec.append(i*np.pi/10.0)
-
-            gLat.append(-0.5*np.pi+i*np.pi/10.0)
-            gLon.append(i*2.0*np.pi/10.0)
-
-            equatorialCoordinates = np.array([ra, dec])
-            galacticCoordinates = np.array([gLon, gLat])
-
-        ebvOutput = ebvObject.calculateEbv(equatorialCoordinates=equatorialCoordinates)
-        self.assertEqual(len(ebvOutput), len(ra))
-
-        ebvOutput = ebvObject.calculateEbv(galacticCoordinates=galacticCoordinates)
-        self.assertEqual(len(ebvOutput), len(gLon))
-        self.assertGreater(len(ebvOutput), 0)
-
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv, equatorialCoordinates=equatorialCoordinates,
-                          galacticCoordinates=galacticCoordinates)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv,
-                          equatorialCoordinates=None, galacticCoordinates=None)
-        self.assertRaises(RuntimeError, ebvObject.calculateEbv)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

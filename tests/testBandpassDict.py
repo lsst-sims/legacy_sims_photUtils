@@ -210,6 +210,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList)
@@ -228,6 +229,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList,
@@ -263,6 +265,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList)
@@ -279,6 +282,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList,
@@ -333,6 +337,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now try a SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList)
@@ -366,6 +371,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList,
@@ -460,6 +466,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList)
@@ -478,6 +485,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList,
@@ -513,6 +521,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # first, test on an SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList)
@@ -529,6 +538,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList,
@@ -583,6 +593,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now try a SedList without a wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList)
@@ -617,6 +628,7 @@ class BandpassDictTest(unittest.TestCase):
 
         # now use wavelenMatch
         testSedList = SedList(sedNameList, magNormList,
+                              fileDir=self.sedDir,
                               internalAvList=internalAvList,
                               redshiftList=redshiftList,
                               galacticAvList=galacticAvList,

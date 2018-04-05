@@ -3,8 +3,6 @@ from builtins import object
 import os
 import copy
 import numpy
-from lsst.utils import getPackageDir
-from lsst.sims.utils import defaultSpecMap
 from .Bandpass import Bandpass
 from .Sed import Sed
 from lsst.sims.photUtils import getImsimFluxNorm
@@ -29,8 +27,8 @@ class SedList(object):
 
     def __init__(self, sedNameList, magNormList,
                  normalizingBandpass=None,
-                 specMap=defaultSpecMap,
-                 fileDir = getPackageDir('sims_sed_library'),
+                 specMap=None,
+                 fileDir = '',
                  wavelenMatch = None,
                  redshiftList = None,
                  galacticAvList = None,
@@ -49,11 +47,12 @@ class SedList(object):
         which is essentially a delta function at 500 nm.
 
         @param [in] fileDir is the base directory where the Sed files are stored
-        (defaults to LSST sims_sed_library package).
+        (defaults to current working directory).
 
         @param [in] specMap is a specMap (defined in sims_utils/../fileMaps.py)
         that maps the names in sedNameList to paths of the files relative to
-        fileDir (defaults to defaultSpecMap defined in sims_utils)
+        fileDir (defaults to None; a defaultSpecMap targeted at
+        sims_sed_library is defined in sims_utils)
 
         @param [in] wavelenMatch is an optional numpy array representing
         the wavelength grid to which all Seds will be re-mapped.
