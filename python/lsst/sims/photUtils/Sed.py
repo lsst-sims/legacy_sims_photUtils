@@ -262,8 +262,8 @@ def _generate_sed_cache(cache_dir, cache_name):
                         full_name = os.path.join(dir_name, file_name)
                         data = numpy.genfromtxt(full_name, dtype=dtype)
                         cache[full_name] = (data['wavelen'], data['flambda'])
-                        if len(cache) % (total_files/20) == 0:
-                            if len(cache) > total_files/20:
+                        if len(cache) % (total_files//20) == 0:
+                            if len(cache) > total_files//20:
                                 sys.stdout.write('\r')
                             sys.stdout.write('loaded %d of %d files in about %.2f seconds'
                                              % (len(cache), total_files, time.time()-t_start))
@@ -287,7 +287,7 @@ def _generate_sed_cache(cache_dir, cache_name):
     return cache
 
 
-def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
+def cache_LSST_seds(wavelen_min=None, wavelen_max=None, cache_dir=None):
     """
     Read all of the SEDs in sims_sed_library into a dict.  Pickle the dict
     and store it in sims_photUtils/cacheDir/lsst_sed_cache.p for future use.
@@ -309,16 +309,23 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
 
     wavelen_max a float
 
-    if either of these are not None, then every SED in the cache will be
-    truncated to only include the wavelength range (in nm) between
-    wavelen_min and wavelen_max
+        if either of these are not None, then every SED in the cache will be
+        truncated to only include the wavelength range (in nm) between
+        wavelen_min and wavelen_max
+
+    cache_dir is a string indicating the directory in which to search for/write
+    the cache.  If set to None, the cache will be in
+    $SIMS_SED_LIBRARY_DIR/lsst_sed_cache_dir/, which may be write-protected on
+    shared installations of the LSST stack.  Defaults to None.
     """
 
     global _global_lsst_sed_cache
+
     try:
-        sed_cache_dir = os.path.join(getPackageDir('sims_sed_library'), 'lsst_sed_cache_dir')
         sed_cache_name = os.path.join('lsst_sed_cache_%d.p' % sys.version_info.major)
         sed_dir = getPackageDir('sims_sed_library')
+        if cache_dir is None:
+            cache_dir = os.path.join(getPackageDir('sims_sed_library'), 'lsst_sed_cache_dir')
 
     except:
         print('An exception was raised related to sims_sed_library. If you did not '
@@ -328,16 +335,16 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
               'actually setup and active in your environment.')
         return
 
-    if not os.path.exists(sed_cache_dir):
-        os.mkdir(sed_cache_dir)
+    if not os.path.exists(cache_dir):
+        os.mkdir(cache_dir)
 
     must_generate = False
-    if not os.path.exists(os.path.join(sed_cache_dir, sed_cache_name)):
+    if not os.path.exists(os.path.join(cache_dir, sed_cache_name)):
         must_generate = True
-    if not os.path.exists(os.path.join(sed_cache_dir, "cache_version_%d.txt" % sys.version_info.major)):
+    if not os.path.exists(os.path.join(cache_dir, "cache_version_%d.txt" % sys.version_info.major)):
         must_generate = True
     else:
-        with open(os.path.join(sed_cache_dir, "cache_version_%d.txt" % sys.version_info.major), "r") as input_file:
+        with open(os.path.join(cache_dir, "cache_version_%d.txt" % sys.version_info.major), "r") as input_file:
             lines = input_file.readlines()
             if len(lines) != 1:
                 must_generate = True
@@ -351,12 +358,12 @@ def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
                     must_generate = True
 
     if must_generate:
-        print("\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name))
-        cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
+        print("\nCreating cache of LSST SEDs in:\n%s" % os.path.join(cache_dir, sed_cache_name))
+        cache = _generate_sed_cache(cache_dir, sed_cache_name)
         _global_lsst_sed_cache = cache
     else:
-        print("\nOpening cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name))
-        with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
+        print("\nOpening cache of LSST SEDs in:\n%s" % os.path.join(cache_dir, sed_cache_name))
+        with open(os.path.join(cache_dir, sed_cache_name), 'rb') as input_file:
             _global_lsst_sed_cache = sed_unpickler(input_file).load()
 
     # Now that we have generated/loaded the cache, we must run tests
