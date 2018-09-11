@@ -991,8 +991,7 @@ class Sed(object):
             elif A_v is None:
                 A_v = R_v * ebv
         # R_v and A_v values are specified or calculated.
-        A_lambda = numpy.empty(len(wavelen), dtype=float)
-        dust = numpy.empty(len(wavelen), dtype=float)
+
         A_lambda = (a_x + b_x / R_v) * A_v
         # dmag_red(dust) = -2.5 log10 (f_red / f_nored) : (f_red / f_nored) = 10**-0.4*dmag_red
         dust = numpy.power(10.0, -0.4*A_lambda)
