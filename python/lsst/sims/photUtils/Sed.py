@@ -110,6 +110,8 @@ _global_lsst_sed_cache = None
 # a cache for ASCII files read-in by the user
 _global_misc_sed_cache = None
 
+_ln10_04 = 0.4*numpy.log(10.0)
+
 
 class SedCacheError(Exception):
     pass
@@ -959,6 +961,8 @@ class Sed(object):
 
         Specify any two of A_V, E(B-V) or R_V (=3.1 default).
         """
+        global _ln10_04
+
         # The extinction law taken from Cardelli, Clayton and Mathis ApJ 1989.
         # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns).
         # Then, different values for a(x) and b(x) depending on wavelength regime.
@@ -994,7 +998,7 @@ class Sed(object):
 
         A_lambda = (a_x + b_x / R_v) * A_v
         # dmag_red(dust) = -2.5 log10 (f_red / f_nored) : (f_red / f_nored) = 10**-0.4*dmag_red
-        dust = numpy.power(10.0, -0.4*A_lambda)
+        dust = numpy.exp(-A_lambda*_ln10_04)
         flambda *= dust
         # Update self if required.
         if update_self:
