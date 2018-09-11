@@ -995,7 +995,7 @@ class Sed(object):
         A_lambda = (a_x + b_x / R_v) * A_v
         # dmag_red(dust) = -2.5 log10 (f_red / f_nored) : (f_red / f_nored) = 10**-0.4*dmag_red
         dust = numpy.power(10.0, -0.4*A_lambda)
-        flambda = flambda * dust
+        flambda *= dust
         # Update self if required.
         if update_self:
             self.flambda = flambda
