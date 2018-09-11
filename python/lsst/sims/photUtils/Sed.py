@@ -959,6 +959,9 @@ class Sed(object):
 
         Specify any two of A_V, E(B-V) or R_V (=3.1 default).
         """
+        if not hasattr(self, '_ln10_04'):
+            self._ln10_04 = 0.4*numpy.log(10.0)
+
         # The extinction law taken from Cardelli, Clayton and Mathis ApJ 1989.
         # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns).
         # Then, different values for a(x) and b(x) depending on wavelength regime.
@@ -991,12 +994,11 @@ class Sed(object):
             elif A_v is None:
                 A_v = R_v * ebv
         # R_v and A_v values are specified or calculated.
-        A_lambda = numpy.empty(len(wavelen), dtype=float)
-        dust = numpy.empty(len(wavelen), dtype=float)
+
         A_lambda = (a_x + b_x / R_v) * A_v
         # dmag_red(dust) = -2.5 log10 (f_red / f_nored) : (f_red / f_nored) = 10**-0.4*dmag_red
-        dust = numpy.power(10.0, -0.4*A_lambda)
-        flambda = flambda * dust
+        dust = numpy.exp(-A_lambda*self._ln10_04)
+        flambda *= dust
         # Update self if required.
         if update_self:
             self.flambda = flambda
