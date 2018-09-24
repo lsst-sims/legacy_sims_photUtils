@@ -958,12 +958,12 @@ class Sed(object):
 
     def setupODonnell_ab(self, wavelen=None):
         """
-        Calculate a(x) and b(x) for CCM dust model. (x=1/wavelen).
+        Calculate a(x) and b(x) for O'Donnell dust model. (x=1/wavelen).
 
         If wavelen not specified, calculates a and b on the own object's wavelength grid.
         Returns a(x) and b(x) can be common to many seds, wavelen is the same.
 
-        This method sets up the extinction parameters from the model of ODonnel 1994
+        This method sets up the extinction parameters from the model of O'Donnel 1994
         (ApJ 422, 158)
         """
         # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns),
