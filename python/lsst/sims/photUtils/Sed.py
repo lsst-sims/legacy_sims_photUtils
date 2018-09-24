@@ -904,7 +904,7 @@ class Sed(object):
         Returns a(x) and b(x) can be common to many seds, wavelen is the same.
 
         This method sets up extinction due to the model of
-        Cardelli, Clayton and Mathis ApJ 1989
+        Cardelli, Clayton and Mathis 1989 (ApJ 345, 245)
         """
         # This extinction law taken from Cardelli, Clayton and Mathis ApJ 1989.
         # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns),
