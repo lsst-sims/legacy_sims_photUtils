@@ -67,8 +67,8 @@ Method include:
   resampleSED -- primarily internal use, but may be useful to user. Resamples SED onto specified grid.
   flambdaTofnu / fnuToflambda -- conversion methods, does not affect wavelen gridding.
   redshiftSED -- redshifts the SED, optionally adding dimmingx
-  setupCCMab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS
-if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupCCMab).
+  setupODonnell_ab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS
+if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupODonnell_ab).
   multiplySED -- multiply two SEDS together.
   calcADU / calcMag / calcFlux -- with a Bandpass, calculate the ADU/magnitude/flux of a SED.
   calcFluxNorm / multiplyFluxNorm -- handle fluxnorm parameters (from UW LSST database) properly.
@@ -896,14 +896,16 @@ class Sed(object):
             return
         return wavelen, flambda
 
-    def setupCCMab(self, wavelen=None):
+    def setupODonnell_ab(self, wavelen=None):
         """
         Calculate a(x) and b(x) for CCM dust model. (x=1/wavelen).
 
         If wavelen not specified, calculates a and b on the own object's wavelength grid.
         Returns a(x) and b(x) can be common to many seds, wavelen is the same.
+
+        This method sets up the extinction parameters from the model of ODonnel 1994
+        (ApJ 422, 158)
         """
-        # This extinction law taken from Cardelli, Clayton and Mathis ApJ 1989.
         # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns),
         # then different values for a(x) and b(x) depending on wavelength regime.
         # Also, the extinction is parametrized as R_v = A_v / E(B-V).
