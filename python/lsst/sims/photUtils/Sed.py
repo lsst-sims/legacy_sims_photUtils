@@ -907,7 +907,10 @@ class Sed(object):
         This method sets up extinction due to the model of
         Cardelli, Clayton and Mathis 1989 (ApJ 345, 245)
         """
-        return self.setupCCM_ab(self, wavelen=wavelen)
+        #warnings.warn("Sed.setupCCMab is now deprecated in favor of Sed.setupCCM_ab",
+        #              DeprecationWarning)
+
+        return self.setupCCM_ab(wavelen=wavelen)
 
     def setupCCM_ab(self, wavelen=None):
         """
