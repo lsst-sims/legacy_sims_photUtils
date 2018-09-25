@@ -67,7 +67,7 @@ Method include:
   resampleSED -- primarily internal use, but may be useful to user. Resamples SED onto specified grid.
   flambdaTofnu / fnuToflambda -- conversion methods, does not affect wavelen gridding.
   redshiftSED -- redshifts the SED, optionally adding dimmingx
-  setupODonnell_ab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS
+  setupODonnell_ab / setupCCMab / addDust -- separated into two components, so that a_x/b_x can be reused between SEDS
 if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupODonnell_ab).
   multiplySED -- multiply two SEDS together.
   calcADU / calcMag / calcFlux -- with a Bandpass, calculate the ADU/magnitude/flux of a SED.
