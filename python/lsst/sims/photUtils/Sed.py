@@ -1017,7 +1017,19 @@ class Sed(object):
 
     def addCCMDust(self, a_x, b_x, A_v=None, ebv=None, R_v=3.1, wavelen=None, flambda=None):
         """
-        Add CCM dust model extinction to the SED, modifying flambda and fnu.
+        Add dust model extinction to the SED, modifying flambda and fnu.
+
+        Get a_x and b_x either from setupCCMab or setupODonnell_ab
+
+        Specify any two of A_V, E(B-V) or R_V (=3.1 default).
+        """
+        self.addDust(a_x, b_x, A_v=A_v, ebv=ebv, R_v=R_v, wavelen=wavelen, flambda=flambda)
+
+    def addDust(self, a_x, b_x, A_v=None, ebv=None, R_v=3.1, wavelen=None, flambda=None):
+        """
+        Add dust model extinction to the SED, modifying flambda and fnu.
+
+        Get a_x and b_x either from setupCCMab or setupODonnell_ab
 
         Specify any two of A_V, E(B-V) or R_V (=3.1 default).
         """
