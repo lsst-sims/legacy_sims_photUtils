@@ -1035,7 +1035,8 @@ class Sed(object):
 
         Specify any two of A_V, E(B-V) or R_V (=3.1 default).
         """
-        self.addDust(a_x, b_x, A_v=A_v, ebv=ebv, R_v=R_v, wavelen=wavelen, flambda=flambda)
+        return self.addDust(a_x, b_x, A_v=A_v, ebv=ebv,
+                            R_v=R_v, wavelen=wavelen, flambda=flambda)
 
     def addDust(self, a_x, b_x, A_v=None, ebv=None, R_v=3.1, wavelen=None, flambda=None):
         """
