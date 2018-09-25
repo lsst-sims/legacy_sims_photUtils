@@ -67,8 +67,9 @@ Method include:
   resampleSED -- primarily internal use, but may be useful to user. Resamples SED onto specified grid.
   flambdaTofnu / fnuToflambda -- conversion methods, does not affect wavelen gridding.
   redshiftSED -- redshifts the SED, optionally adding dimmingx
-  setupCCMab / addCCMDust -- separated into two components, so that a_x/b_x can be reused between SEDS
-if the wavelength range and grid is the same for each SED (calculate a_x/b_x with setupCCMab).
+  (setupODonnell_ab or setupCCM_ab) / addDust -- separated into two components, so that a_x/b_x can be reused between SEDS
+if the wavelength range and grid is the same for each SED (calculate a_x/b_x with either setupODonnell_ab
+or setupCCM_ab).
   multiplySED -- multiply two SEDS together.
   calcADU / calcMag / calcFlux -- with a Bandpass, calculate the ADU/magnitude/flux of a SED.
   calcFluxNorm / multiplyFluxNorm -- handle fluxnorm parameters (from UW LSST database) properly.
@@ -101,6 +102,11 @@ try:
     from lsst.utils import getPackageDir
 except:
     pass
+
+
+# since Python now suppresses DeprecationWarnings by default
+warnings.filterwarnings("default", category=DeprecationWarning, module='lsst.sims.photUtils.Sed')
+
 
 __all__ = ["Sed", "cache_LSST_seds", "read_close_Kurucz"]
 
@@ -902,8 +908,85 @@ class Sed(object):
 
         If wavelen not specified, calculates a and b on the own object's wavelength grid.
         Returns a(x) and b(x) can be common to many seds, wavelen is the same.
+
+        This method sets up extinction due to the model of
+        Cardelli, Clayton and Mathis 1989 (ApJ 345, 245)
+        """
+        warnings.warn("Sed.setupCCMab is now deprecated in favor of Sed.setupCCM_ab",
+                      DeprecationWarning)
+
+        return self.setupCCM_ab(wavelen=wavelen)
+
+    def setupCCM_ab(self, wavelen=None):
+        """
+        Calculate a(x) and b(x) for CCM dust model. (x=1/wavelen).
+
+        If wavelen not specified, calculates a and b on the own object's wavelength grid.
+        Returns a(x) and b(x) can be common to many seds, wavelen is the same.
+
+        This method sets up extinction due to the model of
+        Cardelli, Clayton and Mathis 1989 (ApJ 345, 245)
         """
         # This extinction law taken from Cardelli, Clayton and Mathis ApJ 1989.
+        # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns),
+        # then different values for a(x) and b(x) depending on wavelength regime.
+        # Also, the extinction is parametrized as R_v = A_v / E(B-V).
+        # Magnitudes of extinction (A_l) translates to flux by a_l = -2.5log(f_red / f_nonred).
+        if wavelen is None:
+            wavelen = numpy.copy(self.wavelen)
+        a_x = numpy.zeros(len(wavelen), dtype='float')
+        b_x = numpy.zeros(len(wavelen), dtype='float')
+        # Convert wavelength to x (in inverse microns).
+        x = numpy.empty(len(wavelen), dtype=float)
+        nm_to_micron = 1/1000.0
+        x = 1.0 / (wavelen * nm_to_micron)
+        # Dust in infrared 0.3 /mu < x < 1.1 /mu (inverse microns).
+        condition = (x >= 0.3) & (x <= 1.1)
+        if len(a_x[condition]) > 0:
+            y = x[condition]
+            a_x[condition] = 0.574 * y**1.61
+            b_x[condition] = -0.527 * y**1.61
+        # Dust in optical/NIR 1.1 /mu < x < 3.3 /mu region.
+        condition = (x >= 1.1) & (x <= 3.3)
+        if len(a_x[condition]) > 0:
+            y = x[condition] - 1.82
+            a_x[condition] = 1 + 0.17699*y - 0.50447*y**2 - 0.02427*y**3 + 0.72085*y**4
+            a_x[condition] = a_x[condition] + 0.01979*y**5 - 0.77530*y**6 + 0.32999*y**7
+            b_x[condition] = 1.41338*y + 2.28305*y**2 + 1.07233*y**3 - 5.38434*y**4
+            b_x[condition] = b_x[condition] - 0.62251*y**5 + 5.30260*y**6 - 2.09002*y**7
+        # Dust in ultraviolet and UV (if needed for high-z) 3.3 /mu< x< 8 /mu.
+        condition = (x >= 3.3) & (x < 5.9)
+        if len(a_x[condition]) > 0:
+            y = x[condition]
+            a_x[condition] = 1.752 - 0.316*y - 0.104/((y-4.67)**2 + 0.341)
+            b_x[condition] = -3.090 + 1.825*y + 1.206/((y-4.62)**2 + 0.263)
+        condition = (x > 5.9) & (x < 8)
+        if len(a_x[condition]) > 0:
+            y = x[condition]
+            Fa_x = numpy.empty(len(a_x[condition]), dtype=float)
+            Fb_x = numpy.empty(len(a_x[condition]), dtype=float)
+            Fa_x = -0.04473*(y-5.9)**2 - 0.009779*(y-5.9)**3
+            Fb_x = 0.2130*(y-5.9)**2 + 0.1207*(y-5.9)**3
+            a_x[condition] = 1.752 - 0.316*y - 0.104/((y-4.67)**2 + 0.341) + Fa_x
+            b_x[condition] = -3.090 + 1.825*y + 1.206/((y-4.62)**2 + 0.263) + Fb_x
+        # Dust in far UV (if needed for high-z) 8 /mu < x < 10 /mu region.
+        condition = (x >= 8) & (x <= 11.)
+        if len(a_x[condition]) > 0:
+            y = x[condition]-8.0
+            a_x[condition] = -1.073 - 0.628*(y) + 0.137*(y)**2 - 0.070*(y)**3
+            b_x[condition] = 13.670 + 4.257*(y) - 0.420*(y)**2 + 0.374*(y)**3
+        return a_x, b_x
+
+    def setupODonnell_ab(self, wavelen=None):
+        """
+        Calculate a(x) and b(x) for O'Donnell dust model. (x=1/wavelen).
+
+        If wavelen not specified, calculates a and b on the own object's wavelength grid.
+        Returns a(x) and b(x) can be common to many seds, wavelen is the same.
+
+        This method sets up the extinction parameters from the model of O'Donnel 1994
+        (ApJ 422, 158)
+        """
         # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns),
         # then different values for a(x) and b(x) depending on wavelength regime.
         # Also, the extinction is parametrized as R_v = A_v / E(B-V).
@@ -955,7 +1038,22 @@ class Sed(object):
 
     def addCCMDust(self, a_x, b_x, A_v=None, ebv=None, R_v=3.1, wavelen=None, flambda=None):
         """
-        Add CCM dust model extinction to the SED, modifying flambda and fnu.
+        Add dust model extinction to the SED, modifying flambda and fnu.
+
+        Get a_x and b_x either from setupCCMab or setupODonnell_ab
+
+        Specify any two of A_V, E(B-V) or R_V (=3.1 default).
+        """
+        warnings.warn("Sed.addCCMDust is now deprecated in favor of Sed.addDust",
+                      DeprecationWarning)
+        return self.addDust(a_x, b_x, A_v=A_v, ebv=ebv,
+                            R_v=R_v, wavelen=wavelen, flambda=flambda)
+
+    def addDust(self, a_x, b_x, A_v=None, ebv=None, R_v=3.1, wavelen=None, flambda=None):
+        """
+        Add dust model extinction to the SED, modifying flambda and fnu.
+
+        Get a_x and b_x either from setupCCMab or setupODonnell_ab
 
         Specify any two of A_V, E(B-V) or R_V (=3.1 default).
         """
