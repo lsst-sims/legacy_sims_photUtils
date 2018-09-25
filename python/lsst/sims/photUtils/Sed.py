@@ -103,6 +103,11 @@ try:
 except:
     pass
 
+
+# since Python now suppresses DeprecationWarnings by default
+warnings.filterwarnings("default", category=DeprecationWarning, module='lsst.sims.photUtils.Sed')
+
+
 __all__ = ["Sed", "cache_LSST_seds", "read_close_Kurucz"]
 
 
@@ -907,8 +912,8 @@ class Sed(object):
         This method sets up extinction due to the model of
         Cardelli, Clayton and Mathis 1989 (ApJ 345, 245)
         """
-        #warnings.warn("Sed.setupCCMab is now deprecated in favor of Sed.setupCCM_ab",
-        #              DeprecationWarning)
+        warnings.warn("Sed.setupCCMab is now deprecated in favor of Sed.setupCCM_ab",
+                      DeprecationWarning)
 
         return self.setupCCM_ab(wavelen=wavelen)
 
@@ -1039,6 +1044,8 @@ class Sed(object):
 
         Specify any two of A_V, E(B-V) or R_V (=3.1 default).
         """
+        warnings.warn("Sed.addCCMDust is now deprecated in favor of Sed.addDust",
+                      DeprecationWarning)
         return self.addDust(a_x, b_x, A_v=A_v, ebv=ebv,
                             R_v=R_v, wavelen=wavelen, flambda=flambda)
 
