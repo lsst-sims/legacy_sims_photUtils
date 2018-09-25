@@ -906,6 +906,18 @@ class Sed(object):
         This method sets up extinction due to the model of
         Cardelli, Clayton and Mathis 1989 (ApJ 345, 245)
         """
+        return self.setupCCM_ab(self, wavelen=wavelen)
+
+    def setupCCM_ab(self, wavelen=None):
+        """
+        Calculate a(x) and b(x) for CCM dust model. (x=1/wavelen).
+
+        If wavelen not specified, calculates a and b on the own object's wavelength grid.
+        Returns a(x) and b(x) can be common to many seds, wavelen is the same.
+
+        This method sets up extinction due to the model of
+        Cardelli, Clayton and Mathis 1989 (ApJ 345, 245)
+        """
         # This extinction law taken from Cardelli, Clayton and Mathis ApJ 1989.
         # The general form is A_l / A(V) = a(x) + b(x)/R_V  (where x=1/lambda in microns),
         # then different values for a(x) and b(x) depending on wavelength regime.
