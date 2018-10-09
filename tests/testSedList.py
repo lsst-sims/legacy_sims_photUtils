@@ -124,8 +124,8 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=av)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=av)
 
             np.testing.assert_array_equal(sedControl.wavelen, sedTest.wavelen)
             np.testing.assert_array_equal(sedControl.flambda, sedTest.flambda)
@@ -157,8 +157,8 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=av)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=av)
 
             sedControl.redshiftSED(zz, dimming=True)
 
@@ -192,8 +192,8 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=av)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=av)
 
             sedControl.redshiftSED(zz, dimming=False)
 
@@ -231,13 +231,13 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=av)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=av)
 
             sedControl.redshiftSED(zz, dimming=True)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             np.testing.assert_array_equal(sedControl.wavelen, sedTest.wavelen)
             np.testing.assert_array_equal(sedControl.flambda, sedTest.flambda)
@@ -278,14 +278,14 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=av)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=av)
 
             sedControl.redshiftSED(zz, dimming=True)
             sedControl.resampleSED(wavelen_match=wavelen_match)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             np.testing.assert_array_equal(sedControl.wavelen, sedTest.wavelen)
             np.testing.assert_array_equal(sedControl.flambda, sedTest.flambda)
@@ -379,14 +379,14 @@ class SedListTest(unittest.TestCase):
                         fnorm = sedControl.calcFluxNorm(norm, imsimBand)
                         sedControl.multiplyFluxNorm(fnorm)
 
-                        a_coeff, b_coeff = sedControl.setupCCMab()
-                        sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+                        a_coeff, b_coeff = sedControl.setupCCM_ab()
+                        sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
                         sedControl.redshiftSED(zz, dimming=True)
                         sedControl.resampleSED(wavelen_match=wavelen_match)
 
-                        a_coeff, b_coeff = sedControl.setupCCMab()
-                        sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+                        a_coeff, b_coeff = sedControl.setupCCM_ab()
+                        sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
                         sedTest = testList[ix]
 
@@ -414,8 +414,8 @@ class SedListTest(unittest.TestCase):
                         sedControl.multiplyFluxNorm(fnorm)
 
                         if addIav:
-                            a_coeff, b_coeff = sedControl.setupCCMab()
-                            sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+                            a_coeff, b_coeff = sedControl.setupCCM_ab()
+                            sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
                         if addRedshift:
                             sedControl.redshiftSED(zz, dimming=True)
@@ -423,8 +423,8 @@ class SedListTest(unittest.TestCase):
                         sedControl.resampleSED(wavelen_match=wavelen_match)
 
                         if addGav:
-                            a_coeff, b_coeff = sedControl.setupCCMab()
-                            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+                            a_coeff, b_coeff = sedControl.setupCCM_ab()
+                            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
                         sedTest = testList[ix+nSed]
 
@@ -503,14 +503,14 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
             sedControl.redshiftSED(zz, dimming=True)
             sedControl.resampleSED(wavelen_match=wavelen_match)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             sedTest = testList[ix]
 
@@ -529,8 +529,8 @@ class SedListTest(unittest.TestCase):
             sedControl.multiplyFluxNorm(fnorm)
 
             if iav is not None:
-                a_coeff, b_coeff = sedControl.setupCCMab()
-                sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+                a_coeff, b_coeff = sedControl.setupCCM_ab()
+                sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
             if zz is not None:
                 sedControl.redshiftSED(zz, dimming=True)
@@ -538,8 +538,8 @@ class SedListTest(unittest.TestCase):
             sedControl.resampleSED(wavelen_match=wavelen_match)
 
             if gav is not None:
-                a_coeff, b_coeff = sedControl.setupCCMab()
-                sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+                a_coeff, b_coeff = sedControl.setupCCM_ab()
+                sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             sedTest = testList[ix+nSed]
 
@@ -605,14 +605,14 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, normalizingBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
             sedControl.redshiftSED(zz, dimming=True)
             sedControl.resampleSED(wavelen_match=wavelen_match)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             sedTest = testList[ix]
 
@@ -630,15 +630,15 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, normalizingBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
             sedControl.redshiftSED(zz, dimming=True)
 
             sedControl.resampleSED(wavelen_match=wavelen_match)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             sedTest = testList[ix+nSed]
 
@@ -683,14 +683,14 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
             sedControl.redshiftSED(zz, dimming=True)
             sedControl.resampleSED(wavelen_match=wavelen_match)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             sedTest = testList[ix]
 
@@ -732,14 +732,14 @@ class SedListTest(unittest.TestCase):
             fnorm = sedControl.calcFluxNorm(norm, imsimBand)
             sedControl.multiplyFluxNorm(fnorm)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=iav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=iav)
 
             sedControl.redshiftSED(zz, dimming=True)
             sedControl.resampleSED(wavelen_match=wavelen_match)
 
-            a_coeff, b_coeff = sedControl.setupCCMab()
-            sedControl.addCCMDust(a_coeff, b_coeff, A_v=gav)
+            a_coeff, b_coeff = sedControl.setupCCM_ab()
+            sedControl.addDust(a_coeff, b_coeff, A_v=gav)
 
             sedTest = testList[ix]
 
