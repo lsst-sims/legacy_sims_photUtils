@@ -263,17 +263,17 @@ class SedList(object):
 
         for sedobj, av in zip(sedList, avList):
             if sedobj.wavelen is not None and av is not None:
-                #setupCCMab only depends on the wavelen array
+                #setupCCM_ab only depends on the wavelen array
                 #because this is supposed to be the same for every
                 #SED object in sedList, it is only called once for
                 #each invocation of applyAv
 
                 if dustWavelen is None or len(sedobj.wavelen)!=len(dustWavelen) \
                 or (sedobj.wavelen!=dustWavelen).any():
-                    aCoeffs, bCoeffs = sedobj.setupCCMab()
+                    aCoeffs, bCoeffs = sedobj.setupCCM_ab()
                     dustWavelen = sedobj.wavelen
 
-                sedobj.addCCMDust(aCoeffs, bCoeffs, A_v=av)
+                sedobj.addDust(aCoeffs, bCoeffs, A_v=av)
 
 
         return dustWavelen, aCoeffs, bCoeffs

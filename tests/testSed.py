@@ -262,7 +262,7 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         log10_bb_factor += 2.0*np.log10(speed_of_light)
         log10_bb_factor -= 5.0*(np.log10(wavelen_arr) - 7.0)  # convert wavelen to cm
 
-        for temp in np.arange(1000.0, 7000.0, 250.0):
+        for temp in np.arange(5000.0, 7000.0, 250.0):
             log10_exp_arg = np.log10(planck_h) + np.log10(speed_of_light)
             log10_exp_arg -= (np.log10(wavelen_arr) - 7.0)
             log10_exp_arg -= (np.log10(boltzmann_k) + np.log10(temp))
@@ -300,7 +300,7 @@ class SedBasicFunctionsTestCase(unittest.TestCase):
         log10_bb_factor += 2.0*np.log10(speed_of_light)
         log10_bb_factor -= 5.0*(np.log10(wavelen_arr) - 7.0)  # convert wavelen to cm
 
-        for temp in np.arange(1000.0, 7000.0, 250.0):
+        for temp in np.arange(5000.0, 7000.0, 250.0):
             log10_exp_arg = np.log10(planck_h) + np.log10(speed_of_light)
             log10_exp_arg -= (np.log10(wavelen_arr) - 7.0)
             log10_exp_arg -= (np.log10(boltzmann_k) + np.log10(temp))
