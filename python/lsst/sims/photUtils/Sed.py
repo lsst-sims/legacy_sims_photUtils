@@ -530,7 +530,7 @@ class Sed(object):
         self.name = name
         return
 
-    def readSED_flambda(self, filename, name=None):
+    def readSED_flambda(self, filename, name=None, cache_sed=True):
         """
         Read a file containing [lambda Flambda] (lambda in nm) (Flambda erg/cm^2/s/nm).
 
@@ -589,10 +589,11 @@ class Sed(object):
             sourcewavelen = data['wavelen']
             sourceflambda = data['flambda']
 
-            if _global_misc_sed_cache is None:
-                _global_misc_sed_cache = {}
-            _global_misc_sed_cache[filename] = (numpy.copy(sourcewavelen),
-                                                numpy.copy(sourceflambda))
+            if cache_sed:
+                if _global_misc_sed_cache is None:
+                    _global_misc_sed_cache = {}
+                _global_misc_sed_cache[filename] = (numpy.copy(sourcewavelen),
+                                                    numpy.copy(sourceflambda))
 
         self.wavelen = sourcewavelen
         self.flambda = sourceflambda
