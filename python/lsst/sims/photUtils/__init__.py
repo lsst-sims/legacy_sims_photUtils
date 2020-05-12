@@ -8,3 +8,4 @@ from .SedList import *
 from .PhotometricParameters import *
 from .SignalToNoise import *
 from .CosmologyObject import *
+from .BandpassSet import *

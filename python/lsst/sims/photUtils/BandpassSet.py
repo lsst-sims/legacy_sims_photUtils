@@ -243,7 +243,7 @@ class BandpassSet(object):
             d_perc = drop_percent/100.0  # given in %, must translate to fraction.
             # Find the nearest spot on the wavelength grid used for filter, for edge lookup.
             sbindex = np.where(abs(bandpass[f].wavelen - effsb[f]) < wavelenstep/2.0)
-            sbindex = sbindex[0]
+            sbindex = sbindex[0][0]
             # Now find where Sb drops below 'drop_peak_thruput' of max for the first time.
             # Calculate wavelength where dropoff X percent of max level.
             # Start at effective wavelength, and walk outwards. 
