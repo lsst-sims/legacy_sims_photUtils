@@ -1,7 +1,37 @@
 from builtins import object
-import numpy
+import numpy as np
+from lsst.sims.photUtils import Sed, Bandpass
 
-__all__ = ["PhotometricParameters"]
+__all__ = ["PhotometricParameters", 'Dust_values']
+
+
+class Dust_values(object):
+    """Calculate extinction values
+    """
+    def __init__(self, R_v=3.1):
+        # Calculate dust extinction values
+        waveMins = {'u': 330., 'g': 403., 'r': 552., 'i': 691., 'z': 818., 'y': 950.}
+        waveMaxes = {'u': 403., 'g': 552., 'r': 691., 'i': 818., 'z': 922., 'y': 1070.}
+        self.Ax1 = {}
+        for filtername in waveMins:
+            wavelen_min = waveMins[filtername]
+            wavelen_max = waveMaxes[filtername]
+            testsed = Sed()
+            testsed.setFlatSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=1.0)
+            testbandpass = Bandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=1.0)
+            testbandpass.setBandpass(wavelen=testsed.wavelen,
+                                     sb=np.ones(len(testsed.wavelen)))
+            self.ref_ebv = 1.0
+            # Calculate non-dust-extincted magnitude
+            flatmag = testsed.calcMag(testbandpass)
+            # Add dust
+            a, b = testsed.setupCCM_ab()
+            testsed.addDust(a, b, ebv=self.ref_ebv, R_v=R_v)
+            # Calculate difference due to dust when EBV=1.0 (m_dust = m_nodust - Ax, Ax > 0)
+            self.Ax1[filtername] = testsed.calcMag(testbandpass) - flatmag
+
+        self.pixscale = 0.2
+
 
 class DefaultPhotometricParameters(object):
     """
@@ -45,7 +75,7 @@ class DefaultPhotometricParameters(object):
     nexp = makeDict(nexpN)
 
     # effective area in cm^2
-    effareaCm2 = numpy.pi * (6.423/2.*100)**2
+    effareaCm2 = np.pi * (6.423/2.*100)**2
     effarea = makeDict(effareaCm2)
 
     # electrons per ADU
