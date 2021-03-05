@@ -1,36 +1,42 @@
 from builtins import object
 import numpy as np
-from lsst.sims.photUtils import Sed, Bandpass
+from lsst.sims.photUtils import Sed, BandpassDict
 
 __all__ = ["PhotometricParameters", 'Dust_values']
 
 
 class Dust_values(object):
     """Calculate extinction values
+
+    Parameters
+    ----------
+    R_v : float (3.1)
+        Extinction law parameter (3.1).
+    bandpassDict : dict (None)
+        A dict with keys of filtername and values of lsst.sims.photUtils.Bandpass objects. Default
+        of None will load the standard ugrizy bandpasses.
+    ref_ev : float (1.)
+        The reference E(B-V) value to use. Things in MAF assume 1.
     """
-    def __init__(self, R_v=3.1):
+    def __init__(self, R_v=3.1, bandpassDict=None, ref_ebv=1.):
         # Calculate dust extinction values
-        waveMins = {'u': 330., 'g': 403., 'r': 552., 'i': 691., 'z': 818., 'y': 950.}
-        waveMaxes = {'u': 403., 'g': 552., 'r': 691., 'i': 818., 'z': 922., 'y': 1070.}
         self.Ax1 = {}
-        for filtername in waveMins:
-            wavelen_min = waveMins[filtername]
-            wavelen_max = waveMaxes[filtername]
+        if bandpassDict is None:
+            bandpassDict = BandpassDict.loadTotalBandpassesFromFiles(['u', 'g', 'r', 'i', 'z', 'y'])
+
+        for filtername in bandpassDict:
+            wavelen_min = bandpassDict[filtername].wavelen.min()
+            wavelen_max = bandpassDict[filtername].wavelen.max()
             testsed = Sed()
             testsed.setFlatSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=1.0)
-            testbandpass = Bandpass(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=1.0)
-            testbandpass.setBandpass(wavelen=testsed.wavelen,
-                                     sb=np.ones(len(testsed.wavelen)))
-            self.ref_ebv = 1.0
+            self.ref_ebv = ref_ebv
             # Calculate non-dust-extincted magnitude
-            flatmag = testsed.calcMag(testbandpass)
+            flatmag = testsed.calcMag(bandpassDict[filtername])
             # Add dust
             a, b = testsed.setupCCM_ab()
             testsed.addDust(a, b, ebv=self.ref_ebv, R_v=R_v)
             # Calculate difference due to dust when EBV=1.0 (m_dust = m_nodust - Ax, Ax > 0)
-            self.Ax1[filtername] = testsed.calcMag(testbandpass) - flatmag
-
-        self.pixscale = 0.2
+            self.Ax1[filtername] = testsed.calcMag(bandpassDict[filtername]) - flatmag
 
 
 class DefaultPhotometricParameters(object):
