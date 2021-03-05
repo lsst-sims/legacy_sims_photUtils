@@ -1,7 +1,43 @@
 from builtins import object
-import numpy
+import numpy as np
+from lsst.sims.photUtils import Sed, BandpassDict
 
-__all__ = ["PhotometricParameters"]
+__all__ = ["PhotometricParameters", 'Dust_values']
+
+
+class Dust_values(object):
+    """Calculate extinction values
+
+    Parameters
+    ----------
+    R_v : float (3.1)
+        Extinction law parameter (3.1).
+    bandpassDict : dict (None)
+        A dict with keys of filtername and values of lsst.sims.photUtils.Bandpass objects. Default
+        of None will load the standard ugrizy bandpasses.
+    ref_ev : float (1.)
+        The reference E(B-V) value to use. Things in MAF assume 1.
+    """
+    def __init__(self, R_v=3.1, bandpassDict=None, ref_ebv=1.):
+        # Calculate dust extinction values
+        self.Ax1 = {}
+        if bandpassDict is None:
+            bandpassDict = BandpassDict.loadTotalBandpassesFromFiles(['u', 'g', 'r', 'i', 'z', 'y'])
+
+        for filtername in bandpassDict:
+            wavelen_min = bandpassDict[filtername].wavelen.min()
+            wavelen_max = bandpassDict[filtername].wavelen.max()
+            testsed = Sed()
+            testsed.setFlatSED(wavelen_min=wavelen_min, wavelen_max=wavelen_max, wavelen_step=1.0)
+            self.ref_ebv = ref_ebv
+            # Calculate non-dust-extincted magnitude
+            flatmag = testsed.calcMag(bandpassDict[filtername])
+            # Add dust
+            a, b = testsed.setupCCM_ab()
+            testsed.addDust(a, b, ebv=self.ref_ebv, R_v=R_v)
+            # Calculate difference due to dust when EBV=1.0 (m_dust = m_nodust - Ax, Ax > 0)
+            self.Ax1[filtername] = testsed.calcMag(bandpassDict[filtername]) - flatmag
+
 
 class DefaultPhotometricParameters(object):
     """
@@ -45,7 +81,7 @@ class DefaultPhotometricParameters(object):
     nexp = makeDict(nexpN)
 
     # effective area in cm^2
-    effareaCm2 = numpy.pi * (6.423/2.*100)**2
+    effareaCm2 = np.pi * (6.423/2.*100)**2
     effarea = makeDict(effareaCm2)
 
     # electrons per ADU
