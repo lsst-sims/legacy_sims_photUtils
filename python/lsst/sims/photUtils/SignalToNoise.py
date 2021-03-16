@@ -1,38 +1,53 @@
-from __future__ import print_function
-from __future__ import absolute_import
 import numpy
 from .Sed import Sed
-from .Bandpass import Bandpass
 from . import LSSTdefaults
+
 
 __all__ = ["FWHMeff2FWHMgeom", "FWHMgeom2FWHMeff",
            "calcNeff", "calcInstrNoiseSq", "calcTotalNonSourceNoiseSq", "calcSNR_sed",
           "calcM5", "calcSkyCountsPerPixelForM5", "calcGamma", "calcSNR_m5",
           "calcAstrometricError", "magErrorFromSNR", "calcMagError_m5", "calcMagError_sed"]
 
+
 def FWHMeff2FWHMgeom(FWHMeff):
     """
     Convert FWHMeff to FWHMgeom.
-    This conversion was calculated by Bo Xin and Zeljko Ivezic (and will be in an update on the LSE-40 and overview papers).
+    This conversion was calculated by Bo Xin and Zeljko Ivezic
+    (and will be in an update on the LSE-40 and overview papers).
 
-    @param [in] FWHMeff (the single-gaussian equivalent FWHM value, appropriate for calcNeff) in arcseconds
+    Parameters
+    ----------
+    FWHMeff: float
+        the single-gaussian equivalent FWHM value, appropriate for calcNeff, in arcseconds
 
-    @param [out] FWHMgeom (the geometric FWHM value, as measured from a typical PSF profile) in arcseconds
+    Returns
+    -------
+    float
+        FWHM geom, the geometric FWHM value as measured from a typical PSF profile in arcseconds.
     """
     FWHMgeom = 0.822*FWHMeff + 0.052
     return FWHMgeom
 
+
 def FWHMgeom2FWHMeff(FWHMgeom):
     """
     Convert FWHMgeom to FWHMeff.
-    This conversion was calculated by Bo Xin and Zeljko Ivezic (and will be in an update on the LSE-40 and overview papers).
+    This conversion was calculated by Bo Xin and Zeljko Ivezic
+    (and will be in an update on the LSE-40 and overview papers).
 
-    @param [in] FWHMgeom (the geometric FWHM value, as measured from a typical PSF profile) in arcseconds
+    Parameters
+    ----------
+    FWHMgeom: float
+        The geometric FWHM value, as measured from a typical PSF profile, in arcseconds.
 
-    @param [out] FWHMeff (the single-gaussian equivalent FWHM value, appropriate for calcNeff) in arcseconds
+    Returns
+    -------
+    float
+        FWHM effective, the single-gaussian equivalent FWHM value, appropriate for calcNeff, in arcseconds.
     """
     FWHMeff = (FWHMgeom - 0.052)/0.822
     return FWHMeff
+
 
 def calcNeff(FWHMeff, platescale):
     """
@@ -40,13 +55,17 @@ def calcNeff(FWHMeff, platescale):
     This equation comes from LSE-40, equation 27.
     https://docushare.lsstcorp.org/docushare/dsweb/ImageStoreViewer/LSE-40
 
+    Parameters
+    ----------
+    FWHMeff: float
+        The width of a single-gaussian that produces correct Neff for typical PSF profile.
+    platescale: float
+        The platescale in arcseconds per pixel (0.2 for LSST)
 
-    @param [in] FWHMeff in arcseconds
-       (the width of a single-gaussian that produces correct Neff for typical PSF profile)
-
-    @param [in] platescale in arcseconds per pixel
-
-    @param [out] the effective number of pixels contained in the PSF
+    Returns
+    -------
+    float
+        The effective number of pixels contained in the PSF
 
     The FWHMeff is a way to represent the equivalent seeing value, if the
     atmosphere could be simply represented as a single gaussian (instead of a more
@@ -499,11 +518,30 @@ def calcMagError_sed(sourceSed, totalbandpass, skysed, hardwarebandpass,
         return magErrorFromSNR(snr)
 
 
-def calcAstrometricError(mag, m5, nvisit=1):
+def calcAstrometricError(mag, m5, fwhmGeom=0.7, nvisit=1, systematicFloor=10):
     """
-    Calculate the astrometric error, for object catalog purposes.
+    Calculate an expected astrometric error.
+    Can be used to estimate this for general catalog purposes (use typical FWHM and nvisit=Number of visit).
+    Or can be used for a single visit, use actual FWHM and nvisit=1.
 
-    Returns astrometric error for a given SNR, in mas.
+    Parameters
+    ----------
+    mag: float
+        Magnitude of the source
+    m5: float
+        Point source five sigma limiting magnitude of the image (or typical depth per image).
+    fwhmGeom: float, opt
+        The geometric (physical) FWHM of the image, in arcseconds. Default 0.7.
+    nvisit: int, opt
+        The number of visits/measurement. Default 1.
+        If this is >1, the random error contribution is reduced by sqrt(nvisits).
+    systematicFloor: float, opt
+        The systematic noise floor for the astrometric measurements, in mas. Default 10mas.
+
+    Returns
+    -------
+    float
+        Astrometric error for a given SNR, in mas.
     """
     # The astrometric error can be applied to parallax or proper motion (for nvisit>1).
     # If applying to proper motion, should also divide by the # of years of the survey.
@@ -513,15 +551,11 @@ def calcAstrometricError(mag, m5, nvisit=1):
     # Zeljko says 'be conservative', so removing this reduction for now.
     rgamma = 0.039
     xval = numpy.power(10, 0.4*(mag-m5))
-    # The average FWHMeff is 0.7" (or 700 mas).
-    error_rand = 700.0 * numpy.sqrt((0.04-rgamma)*xval + rgamma*xval*xval)
+    # The average FWHMeff is 0.7" (or 700 mas), but user can specify. Convert to mas.
+    seeing = fwhmGeom * 1000.
+    error_rand = seeing * numpy.sqrt((0.04-rgamma)*xval + rgamma*xval*xval)
     error_rand = error_rand / numpy.sqrt(nvisit)
-    # The systematic error floor in astrometry:
-    error_sys = 10.0
-    # These next few lines are the code removed due to Zeljko's 'be conservative' requirement.
-    #if (nvisit<30):
-    #    error_sys = error_sys/numpy.sqrt(nvisit/2.0)
-    #if (nvisit>30):
-    #    error_sys = error_sys/numpy.sqrt(nvisit)
+    # The systematic error floor in astrometry (mas).
+    error_sys = systematicFloor
     astrom_error = numpy.sqrt(error_sys * error_sys + error_rand*error_rand)
     return astrom_error
