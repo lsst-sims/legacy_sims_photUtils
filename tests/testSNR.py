@@ -242,6 +242,25 @@ class TestSNRmethods(unittest.TestCase):
         FWHMeff = snr.FWHMgeom2FWHMeff(FWHMgeom)
         self.assertEqual(FWHMeff, (FWHMgeom-0.052)/0.822)
 
+    def testAstrometricError(self):
+        fwhmGeom = 0.7
+        m5 = 24.5
+        # For bright objects, error should be systematic floor
+        mag = 10
+        astrometricErr = snr.calcAstrometricError(mag, m5, fwhmGeom=fwhmGeom, nvisit=1, systematicFloor=10)
+        self.assertAlmostEqual(astrometricErr, 10, 3)
+        # Even if you increase the number of visits, the systemic floor doesn't change
+        astrometricErr = snr.calcAstrometricError(mag, m5, fwhmGeom=fwhmGeom, nvisit=100)
+        self.assertAlmostEqual(astrometricErr, 10, 3)
+        # For a single visit, fainter source, larger error and nvisits matters
+        mag = 24.5
+        astrometricErr1 = snr.calcAstrometricError(mag, m5, fwhmGeom=fwhmGeom, nvisit=1,
+                                                   systematicFloor=10)
+        astrometricErr100 = snr.calcAstrometricError(mag, m5, fwhmGeom=fwhmGeom, nvisit=100,
+                                                     systematicFloor=10)
+        self.assertGreater(astrometricErr1, astrometricErr100)
+        self.assertAlmostEqual(astrometricErr1, 140.357, 3)
+
     def testSNR_arr(self):
         """
         Test that calcSNR_m5 works on numpy arrays of magnitudes
